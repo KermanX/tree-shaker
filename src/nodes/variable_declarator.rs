@@ -16,10 +16,10 @@ impl<'a> TreeShakerImpl<'a> {
     let data = self.load_data::<Data>(node);
     need_symbol.map(|symbol| data.included.insert(symbol));
 
-    let init_val = node
-      .init
-      .as_ref()
-      .map_or(Entity::Undefined, |init| self.exec_expression(init, need_symbol.is_some()));
+    let init_val = match &node.init {
+      Some(init) => self.exec_expression(init),
+      None => Entity::Undefined,
+    };
 
     self.exec_binding_pattern(&node.id, need_symbol, init_val)
   }

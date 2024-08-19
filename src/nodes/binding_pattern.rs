@@ -19,6 +19,7 @@ impl<'a> TreeShakerImpl<'a> {
     init_val: Entity,
   ) -> Option<Entity> {
     let data = self.load_data::<Data>(node);
+    need_symbol.map(|symbol| data.included_symbols.insert(symbol));
 
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
@@ -30,11 +31,11 @@ impl<'a> TreeShakerImpl<'a> {
         let mut result: Option<Entity> = None;
         for property in &node.properties {
           if need_symbol.is_some_and(|s| self.is_in_binding_pattern(&property.value, s)) {
-            let key = self.exec_property_key(&property.key, true);
+            let key = self.exec_property_key(&property.key);
             let value = init_val.get_property(&key).as_ref().clone();
             result = self.exec_binding_pattern(&property.value, need_symbol, value)
           } else {
-            self.exec_property_key(&property.key, false);
+            self.exec_property_key(&property.key);
             self.exec_binding_pattern(&property.value, None, Entity::Unknown);
           }
         }
@@ -60,7 +61,7 @@ impl<'a> TreeShakerImpl<'a> {
       BindingPatternKind::AssignmentPattern(node) => {
         let value = self.exec_binding_pattern(&node.left, need_symbol, init_val);
         if value.as_ref().is_some_and(|value| value.is_null_or_undefined()) {
-          self.exec_expression(&node.right, true);
+          self.exec_expression(&node.right);
         }
         value
       }
