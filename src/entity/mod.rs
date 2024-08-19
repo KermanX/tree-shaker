@@ -24,7 +24,6 @@ pub enum Entity {
   UnknownBigInt,
 
   BooleanLiteral(bool),
-  UnknownBoolean,
 
   Null,
   Undefined,
@@ -48,6 +47,13 @@ impl Default for Entity {
 }
 
 impl Entity {
+  pub fn new_unknown_boolean() -> Self {
+    Entity::Union(vec![
+      Rc::new(Entity::StringLiteral("true".to_string())),
+      Rc::new(Entity::StringLiteral("false".to_string())),
+    ])
+  }
+
   pub fn simplified(&self) -> Entity {
     let result = match self {
       Entity::Union(values) => {
@@ -86,10 +92,6 @@ impl Entity {
       Entity::NumberLiteral(num) => Entity::StringLiteral(num.to_string()),
       Entity::BigIntLiteral(num) => Entity::StringLiteral(num.to_string()),
       Entity::BooleanLiteral(bool) => Entity::StringLiteral(bool.to_string()),
-      Entity::UnknownBoolean => Entity::Union(vec![
-        Rc::new(Entity::StringLiteral("true".to_string())),
-        Rc::new(Entity::StringLiteral("false".to_string())),
-      ]),
       Entity::Null => Entity::StringLiteral("null".to_string()),
       Entity::Undefined => Entity::StringLiteral("undefined".to_string()),
       Entity::Symbol(symbol) => Entity::Symbol(symbol.clone()),
@@ -129,5 +131,28 @@ impl Entity {
         | Entity::UnknownBigInt
         | Entity::NonEmptyString(true)
     )
+  }
+
+  pub fn to_boolean(&self) -> Entity {
+    match self {
+      Entity::StringLiteral(str) => Entity::BooleanLiteral(!str.is_empty()),
+      Entity::NumberLiteral(num) => Entity::BooleanLiteral(*num != 0.0),
+      Entity::BigIntLiteral(num) => Entity::BooleanLiteral(*num != 0),
+      Entity::BooleanLiteral(bool) => Entity::BooleanLiteral(bool.clone()),
+      Entity::NonEmptyString(_)
+      | Entity::NonZeroNumber
+      | Entity::NonZeroBigInt
+      | Entity::Symbol(_)
+      | Entity::UnknownSymbol
+      | Entity::Object(_)
+      | Entity::Array(_) => Entity::BooleanLiteral(true),
+      Entity::Null | Entity::Undefined => Entity::BooleanLiteral(false),
+      Entity::UnknownString | Entity::UnknownNumber | Entity::UnknownBigInt | Entity::Unknown => {
+        Entity::new_unknown_boolean()
+      }
+      Entity::Union(values) => {
+        Entity::Union(values.iter().map(|value| Rc::new(value.to_boolean())).collect())
+      }
+    }
   }
 }
