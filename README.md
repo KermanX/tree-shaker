@@ -1,6 +1,6 @@
 # Tree Shaker Prototype
 
-\[WIP\] This is a **prototype** of a tree shaker.
+\[WIP\] This is a **prototype** of a JavaScript tree shaker.
 
 ## Goal
 
@@ -27,12 +27,14 @@ export function f() {
 }
 ```
 
+May not be very fast, but should generates the least code possible.
+
 ## Approach
 
-1. Parse the code.
+1. Parse the code via `oxc_parser`.
 2. Build the sematic information via `oxc_semantic`.
 3. Tree shake the code.
-  - Emulate the runtime behavior of the code. (Control flow, Side effects, ...)
-  - Analyze the possible runtime values of the variables.
-  - Remove the dead code.
+    - Emulate the runtime behavior of the code. (Control flow, Side effects, ...)
+    - Analyze the possible runtime values of the variables.
+    - Remove the dead code.
 4. Minify the code via `oxc_minifier`.
