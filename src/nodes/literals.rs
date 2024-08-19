@@ -1,10 +1,10 @@
-use crate::{entity::Entity, TreeShakerImpl};
+use crate::{entity::Entity, TreeShaker};
 use oxc::ast::ast::{BooleanLiteral, NumericLiteral, StringLiteral};
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {}
 
-impl<'a> TreeShakerImpl<'a> {
+impl<'a> TreeShaker<'a> {
   pub(crate) fn exec_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity {
     let data = self.load_data::<Data>(node);
     Entity::NumberLiteral(node.value)

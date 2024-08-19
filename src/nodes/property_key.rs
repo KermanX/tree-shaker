@@ -1,4 +1,4 @@
-use crate::{entity::Entity, TreeShakerImpl};
+use crate::{entity::Entity, TreeShaker};
 use oxc::{ast::ast::PropertyKey, span::GetSpan};
 
 #[derive(Debug, Default, Clone)]
@@ -6,7 +6,7 @@ pub struct Data {
   value: Entity,
 }
 
-impl<'a> TreeShakerImpl<'a> {
+impl<'a> TreeShaker<'a> {
   pub(crate) fn exec_property_key(&mut self, node: &'a PropertyKey) -> Entity {
     let data = self.load_data::<Data>(node);
 

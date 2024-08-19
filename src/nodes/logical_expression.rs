@@ -1,4 +1,4 @@
-use crate::{build_expression_sequence, entity::Entity, TreeShakerImpl};
+use crate::{build_expression_sequence, entity::Entity, TreeShaker};
 use oxc::{
   ast::ast::{Expression, LogicalExpression, LogicalOperator},
   span::GetSpan,
@@ -11,7 +11,7 @@ pub struct Data {
   need_right: bool,
 }
 
-impl<'a> TreeShakerImpl<'a> {
+impl<'a> TreeShaker<'a> {
   pub(crate) fn exec_logical_expression(&mut self, node: &'a LogicalExpression) -> Entity {
     let data = self.load_data::<Data>(node);
 

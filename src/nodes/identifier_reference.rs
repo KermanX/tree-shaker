@@ -1,7 +1,7 @@
-use crate::{entity::Entity, TreeShakerImpl};
+use crate::{entity::Entity, TreeShaker};
 use oxc::ast::ast::IdentifierReference;
 
-impl<'a> TreeShakerImpl<'a> {
+impl<'a> TreeShaker<'a> {
   pub(crate) fn exec_identifier_reference_read(&mut self, node: &'a IdentifierReference) -> Entity {
     let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
     assert!(reference.is_read());

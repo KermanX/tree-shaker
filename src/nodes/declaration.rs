@@ -1,4 +1,4 @@
-use crate::{entity::Entity, TreeShakerImpl};
+use crate::{entity::Entity, TreeShaker};
 use oxc::{ast::ast::Declaration, semantic::SymbolId};
 
 #[derive(Debug, Default, Clone)]
@@ -6,7 +6,7 @@ pub struct Data {
   included: bool,
 }
 
-impl<'a> TreeShakerImpl<'a> {
+impl<'a> TreeShaker<'a> {
   pub(crate) fn exec_declaration(
     &mut self,
     node: &'a Declaration,

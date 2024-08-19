@@ -1,4 +1,4 @@
-use crate::{entity::Entity, TreeShakerImpl};
+use crate::{entity::Entity, TreeShaker};
 use oxc::{ast::ast::VariableDeclarator, semantic::SymbolId};
 use rustc_hash::FxHashSet;
 
@@ -7,7 +7,7 @@ pub struct Data {
   included: FxHashSet<SymbolId>,
 }
 
-impl<'a> TreeShakerImpl<'a> {
+impl<'a> TreeShaker<'a> {
   pub(crate) fn exec_variable_declarator(
     &mut self,
     node: &'a VariableDeclarator,
