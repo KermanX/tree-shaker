@@ -1,4 +1,4 @@
-use crate::{entity::Entity, TreeShaker};
+use crate::{entity::Entity, TreeShakerImpl};
 use oxc::ast::ast::Expression;
 
 #[derive(Debug, Default, Clone)]
@@ -7,7 +7,7 @@ pub struct Data {
   need_val: bool,
 }
 
-impl<'a> TreeShaker<'a> {
+impl<'a> TreeShakerImpl<'a> {
   pub(crate) fn exec_expression(&mut self, node: &'a Expression, need_val: bool) -> Entity {
     let data = self.load_data::<Data>(node);
     data.included = true;

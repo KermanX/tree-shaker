@@ -1,4 +1,4 @@
-use crate::{entity::Entity, TreeShaker};
+use crate::{entity::Entity, TreeShakerImpl};
 use oxc::{
   ast::ast::{BindingPattern, BindingPatternKind},
   semantic::SymbolId,
@@ -11,7 +11,7 @@ pub struct Data {
   included_symbols: FxHashSet<SymbolId>,
 }
 
-impl<'a> TreeShaker<'a> {
+impl<'a> TreeShakerImpl<'a> {
   pub(crate) fn exec_binding_pattern(
     &mut self,
     node: &'a BindingPattern,

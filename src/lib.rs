@@ -15,10 +15,14 @@ use std::{any::Any, mem};
 pub struct TreeShaker<'a> {
   allocator: &'a Allocator,
   ast: Program<'a>,
-  sematic: Semantic<'a>,
-  declaration: FxHashMap<SymbolId, &'a Declaration<'a>>,
-  current_declaration: Option<&'a Declaration<'a>>,
-  data: FxHashMap<Span, Box<dyn Any>>,
+  implementation: TreeShakerImpl<'a>,
+}
+
+pub(crate) struct TreeShakerImpl<'a> {
+  pub sematic: Semantic<'a>,
+  pub declaration: FxHashMap<SymbolId, &'a Declaration<'a>>,
+  pub current_declaration: Option<&'a Declaration<'a>>,
+  pub data: FxHashMap<Span, Box<dyn Any>>,
 }
 
 impl<'a> TreeShaker<'a> {
@@ -31,16 +35,20 @@ impl<'a> TreeShaker<'a> {
     TreeShaker {
       allocator,
       ast,
-      sematic,
-      declaration: FxHashMap::default(),
-      current_declaration: None,
-      data: FxHashMap::default(),
+      implementation: TreeShakerImpl {
+        sematic,
+        declaration: FxHashMap::default(),
+        current_declaration: None,
+        data: FxHashMap::default(),
+      },
     }
   }
 
-  pub fn tree_shake(&mut self) {
+  pub fn tree_shake(&'a mut self) {
     // Step 1: Execute the program
-    self.execute_program(&self.ast);
+    for statement in &self.ast.body {
+      self.implementation.exec_statement(statement);
+    }
 
     // Step 2: Execute exports
     // TODO:
@@ -51,13 +59,9 @@ impl<'a> TreeShaker<'a> {
     // Step 4: Minify
     // TODO:
   }
+}
 
-  pub fn execute_program(&mut self, program: &'a Program) {
-    for statement in program.body.iter() {
-      self.exec_statement(statement);
-    }
-  }
-
+impl<'a> TreeShakerImpl<'a> {
   pub(crate) fn load_data<D: Default + 'static>(&mut self, node: &dyn GetSpan) -> &'a mut D {
     if !self.data.contains_key(&node.span()) {
       self.data.insert(node.span(), Box::new(D::default()));

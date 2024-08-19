@@ -1,4 +1,4 @@
-use crate::TreeShaker;
+use crate::TreeShakerImpl;
 use oxc::ast::{ast::Statement, match_declaration};
 
 #[derive(Debug, Default, Clone)]
@@ -6,7 +6,7 @@ pub struct Data {
   included: bool,
 }
 
-impl<'a> TreeShaker<'a> {
+impl<'a> TreeShakerImpl<'a> {
   pub(crate) fn exec_statement(&mut self, node: &'a Statement) {
     let data = self.load_data::<Data>(node);
     data.included = true;
