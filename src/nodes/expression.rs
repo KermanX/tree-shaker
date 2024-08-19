@@ -18,4 +18,28 @@ impl<'a> TreeShakerImpl<'a> {
       _ => todo!(),
     }
   }
+
+  pub(crate) fn transform_expression(
+    &mut self,
+    node: Expression<'a>,
+    need_val: bool,
+  ) -> Option<Expression<'a>> {
+    match node {
+      Expression::NumericLiteral(_)
+      | Expression::StringLiteral(_)
+      | Expression::BooleanLiteral(_)
+      | Expression::Identifier(_) => {
+        if need_val {
+          Some(node)
+        } else {
+          None
+        }
+      }
+
+      Expression::LogicalExpression(node) => {
+        self.transform_logical_expression(node.unbox(), need_val)
+      }
+      _ => todo!(),
+    }
+  }
 }

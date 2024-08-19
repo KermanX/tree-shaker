@@ -2,7 +2,6 @@ use crate::{entity::Entity, TreeShakerImpl};
 use oxc::{
   ast::ast::{BindingPattern, BindingPatternKind},
   semantic::SymbolId,
-  syntax::symbol,
 };
 use rustc_hash::FxHashSet;
 

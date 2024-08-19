@@ -1,10 +1,14 @@
 mod entity;
 mod nodes;
+mod utils;
 
 use entity::Entity;
 use oxc::{
   allocator::Allocator,
-  ast::ast::{Declaration, Program},
+  ast::{
+    ast::{Declaration, Program},
+    AstBuilder,
+  },
   parser::Parser,
   semantic::{Semantic, SemanticBuilder, SymbolId},
   span::{GetSpan, SourceType, Span},
@@ -23,6 +27,7 @@ pub(crate) struct TreeShakerImpl<'a> {
   pub declaration: FxHashMap<SymbolId, &'a Declaration<'a>>,
   pub current_declaration: Option<&'a Declaration<'a>>,
   pub data: FxHashMap<Span, Box<dyn Any>>,
+  pub ast_builder: AstBuilder<'a>,
 }
 
 impl<'a> TreeShaker<'a> {
@@ -40,6 +45,7 @@ impl<'a> TreeShaker<'a> {
         declaration: FxHashMap::default(),
         current_declaration: None,
         data: FxHashMap::default(),
+        ast_builder: AstBuilder::new(allocator),
       },
     }
   }
