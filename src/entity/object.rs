@@ -12,9 +12,10 @@ pub struct ObjectEntity {
 
 impl ObjectEntity {
   pub fn get_property(&self, key: &Entity) -> Rc<Entity> {
-    match key {
+    // TODO: builtin properties
+    match key.to_property_key() {
       Entity::StringLiteral(key) => {
-        self.string_keyed.get(key).or(self.rest.as_ref()).cloned().unwrap_or_default()
+        self.string_keyed.get(&key).or(self.rest.as_ref()).cloned().unwrap_or_default()
       }
       Entity::UnknownString => {
         let mut values: Vec<Rc<Entity>> = self.string_keyed.values().map(|v| v.clone()).collect();
@@ -24,11 +25,7 @@ impl ObjectEntity {
       Entity::Symbol(key) => {
         self.symbol_keyed.get(&key.id).or(self.rest.as_ref()).cloned().unwrap_or_default()
       }
-      Entity::UnknownSymbol => {
-        let mut values: Vec<Rc<Entity>> = self.symbol_keyed.values().map(|v| v.clone()).collect();
-        self.rest.as_ref().map(|v| values.push(v.clone()));
-        Rc::new(Entity::Union(values))
-      }
+      Entity::UnknownSymbol => Rc::new(Entity::Unknown),
       Entity::Union(keys) => Rc::new(Entity::Union(
         keys.iter().map(|key| self.get_property(key)).collect::<Vec<Rc<Entity>>>(),
       )),
