@@ -1,0 +1,10 @@
+[package]
+name = "tree-shake"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+
+[dependencies]
+oxc = { version = "0.24.3", features = ["semantic", "minifier"] }
+rustc-hash = "2.0.0"

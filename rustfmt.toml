@@ -1,0 +1,7 @@
+tab_spaces = 2
+
+# This is also the setting used by [rustc](https://github.com/rust-lang/rust/blob/master/rustfmt.toml)
+use_small_heuristics = "Max"
+
+# Use field initialize shorthand if possible
+use_field_init_shorthand = true
