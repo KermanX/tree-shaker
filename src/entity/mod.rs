@@ -1,3 +1,4 @@
+pub mod arguments;
 pub mod array;
 pub mod convertion;
 pub mod function;
@@ -7,6 +8,7 @@ pub mod symbol;
 
 use std::{ops::Deref, rc::Rc};
 
+use arguments::ArgumentsEntity;
 use array::ArrayEntity;
 use function::FunctionEntity;
 use object::ObjectEntity;
@@ -71,17 +73,17 @@ impl Entity {
     }
   }
 
-  pub fn call(&self, this: Option<&Entity>, args: &[Entity]) -> Entity {
+  pub fn call(&self, this: Option<&Entity>, args: ArgumentsEntity) -> Entity {
     match self {
       Entity::Function(func) => func.call(this, args),
       Entity::Union(funcs) => {
         let mut results = vec![];
         for func in funcs {
-          results.push(Rc::new(func.call(this, args)));
+          results.push(Rc::new(func.call(this, args.clone())));
         }
         Entity::Union(results).simplify()
       }
-      _  => Entity::Unknown,
+      _ => Entity::Unknown,
     }
   }
 

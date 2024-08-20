@@ -2,6 +2,7 @@ mod binding_pattern;
 mod declaration;
 mod export_named_declaration;
 mod expression;
+mod formal_parameters;
 mod function;
 mod identifier_reference;
 mod literals;

@@ -1,8 +1,10 @@
+mod builtins;
 mod context;
 mod entity;
 mod nodes;
 mod utils;
 
+use context::Context;
 use entity::Entity;
 use oxc::{
   allocator::Allocator,
@@ -21,20 +23,22 @@ use std::{any::Any, mem};
 
 pub(crate) struct TreeShaker<'a> {
   pub sematic: Semantic<'a>,
+  pub ast_builder: AstBuilder<'a>,
   pub declaration: FxHashMap<SymbolId, &'a Declaration<'a>>,
   pub current_declaration: Option<&'a Declaration<'a>>,
   pub data: FxHashMap<Span, Box<dyn Any>>,
-  pub ast_builder: AstBuilder<'a>,
+  pub context: Context,
 }
 
 impl<'a> TreeShaker<'a> {
   pub fn new(allocator: &'a Allocator, sematic: Semantic<'a>) -> Self {
     TreeShaker {
       sematic,
+      ast_builder: AstBuilder::new(allocator),
       declaration: FxHashMap::default(),
       current_declaration: None,
       data: FxHashMap::default(),
-      ast_builder: AstBuilder::new(allocator),
+      context: Context::new(),
     }
   }
 

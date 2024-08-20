@@ -11,4 +11,13 @@ impl<'a> TreeShaker<'a> {
   pub(crate) fn exec_function(&mut self, node: &'a Function) -> Entity {
     Entity::Function(FunctionEntity::new(node.span))
   }
+
+  pub(crate) fn call_function(
+    &mut self,
+    node: &'a Function,
+    this: Option<&Entity>,
+    args: &[Entity],
+  ) -> Entity {
+    Entity::Unknown
+  }
 }

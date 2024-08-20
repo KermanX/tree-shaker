@@ -1,4 +1,4 @@
-use super::Entity;
+use super::{array::ArrayEntity, Entity};
 use std::rc::Rc;
 
 impl Entity {
@@ -60,5 +60,9 @@ impl Entity {
         Entity::Union(values.iter().map(|value| Rc::new(value.to_boolean())).collect())
       }
     }
+  }
+
+  pub fn to_array(&self) -> ArrayEntity {
+    todo!()
   }
 }
