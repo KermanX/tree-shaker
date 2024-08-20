@@ -17,7 +17,8 @@ impl Entity {
       Entity::NonZeroNumber
       | Entity::UnknownNumber
       | Entity::NonZeroBigInt
-      | Entity::UnknownBigInt => Entity::NonEmptyString(true),
+      | Entity::UnknownBigInt
+      | Entity::Function(_) => Entity::NonEmptyString(true),
 
       // TODO: Side effect in toString
       Entity::Object(_) | Entity::Array(_) => Entity::UnknownString,
@@ -49,7 +50,8 @@ impl Entity {
       | Entity::Symbol(_)
       | Entity::UnknownSymbol
       | Entity::Object(_)
-      | Entity::Array(_) => Entity::BooleanLiteral(true),
+      | Entity::Array(_)
+      | Entity::Function(_) => Entity::BooleanLiteral(true),
       Entity::Null | Entity::Undefined => Entity::BooleanLiteral(false),
       Entity::UnknownString | Entity::UnknownNumber | Entity::UnknownBigInt | Entity::Unknown => {
         Entity::new_unknown_boolean()

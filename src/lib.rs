@@ -1,3 +1,4 @@
+mod context;
 mod entity;
 mod nodes;
 mod utils;
@@ -67,13 +68,17 @@ impl<'a> TreeShaker<'a> {
 }
 
 impl<'a> TreeShaker<'a> {
-  pub(crate) fn load_data<D: Default + 'static>(&mut self, node: &dyn GetSpan) -> &'a mut D {
-    if !self.data.contains_key(&node.span()) {
-      self.data.insert(node.span(), Box::new(D::default()));
+  pub(crate) fn load_data_from_span<D: Default + 'static>(&mut self, span: Span) -> &'a mut D {
+    if !self.data.contains_key(&span) {
+      self.data.insert(span, Box::new(D::default()));
     }
-    let x = self.data.get_mut(&node.span()).unwrap();
+    let x = self.data.get_mut(&span).unwrap();
     let t = x.downcast_mut::<D>().unwrap();
     unsafe { mem::transmute(t) }
+  }
+
+  pub(crate) fn load_data<D: Default + 'static>(&mut self, node: &dyn GetSpan) -> &'a mut D {
+    self.load_data_from_span(node.span())
   }
 
   pub(crate) fn declare_symbol(&mut self, symbol_id: SymbolId) {
