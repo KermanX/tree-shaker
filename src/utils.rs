@@ -1,3 +1,6 @@
+use regex::Regex;
+use std::cell::LazyCell;
+
 #[macro_export]
 macro_rules! build_expression_sequence {
   ($builder:expr, $span:expr, $($x:expr),+ $(,)?) => {
@@ -15,4 +18,10 @@ macro_rules! build_expression_sequence {
       }
     }
   };
+}
+
+const NUMERIC_REGEX: LazyCell<Regex> = LazyCell::new(|| Regex::new(r"^[0-9]+$").unwrap());
+
+pub fn is_numeric_string(s: &str) -> bool {
+  NUMERIC_REGEX.is_match(s)
 }

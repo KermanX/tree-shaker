@@ -27,6 +27,14 @@ impl<'a> TreeShaker<'a> {
         }
         _ => unreachable!(),
       },
+      LogicalOperator::Or => match left_val.to_boolean() {
+        Entity::BooleanLiteral(true) => (left_val, true, false),
+        Entity::BooleanLiteral(false) => (right_val, false, true),
+        Entity::Union(_) => {
+          (Entity::Union(vec![Rc::new(left_val), Rc::new(right_val)]), true, true)
+        }
+        _ => unreachable!(),
+      },
       _ => todo!(),
     };
 

@@ -15,7 +15,7 @@ impl ArrayEntity {
         // TODO: builtin properties
         Rc::new(Entity::Unknown)
       }
-      Entity::NonEmptyString(true) => Rc::new(Entity::Union(self.elements.clone()).simplified()),
+      Entity::NonEmptyString(true) => Rc::new(Entity::Union(self.elements.clone()).simplify()),
       Entity::NonEmptyString(false) | Entity::UnknownString => Rc::new(Entity::Unknown),
       Entity::Symbol(key) => {
         // TODO: builtin properties
