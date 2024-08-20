@@ -42,6 +42,9 @@ impl ArgumentsEntity {
     } else {
       ArrayEntity::from_tuple(rest)
     });
+
+    assert!(args.len() == length);
+
     (args.to_vec(), rest)
   }
 }

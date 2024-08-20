@@ -36,4 +36,22 @@ impl Entity {
       _ => (true, Entity::Unknown),
     }
   }
+
+  pub fn consume<'a>(&self, tree_shaker: &mut TreeShaker<'a>) {
+    match self {
+      Entity::Function(func) => {
+        func.call(
+          tree_shaker,
+          Entity::Unknown,
+          ArgumentsEntity::new(vec![(true, Entity::Unknown)]),
+        );
+      }
+      Entity::Union(funcs) => {
+        for func in funcs {
+          func.consume(tree_shaker);
+        }
+      }
+      _ => {}
+    }
+  }
 }

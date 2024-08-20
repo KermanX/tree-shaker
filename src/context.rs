@@ -10,9 +10,10 @@ pub struct Context {
 
 impl Context {
   pub fn new() -> Self {
-    Context {
-      this: GLOBAL_THIS.clone(),
-      vars: FxHashMap::default(),
-    }
+    Context { this: GLOBAL_THIS.clone(), vars: FxHashMap::default() }
+  }
+
+  pub fn set(&mut self, id: SymbolId, value: Rc<Entity>) {
+    self.vars.insert(id, value);
   }
 }

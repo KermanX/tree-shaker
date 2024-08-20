@@ -3,6 +3,7 @@ mod context;
 mod effect_builder;
 mod entity;
 mod nodes;
+mod symbol;
 mod utils;
 
 use context::Context;
@@ -10,7 +11,7 @@ use entity::Entity;
 use oxc::{
   allocator::Allocator,
   ast::{
-    ast::{Declaration, Expression, Function, NumberBase, Program, Statement},
+    ast::{Expression, Function, NumberBase, Program, Statement},
     AstBuilder,
   },
   codegen::{CodeGenerator, CodegenReturn},
@@ -21,13 +22,13 @@ use oxc::{
 };
 use rustc_hash::FxHashMap;
 use std::{any::Any, mem};
+use symbol::SymbolSource;
 
 pub(crate) struct TreeShaker<'a> {
   pub sematic: Semantic<'a>,
   pub ast_builder: AstBuilder<'a>,
-  pub declarations: FxHashMap<SymbolId, &'a Declaration<'a>>,
   pub functions: FxHashMap<Span, &'a Function<'a>>,
-  pub current_declaration: Option<&'a Declaration<'a>>,
+  symbol_source: FxHashMap<SymbolId, SymbolSource<'a>>,
   pub data: FxHashMap<Span, Box<dyn Any>>,
   pub context: Context,
 }
@@ -37,9 +38,8 @@ impl<'a> TreeShaker<'a> {
     TreeShaker {
       sematic,
       ast_builder: AstBuilder::new(allocator),
-      declarations: FxHashMap::default(),
       functions: FxHashMap::default(),
-      current_declaration: None,
+      symbol_source: FxHashMap::default(),
       data: FxHashMap::default(),
       context: Context::new(),
     }
@@ -86,21 +86,6 @@ impl<'a> TreeShaker<'a> {
 
   pub(crate) fn load_data<D: Default + 'static>(&mut self, node: &dyn GetSpan) -> &'a mut D {
     self.load_data_from_span(node.span())
-  }
-
-  pub(crate) fn declare_symbol(&mut self, symbol_id: SymbolId) {
-    self.current_declaration.map(|declaration| {
-      self.declarations.insert(symbol_id, declaration);
-    });
-  }
-
-  pub(crate) fn read_symbol(&mut self, symbol_id: SymbolId) -> Entity {
-    let declaration = self.declarations.get(&symbol_id).expect("Missing declaration");
-    self.exec_declaration(declaration, Some(symbol_id)).unwrap()
-  }
-
-  pub(crate) fn write_symbol(&mut self, symbol_id: SymbolId, entity: Entity) {
-    todo!()
   }
 
   pub(crate) fn entity_to_expression(&self, span: Span, value: &Entity) -> Option<Expression<'a>> {

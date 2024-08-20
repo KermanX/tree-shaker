@@ -11,7 +11,7 @@ impl<'a> TreeShaker<'a> {
     match node {
       match_declaration!(Statement) => {
         let node = node.to_declaration();
-        self.exec_declaration(node, None);
+        self.exec_declaration(node);
       }
       _ => todo!(),
     }

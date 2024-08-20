@@ -1,4 +1,5 @@
 use crate::{
+  context::Context,
   entity::{arguments::ArgumentsEntity, function::FunctionEntity, Entity},
   TreeShaker,
 };
@@ -19,6 +20,8 @@ impl<'a> TreeShaker<'a> {
     this: Entity,
     args: ArgumentsEntity,
   ) -> (bool, Entity) {
+    // self.exec_block_statement(&node.body, this);
+    self.exec_formal_parameters(&node.params, args);
     todo!()
   }
 }
