@@ -1,4 +1,6 @@
+mod argument;
 mod binding_pattern;
+mod call_expression;
 mod declaration;
 mod export_named_declaration;
 mod expression;

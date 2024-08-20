@@ -9,7 +9,7 @@ impl FunctionEntity {
     FunctionEntity {}
   }
 
-  pub(crate) fn call(&self, this: Option<&Entity>, args: ArgumentsEntity) -> Entity {
-    Entity::Unknown
+  pub(crate) fn call(&self, this: Entity, args: ArgumentsEntity) -> (bool, Entity) {
+    todo!()
   }
 }

@@ -14,6 +14,7 @@ impl<'a> TreeShaker<'a> {
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
       Expression::Identifier(node) => self.exec_identifier_reference_read(node),
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
+      Expression::CallExpression(node) => self.exec_call_expression(node),
 
       _ => todo!(),
     }
@@ -39,6 +40,9 @@ impl<'a> TreeShaker<'a> {
       Expression::LogicalExpression(node) => {
         self.transform_logical_expression(node.unbox(), need_val)
       }
+
+      Expression::CallExpression(node) => self.transform_call_expression(node.unbox(), need_val),
+
       _ => todo!(),
     }
   }

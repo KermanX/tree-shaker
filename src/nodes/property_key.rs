@@ -38,7 +38,7 @@ impl<'a> TreeShaker<'a> {
           Some(self.ast_builder.property_key_identifier_name(span, s))
         }
         _ => {
-          let expr = self.transform_expression(TryFrom::try_from(node).unwrap(), need_val);
+          let expr = self.transform_expression(node.try_into().unwrap(), need_val);
           expr.map(|e| self.ast_builder.property_key_expression(e))
         }
       },

@@ -9,6 +9,10 @@ pub struct ArgumentsEntity {
 }
 
 impl ArgumentsEntity {
+  pub(crate) fn new(args: Vec<(bool, Entity)>) -> Self {
+    ArgumentsEntity { args }
+  }
+
   pub(crate) fn resolve(&self, length: usize) -> (Vec<Entity>, Entity) {
     // TODO: Properly handle rest
     let mut resolved = vec![];

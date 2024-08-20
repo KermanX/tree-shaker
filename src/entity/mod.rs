@@ -73,17 +73,20 @@ impl Entity {
     }
   }
 
-  pub fn call(&self, this: Option<&Entity>, args: ArgumentsEntity) -> Entity {
+  pub fn call(&self, this: Entity, args: ArgumentsEntity) -> (bool, Entity) {
     match self {
       Entity::Function(func) => func.call(this, args),
       Entity::Union(funcs) => {
-        let mut results = vec![];
+        let mut pure = true;
+        let mut values = vec![];
         for func in funcs {
-          results.push(Rc::new(func.call(this, args.clone())));
+          let ret = func.call(this.clone(), args.clone());
+          pure &= ret.0;
+          values.push(Rc::new(ret.1));
         }
-        Entity::Union(results).simplify()
+        (pure, Entity::Union(values).simplify())
       }
-      _ => Entity::Unknown,
+      _ => (true, Entity::Unknown),
     }
   }
 

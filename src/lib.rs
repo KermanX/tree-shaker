@@ -1,5 +1,6 @@
 mod builtins;
 mod context;
+mod effect_builder;
 mod entity;
 mod nodes;
 mod utils;
@@ -9,7 +10,7 @@ use entity::Entity;
 use oxc::{
   allocator::Allocator,
   ast::{
-    ast::{Declaration, Program, Statement},
+    ast::{Declaration, Expression, NumberBase, Program, Statement},
     AstBuilder,
   },
   codegen::{CodeGenerator, CodegenReturn},
@@ -98,6 +99,24 @@ impl<'a> TreeShaker<'a> {
 
   pub(crate) fn write_symbol(&mut self, symbol_id: SymbolId, entity: Entity) {
     todo!()
+  }
+
+  pub(crate) fn entity_to_expression(&self, span: Span, value: &Entity) -> Option<Expression<'a>> {
+    match value {
+      Entity::StringLiteral(s) => Some(self.ast_builder.expression_string_literal(span, s.clone())),
+      Entity::NumberLiteral(n) => Some(self.ast_builder.expression_numeric_literal(
+        span,
+        *n,
+        n.to_string(),
+        NumberBase::Decimal,
+      )),
+      Entity::BooleanLiteral(b) => Some(self.ast_builder.expression_boolean_literal(span, *b)),
+      Entity::Null => Some(self.ast_builder.expression_null_literal(span)),
+      Entity::Undefined => {
+        Some(self.ast_builder.expression_identifier_reference(span, "undefined"))
+      }
+      _ => None,
+    }
   }
 }
 

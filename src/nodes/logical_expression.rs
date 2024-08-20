@@ -1,4 +1,4 @@
-use crate::{build_expression_sequence, entity::Entity, TreeShaker};
+use crate::{build_effect, entity::Entity, TreeShaker};
 use oxc::{
   ast::ast::{Expression, LogicalExpression, LogicalOperator},
   span::GetSpan,
@@ -69,13 +69,13 @@ impl<'a> TreeShaker<'a> {
             left
           }
         }
-        (false, true) => build_expression_sequence!(self.ast_builder, span, left, right),
+        (false, true) => build_effect!(self.ast_builder, span, left, right),
         (false, false) => unreachable!(),
       }
     } else {
       let left = self.transform_expression(node.left, false);
       let right = self.transform_expression(node.right, false);
-      build_expression_sequence!(self.ast_builder, span, left, right)
+      build_effect!(self.ast_builder, span, left, right)
     }
   }
 }
