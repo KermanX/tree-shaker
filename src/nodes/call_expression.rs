@@ -23,7 +23,7 @@ impl<'a> TreeShaker<'a> {
     let args = node.arguments.iter().map(|arg| self.exec_argument(arg)).collect::<Vec<_>>();
 
     // TODO: Track `this`. Refer https://github.com/oxc-project/oxc/issues/4341
-    let (pure, val) = callee.call(Entity::Unknown, ArgumentsEntity::new(args));
+    let (pure, val) = callee.call(self, Entity::Unknown, ArgumentsEntity::new(args));
 
     data.pure = pure;
     data.val = val.clone();

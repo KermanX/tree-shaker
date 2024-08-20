@@ -10,7 +10,7 @@ use entity::Entity;
 use oxc::{
   allocator::Allocator,
   ast::{
-    ast::{Declaration, Expression, NumberBase, Program, Statement},
+    ast::{Declaration, Expression, Function, NumberBase, Program, Statement},
     AstBuilder,
   },
   codegen::{CodeGenerator, CodegenReturn},
@@ -25,7 +25,8 @@ use std::{any::Any, mem};
 pub(crate) struct TreeShaker<'a> {
   pub sematic: Semantic<'a>,
   pub ast_builder: AstBuilder<'a>,
-  pub declaration: FxHashMap<SymbolId, &'a Declaration<'a>>,
+  pub declarations: FxHashMap<SymbolId, &'a Declaration<'a>>,
+  pub functions: FxHashMap<Span, &'a Function<'a>>,
   pub current_declaration: Option<&'a Declaration<'a>>,
   pub data: FxHashMap<Span, Box<dyn Any>>,
   pub context: Context,
@@ -36,7 +37,8 @@ impl<'a> TreeShaker<'a> {
     TreeShaker {
       sematic,
       ast_builder: AstBuilder::new(allocator),
-      declaration: FxHashMap::default(),
+      declarations: FxHashMap::default(),
+      functions: FxHashMap::default(),
       current_declaration: None,
       data: FxHashMap::default(),
       context: Context::new(),
@@ -88,12 +90,12 @@ impl<'a> TreeShaker<'a> {
 
   pub(crate) fn declare_symbol(&mut self, symbol_id: SymbolId) {
     self.current_declaration.map(|declaration| {
-      self.declaration.insert(symbol_id, declaration);
+      self.declarations.insert(symbol_id, declaration);
     });
   }
 
   pub(crate) fn read_symbol(&mut self, symbol_id: SymbolId) -> Entity {
-    let declaration = self.declaration.get(&symbol_id).expect("Missing declaration");
+    let declaration = self.declarations.get(&symbol_id).expect("Missing declaration");
     self.exec_declaration(declaration, Some(symbol_id)).unwrap()
   }
 

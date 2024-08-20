@@ -1,5 +1,5 @@
 use crate::{
-  entity::{function::FunctionEntity, Entity},
+  entity::{arguments::ArgumentsEntity, function::FunctionEntity, Entity},
   TreeShaker,
 };
 use oxc::ast::ast::Function;
@@ -9,15 +9,16 @@ pub struct Data {}
 
 impl<'a> TreeShaker<'a> {
   pub(crate) fn exec_function(&mut self, node: &'a Function) -> Entity {
+    self.functions.insert(node.span, node);
     Entity::Function(FunctionEntity::new(node.span))
   }
 
   pub(crate) fn call_function(
     &mut self,
     node: &'a Function,
-    this: Option<&Entity>,
-    args: &[Entity],
-  ) -> Entity {
-    Entity::Unknown
+    this: Entity,
+    args: ArgumentsEntity,
+  ) -> (bool, Entity) {
+    todo!()
   }
 }
