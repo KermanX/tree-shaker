@@ -29,6 +29,7 @@ impl Entity {
     let mut has_unknown_number = false;
     let mut has_unknown_bigint = false;
     let mut has_unknown_symbol = false;
+    let mut has_unknown_function = false;
 
     for value in values.iter() {
       match value.deref() {
@@ -36,6 +37,7 @@ impl Entity {
         Entity::UnknownNumber => has_unknown_number = true,
         Entity::UnknownBigInt => has_unknown_bigint = true,
         Entity::UnknownSymbol => has_unknown_symbol = true,
+        Entity::UnknownFunction => has_unknown_function = true,
         Entity::Unknown => return Entity::Unknown,
         _ => {}
       }
@@ -109,6 +111,10 @@ impl Entity {
         }
         Entity::Symbol(_) if !has_unknown_symbol => {
           // TODO: Handle same symbol
+          has_others.push(value.clone());
+        }
+        Entity::Function(_) if !has_unknown_function => {
+          // TODO: Handle same function
           has_others.push(value.clone());
         }
         Entity::Array(_) | Entity::Object(_) => {

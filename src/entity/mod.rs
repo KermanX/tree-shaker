@@ -3,6 +3,7 @@ pub mod array;
 pub mod convertion;
 pub mod function;
 pub mod object;
+pub mod operations;
 pub mod simplify;
 pub mod symbol;
 
@@ -37,11 +38,12 @@ pub enum Entity {
   Symbol(SymbolEntity),
   UnknownSymbol,
 
+  Function(FunctionEntity),
+  UnknownFunction,
+
   Object(ObjectEntity),
 
   Array(ArrayEntity),
-
-  Function(FunctionEntity),
 
   Union(Vec<Rc<Entity>>),
 
@@ -60,34 +62,6 @@ impl Entity {
       Rc::new(Entity::StringLiteral("true".to_string())),
       Rc::new(Entity::StringLiteral("false".to_string())),
     ])
-  }
-
-  pub fn get_property(&self, key: &Entity) -> Rc<Entity> {
-    match self {
-      Entity::Object(obj) => obj.get_property(key),
-      Entity::Union(keys) => Rc::new(Entity::Union(
-        keys.iter().map(|key| key.get_property(key)).collect::<Vec<Rc<Entity>>>(),
-      )),
-      Entity::Unknown => Rc::new(Entity::Unknown),
-      _ => unreachable!(),
-    }
-  }
-
-  pub fn call(&self, this: Entity, args: ArgumentsEntity) -> (bool, Entity) {
-    match self {
-      Entity::Function(func) => func.call(this, args),
-      Entity::Union(funcs) => {
-        let mut pure = true;
-        let mut values = vec![];
-        for func in funcs {
-          let ret = func.call(this.clone(), args.clone());
-          pure &= ret.0;
-          values.push(Rc::new(ret.1));
-        }
-        (pure, Entity::Union(values).simplify())
-      }
-      _ => (true, Entity::Unknown),
-    }
   }
 
   pub fn is_null_or_undefined(&self) -> bool {
