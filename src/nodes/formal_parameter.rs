@@ -14,11 +14,9 @@ impl<'a> Analyzer<'a> {
     node: &'a FormalParameter<'a>,
     arg: SymbolSource<'a>,
   ) {
-    let data = self.load_data::<Data>(node);
-
-    data.arg = arg;
-
     self.exec_binding_pattern(&node.pattern, BindingPatternSource::FormalParameter(node));
+
+    self.set_data(node, Data { arg });
   }
 
   pub(crate) fn calc_formal_parameter(
@@ -28,9 +26,9 @@ impl<'a> Analyzer<'a> {
   ) -> Entity {
     let data = self.get_data::<Data>(node);
 
-    let arg = self.calc_source(data.arg);
+    let arg: Entity = self.calc_source(data.arg);
 
-    todo!()
+    self.calc_binding_pattern(&node.pattern, symbol, arg)
   }
 }
 

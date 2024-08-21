@@ -1,4 +1,4 @@
-use crate::{data::DataPlaceholder, symbol::SymbolSource};
+use crate::{symbol::SymbolSource, utils::DataPlaceholder};
 use oxc::{
   allocator::Allocator,
   ast::ast::{Function, Program},

@@ -15,12 +15,13 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub(crate) fn calc_argument(&mut self, node: &'a Argument) -> (bool, Entity) {
+  /// returns (expended, value)
+  pub(crate) fn calc_argument(&self, node: &'a Argument) -> (bool, Entity) {
     match node {
-      Argument::SpreadElement(node) => (true, self.exec_expression(&node.argument)),
+      Argument::SpreadElement(node) => (true, self.calc_expression(&node.argument)),
       _ => {
         let node = node.to_expression();
-        (false, self.exec_expression(node))
+        (false, self.calc_expression(node))
       }
     }
   }

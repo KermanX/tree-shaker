@@ -35,5 +35,4 @@ impl<'a> Analyzer<'a> {
   }
 }
 
-impl<'a> Transformer<'a> {
-}
+impl<'a> Transformer<'a> {}

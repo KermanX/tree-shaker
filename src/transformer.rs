@@ -1,4 +1,4 @@
-use crate::{data::DataPlaceholder, entity::Entity};
+use crate::{entity::Entity, utils::DataPlaceholder};
 use oxc::{
   allocator::Allocator,
   ast::{

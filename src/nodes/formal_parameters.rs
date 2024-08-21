@@ -22,8 +22,6 @@ impl<'a> Analyzer<'a> {
     if let Some(rest) = &node.rest {
       self.exec_binding_rest_element(rest, BindingPatternSource::BindingRestElement(rest));
     }
-
-    todo!()
   }
 }
 

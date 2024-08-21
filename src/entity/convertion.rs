@@ -64,6 +64,24 @@ impl Entity {
     }
   }
 
+  /// `None` for unknown
+  pub fn to_nullable(&self) -> Option<bool> {
+    match self {
+      Entity::Null | Entity::Undefined => Some(true),
+      Entity::Union(values) => {
+        let nullable = values[0].to_nullable()?;
+        for value in &values[1..] {
+          if value.to_nullable()? != nullable {
+            return None;
+          }
+        }
+        Some(nullable)
+      }
+      Entity::Unknown => None,
+      _ => Some(false),
+    }
+  }
+
   pub fn to_array(&self) -> ArrayEntity {
     todo!()
   }

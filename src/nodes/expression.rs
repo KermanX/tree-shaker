@@ -7,10 +7,8 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_expression(&mut self, node: &'a Expression) -> Entity {
-    let data = self.load_data::<Data>(node);
-
-    data.val = match node {
+  pub(crate) fn exec_expression(&mut self, node: &'a Expression) -> (bool, Entity) {
+    let val = match node {
       Expression::NumericLiteral(node) => self.exc_numeric_literal(node),
       Expression::StringLiteral(node) => self.exec_string_literal(node),
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
@@ -21,7 +19,9 @@ impl<'a> Analyzer<'a> {
       _ => todo!(),
     };
 
-    data.val.clone()
+    self.set_data(node, Data { val: val.1.clone() });
+
+    val
   }
 
   pub(crate) fn calc_expression(&self, node: &'a Expression) -> Entity {

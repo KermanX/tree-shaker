@@ -1,6 +1,5 @@
 mod analyzer;
 mod builtins;
-mod context;
 mod data;
 mod effect_builder;
 mod entity;

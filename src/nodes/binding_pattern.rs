@@ -64,6 +64,15 @@ impl<'a> Analyzer<'a> {
     todo!()
   }
 
+  pub(crate) fn calc_binding_pattern(
+    &self,
+    node: &'a BindingPattern<'a>,
+    symbol: SymbolId,
+    value: Entity,
+  ) -> Entity {
+    todo!()
+  }
+
   pub(crate) fn refer_binding_pattern(
     &mut self,
     node: &'a BindingPattern,
@@ -81,7 +90,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         for property in &node.properties {
           if self.is_in_binding_pattern(&property.value, symbol) {
-            let key = self.exec_property_key(&property.key);
+            let key = self.calc_property_key(&property.key);
             let value = init_val.get_property(&key).as_ref().clone();
             return self.refer_binding_pattern(&property.value, symbol, value);
           }

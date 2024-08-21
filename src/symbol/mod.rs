@@ -1,6 +1,9 @@
 pub mod arguments;
 
-use crate::{analyzer::Analyzer, entity::{function::FunctionEntity, Entity}};
+use crate::{
+  analyzer::Analyzer,
+  entity::{function::FunctionEntity, Entity},
+};
 use arguments::ArgumentsEntity;
 use oxc::{
   ast::ast::{

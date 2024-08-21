@@ -9,25 +9,20 @@ use oxc::{
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
-  pure: bool,
-  val: Entity,
+  effect: bool,
+  ret_val: Entity,
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_call_expression(&mut self, node: &'a CallExpression) -> Entity {
-    let data = self.load_data::<Data>(node);
-
+  pub(crate) fn exec_call_expression(&mut self, node: &'a CallExpression) -> (bool, Entity) {
     let callee = self.exec_expression(&node.callee);
 
     let args = node.arguments.iter().map(|arg| self.exec_argument(arg)).collect::<Vec<_>>();
 
     // TODO: Track `this`. Refer https://github.com/oxc-project/oxc/issues/4341
-    let (pure, val) = callee.call(self, Entity::Unknown, ArgumentsEntity::new(args));
+    // callee.call(self, Entity::Unknown, ArgumentsEntity::new(args));
 
-    data.pure = pure;
-    data.val = val.clone();
-
-    val
+    todo!()
   }
 }
 
@@ -49,10 +44,10 @@ impl<'a> Transformer<'a> {
 
     let span = node.span();
 
-    if data.pure {
+    if !data.effect {
       if !need_val {
         return build_effect_from_arr!(self.ast_builder, span, self.get_effects(node));
-      } else if let Some(val) = self.entity_to_expression(span, &data.val) {
+      } else if let Some(val) = self.entity_to_expression(span, &data.ret_val) {
         return build_effect_from_arr!(self.ast_builder, span, self.get_effects(node); val);
       }
     }

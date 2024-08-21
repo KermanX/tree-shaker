@@ -12,36 +12,43 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_logical_expression(&mut self, node: &'a LogicalExpression) -> Entity {
-    let data = self.load_data::<Data>(node);
+  pub(crate) fn exec_logical_expression(&mut self, node: &'a LogicalExpression) -> (bool, Entity) {
+    let (left_effect, left_val) = self.exec_expression(&node.left);
+    let mut right_effect = false;
+    let mut exec_right = || {
+      let (effect, val) = self.exec_expression(&node.right);
+      right_effect = effect;
+      val
+    };
+    let mut exec_unknown =
+      || (Entity::Union(vec![Rc::new(left_val.clone()), Rc::new(exec_right())]), true, true);
 
-    let left_val = self.exec_expression(&node.left);
-    let right_val = self.exec_expression(&node.right);
-
-    let (value, need_left, need_right) = match &node.operator {
+    let (value, need_left_val, need_right_val) = match &node.operator {
       LogicalOperator::And => match left_val.to_boolean() {
-        Entity::BooleanLiteral(true) => (right_val, false, true),
+        Entity::BooleanLiteral(true) => (exec_right(), false, true),
         Entity::BooleanLiteral(false) => (left_val, true, false),
-        Entity::Union(_) => {
-          (Entity::Union(vec![Rc::new(left_val), Rc::new(right_val)]), true, true)
-        }
+        Entity::Union(_) => exec_unknown(),
         _ => unreachable!(),
       },
       LogicalOperator::Or => match left_val.to_boolean() {
         Entity::BooleanLiteral(true) => (left_val, true, false),
-        Entity::BooleanLiteral(false) => (right_val, false, true),
-        Entity::Union(_) => {
-          (Entity::Union(vec![Rc::new(left_val), Rc::new(right_val)]), true, true)
-        }
+        Entity::BooleanLiteral(false) => (exec_right(), false, true),
+        Entity::Union(_) => exec_unknown(),
         _ => unreachable!(),
       },
-      _ => todo!(),
+      LogicalOperator::Coalesce => match left_val.to_nullable() {
+        Some(true) => (exec_right(), false, true),
+        Some(false) => (left_val, true, false),
+        None => exec_unknown(),
+      },
     };
 
-    data.need_left = need_left;
-    data.need_right = need_right;
+    let data = self.load_data::<Data>(node);
 
-    value
+    data.need_left |= left_effect || need_left_val;
+    data.need_right |= need_right_val;
+
+    (left_effect || right_effect, value)
   }
 }
 

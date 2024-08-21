@@ -7,19 +7,28 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_property_key(&mut self, node: &'a PropertyKey) -> Entity {
-    let value = match node {
-      PropertyKey::StaticIdentifier(node) => Entity::StringLiteral(node.name.clone().into_string()),
+  pub(crate) fn exec_property_key(&mut self, node: &'a PropertyKey) -> (bool, Entity) {
+    let (effect, value) = match node {
+      PropertyKey::StaticIdentifier(node) => {
+        (false, Entity::StringLiteral(node.name.clone().into_string()))
+      }
       PropertyKey::PrivateIdentifier(node) => todo!(),
       node => {
         let node = node.to_expression();
-        self.exec_expression(node).to_property_key()
+        let (effect, value) = self.exec_expression(node);
+        (effect, value.to_property_key())
       }
     };
 
     self.set_data(node, Data { value: value.clone() });
 
-    value
+    (effect, value)
+  }
+
+  pub(crate) fn calc_property_key(&self, node: &'a PropertyKey) -> Entity {
+    let data = self.get_data::<Data>(node);
+
+    data.value.clone()
   }
 }
 
