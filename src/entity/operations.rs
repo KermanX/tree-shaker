@@ -1,6 +1,9 @@
-use crate::TreeShaker;
+use crate::{
+  symbol::{arguments::ArgumentsEntity, SymbolSource},
+  TreeShaker,
+};
 
-use super::{arguments::ArgumentsEntity, Entity};
+use super::Entity;
 use std::rc::Rc;
 
 impl Entity {
@@ -43,7 +46,7 @@ impl Entity {
         func.call(
           tree_shaker,
           Entity::Unknown,
-          ArgumentsEntity::new(vec![(true, Entity::Unknown)]),
+          ArgumentsEntity::new(vec![(true, SymbolSource::Unknown)]),
         );
       }
       Entity::Union(funcs) => {

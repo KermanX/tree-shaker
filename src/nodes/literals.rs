@@ -5,7 +5,7 @@ use oxc::ast::ast::{BooleanLiteral, NumericLiteral, StringLiteral};
 pub struct Data {}
 
 impl<'a> TreeShaker<'a> {
-  pub(crate) fn exec_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity {
+  pub(crate) fn exc_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity {
     let data = self.load_data::<Data>(node);
     Entity::NumberLiteral(node.value)
   }

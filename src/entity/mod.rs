@@ -1,4 +1,3 @@
-pub mod arguments;
 pub mod array;
 pub mod convertion;
 pub mod function;
@@ -7,12 +6,10 @@ pub mod operations;
 pub mod simplify;
 pub mod symbol;
 
-use std::{ops::Deref, rc::Rc};
-
-use arguments::ArgumentsEntity;
 use array::ArrayEntity;
 use function::FunctionEntity;
 use object::ObjectEntity;
+use std::rc::Rc;
 use symbol::SymbolEntity;
 
 #[derive(Debug, Clone)]

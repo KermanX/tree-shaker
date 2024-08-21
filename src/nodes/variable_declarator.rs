@@ -1,5 +1,7 @@
-use crate::{entity::Entity, symbol::SymbolSource, TreeShaker};
+use crate::{entity::Entity, TreeShaker};
 use oxc::{ast::ast::VariableDeclarator, semantic::SymbolId};
+
+use super::binding_pattern::BindingPatternSource;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -15,7 +17,7 @@ impl<'a> TreeShaker<'a> {
       None => Entity::Undefined,
     };
 
-    self.exec_binding_pattern(&node.id, SymbolSource::VariableDeclarator(node));
+    self.exec_binding_pattern(&node.id, BindingPatternSource::VariableDeclarator(node));
   }
 
   pub(crate) fn refer_variable_declarator(

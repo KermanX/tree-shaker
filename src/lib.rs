@@ -88,6 +88,16 @@ impl<'a> TreeShaker<'a> {
     self.load_data_from_span(node.span())
   }
 
+  pub(crate) fn get_data_from_span<D: Default + 'static>(&self, span: Span) -> &'a D {
+    let x = self.data.get(&span).unwrap();
+    let t = x.downcast_ref::<D>().unwrap();
+    unsafe { mem::transmute(t) }
+  }
+
+  pub(crate) fn get_data<D: Default + 'static>(&self, node: &dyn GetSpan) -> &'a D {
+    self.get_data_from_span(node.span())
+  }
+
   pub(crate) fn entity_to_expression(&self, span: Span, value: &Entity) -> Option<Expression<'a>> {
     match value {
       Entity::StringLiteral(s) => Some(self.ast_builder.expression_string_literal(span, s.clone())),

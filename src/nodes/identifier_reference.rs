@@ -7,7 +7,7 @@ impl<'a> TreeShaker<'a> {
     assert!(reference.is_read());
     let symbol_id = reference.symbol_id();
     if let Some(symbol_id) = symbol_id {
-      self.read_symbol(symbol_id)
+      self.calc_symbol(symbol_id)
     } else {
       // TODO: Handle globals
       Entity::Unknown

@@ -1,9 +1,32 @@
 use crate::{entity::Entity, symbol::SymbolSource, TreeShaker};
 use oxc::{
-  ast::ast::{BindingPattern, BindingPatternKind},
+  ast::ast::{
+    BindingPattern, BindingPatternKind, BindingRestElement, FormalParameter, VariableDeclarator,
+  },
   semantic::SymbolId,
 };
 use rustc_hash::FxHashSet;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum BindingPatternSource<'a> {
+  VariableDeclarator(&'a VariableDeclarator<'a>),
+  FormalParameter(&'a FormalParameter<'a>),
+  BindingRestElement(&'a BindingRestElement<'a>),
+}
+
+impl<'a> BindingPatternSource<'a> {
+  pub(self) fn to_symble_source(&self, symbol: SymbolId) -> SymbolSource<'a> {
+    match self {
+      BindingPatternSource::VariableDeclarator(node) => {
+        SymbolSource::VariableDeclarator(node, symbol)
+      }
+      BindingPatternSource::FormalParameter(node) => SymbolSource::FormalParameter(node, symbol),
+      BindingPatternSource::BindingRestElement(node) => {
+        SymbolSource::BindingRestElement(node, symbol)
+      }
+    }
+  }
+}
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -14,30 +37,30 @@ impl<'a> TreeShaker<'a> {
   pub(crate) fn exec_binding_pattern(
     &mut self,
     node: &'a BindingPattern<'a>,
-    symbol_source: SymbolSource<'a>,
+    source: BindingPatternSource<'a>,
   ) {
     let data = self.load_data::<Data>(node);
 
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
         let symbol = node.symbol_id.get().unwrap();
-        self.declare_symbol(symbol_source, symbol);
+        self.declare_symbol(source.to_symble_source(symbol), symbol);
       }
       BindingPatternKind::ObjectPattern(node) => {
         for property in &node.properties {
           self.exec_property_key(&property.key);
-          self.exec_binding_pattern(&property.value, symbol_source.clone());
+          self.exec_binding_pattern(&property.value, source);
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
         for element in &node.elements {
           if let Some(element) = element {
-            self.exec_binding_pattern(element, symbol_source.clone());
+            self.exec_binding_pattern(element, source);
           }
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {
-        self.exec_binding_pattern(&node.left, symbol_source);
+        self.exec_binding_pattern(&node.left, source);
       }
     }
     todo!()

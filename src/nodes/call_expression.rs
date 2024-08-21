@@ -1,7 +1,5 @@
 use crate::{
-  build_effect_from_arr,
-  entity::{arguments::ArgumentsEntity, Entity},
-  TreeShaker,
+  build_effect_from_arr, entity::Entity, symbol::arguments::ArgumentsEntity, TreeShaker,
 };
 use oxc::{
   ast::ast::{CallExpression, Expression, TSTypeParameterInstantiation},

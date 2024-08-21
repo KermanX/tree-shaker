@@ -28,4 +28,13 @@ impl<'a> TreeShaker<'a> {
 
     todo!()
   }
+
+  pub(crate) fn transform_binding_rest_element(
+    &self,
+    node: BindingRestElement<'a>,
+  ) -> Option<BindingRestElement<'a>> {
+    let data = self.get_data::<Data>(&node);
+
+    todo!()
+  }
 }

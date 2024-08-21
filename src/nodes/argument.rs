@@ -1,11 +1,21 @@
-use crate::{entity::Entity, TreeShaker};
+use crate::{entity::Entity, symbol::SymbolSource, TreeShaker};
 use oxc::{
   ast::ast::{Argument, Expression},
   span::GetSpan,
 };
 
 impl<'a> TreeShaker<'a> {
-  pub(crate) fn exec_argument(&mut self, node: &'a Argument) -> (bool, Entity) {
+  pub(crate) fn exec_argument(&mut self, node: &'a Argument) -> (bool, SymbolSource<'a>) {
+    match node {
+      Argument::SpreadElement(node) => (true, SymbolSource::Expression(&node.argument)),
+      _ => {
+        let node = node.to_expression();
+        (false, SymbolSource::Expression(node))
+      }
+    }
+  }
+
+  pub(crate) fn calc_argument(&self, node: &'a Argument) -> (bool, Entity) {
     match node {
       Argument::SpreadElement(node) => (true, self.exec_expression(&node.argument)),
       _ => {

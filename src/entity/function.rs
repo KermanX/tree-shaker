@@ -1,5 +1,5 @@
-use super::{arguments::ArgumentsEntity, Entity};
-use crate::TreeShaker;
+use super::Entity;
+use crate::{symbol::arguments::ArgumentsEntity, TreeShaker};
 use oxc::span::Span;
 
 #[derive(Debug, Default, Clone)]
