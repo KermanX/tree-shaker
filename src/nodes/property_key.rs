@@ -1,4 +1,4 @@
-use crate::{entity::Entity, TreeShaker};
+use crate::{entity::Entity, transformer::Transformer, Analyzer};
 use oxc::{ast::ast::PropertyKey, span::GetSpan};
 
 #[derive(Debug, Default, Clone)]
@@ -6,11 +6,9 @@ pub struct Data {
   value: Entity,
 }
 
-impl<'a> TreeShaker<'a> {
+impl<'a> Analyzer<'a> {
   pub(crate) fn exec_property_key(&mut self, node: &'a PropertyKey) -> Entity {
-    let data = self.load_data::<Data>(node);
-
-    data.value = match node {
+    let value = match node {
       PropertyKey::StaticIdentifier(node) => Entity::StringLiteral(node.name.clone().into_string()),
       PropertyKey::PrivateIdentifier(node) => todo!(),
       node => {
@@ -19,15 +17,19 @@ impl<'a> TreeShaker<'a> {
       }
     };
 
-    data.value.clone()
-  }
+    self.set_data(node, Data { value: value.clone() });
 
+    value
+  }
+}
+
+impl<'a> Transformer<'a> {
   pub(crate) fn transform_property_key(
-    &mut self,
+    &self,
     node: PropertyKey<'a>,
     need_val: bool,
   ) -> Option<PropertyKey<'a>> {
-    let data = self.load_data::<Data>(&node);
+    let data = self.get_data::<Data>(&node);
 
     match node {
       PropertyKey::StaticIdentifier(_) | PropertyKey::PrivateIdentifier(_) => Some(node),

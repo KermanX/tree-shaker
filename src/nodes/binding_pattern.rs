@@ -1,4 +1,4 @@
-use crate::{entity::Entity, symbol::SymbolSource, TreeShaker};
+use crate::{entity::Entity, symbol::SymbolSource, Analyzer};
 use oxc::{
   ast::ast::{
     BindingPattern, BindingPatternKind, BindingRestElement, FormalParameter, VariableDeclarator,
@@ -33,14 +33,12 @@ pub struct Data {
   referred_symbols: FxHashSet<SymbolId>,
 }
 
-impl<'a> TreeShaker<'a> {
+impl<'a> Analyzer<'a> {
   pub(crate) fn exec_binding_pattern(
     &mut self,
     node: &'a BindingPattern<'a>,
     source: BindingPatternSource<'a>,
   ) {
-    let data = self.load_data::<Data>(node);
-
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
         let symbol = node.symbol_id.get().unwrap();

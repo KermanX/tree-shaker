@@ -1,4 +1,4 @@
-use crate::{entity::Entity, symbol::SymbolSource, TreeShaker};
+use crate::{entity::Entity, symbol::SymbolSource, transformer::Transformer, Analyzer};
 use oxc::{allocator::Vec, ast::ast::FormalParameter, semantic::SymbolId};
 
 use super::binding_pattern::BindingPatternSource;
@@ -8,7 +8,7 @@ pub struct Data<'a> {
   arg: SymbolSource<'a>,
 }
 
-impl<'a> TreeShaker<'a> {
+impl<'a> Analyzer<'a> {
   pub(crate) fn exec_formal_parameter(
     &mut self,
     node: &'a FormalParameter<'a>,
@@ -32,7 +32,9 @@ impl<'a> TreeShaker<'a> {
 
     todo!()
   }
+}
 
+impl<'a> Transformer<'a> {
   pub(crate) fn transform_formal_parameter(
     &self,
     node: FormalParameter<'a>,

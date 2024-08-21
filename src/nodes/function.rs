@@ -1,14 +1,14 @@
 use crate::{
   entity::{function::FunctionEntity, Entity},
   symbol::{arguments::ArgumentsEntity, SymbolSource},
-  TreeShaker,
+  Analyzer,
 };
-use oxc::{ast::ast::Function, semantic::SymbolId};
+use oxc::ast::ast::Function;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {}
 
-impl<'a> TreeShaker<'a> {
+impl<'a> Analyzer<'a> {
   pub(crate) fn exec_function(&mut self, node: &'a Function) {
     if let Some(id) = &node.id {
       self.declare_symbol(SymbolSource::Function(node), id.symbol_id.get().unwrap());

@@ -1,4 +1,4 @@
-use crate::{build_effect, entity::Entity, TreeShaker};
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, Transformer};
 use oxc::{
   ast::ast::{Expression, LogicalExpression, LogicalOperator},
   span::GetSpan,
@@ -11,7 +11,7 @@ pub struct Data {
   need_right: bool,
 }
 
-impl<'a> TreeShaker<'a> {
+impl<'a> Analyzer<'a> {
   pub(crate) fn exec_logical_expression(&mut self, node: &'a LogicalExpression) -> Entity {
     let data = self.load_data::<Data>(node);
 
@@ -43,13 +43,15 @@ impl<'a> TreeShaker<'a> {
 
     value
   }
+}
 
+impl<'a> Transformer<'a> {
   pub(crate) fn transform_logical_expression(
-    &mut self,
+    &self,
     node: LogicalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.load_data::<Data>(&node);
+    let data = self.get_data::<Data>(&node);
     let span = node.span();
 
     if need_val {

@@ -1,12 +1,12 @@
-use crate::{entity::Entity, TreeShaker};
+use crate::{entity::Entity, transformer::Transformer, Analyzer};
 use oxc::ast::ast::Expression;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
-  val: Entity
+  val: Entity,
 }
 
-impl<'a> TreeShaker<'a> {
+impl<'a> Analyzer<'a> {
   pub(crate) fn exec_expression(&mut self, node: &'a Expression) -> Entity {
     let data = self.load_data::<Data>(node);
 
@@ -29,9 +29,11 @@ impl<'a> TreeShaker<'a> {
 
     data.val.clone()
   }
+}
 
+impl<'a> Transformer<'a> {
   pub(crate) fn transform_expression(
-    &mut self,
+    &self,
     node: Expression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

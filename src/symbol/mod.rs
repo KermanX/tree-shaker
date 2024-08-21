@@ -1,9 +1,6 @@
 pub mod arguments;
 
-use crate::{
-  entity::{function::FunctionEntity, Entity},
-  TreeShaker,
-};
+use crate::{analyzer::Analyzer, entity::{function::FunctionEntity, Entity}};
 use arguments::ArgumentsEntity;
 use oxc::{
   ast::ast::{
@@ -32,7 +29,7 @@ impl Default for SymbolSource<'_> {
   }
 }
 
-impl<'a> TreeShaker<'a> {
+impl<'a> Analyzer<'a> {
   pub(crate) fn declare_symbol(&mut self, source: SymbolSource<'a>, symbol: SymbolId) {
     self.symbol_source.insert(symbol, source);
   }
@@ -62,7 +59,9 @@ impl<'a> TreeShaker<'a> {
     let source = self.symbol_source.get(&symbol).expect("Missing declaration");
 
     match source {
-      SymbolSource::VariableDeclarator(node) => self.refer_variable_declarator(node, symbol),
+      SymbolSource::VariableDeclarator(node, symbol) => {
+        self.refer_variable_declarator(node, *symbol)
+      }
       SymbolSource::Function(node) => Entity::Function(FunctionEntity::new(node.span)),
       _ => todo!(),
     }
@@ -76,7 +75,7 @@ impl<'a> TreeShaker<'a> {
     &mut self,
     symbol: SymbolId,
     this: Entity,
-    args: ArgumentsEntity,
+    args: ArgumentsEntity<'a>,
   ) -> (bool, Entity) {
     let source = self.symbol_source.get(&symbol).expect("Missing declaration");
 

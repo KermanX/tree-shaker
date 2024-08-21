@@ -1,5 +1,5 @@
 use super::Entity;
-use crate::{symbol::arguments::ArgumentsEntity, TreeShaker};
+use crate::{symbol::arguments::ArgumentsEntity, Analyzer};
 use oxc::span::Span;
 
 #[derive(Debug, Default, Clone)]
@@ -14,11 +14,11 @@ impl FunctionEntity {
 
   pub(crate) fn call<'a>(
     &self,
-    tree_shaker: &mut TreeShaker<'a>,
+    analyzer: &mut Analyzer<'a>,
     this: Entity,
-    args: ArgumentsEntity,
+    args: ArgumentsEntity<'a>,
   ) -> (bool, Entity) {
-    let node = tree_shaker.functions.get(&self.span).unwrap();
-    tree_shaker.call_function(node, this, args)
+    let node = analyzer.functions.get(&self.span).unwrap();
+    analyzer.call_function(node, this, args)
   }
 }

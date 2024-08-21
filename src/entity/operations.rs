@@ -1,6 +1,6 @@
 use crate::{
   symbol::{arguments::ArgumentsEntity, SymbolSource},
-  TreeShaker,
+  Analyzer,
 };
 
 use super::Entity;
@@ -20,17 +20,17 @@ impl Entity {
 
   pub fn call<'a>(
     &self,
-    tree_shaker: &mut TreeShaker<'a>,
+    analyzer: &mut Analyzer<'a>,
     this: Entity,
-    args: ArgumentsEntity,
+    args: ArgumentsEntity<'a>,
   ) -> (bool, Entity) {
     match self {
-      Entity::Function(func) => func.call(tree_shaker, this, args),
+      Entity::Function(func) => func.call(analyzer, this, args),
       Entity::Union(funcs) => {
         let mut pure = true;
         let mut values = vec![];
         for func in funcs {
-          let ret = func.call(tree_shaker, this.clone(), args.clone());
+          let ret = func.call(analyzer, this.clone(), args.clone());
           pure &= ret.0;
           values.push(Rc::new(ret.1));
         }
@@ -40,18 +40,18 @@ impl Entity {
     }
   }
 
-  pub fn consume<'a>(&self, tree_shaker: &mut TreeShaker<'a>) {
+  pub fn consume<'a>(&self, analyzer: &mut Analyzer<'a>) {
     match self {
       Entity::Function(func) => {
         func.call(
-          tree_shaker,
+          analyzer,
           Entity::Unknown,
           ArgumentsEntity::new(vec![(true, SymbolSource::Unknown)]),
         );
       }
       Entity::Union(funcs) => {
         for func in funcs {
-          func.consume(tree_shaker);
+          func.consume(analyzer);
         }
       }
       _ => {}

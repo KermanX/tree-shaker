@@ -1,16 +1,11 @@
-use crate::{entity::Entity, TreeShaker};
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::{ast::ast::Declaration, semantic::SymbolId};
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {}
 
-impl<'a> TreeShaker<'a> {
-  pub(crate) fn exec_declaration(
-    &mut self,
-    node: &'a Declaration,
-  ) -> Option<Entity> {
-    let data = self.load_data::<Data>(node);
-
+impl<'a> Analyzer<'a> {
+  pub(crate) fn exec_declaration(&mut self, node: &'a Declaration) -> Option<Entity> {
     todo!()
     // if need_symbol.is_some() {
     //   match node {
@@ -38,4 +33,7 @@ impl<'a> TreeShaker<'a> {
     //   None
     // }
   }
+}
+
+impl<'a> Transformer<'a> {
 }

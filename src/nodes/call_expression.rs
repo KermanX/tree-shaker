@@ -1,5 +1,6 @@
 use crate::{
-  build_effect_from_arr, entity::Entity, symbol::arguments::ArgumentsEntity, TreeShaker,
+  build_effect_from_arr, entity::Entity, symbol::arguments::ArgumentsEntity,
+  transformer::Transformer, Analyzer,
 };
 use oxc::{
   ast::ast::{CallExpression, Expression, TSTypeParameterInstantiation},
@@ -12,7 +13,7 @@ pub struct Data {
   val: Entity,
 }
 
-impl<'a> TreeShaker<'a> {
+impl<'a> Analyzer<'a> {
   pub(crate) fn exec_call_expression(&mut self, node: &'a CallExpression) -> Entity {
     let data = self.load_data::<Data>(node);
 
@@ -28,8 +29,10 @@ impl<'a> TreeShaker<'a> {
 
     val
   }
+}
 
-  fn get_effects(&mut self, node: CallExpression<'a>) -> Vec<Option<Expression<'a>>> {
+impl<'a> Transformer<'a> {
+  fn get_effects(&self, node: CallExpression<'a>) -> Vec<Option<Expression<'a>>> {
     let callee = self.transform_expression(node.callee, false);
     let mut arguments =
       node.arguments.into_iter().map(|arg| self.transform_argument_no_val(arg)).collect::<Vec<_>>();
@@ -38,11 +41,11 @@ impl<'a> TreeShaker<'a> {
   }
 
   pub(crate) fn transform_call_expression(
-    &mut self,
+    &self,
     node: CallExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.load_data::<Data>(&node);
+    let data = self.get_data::<Data>(&node);
 
     let span = node.span();
 

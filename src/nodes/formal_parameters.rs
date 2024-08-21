@@ -1,20 +1,18 @@
 use crate::{
-  symbol::{arguments::ArgumentsEntity, SymbolSource},
-  TreeShaker,
+  nodes::binding_pattern::BindingPatternSource, symbol::arguments::ArgumentsEntity,
+  transformer::Transformer, Analyzer,
 };
-use oxc::{ast::ast::FormalParameters, span::GetSpan};
+use oxc::ast::ast::FormalParameters;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {}
 
-impl<'a> TreeShaker<'a> {
+impl<'a> Analyzer<'a> {
   pub(crate) fn exec_formal_parameters(
     &mut self,
     node: &'a FormalParameters<'a>,
     args: ArgumentsEntity<'a>,
   ) {
-    let data = self.load_data::<Data>(node);
-
     let resolved = args.resolve(node.items.len());
 
     for (param, arg) in node.items.iter().zip(resolved.0) {
@@ -22,17 +20,19 @@ impl<'a> TreeShaker<'a> {
     }
 
     if let Some(rest) = &node.rest {
-      self.exec_binding_rest_element(rest, SymbolSource::BindingRestElement(rest));
+      self.exec_binding_rest_element(rest, BindingPatternSource::BindingRestElement(rest));
     }
 
     todo!()
   }
+}
 
+impl<'a> Transformer<'a> {
   pub(crate) fn transform_formal_parameters(
     &mut self,
     node: FormalParameters<'a>,
   ) -> FormalParameters<'a> {
-    let data = self.load_data::<Data>(&node);
+    let data = self.get_data::<Data>(&node);
     let FormalParameters { span, items, rest, kind, .. } = node;
 
     let mut transformed_items = self.ast_builder.vec();
