@@ -41,7 +41,9 @@ impl<'a> Transformer<'a> {
     let data = self.get_data::<Data>(&node);
 
     match node {
-      PropertyKey::StaticIdentifier(_) | PropertyKey::PrivateIdentifier(_) => Some(node),
+      PropertyKey::StaticIdentifier(_) | PropertyKey::PrivateIdentifier(_) => {
+        need_val.then_some(node)
+      }
       _ => match &data.value {
         Entity::StringLiteral(s) => {
           let span = node.span();

@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
       Expression::Identifier(node) => self.exec_identifier_reference_read(node),
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
       Expression::CallExpression(node) => self.exec_call_expression(node),
-
+      Expression::ObjectExpression(node) => self.exec_object_expression(node),
       _ => todo!(),
     };
 
@@ -56,6 +56,8 @@ impl<'a> Transformer<'a> {
       }
 
       Expression::CallExpression(node) => self.transform_call_expression(node.unbox(), need_val),
+
+      Expression::ObjectExpression(node) => self.transform_object_expression(node.unbox()),
 
       _ => todo!(),
     }
