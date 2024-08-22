@@ -16,7 +16,11 @@ impl<'a> Analyzer<'a> {
       None => (false, Entity::Undefined),
     };
 
-    self.exec_binding_pattern(&node.id, BindingPatternSource::VariableDeclarator(node));
+    self.exec_binding_pattern(
+      &node.id,
+      BindingPatternSource::VariableDeclarator(node),
+      init_val.clone(),
+    );
 
     self.set_data(node, Data { init_effect, init_val });
 
@@ -28,16 +32,14 @@ impl<'a> Analyzer<'a> {
     node: &'a VariableDeclarator,
     symbol: SymbolId,
   ) -> Entity {
-    let data = self.get_data::<Data>(node);
-    self.calc_binding_pattern(&node.id, symbol, data.init_val.clone())
+    self.calc_binding_pattern(&node.id, symbol).unwrap()
   }
 
   pub(crate) fn refer_variable_declarator(
     &mut self,
     node: &'a VariableDeclarator,
     symbol: SymbolId,
-  ) -> Entity {
-    let data = self.load_data::<Data>(node);
-    self.refer_binding_pattern(&node.id, symbol, data.init_val.clone())
+  ) {
+    self.refer_binding_pattern(&node.id, symbol)
   }
 }

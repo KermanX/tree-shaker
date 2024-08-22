@@ -14,8 +14,8 @@ impl<'a> Analyzer<'a> {
     node: &'a FormalParameter<'a>,
     arg: SymbolSource<'a>,
   ) {
-    self.exec_binding_pattern(&node.pattern, BindingPatternSource::FormalParameter(node));
-
+    let init_val = self.calc_source(arg);
+    self.exec_binding_pattern(&node.pattern, BindingPatternSource::FormalParameter(node), init_val);
     self.set_data(node, Data { arg });
   }
 
@@ -24,11 +24,7 @@ impl<'a> Analyzer<'a> {
     node: &'a FormalParameter<'a>,
     symbol: SymbolId,
   ) -> Entity {
-    let data = self.get_data::<Data>(node);
-
-    let arg: Entity = self.calc_source(data.arg);
-
-    self.calc_binding_pattern(&node.pattern, symbol, arg)
+    self.calc_binding_pattern(&node.pattern, symbol).unwrap()
   }
 }
 

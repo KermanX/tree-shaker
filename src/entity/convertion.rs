@@ -65,13 +65,13 @@ impl Entity {
   }
 
   /// `None` for unknown
-  pub fn to_nullable(&self) -> Option<bool> {
+  pub fn is_nullable(&self) -> Option<bool> {
     match self {
       Entity::Null | Entity::Undefined => Some(true),
       Entity::Union(values) => {
-        let nullable = values[0].to_nullable()?;
+        let nullable = values[0].is_nullable()?;
         for value in &values[1..] {
-          if value.to_nullable()? != nullable {
+          if value.is_nullable()? != nullable {
             return None;
           }
         }

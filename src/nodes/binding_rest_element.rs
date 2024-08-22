@@ -24,7 +24,7 @@ impl<'a> Analyzer<'a> {
     &self,
     node: &'a BindingRestElement<'a>,
     symbol: SymbolId,
-  ) -> Entity {
+  ) -> Option<Entity> {
     todo!()
   }
 
@@ -32,8 +32,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a BindingRestElement<'a>,
     symbol: SymbolId,
-    init_val: Entity,
-  ) -> Entity {
+  ) {
     todo!()
   }
 }

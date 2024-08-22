@@ -14,6 +14,7 @@ pub(crate) struct Analyzer<'a> {
   pub functions: FxHashMap<Span, &'a Function<'a>>,
   pub symbol_source: FxHashMap<SymbolId, SymbolSource<'a>>,
   pub data: FxHashMap<Span, Box<DataPlaceholder<'a>>>,
+  pub indeterminate: bool,
 }
 
 impl<'a> Analyzer<'a> {
@@ -24,6 +25,7 @@ impl<'a> Analyzer<'a> {
       functions: FxHashMap::default(),
       symbol_source: FxHashMap::default(),
       data: FxHashMap::default(),
+      indeterminate: false,
     }
   }
 
@@ -69,5 +71,19 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn get_data<D: Default + 'a>(&self, node: &dyn GetSpan) -> &'a D {
     self.get_data_by_span(node.span())
+  }
+}
+
+pub(crate) struct IndeterminateBackup(bool);
+
+impl<'a> Analyzer<'a> {
+  pub(crate) fn start_indeterminate(&mut self) -> IndeterminateBackup {
+    let prev = self.indeterminate;
+    self.indeterminate = true;
+    IndeterminateBackup(prev)
+  }
+
+  pub(crate) fn end_indeterminate(&mut self, prev: IndeterminateBackup) {
+    self.indeterminate = prev.0;
   }
 }

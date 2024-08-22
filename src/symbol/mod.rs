@@ -47,7 +47,7 @@ impl<'a> Analyzer<'a> {
       SymbolSource::Function(node) => self.calc_function(node),
       SymbolSource::FormalParameter(node, symbol) => self.calc_formal_parameter(node, symbol),
       SymbolSource::BindingRestElement(node, symbol) => {
-        self.calc_binding_rest_element(node, symbol)
+        self.calc_binding_rest_element(node, symbol).unwrap()
       }
       SymbolSource::Expression(node) => self.calc_expression(node),
       _ => todo!(),
@@ -58,16 +58,18 @@ impl<'a> Analyzer<'a> {
     self.calc_source(self.get_symbol_source(symbol))
   }
 
-  pub(crate) fn read_symbol(&mut self, symbol: SymbolId) -> Entity {
-    let source = self.symbol_source.get(&symbol).expect("Missing declaration");
-
+  pub(crate) fn read_source(&mut self, source: SymbolSource<'a>) {
     match source {
       SymbolSource::VariableDeclarator(node, symbol) => {
-        self.refer_variable_declarator(node, *symbol)
+        self.refer_variable_declarator(node, symbol)
       }
-      SymbolSource::Function(node) => Entity::Function(FunctionEntity::new(node.span)),
+      SymbolSource::Function(node) => self.refer_function(node),
       _ => todo!(),
     }
+  }
+
+  pub(crate) fn read_symbol(&mut self, symbol: SymbolId) {
+    self.read_source(self.get_symbol_source(symbol))
   }
 
   pub(crate) fn read_symbol_member(&mut self, symbol: SymbolId, member: Entity) -> Entity {

@@ -6,7 +6,9 @@ use crate::{
 use oxc::ast::ast::Function;
 
 #[derive(Debug, Default, Clone)]
-pub struct Data {}
+pub struct Data {
+  referred: bool,
+}
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_function(&mut self, node: &'a Function) -> (bool, Entity) {
@@ -18,6 +20,11 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn calc_function(&self, node: &'a Function<'a>) -> Entity {
     Entity::Function(FunctionEntity::new(node.span))
+  }
+
+  pub(crate) fn refer_function(&mut self, node: &'a Function<'a>) {
+    let data = self.load_data::<Data>(node);
+    data.referred = true;
   }
 
   pub(crate) fn call_function(
