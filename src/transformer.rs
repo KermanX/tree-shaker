@@ -2,13 +2,16 @@ use crate::{entity::Entity, utils::DataPlaceholder};
 use oxc::{
   allocator::Allocator,
   ast::{
-    ast::{Expression, NumberBase, Program, Statement},
+    ast::{BindingPattern, Expression, NumberBase, Program, Statement, TSTypeAnnotation},
     AstBuilder,
   },
   span::{GetSpan, SourceType, Span, SPAN},
 };
 use rustc_hash::FxHashMap;
-use std::mem;
+use std::{
+  mem,
+  sync::atomic::{AtomicUsize, Ordering},
+};
 
 pub(crate) struct Transformer<'a> {
   allocator: &'a Allocator,
@@ -59,6 +62,19 @@ impl<'a> Transformer<'a> {
       }
       _ => None,
     }
+  }
+}
+
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+impl<'a> Transformer<'a> {
+  pub(crate) fn new_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
+    let name = format!("__unused_{}", COUNTER.fetch_add(1, Ordering::Relaxed));
+    self.ast_builder.binding_pattern(
+      self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
+      None::<TSTypeAnnotation>,
+      false,
+    )
   }
 }
 

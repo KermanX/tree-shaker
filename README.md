@@ -39,6 +39,10 @@ May not be very fast, but should generates the least code possible.
     - Remove the dead code.
 4. Minify the code via `oxc_minifier`.
 
+> Tree shake v.s. Minify:
+>
+> In this project, tree shake is to remove the dead code, while minify is to reduce the code size. They are different steps in the process.
+
 ## Implementation
 
 1. `exec_x`: Execute the code.

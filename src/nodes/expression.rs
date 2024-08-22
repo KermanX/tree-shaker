@@ -40,8 +40,7 @@ impl<'a> Transformer<'a> {
     match node {
       Expression::NumericLiteral(_)
       | Expression::StringLiteral(_)
-      | Expression::BooleanLiteral(_)
-      | Expression::Identifier(_) => {
+      | Expression::BooleanLiteral(_) => {
         if need_val {
           Some(node)
         } else {
@@ -49,6 +48,9 @@ impl<'a> Transformer<'a> {
         }
       }
 
+      Expression::Identifier(node) => self
+        .transform_identifier_reference_read(node.unbox(), need_val)
+        .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
       Expression::LogicalExpression(node) => {
         self.transform_logical_expression(node.unbox(), need_val)
       }

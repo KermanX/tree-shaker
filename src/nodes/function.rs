@@ -1,7 +1,5 @@
 use crate::{
-  entity::{function::FunctionEntity, Entity},
-  symbol::{arguments::ArgumentsEntity, SymbolSource},
-  Analyzer,
+  entity::{function::FunctionEntity, Entity}, symbol::{arguments::ArgumentsEntity, SymbolSource}, transformer::Transformer, Analyzer
 };
 use oxc::ast::ast::Function;
 
@@ -34,6 +32,18 @@ impl<'a> Analyzer<'a> {
     args: ArgumentsEntity<'a>,
   ) -> (bool, Entity) {
     self.exec_formal_parameters(&node.params, args);
+    todo!()
+  }
+}
+
+impl<'a> Transformer<'a> {
+  pub fn transform_function(&self, node: Function<'a>) -> Option<Function<'a>> {
+    let data = self.get_data::<Data>(&node);
+
+    if !data.referred {
+      return None;
+    }
+
     todo!()
   }
 }

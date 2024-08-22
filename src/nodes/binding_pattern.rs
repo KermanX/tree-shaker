@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{entity::Entity, symbol::SymbolSource, Analyzer};
+use crate::{entity::Entity, symbol::SymbolSource, transformer::Transformer, Analyzer};
 use oxc::{
   ast::ast::{
     BindingPattern, BindingPatternKind, BindingRestElement, FormalParameter, VariableDeclarator,
@@ -162,31 +162,14 @@ impl<'a> Analyzer<'a> {
       }
     }
   }
+}
 
-  // fn is_in_binding_pattern(&self, node: &'a BindingPattern, symbol_id: SymbolId) -> bool {
-  //   match &node.kind {
-  //     BindingPatternKind::BindingIdentifier(node) => node.symbol_id.get().unwrap() == symbol_id,
-  //     BindingPatternKind::ObjectPattern(node) => {
-  //       for property in &node.properties {
-  //         if self.is_in_binding_pattern(&property.value, symbol_id) {
-  //           return true;
-  //         }
-  //       }
-  //       false
-  //     }
-  //     BindingPatternKind::ArrayPattern(node) => {
-  //       for element in &node.elements {
-  //         if let Some(element) = element {
-  //           if self.is_in_binding_pattern(element, symbol_id) {
-  //             return true;
-  //           }
-  //         }
-  //       }
-  //       false
-  //     }
-  //     BindingPatternKind::AssignmentPattern(node) => {
-  //       self.is_in_binding_pattern(&node.left, symbol_id)
-  //     }
-  //   }
-  // }
+impl<'a> Transformer<'a> {
+  pub(crate) fn transform_binding_pattern(
+    &self,
+    node: BindingPattern<'a>,
+  ) -> Option<BindingPattern<'a>> {
+    let data = self.get_data::<Data>(&node);
+    todo!()
+  }
 }

@@ -1,5 +1,5 @@
-use crate::{entity::Entity, Analyzer};
-use oxc::{ast::ast::VariableDeclarator, semantic::SymbolId};
+use crate::{entity::Entity, transformer::Transformer, Analyzer};
+use oxc::{ast::ast::VariableDeclarator, semantic::SymbolId, span::GetSpan};
 
 use super::binding_pattern::BindingPatternSource;
 
@@ -41,5 +41,34 @@ impl<'a> Analyzer<'a> {
     symbol: SymbolId,
   ) {
     self.refer_binding_pattern(&node.id, symbol)
+  }
+}
+
+impl<'a> Transformer<'a> {
+  pub(crate) fn transform_variable_declarator(
+    &self,
+    node: VariableDeclarator<'a>,
+  ) -> Option<VariableDeclarator<'a>> {
+    let data = self.get_data::<Data>(&node);
+
+    let VariableDeclarator { span, kind, id, init, .. } = node;
+
+    let id_span = id.span();
+    let id = self.transform_binding_pattern(id);
+    let init = init.and_then(|init| self.transform_expression(init, id.is_some()));
+
+    if let Some(init) = init {
+      Some(self.ast_builder.variable_declarator(
+        span,
+        kind,
+        id.unwrap_or_else(|| self.new_unused_binding_pattern(id_span)),
+        Some(init),
+        false,
+      ))
+    } else if let Some(id) = id {
+      Some(self.ast_builder.variable_declarator(span, kind, id, None, false))
+    } else {
+      None
+    }
   }
 }
