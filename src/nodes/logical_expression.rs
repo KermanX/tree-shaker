@@ -61,30 +61,27 @@ impl<'a> Transformer<'a> {
     let data = self.get_data::<Data>(&node);
     let span = node.span();
 
-    if need_val {
-      let left = self.transform_expression(node.left, data.need_left);
-      let right = self.transform_expression(node.right, data.need_right);
-      match (data.need_left, data.need_right) {
-        (true, true) => Some(self.ast_builder.expression_logical(
-          span,
-          left.unwrap(),
-          node.operator,
-          right.unwrap(),
-        )),
-        (true, false) => {
-          if let Some(right) = right {
-            Some(self.ast_builder.expression_logical(span, left.unwrap(), node.operator, right))
-          } else {
-            left
-          }
+    let need_left = need_val && data.need_left;
+    let need_right = need_val && data.need_right;
+
+    let left = self.transform_expression(node.left, need_left);
+    let right = self.transform_expression(node.right, need_right);
+    match (need_left, need_right) {
+      (true, true) => Some(self.ast_builder.expression_logical(
+        span,
+        left.unwrap(),
+        node.operator,
+        right.unwrap(),
+      )),
+      (true, false) => {
+        if let Some(right) = right {
+          Some(self.ast_builder.expression_logical(span, left.unwrap(), node.operator, right))
+        } else {
+          left
         }
-        (false, true) => build_effect!(self.ast_builder, span, left, right),
-        (false, false) => unreachable!(),
       }
-    } else {
-      let left = self.transform_expression(node.left, false);
-      let right = self.transform_expression(node.right, false);
-      build_effect!(self.ast_builder, span, left, right)
+      (false, true) => build_effect!(self.ast_builder, span, left; right.unwrap()),
+      (false, false) => unreachable!(),
     }
   }
 }
