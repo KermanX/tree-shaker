@@ -39,12 +39,13 @@ impl Entity {
     }
   }
 
-  pub fn to_boolean(&self) -> Entity {
+  /// `None` for unknown
+  pub fn to_boolean(&self) -> Option<bool> {
     match self {
-      Entity::StringLiteral(str) => Entity::BooleanLiteral(!str.is_empty()),
-      Entity::NumberLiteral(num) => Entity::BooleanLiteral(*num != 0.0),
-      Entity::BigIntLiteral(num) => Entity::BooleanLiteral(*num != 0),
-      Entity::BooleanLiteral(bool) => Entity::BooleanLiteral(bool.clone()),
+      Entity::StringLiteral(str) => Some(!str.is_empty()),
+      Entity::NumberLiteral(num) => Some(*num != 0.0),
+      Entity::BigIntLiteral(num) => Some(*num != 0),
+      Entity::BooleanLiteral(bool) => Some(bool.clone()),
       Entity::NonEmptyString(_)
       | Entity::NonZeroNumber
       | Entity::NonZeroBigInt
@@ -53,13 +54,19 @@ impl Entity {
       | Entity::Object(_)
       | Entity::Array(_)
       | Entity::Function(_)
-      | Entity::UnknownFunction => Entity::BooleanLiteral(true),
-      Entity::Null | Entity::Undefined => Entity::BooleanLiteral(false),
+      | Entity::UnknownFunction => Some(true),
+      Entity::Null | Entity::Undefined => Some(false),
       Entity::UnknownString | Entity::UnknownNumber | Entity::UnknownBigInt | Entity::Unknown => {
-        Entity::new_unknown_boolean()
+        None
       }
       Entity::Union(values) => {
-        Entity::Union(values.iter().map(|value| Rc::new(value.to_boolean())).collect())
+        let boolean = values[0].to_boolean()?;
+        for value in &values[1..] {
+          if value.to_boolean()? != boolean {
+            return None;
+          }
+        }
+        Some(boolean)
       }
     }
   }

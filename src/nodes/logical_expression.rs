@@ -28,16 +28,14 @@ impl<'a> Analyzer<'a> {
 
     let (value, need_left_val, need_right_val) = match &node.operator {
       LogicalOperator::And => match left_val.to_boolean() {
-        Entity::BooleanLiteral(true) => (exec_right(), false, true),
-        Entity::BooleanLiteral(false) => (left_val, true, false),
-        Entity::Union(_) => exec_unknown(),
-        _ => unreachable!(),
+        Some(true) => (exec_right(), false, true),
+        Some(false) => (left_val, true, false),
+        None => exec_unknown(),
       },
       LogicalOperator::Or => match left_val.to_boolean() {
-        Entity::BooleanLiteral(true) => (left_val, true, false),
-        Entity::BooleanLiteral(false) => (exec_right(), false, true),
-        Entity::Union(_) => exec_unknown(),
-        _ => unreachable!(),
+        Some(true) => (left_val, true, false),
+        Some(false) => (exec_right(), false, true),
+        None => exec_unknown(),
       },
       LogicalOperator::Coalesce => match left_val.is_null_or_undefined() {
         Some(true) => (exec_right(), false, true),

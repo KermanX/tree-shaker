@@ -2,7 +2,9 @@ use crate::{ast_type::AstType2, entity::Entity, utils::ExtraData};
 use oxc::{
   allocator::Allocator,
   ast::{
-    ast::{BindingPattern, Expression, NumberBase, Program, Statement, TSTypeAnnotation},
+    ast::{
+      BindingPattern, Expression, NumberBase, Program, Statement, TSTypeAnnotation, UnaryOperator,
+    },
     AstBuilder,
   },
   span::{GetSpan, SourceType, Span, SPAN},
@@ -74,6 +76,10 @@ impl<'a> Transformer<'a> {
       None::<TSTypeAnnotation>,
       false,
     )
+  }
+
+  pub(crate) fn negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {
+    self.ast_builder.expression_unary(expression.span(), UnaryOperator::LogicalNot, expression)
   }
 }
 

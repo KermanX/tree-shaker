@@ -25,9 +25,9 @@ impl<'a> Analyzer<'a> {
         self.exec_module_declaration(node);
         false
       }
-      Statement::ExpressionStatement(node) => {
-        self.exec_expression(&node.expression).0
-      }
+      Statement::ExpressionStatement(node) => self.exec_expression(&node.expression).0,
+      Statement::BlockStatement(node) => self.exec_block_statement(node),
+      Statement::IfStatement(node) => self.exec_if_statement(node),
       _ => todo!(),
     }
   }
@@ -51,6 +51,8 @@ impl<'a> Transformer<'a> {
           .transform_expression(expression, false)
           .map(|expr| self.ast_builder.statement_expression(span, expr))
       }
+      Statement::BlockStatement(node) => self.transform_block_statement(node.unbox()),
+      Statement::IfStatement(node) => self.transform_if_statement(node.unbox()),
       _ => todo!(),
     }
   }

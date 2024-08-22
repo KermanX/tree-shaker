@@ -8,3 +8,5 @@ let { b } = {
 	b: 2,
 	d: effect
 };
+effect4;
+if (effect) effect5;

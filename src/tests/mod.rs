@@ -12,6 +12,18 @@ fn test_1() {
       export { b };
       let c = 3;
       let { ["b"]: b, d } = { b: 2, d: effect };
+
+      let t = 0;
+      if (t) {
+        effect3;
+      }
+      else {
+        effect4;
+      }
+
+      if (effect) {
+        effect5;
+      }
       "#,
   );
 }
