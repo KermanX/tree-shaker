@@ -1,4 +1,4 @@
-use crate::{entity::Entity, symbol::SymbolSource, transformer::Transformer, Analyzer};
+use crate::{symbol::SymbolSource, transformer::Transformer, Analyzer};
 use oxc::{
   ast::ast::{Argument, Expression},
   span::GetSpan,
@@ -11,17 +11,6 @@ impl<'a> Analyzer<'a> {
       _ => {
         let node = node.to_expression();
         (false, SymbolSource::Expression(node))
-      }
-    }
-  }
-
-  /// returns (expended, value)
-  pub(crate) fn calc_argument(&self, node: &'a Argument) -> (bool, Entity) {
-    match node {
-      Argument::SpreadElement(node) => (true, self.calc_expression(&node.argument)),
-      _ => {
-        let node = node.to_expression();
-        (false, self.calc_expression(node))
       }
     }
   }

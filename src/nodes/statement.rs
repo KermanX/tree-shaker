@@ -14,18 +14,19 @@ const AST_TYPE: AstType2 = AstType2::Statement;
 pub struct Data {}
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_statement(&mut self, node: &'a Statement) {
+  pub(crate) fn exec_statement(&mut self, node: &'a Statement) -> bool {
     match node {
       match_declaration!(Statement) => {
         let node = node.to_declaration();
-        self.exec_declaration(node);
+        self.exec_declaration(node)
       }
       match_module_declaration!(Statement) => {
         let node = node.to_module_declaration();
         self.exec_module_declaration(node);
+        false
       }
       Statement::ExpressionStatement(node) => {
-        self.exec_expression(&node.expression);
+        self.exec_expression(&node.expression).0
       }
       _ => todo!(),
     }

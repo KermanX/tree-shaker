@@ -10,11 +10,12 @@ impl<'a> ArgumentsEntity<'a> {
     ArgumentsEntity { args }
   }
 
+  /// (args, rest)
   pub(crate) fn resolve(self, length: usize) -> (Vec<SymbolSource<'a>>, SymbolSource<'a>) {
     let mut resolved = vec![];
     for (expend, arg) in self.args {
       // TODO: handle expend
-      assert!(!expend);
+      assert!(!expend, "not implemented");
       resolved.push(arg);
     }
 

@@ -41,7 +41,16 @@ impl<'a> Analyzer<'a> {
     args: ArgumentsEntity<'a>,
   ) -> (bool, Entity) {
     self.exec_formal_parameters(&node.params, args);
-    todo!()
+
+    let mut has_effect = false;
+
+    if let Some(body) = &node.body {
+      for statement in &body.statements {
+        has_effect |= self.exec_statement(statement);
+      }
+    }
+
+    (has_effect, todo!())
   }
 }
 

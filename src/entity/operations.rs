@@ -49,9 +49,9 @@ impl Entity {
           ArgumentsEntity::new(vec![(true, SymbolSource::Unknown)]),
         );
       }
-      Entity::Union(funcs) => {
-        for func in funcs {
-          func.consume(analyzer);
+      Entity::Union(values) => {
+        for value in values {
+          value.consume(analyzer);
         }
       }
       _ => {}
