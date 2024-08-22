@@ -1,11 +1,10 @@
-use crate::{entity::Entity, symbol::SymbolSource, transformer::Transformer, Analyzer};
-use oxc::{
-  ast::ast::{BindingPattern, BindingPatternKind, BindingRestElement},
-  semantic::SymbolId,
-};
+use super::binding_pattern::BindingPatternSource;
+use crate::ast_type::AstType2;
+use crate::{entity::Entity, transformer::Transformer, Analyzer};
+use oxc::{ast::ast::BindingRestElement, semantic::SymbolId};
 use rustc_hash::FxHashSet;
 
-use super::binding_pattern::BindingPatternSource;
+const AST_TYPE: AstType2 = AstType2::BindingRestElement;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -42,7 +41,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: BindingRestElement<'a>,
   ) -> Option<BindingRestElement<'a>> {
-    let data = self.get_data::<Data>(&node);
+    let data = self.get_data::<Data>(AST_TYPE, &node);
 
     todo!()
   }

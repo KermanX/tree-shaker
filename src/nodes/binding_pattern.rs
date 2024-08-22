@@ -1,5 +1,4 @@
-use std::rc::Rc;
-
+use crate::ast_type::AstType2;
 use crate::{entity::Entity, symbol::SymbolSource, transformer::Transformer, Analyzer};
 use oxc::{
   ast::ast::{
@@ -9,6 +8,9 @@ use oxc::{
   semantic::SymbolId,
   span::GetSpan,
 };
+use std::rc::Rc;
+
+const AST_TYPE: AstType2 = AstType2::BindingPattern;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum BindingPatternSource<'a> {
@@ -100,7 +102,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    self.set_data(node, Data { init_val, referred: self.exporting });
+    self.set_data(AST_TYPE, node, Data { init_val, referred: self.exporting });
 
     effect
   }
@@ -110,7 +112,7 @@ impl<'a> Analyzer<'a> {
     node: &'a BindingPattern<'a>,
     symbol: SymbolId,
   ) -> Option<Entity> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
@@ -139,7 +141,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub(crate) fn refer_binding_pattern(&mut self, node: &'a BindingPattern, symbol: SymbolId) {
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
 
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
@@ -171,7 +173,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: BindingPattern<'a>,
   ) -> Option<BindingPattern<'a>> {
-    let data = self.get_data::<Data>(&node);
+    let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let BindingPattern { kind, .. } = node;
 

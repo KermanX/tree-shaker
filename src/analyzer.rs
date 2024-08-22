@@ -1,4 +1,8 @@
-use crate::{symbol::SymbolSource, utils::DataPlaceholder};
+use crate::{
+  ast_type::AstType2,
+  symbol::SymbolSource,
+  utils::{DataPlaceholder, ExtraData},
+};
 use oxc::{
   allocator::Allocator,
   ast::ast::{Function, Program},
@@ -13,7 +17,7 @@ pub(crate) struct Analyzer<'a> {
   pub(crate) sematic: Semantic<'a>,
   pub(crate) functions: FxHashMap<Span, &'a Function<'a>>,
   pub(crate) symbol_source: FxHashMap<SymbolId, SymbolSource<'a>>,
-  pub(crate) data: FxHashMap<Span, Box<DataPlaceholder<'a>>>,
+  pub(crate) data: ExtraData<'a>,
   pub(crate) indeterminate: bool,
   pub(crate) exporting: bool,
   pub(crate) exports: Vec<SymbolId>,
@@ -46,40 +50,54 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn set_data_by_span(&mut self, span: Span, data: impl Default + 'a) {
-    self.data.insert(span, unsafe { mem::transmute(Box::new(data)) });
+  pub(crate) fn set_data_by_span(
+    &mut self,
+    ast_type: AstType2,
+    span: Span,
+    data: impl Default + 'a,
+  ) {
+    let map = self.data.entry(ast_type).or_insert_with(|| FxHashMap::default());
+    map.insert(span, unsafe { mem::transmute(Box::new(data)) });
   }
 
-  pub(crate) fn set_data(&mut self, node: &dyn GetSpan, data: impl Default + 'a) {
-    self.set_data_by_span(node.span(), data)
+  pub(crate) fn set_data(
+    &mut self,
+    ast_type: AstType2,
+    node: &dyn GetSpan,
+    data: impl Default + 'a,
+  ) {
+    self.set_data_by_span(ast_type, node.span(), data)
   }
 
-  pub(crate) fn load_data_by_span<D: Default + 'a>(&mut self, span: Span) -> &'a mut D {
-    let existing = self.data.get_mut(&span);
-    match existing {
-      Some(boxed) => unsafe { mem::transmute(boxed.as_mut()) },
-      None => {
-        let data = D::default();
-        self.set_data_by_span(span, data);
-        self.load_data_by_span(span)
-      }
-    }
+  pub(crate) fn load_data_by_span<D: Default + 'a>(
+    &mut self,
+    ast_type: AstType2,
+    span: Span,
+  ) -> &'a mut D {
+    let map = self.data.entry(ast_type).or_insert_with(|| FxHashMap::default());
+    let boxed =
+      map.entry(span).or_insert_with(|| unsafe { mem::transmute(Box::new(D::default())) });
+    unsafe { mem::transmute(boxed.as_mut()) }
   }
 
-  pub(crate) fn load_data<D: Default + 'a>(&mut self, node: &dyn GetSpan) -> &'a mut D {
-    self.load_data_by_span(node.span())
+  pub(crate) fn load_data<D: Default + 'a>(
+    &mut self,
+    ast_type: AstType2,
+    node: &dyn GetSpan,
+  ) -> &'a mut D {
+    self.load_data_by_span(ast_type, node.span())
   }
 
-  pub(crate) fn get_data_by_span<D: Default + 'a>(&self, span: Span) -> &'a D {
-    let existing = self.data.get(&span);
+  pub(crate) fn get_data_by_span<D: Default + 'a>(&self, ast_type: AstType2, span: Span) -> &'a D {
+    let existing = self.data.get(&ast_type).and_then(|map| map.get(&span));
     match existing {
       Some(boxed) => unsafe { mem::transmute(boxed.as_ref()) },
       None => self.allocator.alloc(D::default()),
     }
   }
 
-  pub(crate) fn get_data<D: Default + 'a>(&self, node: &dyn GetSpan) -> &'a D {
-    self.get_data_by_span(node.span())
+  pub(crate) fn get_data<D: Default + 'a>(&self, ast_type: AstType2, node: &dyn GetSpan) -> &'a D {
+    self.get_data_by_span(ast_type, node.span())
   }
 }
 

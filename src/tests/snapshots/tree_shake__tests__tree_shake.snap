@@ -2,6 +2,6 @@
 source: src/tests/mod.rs
 expression: output
 ---
-export let a = 1;
+export let a = 2;
 export { b };
 let { b } = { b: 2 };

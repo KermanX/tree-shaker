@@ -1,7 +1,9 @@
+use super::binding_pattern::BindingPatternSource;
+use crate::ast_type::AstType2;
 use crate::{entity::Entity, transformer::Transformer, Analyzer};
 use oxc::{ast::ast::VariableDeclarator, semantic::SymbolId, span::GetSpan};
 
-use super::binding_pattern::BindingPatternSource;
+const AST_TYPE: AstType2 = AstType2::VariableDeclarator;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -22,7 +24,7 @@ impl<'a> Analyzer<'a> {
       init_val.clone(),
     );
 
-    self.set_data(node, Data { init_effect, init_val });
+    self.set_data(AST_TYPE, node, Data { init_effect, init_val });
 
     init_effect
   }
@@ -49,7 +51,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: VariableDeclarator<'a>,
   ) -> Option<VariableDeclarator<'a>> {
-    let data = self.get_data::<Data>(&node);
+    let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let VariableDeclarator { span, kind, id, init, .. } = node;
 

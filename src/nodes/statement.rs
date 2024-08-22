@@ -1,3 +1,4 @@
+use crate::ast_type::AstType2;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::{
   ast::{
@@ -5,8 +6,9 @@ use oxc::{
     match_declaration, match_module_declaration,
   },
   span::GetSpan,
-  syntax::node,
 };
+
+const AST_TYPE: AstType2 = AstType2::Statement;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {}

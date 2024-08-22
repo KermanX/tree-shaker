@@ -1,5 +1,8 @@
+use crate::ast_type::AstType2;
 use crate::{entity::Entity, transformer::Transformer, Analyzer};
 use oxc::ast::ast::Expression;
+
+const AST_TYPE: AstType2 = AstType2::Expression;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -19,13 +22,13 @@ impl<'a> Analyzer<'a> {
       _ => todo!(),
     };
 
-    self.set_data(node, Data { val: val.1.clone() });
+    self.set_data(AST_TYPE, node, Data { val: val.1.clone() });
 
     val
   }
 
   pub(crate) fn calc_expression(&self, node: &'a Expression) -> Entity {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     data.val.clone()
   }

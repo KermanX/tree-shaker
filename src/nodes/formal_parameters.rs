@@ -1,8 +1,11 @@
+use crate::ast_type::AstType2;
 use crate::{
   nodes::binding_pattern::BindingPatternSource, symbol::arguments::ArgumentsEntity,
   transformer::Transformer, Analyzer,
 };
 use oxc::ast::ast::FormalParameters;
+
+const AST_TYPE: AstType2 = AstType2::FormalParameters;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {}
@@ -30,7 +33,7 @@ impl<'a> Transformer<'a> {
     &mut self,
     node: FormalParameters<'a>,
   ) -> FormalParameters<'a> {
-    let data = self.get_data::<Data>(&node);
+    let data = self.get_data::<Data>(AST_TYPE, &node);
     let FormalParameters { span, items, rest, kind, .. } = node;
 
     let mut transformed_items = self.ast_builder.vec();

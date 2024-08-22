@@ -1,9 +1,12 @@
+use crate::ast_type::AstType2;
 use crate::{
   analyzer::Analyzer,
   entity::{object::ObjectEntity, Entity},
   transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, ObjectExpression, ObjectPropertyKind};
+
+const AST_TYPE: AstType2 = AstType2::ObjectExpression;
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> (bool, Entity) {

@@ -1,5 +1,8 @@
+use crate::ast_type::AstType2;
 use crate::{entity::Entity, transformer::Transformer, Analyzer};
 use oxc::{ast::ast::PropertyKey, span::GetSpan};
+
+const AST_TYPE: AstType2 = AstType2::PropertyKey;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -20,13 +23,13 @@ impl<'a> Analyzer<'a> {
       }
     };
 
-    self.set_data(node, Data { value: value.clone() });
+    self.set_data(AST_TYPE, node, Data { value: value.clone() });
 
     (effect, value)
   }
 
   pub(crate) fn calc_property_key(&self, node: &'a PropertyKey) -> Entity {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     data.value.clone()
   }
@@ -38,7 +41,7 @@ impl<'a> Transformer<'a> {
     node: PropertyKey<'a>,
     need_val: bool,
   ) -> Option<PropertyKey<'a>> {
-    let data = self.get_data::<Data>(&node);
+    let data = self.get_data::<Data>(AST_TYPE, &node);
 
     match node {
       PropertyKey::StaticIdentifier(_) | PropertyKey::PrivateIdentifier(_) => {

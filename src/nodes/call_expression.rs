@@ -1,11 +1,11 @@
-use crate::{
-  build_effect_from_arr, entity::Entity, symbol::arguments::ArgumentsEntity,
-  transformer::Transformer, Analyzer,
-};
+use crate::ast_type::AstType2;
+use crate::{build_effect_from_arr, entity::Entity, transformer::Transformer, Analyzer};
 use oxc::{
   ast::ast::{CallExpression, Expression, TSTypeParameterInstantiation},
   span::GetSpan,
 };
+
+const AST_TYPE: AstType2 = AstType2::CallExpression;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -40,7 +40,7 @@ impl<'a> Transformer<'a> {
     node: CallExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(&node);
+    let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let span = node.span();
 

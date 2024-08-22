@@ -1,4 +1,7 @@
+use crate::ast_type::AstType2;
+use oxc::span::Span;
 use regex::Regex;
+use rustc_hash::FxHashMap;
 use std::cell::LazyCell;
 
 const NUMERIC_REGEX: LazyCell<Regex> = LazyCell::new(|| Regex::new(r"^[0-9]+$").unwrap());
@@ -10,3 +13,5 @@ pub(crate) fn is_numeric_string(s: &str) -> bool {
 pub(crate) struct DataPlaceholder<'a> {
   _phantom: std::marker::PhantomData<&'a ()>,
 }
+
+pub(crate) type ExtraData<'a> = FxHashMap<AstType2, FxHashMap<Span, Box<DataPlaceholder<'a>>>>;

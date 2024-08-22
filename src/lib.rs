@@ -1,14 +1,15 @@
 mod analyzer;
+mod ast_type;
 mod builtins;
 mod data;
 mod effect_builder;
 mod entity;
 mod nodes;
 mod symbol;
-mod transformer;
-mod utils;
 #[cfg(test)]
 mod tests;
+mod transformer;
+mod utils;
 
 use analyzer::Analyzer;
 use oxc::{

@@ -1,4 +1,4 @@
-use crate::{entity::Entity, utils::DataPlaceholder};
+use crate::{ast_type::AstType2, entity::Entity, utils::ExtraData};
 use oxc::{
   allocator::Allocator,
   ast::{
@@ -7,7 +7,6 @@ use oxc::{
   },
   span::{GetSpan, SourceType, Span, SPAN},
 };
-use rustc_hash::FxHashMap;
 use std::{
   mem,
   sync::atomic::{AtomicUsize, Ordering},
@@ -16,11 +15,11 @@ use std::{
 pub(crate) struct Transformer<'a> {
   allocator: &'a Allocator,
   pub ast_builder: AstBuilder<'a>,
-  pub data: FxHashMap<Span, Box<DataPlaceholder<'a>>>,
+  pub data: ExtraData<'a>,
 }
 
 impl<'a> Transformer<'a> {
-  pub fn new(allocator: &'a Allocator, data: FxHashMap<Span, Box<DataPlaceholder<'a>>>) -> Self {
+  pub fn new(allocator: &'a Allocator, data: ExtraData<'a>) -> Self {
     Transformer { allocator, ast_builder: AstBuilder::new(allocator), data }
   }
 
@@ -79,15 +78,15 @@ impl<'a> Transformer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn get_data_by_span<D: Default + 'a>(&self, span: Span) -> &'a D {
-    let existing = self.data.get(&span);
+  pub(crate) fn get_data_by_span<D: Default + 'a>(&self, ast_type: AstType2, span: Span) -> &'a D {
+    let existing = self.data.get(&ast_type).and_then(|map| map.get(&span));
     match existing {
       Some(boxed) => unsafe { mem::transmute(boxed.as_ref()) },
       None => self.allocator.alloc(D::default()),
     }
   }
 
-  pub(crate) fn get_data<D: Default + 'a>(&self, node: &dyn GetSpan) -> &'a D {
-    self.get_data_by_span(node.span())
+  pub(crate) fn get_data<D: Default + 'a>(&self, ast_type: AstType2, node: &dyn GetSpan) -> &'a D {
+    self.get_data_by_span(ast_type, node.span())
   }
 }

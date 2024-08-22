@@ -1,9 +1,12 @@
+use crate::ast_type::AstType2;
 use crate::{analyzer::Analyzer, build_effect, entity::Entity, Transformer};
 use oxc::{
   ast::ast::{Expression, LogicalExpression, LogicalOperator},
   span::GetSpan,
 };
 use std::rc::Rc;
+
+const AST_TYPE: AstType2 = AstType2::LogicalExpression;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -43,7 +46,7 @@ impl<'a> Analyzer<'a> {
       },
     };
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
 
     data.need_left |= left_effect || need_left_val;
     data.need_right |= need_right_val;
@@ -58,7 +61,7 @@ impl<'a> Transformer<'a> {
     node: LogicalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(&node);
+    let data = self.get_data::<Data>(AST_TYPE, &node);
     let span = node.span();
 
     let need_left = need_val && data.need_left;

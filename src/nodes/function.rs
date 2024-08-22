@@ -1,7 +1,13 @@
+use crate::ast_type::AstType2;
 use crate::{
-  entity::{function::FunctionEntity, Entity}, symbol::{arguments::ArgumentsEntity, SymbolSource}, transformer::Transformer, Analyzer
+  entity::{function::FunctionEntity, Entity},
+  symbol::{arguments::ArgumentsEntity, SymbolSource},
+  transformer::Transformer,
+  Analyzer,
 };
 use oxc::ast::ast::Function;
+
+const AST_TYPE: AstType2 = AstType2::Function;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -14,7 +20,7 @@ impl<'a> Analyzer<'a> {
       self.declare_symbol(SymbolSource::Function(node), id.symbol_id.get().unwrap());
     }
 
-    self.set_data(node, Data { referred: self.exporting });
+    self.set_data(AST_TYPE, node, Data { referred: self.exporting });
 
     (false, Entity::Function(FunctionEntity::new(node.span)))
   }
@@ -24,7 +30,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub(crate) fn refer_function(&mut self, node: &'a Function<'a>) {
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.referred = true;
   }
 
@@ -41,7 +47,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_function(&self, node: Function<'a>) -> Option<Function<'a>> {
-    let data = self.get_data::<Data>(&node);
+    let data = self.get_data::<Data>(AST_TYPE, &node);
 
     if !data.referred {
       return None;

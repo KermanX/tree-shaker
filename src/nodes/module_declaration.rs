@@ -1,5 +1,8 @@
+use crate::ast_type::AstType2;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::{ExportNamedDeclaration, ModuleDeclaration, ModuleExportName};
+
+const AST_TYPE: AstType2 = AstType2::ModuleDeclaration;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {}

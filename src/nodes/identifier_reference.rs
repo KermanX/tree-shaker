@@ -1,5 +1,8 @@
+use crate::ast_type::AstType2;
 use crate::{entity::Entity, transformer::Transformer, Analyzer};
 use oxc::ast::ast::IdentifierReference;
+
+const AST_TYPE: AstType2 = AstType2::IdentifierReference;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -15,7 +18,7 @@ impl<'a> Analyzer<'a> {
     assert!(reference.is_read());
     let symbol = reference.symbol_id();
 
-    self.set_data(node, Data { resolvable: symbol.is_some() });
+    self.set_data(AST_TYPE, node, Data { resolvable: symbol.is_some() });
 
     if let Some(symbol) = symbol {
       (false, self.calc_symbol(&symbol))
@@ -39,7 +42,7 @@ impl<'a> Transformer<'a> {
     node: IdentifierReference<'a>,
     need_val: bool,
   ) -> Option<IdentifierReference<'a>> {
-    let data = self.get_data::<Data>(&node);
+    let data = self.get_data::<Data>(AST_TYPE, &node);
 
     (!data.resolvable || need_val).then(|| node)
   }
