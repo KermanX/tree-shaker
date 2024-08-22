@@ -13,6 +13,9 @@ impl<'a> Analyzer<'a> {
     if let Some(id) = &node.id {
       self.declare_symbol(SymbolSource::Function(node), id.symbol_id.get().unwrap());
     }
+
+    self.set_data(node, Data { referred: self.exporting });
+
     (false, Entity::Function(FunctionEntity::new(node.span)))
   }
 

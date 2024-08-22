@@ -1,5 +1,5 @@
 use crate::{transformer::Transformer, Analyzer};
-use oxc::ast::ast::{ExportNamedDeclaration, ModuleDeclaration};
+use oxc::ast::ast::{ExportNamedDeclaration, ModuleDeclaration, ModuleExportName};
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {}
@@ -8,7 +8,20 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
     match node {
       ModuleDeclaration::ExportNamedDeclaration(node) => {
+        self.exporting = true;
         node.declaration.as_ref().map(|declaration| self.exec_declaration(declaration));
+        for specifier in &node.specifiers {
+          match &specifier.local {
+            ModuleExportName::IdentifierReference(node) => {
+              self.exec_identifier_reference_export(node);
+            }
+            _ => unreachable!(),
+          }
+        }
+        self.exporting = false;
+      }
+      ModuleDeclaration::ExportDefaultDeclaration(node) => {
+        todo!()
       }
       _ => todo!(),
     }

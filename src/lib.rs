@@ -5,7 +5,7 @@ mod effect_builder;
 mod entity;
 mod nodes;
 mod symbol;
-mod test;
+mod tests;
 mod transformer;
 mod utils;
 
@@ -36,14 +36,9 @@ pub fn tree_shake(source_text: &str) -> TreeShakeReturn {
   let sematic_builder = SemanticBuilder::new(source_text, source_type);
   let sematic = sematic_builder.build(&ast1).semantic;
 
+  // Step 1: Analyze the program
   let mut analyzer = Analyzer::new(&allocator, sematic);
-
-  // Step 1: Execute the program
   analyzer.exec_program(ast1);
-
-  // Step 2: Execute exports
-  // TODO:
-
   let Analyzer { data, .. } = analyzer;
 
   // Step 3: Remove dead code (transform)

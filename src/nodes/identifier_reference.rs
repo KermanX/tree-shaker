@@ -13,16 +13,23 @@ impl<'a> Analyzer<'a> {
   ) -> (bool, Entity) {
     let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
     assert!(reference.is_read());
-    let symbol_id = reference.symbol_id();
+    let symbol = reference.symbol_id();
 
-    self.set_data(node, Data { resolvable: symbol_id.is_some() });
+    self.set_data(node, Data { resolvable: symbol.is_some() });
 
-    if let Some(symbol_id) = symbol_id {
-      (false, self.calc_symbol(symbol_id))
+    if let Some(symbol) = symbol {
+      (false, self.calc_symbol(&symbol))
     } else {
       // TODO: Handle globals
       (true, Entity::Unknown)
     }
+  }
+
+  pub(crate) fn exec_identifier_reference_export(&mut self, node: &'a IdentifierReference) {
+    let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
+    assert!(reference.is_read());
+    let symbol = reference.symbol_id().unwrap();
+    self.exports.push(symbol);
   }
 }
 

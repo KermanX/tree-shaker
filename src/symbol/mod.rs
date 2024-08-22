@@ -37,8 +37,8 @@ impl<'a> Analyzer<'a> {
     self.symbol_source.insert(symbol, source);
   }
 
-  pub(crate) fn get_symbol_source(&self, symbol: SymbolId) -> SymbolSource<'a> {
-    *self.symbol_source.get(&symbol).unwrap()
+  pub(crate) fn get_symbol_source(&self, symbol: &SymbolId) -> SymbolSource<'a> {
+    *self.symbol_source.get(symbol).unwrap()
   }
 
   pub(crate) fn calc_source(&self, source: SymbolSource<'a>) -> Entity {
@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub(crate) fn calc_symbol(&self, symbol: SymbolId) -> Entity {
+  pub(crate) fn calc_symbol(&self, symbol: &SymbolId) -> Entity {
     self.calc_source(self.get_symbol_source(symbol))
   }
 
@@ -68,7 +68,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub(crate) fn read_symbol(&mut self, symbol: SymbolId) {
+  pub(crate) fn read_symbol(&mut self, symbol: &SymbolId) {
     self.read_source(self.get_symbol_source(symbol))
   }
 

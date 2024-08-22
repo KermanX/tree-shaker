@@ -100,7 +100,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    self.set_data(node, Data { init_val, referred: false });
+    self.set_data(node, Data { init_val, referred: self.exporting });
 
     effect
   }

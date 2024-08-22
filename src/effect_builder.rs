@@ -50,7 +50,7 @@ macro_rules! build_effect_from_arr {
   ($builder:expr, $span:expr, $($x:expr),+ $(,)?; $val:expr) => {
     {
       let mut exprs = $builder.vec();
-      $($x.into_iter().map(|x| x.map(|e| exprs.push(e)));)*
+      $(for x in $x { x.map(|e| exprs.push(e)); })*
       if exprs.is_empty() {
         Some($val)
       }

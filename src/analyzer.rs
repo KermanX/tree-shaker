@@ -10,15 +10,17 @@ use std::mem;
 
 pub(crate) struct Analyzer<'a> {
   allocator: &'a Allocator,
-  pub sematic: Semantic<'a>,
-  pub functions: FxHashMap<Span, &'a Function<'a>>,
-  pub symbol_source: FxHashMap<SymbolId, SymbolSource<'a>>,
-  pub data: FxHashMap<Span, Box<DataPlaceholder<'a>>>,
-  pub indeterminate: bool,
+  pub(crate) sematic: Semantic<'a>,
+  pub(crate) functions: FxHashMap<Span, &'a Function<'a>>,
+  pub(crate) symbol_source: FxHashMap<SymbolId, SymbolSource<'a>>,
+  pub(crate) data: FxHashMap<Span, Box<DataPlaceholder<'a>>>,
+  pub(crate) indeterminate: bool,
+  pub(crate) exporting: bool,
+  pub(crate) exports: Vec<SymbolId>,
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new(allocator: &'a Allocator, sematic: Semantic<'a>) -> Self {
+  pub(crate) fn new(allocator: &'a Allocator, sematic: Semantic<'a>) -> Self {
     Analyzer {
       allocator,
       sematic,
@@ -26,12 +28,19 @@ impl<'a> Analyzer<'a> {
       symbol_source: FxHashMap::default(),
       data: FxHashMap::default(),
       indeterminate: false,
+      exporting: false,
+      exports: Vec::new(),
     }
   }
 
-  pub fn exec_program(&mut self, ast: &'a Program<'a>) {
+  pub(crate) fn exec_program(&mut self, ast: &'a Program<'a>) {
     for statement in &ast.body {
       self.exec_statement(statement);
+    }
+
+    for symbol in self.exports.clone() {
+      // TODO: Should consume the symbol
+      self.read_symbol(&symbol);
     }
   }
 }
