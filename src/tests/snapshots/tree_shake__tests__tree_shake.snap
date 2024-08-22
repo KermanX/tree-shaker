@@ -4,4 +4,7 @@ expression: output
 ---
 export let a = 2;
 export { b };
-let { b } = { b: 2 };
+let { b } = {
+	b: 2,
+	d: effect
+};

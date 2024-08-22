@@ -11,7 +11,7 @@ fn test_1() {
       export let a = 1 && 2;
       export { b };
       let c = 3;
-      let { b, d } = { b: 2 };
+      let { ["b"]: b, d } = { b: 2, d: effect };
       "#,
   );
 }

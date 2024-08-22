@@ -36,26 +36,27 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
+  /// Returns (computed, node)
   pub(crate) fn transform_property_key(
     &self,
     node: PropertyKey<'a>,
     need_val: bool,
-  ) -> Option<PropertyKey<'a>> {
+  ) -> Option<(bool, PropertyKey<'a>)> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     match node {
       PropertyKey::StaticIdentifier(_) | PropertyKey::PrivateIdentifier(_) => {
-        need_val.then_some(node)
+        need_val.then_some((false, node))
       }
       _ => match &data.value {
         Entity::StringLiteral(s) => {
           let span = node.span();
           self.transform_expression(TryFrom::try_from(node).unwrap(), false);
-          Some(self.ast_builder.property_key_identifier_name(span, s))
+          Some((false, self.ast_builder.property_key_identifier_name(span, s)))
         }
         _ => {
           let expr = self.transform_expression(node.try_into().unwrap(), need_val);
-          expr.map(|e| self.ast_builder.property_key_expression(e))
+          expr.map(|e| (true, self.ast_builder.property_key_expression(e)))
         }
       },
     }

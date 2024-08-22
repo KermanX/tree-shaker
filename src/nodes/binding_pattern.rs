@@ -193,18 +193,14 @@ impl<'a> Transformer<'a> {
         let ObjectPattern { span, properties, rest, .. } = node.unbox();
         let mut transformed_properties = self.ast_builder.vec();
         for property in properties {
-          let BindingProperty { span, key, value, shorthand, computed, .. } = property;
+          let BindingProperty { span, key, value, shorthand, .. } = property;
           let key_span = key.span();
           let value = self.transform_binding_pattern(value);
           if let Some(value) = value {
-            transformed_properties.push(self.ast_builder.binding_property(
-              span,
-              self.transform_property_key(key, true).unwrap(),
-              value,
-              shorthand,
-              computed,
-            ));
-          } else if let Some(key) = self.transform_property_key(key, false) {
+            let (computed, key) = self.transform_property_key(key, true).unwrap();
+            transformed_properties
+              .push(self.ast_builder.binding_property(span, key, value, shorthand, computed));
+          } else if let Some((computed, key)) = self.transform_property_key(key, false) {
             transformed_properties.push(self.ast_builder.binding_property(
               span,
               key,
