@@ -36,7 +36,7 @@ impl<'a> Analyzer<'a> {
         Entity::Union(_) => exec_unknown(),
         _ => unreachable!(),
       },
-      LogicalOperator::Coalesce => match left_val.is_nullable() {
+      LogicalOperator::Coalesce => match left_val.is_null_or_undefined() {
         Some(true) => (exec_right(), false, true),
         Some(false) => (left_val, true, false),
         None => exec_unknown(),

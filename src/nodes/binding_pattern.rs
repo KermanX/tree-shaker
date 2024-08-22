@@ -3,9 +3,11 @@ use std::rc::Rc;
 use crate::{entity::Entity, symbol::SymbolSource, transformer::Transformer, Analyzer};
 use oxc::{
   ast::ast::{
-    BindingPattern, BindingPatternKind, BindingRestElement, FormalParameter, VariableDeclarator,
+    ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,
+    BindingRestElement, FormalParameter, ObjectPattern, TSTypeAnnotation, VariableDeclarator,
   },
   semantic::SymbolId,
+  span::GetSpan,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -74,7 +76,7 @@ impl<'a> Analyzer<'a> {
         // TODO: rest
       }
       BindingPatternKind::AssignmentPattern(node) => {
-        let is_nullable = init_val.is_nullable();
+        let is_nullable = init_val.is_null_or_undefined();
         let binding_val = match is_nullable {
           Some(true) => self.calc_expression(&node.right),
           Some(false) => init_val.clone(),
@@ -170,6 +172,106 @@ impl<'a> Transformer<'a> {
     node: BindingPattern<'a>,
   ) -> Option<BindingPattern<'a>> {
     let data = self.get_data::<Data>(&node);
-    todo!()
+
+    let BindingPattern { kind, .. } = node;
+
+    match kind {
+      BindingPatternKind::BindingIdentifier(node) => {
+        if data.referred {
+          Some(self.ast_builder.binding_pattern(
+            self.ast_builder.binding_pattern_kind_from_binding_identifier(node),
+            None::<TSTypeAnnotation>,
+            false,
+          ))
+        } else {
+          None
+        }
+      }
+      BindingPatternKind::ObjectPattern(node) => {
+        let ObjectPattern { span, properties, rest, .. } = node.unbox();
+        let mut transformed_properties = self.ast_builder.vec();
+        for property in properties {
+          let BindingProperty { span, key, value, shorthand, computed, .. } = property;
+          let key_span = key.span();
+          let value = self.transform_binding_pattern(value);
+          if let Some(value) = value {
+            transformed_properties.push(self.ast_builder.binding_property(
+              span,
+              self.transform_property_key(key, true).unwrap(),
+              value,
+              shorthand,
+              computed,
+            ));
+          } else if let Some(key) = self.transform_property_key(key, false) {
+            transformed_properties.push(self.ast_builder.binding_property(
+              span,
+              key,
+              self.new_unused_binding_pattern(key_span),
+              shorthand,
+              computed,
+            ));
+          }
+        }
+        let rest = rest.and_then(|rest| self.transform_binding_rest_element(rest.unbox()));
+        if transformed_properties.is_empty() && rest.is_none() {
+          None
+        } else {
+          Some(self.ast_builder.binding_pattern(
+            self.ast_builder.binding_pattern_kind_object_pattern(
+              span,
+              transformed_properties,
+              rest,
+            ),
+            None::<TSTypeAnnotation>,
+            false,
+          ))
+        }
+      }
+      BindingPatternKind::ArrayPattern(node) => {
+        let ArrayPattern { span, elements, rest, .. } = node.unbox();
+        let mut transformed_elements = self.ast_builder.vec();
+        for element in elements {
+          transformed_elements
+            .push(element.and_then(|element| self.transform_binding_pattern(element)));
+        }
+        let rest = rest.and_then(|rest| self.transform_binding_rest_element(rest.unbox()));
+
+        while transformed_elements.last().is_none() {
+          transformed_elements.pop();
+        }
+
+        if transformed_elements.is_empty() && rest.is_none() {
+          None
+        } else {
+          Some(self.ast_builder.binding_pattern(
+            self.ast_builder.binding_pattern_kind_array_pattern(span, transformed_elements, rest),
+            None::<TSTypeAnnotation>,
+            false,
+          ))
+        }
+      }
+      BindingPatternKind::AssignmentPattern(node) => {
+        let AssignmentPattern { span, left, right, .. } = node.unbox();
+        let left_span = left.span();
+        let left: Option<BindingPattern> = self.transform_binding_pattern(left);
+        let right = match data.init_val.is_null_or_undefined() {
+          Some(false) => None,
+          _ => self.transform_expression(right, left.is_some()),
+        };
+        if let Some(right) = right {
+          Some(self.ast_builder.binding_pattern(
+            self.ast_builder.binding_pattern_kind_assignment_pattern(
+              span,
+              left.unwrap_or(self.new_unused_binding_pattern(left_span)),
+              right,
+            ),
+            None::<TSTypeAnnotation>,
+            false,
+          ))
+        } else {
+          left
+        }
+      }
+    }
   }
 }

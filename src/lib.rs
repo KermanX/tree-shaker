@@ -5,6 +5,7 @@ mod effect_builder;
 mod entity;
 mod nodes;
 mod symbol;
+mod test;
 mod transformer;
 mod utils;
 

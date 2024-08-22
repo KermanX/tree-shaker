@@ -29,6 +29,9 @@ impl<'a> Transformer<'a> {
   pub(crate) fn transform_statement(&self, node: Statement<'a>) -> Option<Statement<'a>> {
     let span = node.span();
     match node {
+      match_declaration!(Statement) => self
+        .transform_declaration(node.try_into().unwrap())
+        .map(|decl| self.ast_builder.statement_declaration(decl)),
       Statement::ExpressionStatement(node) => {
         let ExpressionStatement { expression, .. } = node.unbox();
         self

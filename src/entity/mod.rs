@@ -61,10 +61,6 @@ impl Entity {
     ])
   }
 
-  pub fn is_null_or_undefined(&self) -> bool {
-    matches!(self, Entity::Null | Entity::Undefined)
-  }
-
   pub fn is_numeric(&self) -> bool {
     matches!(
       self,
