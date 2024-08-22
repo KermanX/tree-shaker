@@ -5,9 +5,10 @@ mod effect_builder;
 mod entity;
 mod nodes;
 mod symbol;
-mod tests;
 mod transformer;
 mod utils;
+#[cfg(test)]
+mod tests;
 
 use analyzer::Analyzer;
 use oxc::{
