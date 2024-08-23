@@ -10,3 +10,4 @@ let { b } = {
 };
 effect4;
 if (effect) effect5;
+while (effect7);

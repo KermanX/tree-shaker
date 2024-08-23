@@ -28,6 +28,7 @@ impl<'a> Analyzer<'a> {
       Statement::ExpressionStatement(node) => self.exec_expression(&node.expression).0,
       Statement::BlockStatement(node) => self.exec_block_statement(node),
       Statement::IfStatement(node) => self.exec_if_statement(node),
+      Statement::WhileStatement(node) => self.exec_while_statement(node),
       _ => todo!(),
     }
   }
@@ -53,6 +54,7 @@ impl<'a> Transformer<'a> {
       }
       Statement::BlockStatement(node) => self.transform_block_statement(node.unbox()),
       Statement::IfStatement(node) => self.transform_if_statement(node.unbox()),
+      Statement::WhileStatement(node) => self.transform_while_statement(node.unbox()),
       _ => todo!(),
     }
   }

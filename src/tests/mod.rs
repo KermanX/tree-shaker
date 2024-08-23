@@ -24,6 +24,14 @@ fn test_1() {
       if (effect) {
         effect5;
       }
+
+      while(0) {
+        effect6;
+      }
+
+      while(effect7) {
+        0;
+      }
       "#,
   );
 }

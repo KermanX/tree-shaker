@@ -46,10 +46,10 @@ impl<'a> Transformer<'a> {
 
     let IfStatement { span, test, consequent, alternate, .. } = node;
 
+    let test = self.transform_expression(test, data.maybe_true && data.maybe_false);
     let consequent = data.maybe_true.then(|| self.transform_statement(consequent));
     let alternate =
       data.maybe_false.then(|| alternate.and_then(|alt| self.transform_statement(alt)));
-    let test = self.transform_expression(test, data.maybe_true && data.maybe_false);
 
     let mut statements = self.ast_builder.vec();
 
