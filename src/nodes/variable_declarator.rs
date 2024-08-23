@@ -6,10 +6,7 @@ use oxc::{ast::ast::VariableDeclarator, semantic::SymbolId, span::GetSpan};
 const AST_TYPE: AstType2 = AstType2::VariableDeclarator;
 
 #[derive(Debug, Default, Clone)]
-pub struct Data {
-  init_effect: bool,
-  init_val: Entity,
-}
+pub struct Data {}
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_variable_declarator(&mut self, node: &'a VariableDeclarator) -> bool {
@@ -23,8 +20,6 @@ impl<'a> Analyzer<'a> {
       BindingPatternSource::VariableDeclarator(node),
       init_val.clone(),
     );
-
-    self.set_data(AST_TYPE, node, Data { init_effect, init_val });
 
     init_effect
   }
@@ -51,8 +46,6 @@ impl<'a> Transformer<'a> {
     &self,
     node: VariableDeclarator<'a>,
   ) -> Option<VariableDeclarator<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
-
     let VariableDeclarator { span, kind, id, init, .. } = node;
 
     let id_span = id.span();

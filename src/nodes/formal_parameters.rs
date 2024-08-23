@@ -23,7 +23,8 @@ impl<'a> Analyzer<'a> {
     }
 
     if let Some(rest) = &node.rest {
-      self.exec_binding_rest_element(rest, BindingPatternSource::BindingRestElement(rest));
+      let init_val = self.calc_source(resolved.1);
+      self.exec_binding_rest_element(rest, BindingPatternSource::BindingRestElement(rest), init_val);
     }
   }
 }

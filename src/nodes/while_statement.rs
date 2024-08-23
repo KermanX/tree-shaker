@@ -43,8 +43,6 @@ impl<'a> Transformer<'a> {
     let WhileStatement { span, test, body, .. } = node;
     let body_span = body.span();
 
-    print!("data: {:?}\n", data);
-
     let test = self.transform_expression(test, data.need_loop);
     let body = data.need_loop.then(|| self.transform_statement(body)).flatten();
 

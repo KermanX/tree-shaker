@@ -62,7 +62,9 @@ impl<'a> Analyzer<'a> {
             (*init_val.get_property(&key_val)).clone(),
           );
         }
-        // TODO: rest
+        if let Some(rest) = &node.rest {
+          effect |= self.exec_binding_rest_element(rest, source, todo!());
+        }
       }
       BindingPatternKind::ArrayPattern(node) => {
         for (index, element) in node.elements.iter().enumerate() {
@@ -75,7 +77,9 @@ impl<'a> Analyzer<'a> {
             );
           }
         }
-        // TODO: rest
+        if let Some(rest) = &node.rest {
+          effect |= self.exec_binding_rest_element(rest, source, todo!());
+        }
       }
       BindingPatternKind::AssignmentPattern(node) => {
         let is_nullable = init_val.is_null_or_undefined();
