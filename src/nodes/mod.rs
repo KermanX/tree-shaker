@@ -15,6 +15,7 @@ mod logical_expression;
 mod module_declaration;
 mod object_expression;
 mod property_key;
+mod return_statement;
 mod statement;
 mod variable_declarator;
 mod while_statement;

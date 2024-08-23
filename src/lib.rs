@@ -5,6 +5,7 @@ mod data;
 mod effect_builder;
 mod entity;
 mod nodes;
+mod scope;
 mod symbol;
 #[cfg(test)]
 mod tests;

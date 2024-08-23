@@ -1,4 +1,4 @@
-use crate::{ast::AstType2, symbol::SymbolSource, utils::ExtraData};
+use crate::{ast::AstType2, scope::ScopeContext, symbol::SymbolSource, utils::ExtraData};
 use oxc::{
   allocator::Allocator,
   ast::ast::{Function, Program},
@@ -17,6 +17,7 @@ pub(crate) struct Analyzer<'a> {
   pub(crate) indeterminate: bool,
   pub(crate) exporting: bool,
   pub(crate) exports: Vec<SymbolId>,
+  pub(crate) scope_context: ScopeContext<'a>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -30,6 +31,7 @@ impl<'a> Analyzer<'a> {
       indeterminate: false,
       exporting: false,
       exports: Vec::new(),
+      scope_context: ScopeContext::new(),
     }
   }
 
