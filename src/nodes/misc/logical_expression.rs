@@ -1,5 +1,5 @@
 use crate::ast::AstType2;
-use crate::{analyzer::Analyzer, build_effect, entity::Entity, Transformer};
+use crate::{analyzer::Analyzer, build_effect, entity::EntityValue, Transformer};
 use oxc::{
   ast::ast::{Expression, LogicalExpression, LogicalOperator},
   span::GetSpan,
@@ -15,7 +15,10 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_logical_expression(&mut self, node: &'a LogicalExpression) -> (bool, Entity) {
+  pub(crate) fn exec_logical_expression(
+    &mut self,
+    node: &'a LogicalExpression,
+  ) -> (bool, EntityValue) {
     let (left_effect, left_val) = self.exec_expression(&node.left);
     let mut right_effect = false;
     let mut exec_right = || {
@@ -24,7 +27,7 @@ impl<'a> Analyzer<'a> {
       val
     };
     let mut exec_unknown =
-      || (Entity::Union(vec![Rc::new(left_val.clone()), Rc::new(exec_right())]), true, true);
+      || (EntityValue::Union(vec![Rc::new(left_val.clone()), Rc::new(exec_right())]), true, true);
 
     let (value, need_left_val, need_right_val) = match &node.operator {
       LogicalOperator::And => match left_val.to_boolean() {

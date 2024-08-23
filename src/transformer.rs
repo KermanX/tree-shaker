@@ -1,6 +1,6 @@
 use crate::{
   ast::AstType2,
-  entity::Entity,
+  entity::EntityValue,
   utils::{DataPlaceholder, ExtraData},
 };
 use oxc::{
@@ -51,18 +51,24 @@ impl<'a> Transformer<'a> {
     self.ast_builder.program(span, source_type, hashbang, directives, new_statements)
   }
 
-  pub(crate) fn entity_to_expression(&self, span: Span, value: &Entity) -> Option<Expression<'a>> {
+  pub(crate) fn entity_to_expression(
+    &self,
+    span: Span,
+    value: &EntityValue,
+  ) -> Option<Expression<'a>> {
     match value {
-      Entity::StringLiteral(s) => Some(self.ast_builder.expression_string_literal(span, s.clone())),
-      Entity::NumberLiteral(n) => Some(self.ast_builder.expression_numeric_literal(
+      EntityValue::StringLiteral(s) => {
+        Some(self.ast_builder.expression_string_literal(span, s.clone()))
+      }
+      EntityValue::NumberLiteral(n) => Some(self.ast_builder.expression_numeric_literal(
         span,
         *n,
         n.to_string(),
         NumberBase::Decimal,
       )),
-      Entity::BooleanLiteral(b) => Some(self.ast_builder.expression_boolean_literal(span, *b)),
-      Entity::Null => Some(self.ast_builder.expression_null_literal(span)),
-      Entity::Undefined => {
+      EntityValue::BooleanLiteral(b) => Some(self.ast_builder.expression_boolean_literal(span, *b)),
+      EntityValue::Null => Some(self.ast_builder.expression_null_literal(span)),
+      EntityValue::Undefined => {
         Some(self.ast_builder.expression_identifier_reference(span, "undefined"))
       }
       _ => None,

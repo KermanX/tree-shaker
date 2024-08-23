@@ -1,5 +1,5 @@
 pub mod arguments;
-use crate::{analyzer::Analyzer, entity::Entity};
+use crate::{analyzer::Analyzer, entity::EntityValue};
 use arguments::ArgumentsSource;
 use oxc::{
   ast::ast::{
@@ -31,7 +31,7 @@ impl<'a> Analyzer<'a> {
     *self.symbol_source.get(symbol).unwrap()
   }
 
-  pub(crate) fn calc_source(&self, source: SymbolSource<'a>) -> Entity {
+  pub(crate) fn calc_source(&self, source: SymbolSource<'a>) -> EntityValue {
     match source {
       SymbolSource::VariableDeclarator(node, symbol) => self.calc_variable_declarator(node, symbol),
       SymbolSource::Function(node) => self.calc_function(node),
@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub(crate) fn calc_symbol(&self, symbol: &SymbolId) -> Entity {
+  pub(crate) fn calc_symbol(&self, symbol: &SymbolId) -> EntityValue {
     self.calc_source(self.get_symbol_source(symbol))
   }
 
@@ -61,21 +61,25 @@ impl<'a> Analyzer<'a> {
     self.read_source(self.get_symbol_source(symbol))
   }
 
-  pub(crate) fn read_symbol_member(&mut self, symbol: SymbolId, member: Entity) -> Entity {
+  pub(crate) fn read_symbol_member(
+    &mut self,
+    symbol: SymbolId,
+    member: EntityValue,
+  ) -> EntityValue {
     todo!()
   }
 
   pub(crate) fn call_symbol(
     &mut self,
     symbol: SymbolId,
-    this: Entity,
+    this: EntityValue,
     args: &'a dyn ArgumentsSource<'a>,
-  ) -> (bool, Entity) {
+  ) -> (bool, EntityValue) {
     let source = self.symbol_source.get(&symbol).expect("Missing declaration");
 
     match source {
       SymbolSource::Function(node) => self.call_function(node, this, args),
-      _ => (true, Entity::Unknown),
+      _ => (true, EntityValue::Unknown),
     }
   }
 }

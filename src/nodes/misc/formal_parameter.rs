@@ -1,6 +1,6 @@
 use super::binding_pattern::BindingPatternSource;
 use crate::ast::AstType2;
-use crate::{entity::Entity, symbol::SymbolSource, transformer::Transformer, Analyzer};
+use crate::{entity::EntityValue, symbol::SymbolSource, transformer::Transformer, Analyzer};
 use oxc::{allocator::Vec, ast::ast::FormalParameter, semantic::SymbolId};
 
 const AST_TYPE: AstType2 = AstType2::FormalParameter;
@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
     &self,
     node: &'a FormalParameter<'a>,
     symbol: SymbolId,
-  ) -> Entity {
+  ) -> EntityValue {
     self.calc_binding_pattern(&node.pattern, symbol).unwrap()
   }
 }

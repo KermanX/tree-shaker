@@ -1,7 +1,7 @@
 use crate::ast::AstType2;
 use crate::{
   analyzer::Analyzer,
-  entity::{object::ObjectEntity, Entity},
+  entity::{object::ObjectEntity, EntityValue},
   transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, ObjectExpression, ObjectPropertyKind};
@@ -9,7 +9,10 @@ use oxc::ast::ast::{Expression, ObjectExpression, ObjectPropertyKind};
 const AST_TYPE: AstType2 = AstType2::ObjectExpression;
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> (bool, Entity) {
+  pub(crate) fn exec_object_expression(
+    &mut self,
+    node: &'a ObjectExpression,
+  ) -> (bool, EntityValue) {
     let mut effect = false;
     let mut value = ObjectEntity::default();
 
@@ -25,7 +28,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    (effect, Entity::Object(value))
+    (effect, EntityValue::Object(value))
   }
 }
 

@@ -1,4 +1,4 @@
-use crate::entity::Entity;
+use crate::entity::EntityValue;
 use oxc::ast::ast::{ArrowFunctionExpression, Function};
 use std::rc::Rc;
 
@@ -13,7 +13,7 @@ pub(crate) struct FunctionScope<'a> {
   pub(crate) node: FunctionScopeNode<'a>,
   /// `None` for indeterminate
   pub(crate) returned: Option<bool>,
-  pub(crate) returned_value: Vec<Rc<Entity>>,
+  pub(crate) returned_value: Vec<Rc<EntityValue>>,
 }
 
 impl<'a> FunctionScope<'a> {

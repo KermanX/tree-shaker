@@ -3,18 +3,18 @@ mod literals;
 mod object_expression;
 
 use crate::ast::AstType2;
-use crate::{entity::Entity, transformer::Transformer, Analyzer};
+use crate::{entity::EntityValue, transformer::Transformer, Analyzer};
 use oxc::ast::ast::Expression;
 
 const AST_TYPE: AstType2 = AstType2::Expression;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
-  val: Entity,
+  val: EntityValue,
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_expression(&mut self, node: &'a Expression) -> (bool, Entity) {
+  pub(crate) fn exec_expression(&mut self, node: &'a Expression) -> (bool, EntityValue) {
     let val = match node {
       Expression::NumericLiteral(node) => self.exc_numeric_literal(node),
       Expression::StringLiteral(node) => self.exec_string_literal(node),
@@ -31,7 +31,7 @@ impl<'a> Analyzer<'a> {
     val
   }
 
-  pub(crate) fn calc_expression(&self, node: &'a Expression) -> Entity {
+  pub(crate) fn calc_expression(&self, node: &'a Expression) -> EntityValue {
     let data = self.get_data::<Data>(AST_TYPE, node);
 
     data.val.clone()

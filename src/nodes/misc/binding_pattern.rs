@@ -1,5 +1,5 @@
 use crate::ast::AstType2;
-use crate::{entity::Entity, symbol::SymbolSource, transformer::Transformer, Analyzer};
+use crate::{entity::EntityValue, symbol::SymbolSource, transformer::Transformer, Analyzer};
 use oxc::{
   ast::ast::{
     ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,
@@ -35,7 +35,7 @@ impl<'a> BindingPatternSource<'a> {
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
-  init_val: Entity,
+  init_val: EntityValue,
   referred: bool,
 }
 
@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a BindingPattern<'a>,
     source: BindingPatternSource<'a>,
-    init_val: Entity,
+    init_val: EntityValue,
   ) -> bool {
     let mut effect = false;
     match &node.kind {
@@ -69,7 +69,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ArrayPattern(node) => {
         for (index, element) in node.elements.iter().enumerate() {
           if let Some(element) = element {
-            let key_val = Entity::StringLiteral(index.to_string());
+            let key_val = EntityValue::StringLiteral(index.to_string());
             effect |= self.exec_binding_pattern(
               element,
               source,
@@ -86,7 +86,7 @@ impl<'a> Analyzer<'a> {
         let binding_val = match is_nullable {
           Some(true) => self.calc_expression(&node.right),
           Some(false) => init_val.clone(),
-          None => Entity::Union(vec![
+          None => EntityValue::Union(vec![
             Rc::new(self.calc_expression(&node.right)),
             Rc::new(init_val.clone()),
           ])
@@ -115,7 +115,7 @@ impl<'a> Analyzer<'a> {
     &self,
     node: &'a BindingPattern<'a>,
     symbol: SymbolId,
-  ) -> Option<Entity> {
+  ) -> Option<EntityValue> {
     let data = self.get_data::<Data>(AST_TYPE, node);
 
     match &node.kind {

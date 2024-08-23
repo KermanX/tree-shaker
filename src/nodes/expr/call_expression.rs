@@ -1,6 +1,6 @@
 use crate::ast::AstType2;
 use crate::entity::simple_literal::{combine_simple_literal, SimpleLiteral};
-use crate::{build_effect_from_arr, entity::Entity, transformer::Transformer, Analyzer};
+use crate::{build_effect_from_arr, entity::EntityValue, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{CallExpression, Expression, TSTypeParameterInstantiation};
 
 const AST_TYPE: AstType2 = AstType2::CallExpression;
@@ -12,13 +12,13 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_call_expression(&mut self, node: &'a CallExpression) -> (bool, Entity) {
+  pub(crate) fn exec_call_expression(&mut self, node: &'a CallExpression) -> (bool, EntityValue) {
     let (callee_effect, callee_val) = self.exec_expression(&node.callee);
 
     let (args_effect, args_val) = self.exec_arguments(&node.arguments);
 
     // TODO: Track `this`. Refer https://github.com/oxc-project/oxc/issues/4341
-    let (call_effect, ret_val) = callee_val.call(self, Entity::Unknown, args_val);
+    let (call_effect, ret_val) = callee_val.call(self, EntityValue::Unknown, args_val);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     combine_simple_literal(&mut data.ret_val, &ret_val);

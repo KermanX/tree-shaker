@@ -1,6 +1,6 @@
 use super::binding_pattern::BindingPatternSource;
 use crate::ast::AstType2;
-use crate::{entity::Entity, transformer::Transformer, Analyzer};
+use crate::{entity::EntityValue, transformer::Transformer, Analyzer};
 use oxc::{ast::ast::VariableDeclarator, semantic::SymbolId, span::GetSpan};
 
 const AST_TYPE: AstType2 = AstType2::VariableDeclarator;
@@ -12,7 +12,7 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_variable_declarator(&mut self, node: &'a VariableDeclarator) -> bool {
     let (init_effect, init_val) = match &node.init {
       Some(init) => self.exec_expression(init),
-      None => (false, Entity::Undefined),
+      None => (false, EntityValue::Undefined),
     };
 
     self.exec_binding_pattern(
@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
     &self,
     node: &'a VariableDeclarator,
     symbol: SymbolId,
-  ) -> Entity {
+  ) -> EntityValue {
     self.calc_binding_pattern(&node.id, symbol).unwrap()
   }
 

@@ -14,7 +14,7 @@ use std::rc::Rc;
 use symbol::SymbolEntity;
 
 #[derive(Debug, Clone)]
-pub enum Entity {
+pub enum EntityValue {
   StringLiteral(String),
   /// `true` for numeric string, `false` for unknown
   NonEmptyString(bool),
@@ -43,35 +43,35 @@ pub enum Entity {
 
   Array(ArrayEntity),
 
-  Union(Vec<Rc<Entity>>),
+  Union(Vec<Rc<EntityValue>>),
 
   Unknown,
 }
 
-impl Default for Entity {
+impl Default for EntityValue {
   fn default() -> Self {
-    Entity::Unknown
+    EntityValue::Unknown
   }
 }
 
-impl Entity {
+impl EntityValue {
   pub fn new_unknown_boolean() -> Self {
-    Entity::Union(vec![
-      Rc::new(Entity::StringLiteral("true".to_string())),
-      Rc::new(Entity::StringLiteral("false".to_string())),
+    EntityValue::Union(vec![
+      Rc::new(EntityValue::StringLiteral("true".to_string())),
+      Rc::new(EntityValue::StringLiteral("false".to_string())),
     ])
   }
 
   pub fn is_numeric(&self) -> bool {
     matches!(
       self,
-      Entity::NumberLiteral(_)
-        | Entity::NonZeroNumber
-        | Entity::UnknownNumber
-        | Entity::BigIntLiteral(_)
-        | Entity::NonZeroBigInt
-        | Entity::UnknownBigInt
-        | Entity::NonEmptyString(true)
+      EntityValue::NumberLiteral(_)
+        | EntityValue::NonZeroNumber
+        | EntityValue::UnknownNumber
+        | EntityValue::BigIntLiteral(_)
+        | EntityValue::NonZeroBigInt
+        | EntityValue::UnknownBigInt
+        | EntityValue::NonEmptyString(true)
     )
   }
 }

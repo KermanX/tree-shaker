@@ -1,40 +1,41 @@
-use super::{array::ArrayEntity, Entity};
+use super::{array::ArrayEntity, EntityValue};
 use std::rc::Rc;
 
-impl Entity {
-  pub fn to_property_key(&self) -> Entity {
+impl EntityValue {
+  pub fn to_property_key(&self) -> EntityValue {
     match self {
-      Entity::StringLiteral(str) => Entity::StringLiteral(str.clone()),
-      Entity::NonEmptyString(numeric) => Entity::NonEmptyString(numeric.clone()),
-      Entity::NumberLiteral(num) => Entity::StringLiteral(num.to_string()),
-      Entity::BigIntLiteral(num) => Entity::StringLiteral(num.to_string()),
-      Entity::BooleanLiteral(bool) => Entity::StringLiteral(bool.to_string()),
-      Entity::Null => Entity::StringLiteral("null".to_string()),
-      Entity::Undefined => Entity::StringLiteral("undefined".to_string()),
-      Entity::Symbol(symbol) => Entity::Symbol(symbol.clone()),
-      Entity::UnknownSymbol => Entity::UnknownSymbol,
+      EntityValue::StringLiteral(str) => EntityValue::StringLiteral(str.clone()),
+      EntityValue::NonEmptyString(numeric) => EntityValue::NonEmptyString(numeric.clone()),
+      EntityValue::NumberLiteral(num) => EntityValue::StringLiteral(num.to_string()),
+      EntityValue::BigIntLiteral(num) => EntityValue::StringLiteral(num.to_string()),
+      EntityValue::BooleanLiteral(bool) => EntityValue::StringLiteral(bool.to_string()),
+      EntityValue::Null => EntityValue::StringLiteral("null".to_string()),
+      EntityValue::Undefined => EntityValue::StringLiteral("undefined".to_string()),
+      EntityValue::Symbol(symbol) => EntityValue::Symbol(symbol.clone()),
+      EntityValue::UnknownSymbol => EntityValue::UnknownSymbol,
 
-      Entity::NonZeroNumber
-      | Entity::UnknownNumber
-      | Entity::NonZeroBigInt
-      | Entity::UnknownBigInt
-      | Entity::Function(_)
-      | Entity::UnknownFunction => Entity::NonEmptyString(true),
+      EntityValue::NonZeroNumber
+      | EntityValue::UnknownNumber
+      | EntityValue::NonZeroBigInt
+      | EntityValue::UnknownBigInt
+      | EntityValue::Function(_)
+      | EntityValue::UnknownFunction => EntityValue::NonEmptyString(true),
 
       // TODO: Side effect in toString
-      Entity::Object(_) | Entity::Array(_) => Entity::UnknownString,
+      EntityValue::Object(_) | EntityValue::Array(_) => EntityValue::UnknownString,
 
-      Entity::UnknownString | Entity::Unknown => Entity::UnknownString,
+      EntityValue::UnknownString | EntityValue::Unknown => EntityValue::UnknownString,
 
-      Entity::Union(values) => {
-        Entity::Union(values.iter().map(|value| Rc::new(value.to_string())).collect()).simplify()
+      EntityValue::Union(values) => {
+        EntityValue::Union(values.iter().map(|value| Rc::new(value.to_string())).collect())
+          .simplify()
       }
     }
   }
 
-  pub fn to_string(&self) -> Entity {
+  pub fn to_string(&self) -> EntityValue {
     match self.to_property_key() {
-      Entity::Symbol(_) | Entity::UnknownSymbol => Entity::NonEmptyString(false),
+      EntityValue::Symbol(_) | EntityValue::UnknownSymbol => EntityValue::NonEmptyString(false),
       str => str,
     }
   }
@@ -42,24 +43,25 @@ impl Entity {
   /// `None` for unknown
   pub fn to_boolean(&self) -> Option<bool> {
     match self {
-      Entity::StringLiteral(str) => Some(!str.is_empty()),
-      Entity::NumberLiteral(num) => Some(*num != 0.0),
-      Entity::BigIntLiteral(num) => Some(*num != 0),
-      Entity::BooleanLiteral(bool) => Some(bool.clone()),
-      Entity::NonEmptyString(_)
-      | Entity::NonZeroNumber
-      | Entity::NonZeroBigInt
-      | Entity::Symbol(_)
-      | Entity::UnknownSymbol
-      | Entity::Object(_)
-      | Entity::Array(_)
-      | Entity::Function(_)
-      | Entity::UnknownFunction => Some(true),
-      Entity::Null | Entity::Undefined => Some(false),
-      Entity::UnknownString | Entity::UnknownNumber | Entity::UnknownBigInt | Entity::Unknown => {
-        None
-      }
-      Entity::Union(values) => {
+      EntityValue::StringLiteral(str) => Some(!str.is_empty()),
+      EntityValue::NumberLiteral(num) => Some(*num != 0.0),
+      EntityValue::BigIntLiteral(num) => Some(*num != 0),
+      EntityValue::BooleanLiteral(bool) => Some(bool.clone()),
+      EntityValue::NonEmptyString(_)
+      | EntityValue::NonZeroNumber
+      | EntityValue::NonZeroBigInt
+      | EntityValue::Symbol(_)
+      | EntityValue::UnknownSymbol
+      | EntityValue::Object(_)
+      | EntityValue::Array(_)
+      | EntityValue::Function(_)
+      | EntityValue::UnknownFunction => Some(true),
+      EntityValue::Null | EntityValue::Undefined => Some(false),
+      EntityValue::UnknownString
+      | EntityValue::UnknownNumber
+      | EntityValue::UnknownBigInt
+      | EntityValue::Unknown => None,
+      EntityValue::Union(values) => {
         let boolean = values[0].to_boolean()?;
         for value in &values[1..] {
           if value.to_boolean()? != boolean {
@@ -74,8 +76,8 @@ impl Entity {
   /// `None` for unknown
   pub fn is_null_or_undefined(&self) -> Option<bool> {
     match self {
-      Entity::Null | Entity::Undefined => Some(true),
-      Entity::Union(values) => {
+      EntityValue::Null | EntityValue::Undefined => Some(true),
+      EntityValue::Union(values) => {
         let nullable = values[0].is_null_or_undefined()?;
         for value in &values[1..] {
           if value.is_null_or_undefined()? != nullable {
@@ -84,7 +86,7 @@ impl Entity {
         }
         Some(nullable)
       }
-      Entity::Unknown => None,
+      EntityValue::Unknown => None,
       _ => Some(false),
     }
   }

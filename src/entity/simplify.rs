@@ -2,24 +2,24 @@ use rustc_hash::FxHashSet;
 
 use crate::utils::is_numeric_string;
 
-use super::Entity;
+use super::EntityValue;
 use std::{ops::Deref, rc::Rc};
 
-impl Entity {
-  pub fn simplify(&self) -> Entity {
+impl EntityValue {
+  pub fn simplify(&self) -> EntityValue {
     match self {
-      Entity::Union(values) => Self::simplify_union(values),
+      EntityValue::Union(values) => Self::simplify_union(values),
       other => other.clone(),
     }
   }
 
-  pub(crate) fn simplify_union(values: &Vec<Rc<Entity>>) -> Entity {
-    let values: Vec<Rc<Entity>> = values
+  pub(crate) fn simplify_union(values: &Vec<Rc<EntityValue>>) -> EntityValue {
+    let values: Vec<Rc<EntityValue>> = values
       .iter()
       .flat_map(|e| {
         let entity = e.simplify();
         match entity {
-          Entity::Union(values) => values,
+          EntityValue::Union(values) => values,
           _ => vec![Rc::new(entity.clone())],
         }
       })
@@ -33,12 +33,12 @@ impl Entity {
 
     for value in values.iter() {
       match value.deref() {
-        Entity::UnknownString => has_unknown_string = true,
-        Entity::UnknownNumber => has_unknown_number = true,
-        Entity::UnknownBigInt => has_unknown_bigint = true,
-        Entity::UnknownSymbol => has_unknown_symbol = true,
-        Entity::UnknownFunction => has_unknown_function = true,
-        Entity::Unknown => return Entity::Unknown,
+        EntityValue::UnknownString => has_unknown_string = true,
+        EntityValue::UnknownNumber => has_unknown_number = true,
+        EntityValue::UnknownBigInt => has_unknown_bigint = true,
+        EntityValue::UnknownSymbol => has_unknown_symbol = true,
+        EntityValue::UnknownFunction => has_unknown_function = true,
+        EntityValue::Unknown => return EntityValue::Unknown,
         _ => {}
       }
     }
@@ -50,10 +50,10 @@ impl Entity {
 
     for value in values.iter() {
       match value.deref() {
-        Entity::NonEmptyString(true) if !has_unknown_string => has_numeric_string = true,
-        Entity::NonEmptyString(false) if !has_unknown_string => has_non_empty_string = true,
-        Entity::NonZeroNumber if !has_unknown_number => has_non_zero_number = true,
-        Entity::NonZeroBigInt if !has_unknown_bigint => has_non_zero_bigint = true,
+        EntityValue::NonEmptyString(true) if !has_unknown_string => has_numeric_string = true,
+        EntityValue::NonEmptyString(false) if !has_unknown_string => has_non_empty_string = true,
+        EntityValue::NonZeroNumber if !has_unknown_number => has_non_zero_number = true,
+        EntityValue::NonZeroBigInt if !has_unknown_bigint => has_non_zero_bigint = true,
         _ => {}
       }
     }
@@ -69,11 +69,11 @@ impl Entity {
     let mut has_boolean_false = false;
     let mut has_null = false;
     let mut has_undefined = false;
-    let mut has_others = Vec::<Rc<Entity>>::default();
+    let mut has_others = Vec::<Rc<EntityValue>>::default();
 
     for value in values.iter() {
       match value.deref() {
-        Entity::StringLiteral(str) if !has_unknown_string => {
+        EntityValue::StringLiteral(str) if !has_unknown_string => {
           if !has_non_empty_string {
             if !has_numeric_string || !is_numeric_string(str.as_str()) {
               has_string_literal.insert(str.clone());
@@ -83,7 +83,7 @@ impl Entity {
             has_non_empty_string = false;
           }
         }
-        Entity::NumberLiteral(num) if !has_unknown_number => {
+        EntityValue::NumberLiteral(num) if !has_unknown_number => {
           if !has_non_zero_number {
             if !has_number_literal.contains(num) {
               has_number_literal.push(*num);
@@ -93,7 +93,7 @@ impl Entity {
             has_non_zero_number = false;
           }
         }
-        Entity::BigIntLiteral(num) if !has_unknown_bigint => {
+        EntityValue::BigIntLiteral(num) if !has_unknown_bigint => {
           if !has_non_zero_bigint {
             has_bigint_literal.insert(*num);
           } else if *num == 0 {
@@ -101,75 +101,75 @@ impl Entity {
             has_non_zero_bigint = false;
           }
         }
-        Entity::BooleanLiteral(true) => has_boolean_true = true,
-        Entity::BooleanLiteral(false) => has_boolean_false = true,
-        Entity::Null => {
+        EntityValue::BooleanLiteral(true) => has_boolean_true = true,
+        EntityValue::BooleanLiteral(false) => has_boolean_false = true,
+        EntityValue::Null => {
           has_null = true;
         }
-        Entity::Undefined => {
+        EntityValue::Undefined => {
           has_undefined = true;
         }
-        Entity::Symbol(_) if !has_unknown_symbol => {
+        EntityValue::Symbol(_) if !has_unknown_symbol => {
           // TODO: Handle same symbol
           has_others.push(value.clone());
         }
-        Entity::Function(_) if !has_unknown_function => {
+        EntityValue::Function(_) if !has_unknown_function => {
           // TODO: Handle same function
           has_others.push(value.clone());
         }
-        Entity::Array(_) | Entity::Object(_) => {
+        EntityValue::Array(_) | EntityValue::Object(_) => {
           has_others.push(value.clone());
         }
         _ => {}
       }
     }
 
-    let mut result: Vec<Rc<Entity>> = Vec::new();
+    let mut result: Vec<Rc<EntityValue>> = Vec::new();
 
     if has_unknown_string {
-      result.push(Rc::new(Entity::UnknownString));
+      result.push(Rc::new(EntityValue::UnknownString));
     }
     if has_numeric_string {
-      result.push(Rc::new(Entity::NonEmptyString(true)));
+      result.push(Rc::new(EntityValue::NonEmptyString(true)));
     }
     if has_non_empty_string {
-      result.push(Rc::new(Entity::NonEmptyString(false)));
+      result.push(Rc::new(EntityValue::NonEmptyString(false)));
     }
     for str in has_string_literal {
-      result.push(Rc::new(Entity::StringLiteral(str)));
+      result.push(Rc::new(EntityValue::StringLiteral(str)));
     }
     if has_unknown_number {
-      result.push(Rc::new(Entity::UnknownNumber));
+      result.push(Rc::new(EntityValue::UnknownNumber));
     }
     if has_non_zero_number {
-      result.push(Rc::new(Entity::NonZeroNumber));
+      result.push(Rc::new(EntityValue::NonZeroNumber));
     }
     for num in has_number_literal {
-      result.push(Rc::new(Entity::NumberLiteral(num)));
+      result.push(Rc::new(EntityValue::NumberLiteral(num)));
     }
     if has_unknown_bigint {
-      result.push(Rc::new(Entity::UnknownBigInt));
+      result.push(Rc::new(EntityValue::UnknownBigInt));
     }
     if has_non_zero_bigint {
-      result.push(Rc::new(Entity::NonZeroBigInt));
+      result.push(Rc::new(EntityValue::NonZeroBigInt));
     }
     for num in has_bigint_literal {
-      result.push(Rc::new(Entity::BigIntLiteral(num)));
+      result.push(Rc::new(EntityValue::BigIntLiteral(num)));
     }
     if has_boolean_true {
-      result.push(Rc::new(Entity::BooleanLiteral(true)));
+      result.push(Rc::new(EntityValue::BooleanLiteral(true)));
     }
     if has_boolean_false {
-      result.push(Rc::new(Entity::BooleanLiteral(false)));
+      result.push(Rc::new(EntityValue::BooleanLiteral(false)));
     }
     if has_null {
-      result.push(Rc::new(Entity::Null));
+      result.push(Rc::new(EntityValue::Null));
     }
     if has_undefined {
-      result.push(Rc::new(Entity::Undefined));
+      result.push(Rc::new(EntityValue::Undefined));
     }
     if has_unknown_symbol {
-      result.push(Rc::new(Entity::UnknownSymbol));
+      result.push(Rc::new(EntityValue::UnknownSymbol));
     }
     for value in has_others {
       result.push(value);
@@ -178,7 +178,7 @@ impl Entity {
     if result.len() == 1 {
       result[0].deref().clone()
     } else {
-      Entity::Union(result)
+      EntityValue::Union(result)
     }
   }
 }

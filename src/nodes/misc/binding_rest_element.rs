@@ -1,6 +1,6 @@
 use super::binding_pattern::BindingPatternSource;
 use crate::ast::AstType2;
-use crate::{entity::Entity, transformer::Transformer, Analyzer};
+use crate::{entity::EntityValue, transformer::Transformer, Analyzer};
 use oxc::{ast::ast::BindingRestElement, semantic::SymbolId};
 
 const AST_TYPE: AstType2 = AstType2::BindingRestElement;
@@ -13,7 +13,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a BindingRestElement<'a>,
     source: BindingPatternSource<'a>,
-    init_val: Entity,
+    init_val: EntityValue,
   ) -> bool {
     self.exec_binding_pattern(&node.argument, source, init_val)
   }
@@ -22,7 +22,7 @@ impl<'a> Analyzer<'a> {
     &self,
     node: &'a BindingRestElement<'a>,
     symbol: SymbolId,
-  ) -> Option<Entity> {
+  ) -> Option<EntityValue> {
     self.calc_binding_pattern(&node.argument, symbol)
   }
 

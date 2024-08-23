@@ -1,19 +1,19 @@
 use crate::ast::AstType2;
-use crate::{entity::Entity, transformer::Transformer, Analyzer};
+use crate::{entity::EntityValue, transformer::Transformer, Analyzer};
 use oxc::{ast::ast::PropertyKey, span::GetSpan};
 
 const AST_TYPE: AstType2 = AstType2::PropertyKey;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
-  value: Entity,
+  value: EntityValue,
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_property_key(&mut self, node: &'a PropertyKey) -> (bool, Entity) {
+  pub(crate) fn exec_property_key(&mut self, node: &'a PropertyKey) -> (bool, EntityValue) {
     let (effect, value) = match node {
       PropertyKey::StaticIdentifier(node) => {
-        (false, Entity::StringLiteral(node.name.clone().into_string()))
+        (false, EntityValue::StringLiteral(node.name.clone().into_string()))
       }
       PropertyKey::PrivateIdentifier(node) => todo!(),
       node => {
@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
     (effect, value)
   }
 
-  pub(crate) fn calc_property_key(&self, node: &'a PropertyKey) -> Entity {
+  pub(crate) fn calc_property_key(&self, node: &'a PropertyKey) -> EntityValue {
     let data = self.get_data::<Data>(AST_TYPE, node);
 
     data.value.clone()
@@ -49,7 +49,7 @@ impl<'a> Transformer<'a> {
         need_val.then_some((false, node))
       }
       _ => match &data.value {
-        Entity::StringLiteral(s) => {
+        EntityValue::StringLiteral(s) => {
           let span = node.span();
           self.transform_expression(TryFrom::try_from(node).unwrap(), false);
           Some((false, self.ast_builder.property_key_identifier_name(span, s)))

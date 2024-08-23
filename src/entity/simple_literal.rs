@@ -1,4 +1,4 @@
-use super::Entity;
+use super::EntityValue;
 use crate::{transformer::Transformer, utils::F64WithEq};
 use oxc::{
   ast::ast::{BigintBase, Expression, NumberBase},
@@ -18,21 +18,21 @@ pub(crate) enum SimpleLiteral {
   Undefined,
 }
 
-impl Entity {
+impl EntityValue {
   pub(crate) fn to_simple_literal(&self) -> SimpleLiteral {
     match self.simplify() {
-      Entity::StringLiteral(str) => SimpleLiteral::String(str),
-      Entity::NumberLiteral(num) => SimpleLiteral::Number(num.into()),
-      Entity::BigIntLiteral(num) => SimpleLiteral::BigInt(num),
-      Entity::BooleanLiteral(bool) => SimpleLiteral::Boolean(bool),
-      Entity::Null => SimpleLiteral::Null,
-      Entity::Undefined => SimpleLiteral::Undefined,
+      EntityValue::StringLiteral(str) => SimpleLiteral::String(str),
+      EntityValue::NumberLiteral(num) => SimpleLiteral::Number(num.into()),
+      EntityValue::BigIntLiteral(num) => SimpleLiteral::BigInt(num),
+      EntityValue::BooleanLiteral(bool) => SimpleLiteral::Boolean(bool),
+      EntityValue::Null => SimpleLiteral::Null,
+      EntityValue::Undefined => SimpleLiteral::Undefined,
       _ => SimpleLiteral::None,
     }
   }
 }
 
-pub(crate) fn combine_simple_literal(this: &mut SimpleLiteral, other: &Entity) {
+pub(crate) fn combine_simple_literal(this: &mut SimpleLiteral, other: &EntityValue) {
   let other = other.to_simple_literal();
   if matches!(this, SimpleLiteral::None) {
     *this = other;

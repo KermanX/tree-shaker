@@ -1,4 +1,4 @@
-use super::Entity;
+use super::EntityValue;
 use crate::{symbol::arguments::ArgumentsSource, Analyzer};
 use oxc::span::Span;
 
@@ -15,9 +15,9 @@ impl FunctionEntity {
   pub(crate) fn call<'a>(
     &self,
     analyzer: &mut Analyzer<'a>,
-    this: Entity,
+    this: EntityValue,
     args: &'a dyn ArgumentsSource<'a>,
-  ) -> (bool, Entity) {
+  ) -> (bool, EntityValue) {
     let node = analyzer.functions.get(&self.span).unwrap();
     analyzer.call_function(node, this, args)
   }
