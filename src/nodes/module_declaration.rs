@@ -1,4 +1,4 @@
-use crate::ast_type::AstType2;
+use crate::ast::AstType2;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::{ExportNamedDeclaration, ModuleDeclaration, ModuleExportName};
 

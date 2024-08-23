@@ -1,5 +1,5 @@
 use super::binding_pattern::BindingPatternSource;
-use crate::ast_type::AstType2;
+use crate::ast::AstType2;
 use crate::{entity::Entity, transformer::Transformer, Analyzer};
 use oxc::{ast::ast::BindingRestElement, semantic::SymbolId};
 

@@ -1,4 +1,4 @@
-use crate::{ast_type::AstType2, symbol::SymbolSource, utils::ExtraData};
+use crate::{ast::AstType2, symbol::SymbolSource, utils::ExtraData};
 use oxc::{
   allocator::Allocator,
   ast::ast::{Function, Program},
@@ -9,7 +9,7 @@ use rustc_hash::FxHashMap;
 use std::mem;
 
 pub(crate) struct Analyzer<'a> {
-  allocator: &'a Allocator,
+  pub(crate) allocator: &'a Allocator,
   pub(crate) sematic: Semantic<'a>,
   pub(crate) functions: FxHashMap<Span, &'a Function<'a>>,
   pub(crate) symbol_source: FxHashMap<SymbolId, SymbolSource<'a>>,

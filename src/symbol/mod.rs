@@ -1,10 +1,10 @@
 pub mod arguments;
 use crate::{analyzer::Analyzer, entity::Entity};
-use arguments::ArgumentsEntity;
+use arguments::ArgumentsSource;
 use oxc::{
   ast::ast::{
-    AssignmentExpression, BindingRestElement, Class, Expression, FormalParameter, Function,
-    UsingDeclaration, VariableDeclarator,
+    AssignmentExpression, BindingRestElement, Class, FormalParameter, Function, UsingDeclaration,
+    VariableDeclarator,
   },
   semantic::SymbolId,
 };
@@ -17,7 +17,6 @@ pub enum SymbolSource<'a> {
   UsingDeclaration(&'a UsingDeclaration<'a>),
   FormalParameter(&'a FormalParameter<'a>, SymbolId),
   BindingRestElement(&'a BindingRestElement<'a>, SymbolId),
-  Expression(&'a Expression<'a>),
   Assignment(&'a AssignmentExpression<'a>, SymbolId),
   #[default]
   Unknown,
@@ -40,7 +39,6 @@ impl<'a> Analyzer<'a> {
       SymbolSource::BindingRestElement(node, symbol) => {
         self.calc_binding_rest_element(node, symbol).unwrap()
       }
-      SymbolSource::Expression(node) => self.calc_expression(node),
       _ => todo!(),
     }
   }
@@ -71,7 +69,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     symbol: SymbolId,
     this: Entity,
-    args: ArgumentsEntity<'a>,
+    args: &'a dyn ArgumentsSource<'a>,
   ) -> (bool, Entity) {
     let source = self.symbol_source.get(&symbol).expect("Missing declaration");
 

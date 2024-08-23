@@ -1,7 +1,7 @@
-use crate::ast_type::AstType2;
+use crate::ast::AstType2;
 use crate::{
   entity::{function::FunctionEntity, Entity},
-  symbol::{arguments::ArgumentsEntity, SymbolSource},
+  symbol::{arguments::ArgumentsSource, SymbolSource},
   transformer::Transformer,
   Analyzer,
 };
@@ -38,7 +38,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a Function<'a>,
     this: Entity,
-    args: ArgumentsEntity<'a>,
+    args: &'a dyn ArgumentsSource<'a>,
   ) -> (bool, Entity) {
     self.exec_formal_parameters(&node.params, args);
 

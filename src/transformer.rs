@@ -1,5 +1,5 @@
 use crate::{
-  ast_type::AstType2,
+  ast::AstType2,
   entity::Entity,
   utils::{DataPlaceholder, ExtraData},
 };

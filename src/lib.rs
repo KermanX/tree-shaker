@@ -1,5 +1,5 @@
 mod analyzer;
-mod ast_type;
+mod ast;
 mod builtins;
 mod data;
 mod effect_builder;

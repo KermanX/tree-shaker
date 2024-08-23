@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast_type::AstType2, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
 use oxc::{
   ast::ast::{Statement, WhileStatement},
   span::GetSpan,

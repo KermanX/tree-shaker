@@ -1,4 +1,4 @@
-use crate::ast_type::AstType2;
+use crate::ast::AstType2;
 use crate::{entity::Entity, symbol::SymbolSource, transformer::Transformer, Analyzer};
 use oxc::{
   ast::ast::{
@@ -158,7 +158,7 @@ impl<'a> Analyzer<'a> {
         node.rest.as_ref().map(|rest| self.refer_binding_rest_element(rest, symbol));
       }
       BindingPatternKind::ArrayPattern(node) => {
-        for (index, element) in node.elements.iter().enumerate() {
+        for element in &node.elements {
           if let Some(element) = element {
             self.refer_binding_pattern(&element, symbol);
           }

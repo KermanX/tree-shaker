@@ -1,3 +1,7 @@
+use oxc::{allocator::Vec, ast::ast::Argument};
+
+pub(crate) type Arguments<'a> = Vec<'a, Argument<'a>>;
+
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum AstType2 {
@@ -176,4 +180,5 @@ pub(crate) enum AstType2 {
   Declaration,
   Expression,
   Statement,
+  Arguments,
 }

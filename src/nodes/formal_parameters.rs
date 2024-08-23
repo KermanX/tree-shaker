@@ -1,6 +1,6 @@
-use crate::ast_type::AstType2;
+use crate::ast::AstType2;
 use crate::{
-  nodes::binding_pattern::BindingPatternSource, symbol::arguments::ArgumentsEntity,
+  nodes::binding_pattern::BindingPatternSource, symbol::arguments::ArgumentsSource,
   transformer::Transformer, Analyzer,
 };
 use oxc::ast::ast::FormalParameters;
@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_formal_parameters(
     &mut self,
     node: &'a FormalParameters<'a>,
-    args: ArgumentsEntity<'a>,
+    args: &'a dyn ArgumentsSource<'a>,
   ) {
     let resolved = args.resolve(node.items.len());
 
@@ -24,7 +24,11 @@ impl<'a> Analyzer<'a> {
 
     if let Some(rest) = &node.rest {
       let init_val = self.calc_source(resolved.1);
-      self.exec_binding_rest_element(rest, BindingPatternSource::BindingRestElement(rest), init_val);
+      self.exec_binding_rest_element(
+        rest,
+        BindingPatternSource::BindingRestElement(rest),
+        init_val,
+      );
     }
   }
 }

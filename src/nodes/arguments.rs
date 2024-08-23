@@ -1,17 +1,30 @@
-use crate::{symbol::SymbolSource, transformer::Transformer, Analyzer};
+use crate::{
+  ast::{Arguments, AstType2},
+  symbol::arguments::{ArgumentsSource, ArgumentsSourceFromNode},
+  transformer::Transformer,
+  Analyzer,
+};
 use oxc::{
   ast::ast::{Argument, Expression},
   span::GetSpan,
 };
 
+const AST_TYPE: AstType2 = AstType2::Arguments;
+
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_argument(&mut self, node: &'a Argument) -> (bool, (bool, SymbolSource<'a>)) {
-    let (expended, node) = match node {
-      Argument::SpreadElement(node) => (true, &node.argument),
-      _ => (false, node.to_expression()),
-    };
-    let effect = self.exec_expression(node).0;
-    (effect, (expended, SymbolSource::Expression(node)))
+  pub(crate) fn exec_arguments(
+    &mut self,
+    node: &'a Arguments<'a>,
+  ) -> (bool, &'a dyn ArgumentsSource<'a>) {
+    let mut effect = false;
+    for argument in node {
+      let expression = match argument {
+        Argument::SpreadElement(node) => &node.argument,
+        node => node.to_expression(),
+      };
+      effect |= self.exec_expression(expression).0;
+    }
+    (effect, self.allocator.alloc(ArgumentsSourceFromNode { node }))
   }
 }
 

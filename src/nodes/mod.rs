@@ -1,4 +1,4 @@
-mod argument;
+mod arguments;
 mod binding_pattern;
 mod binding_rest_element;
 mod block_statement;

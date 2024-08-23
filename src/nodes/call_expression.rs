@@ -1,6 +1,6 @@
-use crate::ast_type::AstType2;
+use crate::ast::AstType2;
 use crate::entity::simple_literal::{combine_simple_literal, SimpleLiteral};
-use crate::symbol::arguments::ArgumentsEntity;
+use crate::symbol::arguments::ArgumentsSource;
 use crate::{build_effect_from_arr, entity::Entity, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{CallExpression, Expression, TSTypeParameterInstantiation};
 
@@ -16,20 +16,10 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_call_expression(&mut self, node: &'a CallExpression) -> (bool, Entity) {
     let (callee_effect, callee_val) = self.exec_expression(&node.callee);
 
-    let mut args_effect = false;
-    let mut args_val = vec![];
-
-    for arg in &node.arguments {
-      let (effect, val) = self.exec_argument(arg);
-      args_effect |= effect;
-      args_val.push(val);
-    }
-
-    // let args = node.arguments.iter().map(|arg| self.exec_argument(arg)).collect::<Vec<_>>();
+    let (args_effect, args_val) = self.exec_arguments(&node.arguments);
 
     // TODO: Track `this`. Refer https://github.com/oxc-project/oxc/issues/4341
-    let (call_effect, ret_val) =
-      callee_val.call(self, Entity::Unknown, ArgumentsEntity::new(args_val));
+    let (call_effect, ret_val) = callee_val.call(self, Entity::Unknown, args_val);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     combine_simple_literal(&mut data.ret_val, &ret_val);

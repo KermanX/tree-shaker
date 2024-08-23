@@ -1,28 +1,25 @@
-use crate::symbol::SymbolSource;
+use crate::ast::Arguments;
 
-#[derive(Clone)]
-pub struct ArgumentsEntity<'a> {
-  args: Vec<(bool, SymbolSource<'a>)>,
+use super::SymbolSource;
+
+pub(crate) trait ArgumentsSource<'a> {
+  fn resolve(&self, length: usize) -> (Vec<SymbolSource<'a>>, SymbolSource<'a>);
 }
 
-impl<'a> ArgumentsEntity<'a> {
-  pub(crate) fn new(args: Vec<(bool, SymbolSource<'a>)>) -> Self {
-    ArgumentsEntity { args }
+pub(crate) struct ArgumentsSourceFromNode<'a> {
+  pub(crate) node: &'a Arguments<'a>,
+}
+
+impl<'a> ArgumentsSource<'a> for ArgumentsSourceFromNode<'a> {
+  fn resolve(&self, length: usize) -> (Vec<SymbolSource<'a>>, SymbolSource<'a>) {
+    todo!()
   }
+}
 
-  /// (args, rest)
-  pub(crate) fn resolve(self, length: usize) -> (Vec<SymbolSource<'a>>, SymbolSource<'a>) {
-    let mut resolved = vec![];
-    for (expend, arg) in self.args {
-      // TODO: handle expend
-      assert!(!expend, "not implemented");
-      resolved.push(arg);
-    }
+pub(crate) struct ArgumentsSourceUnknown {}
 
-    for _ in resolved.len()..length {
-      resolved.push(SymbolSource::Unknown);
-    }
-
-    (resolved, SymbolSource::Unknown)
+impl<'a> ArgumentsSource<'a> for ArgumentsSourceUnknown {
+  fn resolve(&self, length: usize) -> (Vec<SymbolSource<'a>>, SymbolSource<'a>) {
+    (vec![SymbolSource::Unknown; length], SymbolSource::Unknown)
   }
 }

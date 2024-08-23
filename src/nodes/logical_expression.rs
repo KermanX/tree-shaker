@@ -1,4 +1,4 @@
-use crate::ast_type::AstType2;
+use crate::ast::AstType2;
 use crate::{analyzer::Analyzer, build_effect, entity::Entity, Transformer};
 use oxc::{
   ast::ast::{Expression, LogicalExpression, LogicalOperator},

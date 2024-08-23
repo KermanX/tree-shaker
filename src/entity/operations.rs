@@ -1,5 +1,5 @@
 use crate::{
-  symbol::{arguments::ArgumentsEntity, SymbolSource},
+  symbol::arguments::{ArgumentsSource, ArgumentsSourceUnknown},
   Analyzer,
 };
 
@@ -22,7 +22,7 @@ impl Entity {
     &self,
     analyzer: &mut Analyzer<'a>,
     this: Entity,
-    args: ArgumentsEntity<'a>,
+    args: &'a dyn ArgumentsSource<'a>,
   ) -> (bool, Entity) {
     match self {
       Entity::Function(func) => func.call(analyzer, this, args),
@@ -43,11 +43,7 @@ impl Entity {
   pub fn consume<'a>(&self, analyzer: &mut Analyzer<'a>) {
     match self {
       Entity::Function(func) => {
-        func.call(
-          analyzer,
-          Entity::Unknown,
-          ArgumentsEntity::new(vec![(true, SymbolSource::Unknown)]),
-        );
+        func.call(analyzer, Entity::Unknown, analyzer.allocator.alloc(ArgumentsSourceUnknown {}));
       }
       Entity::Union(values) => {
         for value in values {
