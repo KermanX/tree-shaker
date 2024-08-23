@@ -67,7 +67,7 @@ impl<'a> Transformer<'a> {
           (None, Some(alternate)) => {
             statements.push(self.ast_builder.statement_if(
               span,
-              self.negate_expression(test),
+              self.build_negate_expression(test),
               alternate,
               None,
             ));

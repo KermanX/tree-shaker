@@ -204,7 +204,7 @@ impl<'a> Transformer<'a> {
             transformed_properties.push(self.ast_builder.binding_property(
               span,
               key,
-              self.new_unused_binding_pattern(key_span),
+              self.build_unused_binding_pattern(key_span),
               shorthand,
               computed,
             ));
@@ -260,7 +260,7 @@ impl<'a> Transformer<'a> {
           Some(self.ast_builder.binding_pattern(
             self.ast_builder.binding_pattern_kind_assignment_pattern(
               span,
-              left.unwrap_or(self.new_unused_binding_pattern(left_span)),
+              left.unwrap_or(self.build_unused_binding_pattern(left_span)),
               right,
             ),
             None::<TSTypeAnnotation>,

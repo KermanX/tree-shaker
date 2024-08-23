@@ -1,4 +1,8 @@
-use crate::{ast_type::AstType2, entity::Entity, utils::{DataPlaceholder, ExtraData}};
+use crate::{
+  ast_type::AstType2,
+  entity::Entity,
+  utils::{DataPlaceholder, ExtraData},
+};
 use oxc::{
   allocator::Allocator,
   ast::{
@@ -69,7 +73,7 @@ impl<'a> Transformer<'a> {
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn new_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
+  pub(crate) fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
     let name = format!("__unused_{}", COUNTER.fetch_add(1, Ordering::Relaxed));
     self.ast_builder.binding_pattern(
       self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
@@ -78,7 +82,7 @@ impl<'a> Transformer<'a> {
     )
   }
 
-  pub(crate) fn negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {
+  pub(crate) fn build_negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {
     self.ast_builder.expression_unary(expression.span(), UnaryOperator::LogicalNot, expression)
   }
 }

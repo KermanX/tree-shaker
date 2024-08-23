@@ -1,8 +1,5 @@
 pub mod arguments;
-use crate::{
-  analyzer::Analyzer,
-  entity::Entity,
-};
+use crate::{analyzer::Analyzer, entity::Entity};
 use arguments::ArgumentsEntity;
 use oxc::{
   ast::ast::{

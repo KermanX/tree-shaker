@@ -5,14 +5,13 @@ use oxc::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_argument(&mut self, node: &'a Argument) -> (bool, SymbolSource<'a>) {
-    match node {
-      Argument::SpreadElement(node) => (true, SymbolSource::Expression(&node.argument)),
-      _ => {
-        let node = node.to_expression();
-        (false, SymbolSource::Expression(node))
-      }
-    }
+  pub(crate) fn exec_argument(&mut self, node: &'a Argument) -> (bool, (bool, SymbolSource<'a>)) {
+    let (expended, node) = match node {
+      Argument::SpreadElement(node) => (true, &node.argument),
+      _ => (false, node.to_expression()),
+    };
+    let effect = self.exec_expression(node).0;
+    (effect, (expended, SymbolSource::Expression(node)))
   }
 }
 

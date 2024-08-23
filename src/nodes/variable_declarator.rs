@@ -63,7 +63,7 @@ impl<'a> Transformer<'a> {
       Some(self.ast_builder.variable_declarator(
         span,
         kind,
-        id.unwrap_or_else(|| self.new_unused_binding_pattern(id_span)),
+        id.unwrap_or_else(|| self.build_unused_binding_pattern(id_span)),
         Some(init),
         false,
       ))
