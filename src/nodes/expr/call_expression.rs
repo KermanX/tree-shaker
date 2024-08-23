@@ -1,6 +1,5 @@
 use crate::ast::AstType2;
 use crate::entity::simple_literal::{combine_simple_literal, SimpleLiteral};
-use crate::symbol::arguments::ArgumentsSource;
 use crate::{build_effect_from_arr, entity::Entity, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{CallExpression, Expression, TSTypeParameterInstantiation};
 

@@ -1,9 +1,8 @@
 use crate::ast::AstType2;
-use crate::{
-  nodes::binding_pattern::BindingPatternSource, symbol::arguments::ArgumentsSource,
-  transformer::Transformer, Analyzer,
-};
+use crate::{symbol::arguments::ArgumentsSource, transformer::Transformer, Analyzer};
 use oxc::ast::ast::FormalParameters;
+
+use super::binding_pattern::BindingPatternSource;
 
 const AST_TYPE: AstType2 = AstType2::FormalParameters;
 

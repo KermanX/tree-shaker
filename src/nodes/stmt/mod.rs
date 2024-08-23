@@ -1,3 +1,10 @@
+mod block_statement;
+mod declaration;
+mod if_statement;
+mod module_declaration;
+mod return_statement;
+mod while_statement;
+
 use crate::ast::AstType2;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::{

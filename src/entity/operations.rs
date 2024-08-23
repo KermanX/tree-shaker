@@ -30,7 +30,7 @@ impl Entity {
         let mut pure = true;
         let mut values = vec![];
         for func in funcs {
-          let ret = func.call(analyzer, this.clone(), args.clone());
+          let ret = func.call(analyzer, this.clone(), args);
           pure &= ret.0;
           values.push(Rc::new(ret.1));
         }

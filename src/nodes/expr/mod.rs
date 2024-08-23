@@ -1,3 +1,7 @@
+mod call_expression;
+mod literals;
+mod object_expression;
+
 use crate::ast::AstType2;
 use crate::{entity::Entity, transformer::Transformer, Analyzer};
 use oxc::ast::ast::Expression;
