@@ -1,4 +1,4 @@
-use crate::{ast_type::AstType2, entity::Entity, utils::ExtraData};
+use crate::{ast_type::AstType2, entity::Entity, utils::{DataPlaceholder, ExtraData}};
 use oxc::{
   allocator::Allocator,
   ast::{
@@ -87,7 +87,7 @@ impl<'a> Transformer<'a> {
   pub(crate) fn get_data_by_span<D: Default + 'a>(&self, ast_type: AstType2, span: Span) -> &'a D {
     let existing = self.data.get(&ast_type).and_then(|map| map.get(&span));
     match existing {
-      Some(boxed) => unsafe { mem::transmute(boxed.as_ref()) },
+      Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },
       None => self.allocator.alloc(D::default()),
     }
   }

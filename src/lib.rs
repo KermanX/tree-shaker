@@ -36,7 +36,7 @@ pub fn tree_shake(source_text: &str) -> TreeShakeReturn {
   let parser = Parser::new(&allocator, source_text, source_type);
   let ast2 = allocator.alloc(parser.parse().program);
   let sematic_builder = SemanticBuilder::new(source_text, source_type);
-  let sematic = sematic_builder.build(&ast1).semantic;
+  let sematic = sematic_builder.build(ast1).semantic;
 
   // Step 1: Analyze the program
   let mut analyzer = Analyzer::new(&allocator, sematic);

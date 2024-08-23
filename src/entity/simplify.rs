@@ -14,7 +14,7 @@ impl Entity {
   }
 
   pub(crate) fn simplify_union(values: &Vec<Rc<Entity>>) -> Entity {
-    let mut values: Vec<Rc<Entity>> = values
+    let values: Vec<Rc<Entity>> = values
       .iter()
       .flat_map(|e| {
         let entity = e.simplify();

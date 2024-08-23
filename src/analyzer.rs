@@ -1,8 +1,4 @@
-use crate::{
-  ast_type::AstType2,
-  symbol::SymbolSource,
-  utils::{DataPlaceholder, ExtraData},
-};
+use crate::{ast_type::AstType2, symbol::SymbolSource, utils::ExtraData};
 use oxc::{
   allocator::Allocator,
   ast::ast::{Function, Program},

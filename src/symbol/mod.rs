@@ -1,8 +1,7 @@
 pub mod arguments;
-
 use crate::{
   analyzer::Analyzer,
-  entity::{function::FunctionEntity, Entity},
+  entity::Entity,
 };
 use arguments::ArgumentsEntity;
 use oxc::{
@@ -13,7 +12,7 @@ use oxc::{
   semantic::SymbolId,
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub enum SymbolSource<'a> {
   VariableDeclarator(&'a VariableDeclarator<'a>, SymbolId),
   Function(&'a Function<'a>),
@@ -23,13 +22,8 @@ pub enum SymbolSource<'a> {
   BindingRestElement(&'a BindingRestElement<'a>, SymbolId),
   Expression(&'a Expression<'a>),
   Assignment(&'a AssignmentExpression<'a>, SymbolId),
+  #[default]
   Unknown,
-}
-
-impl Default for SymbolSource<'_> {
-  fn default() -> Self {
-    SymbolSource::Unknown
-  }
 }
 
 impl<'a> Analyzer<'a> {
