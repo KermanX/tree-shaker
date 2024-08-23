@@ -1,6 +1,5 @@
+use super::source::SymbolSource;
 use crate::ast::Arguments;
-
-use super::SymbolSource;
 
 pub(crate) trait ArgumentsSource<'a> {
   fn resolve(&self, length: usize) -> (Vec<SymbolSource<'a>>, SymbolSource<'a>);

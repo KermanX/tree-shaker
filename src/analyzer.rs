@@ -1,4 +1,4 @@
-use crate::{ast::AstType2, scope::ScopeContext, symbol::SymbolSource, utils::ExtraData};
+use crate::{ast::AstType2, entity::source::SymbolSource, scope::ScopeContext, utils::ExtraData};
 use oxc::{
   allocator::Allocator,
   ast::ast::{Function, Program},

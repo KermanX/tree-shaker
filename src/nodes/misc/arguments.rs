@@ -1,6 +1,6 @@
 use crate::{
   ast::{Arguments, AstType2},
-  symbol::arguments::{ArgumentsSource, ArgumentsSourceFromNode},
+  entity::arguments::{ArgumentsSource, ArgumentsSourceFromNode},
   transformer::Transformer,
   Analyzer,
 };

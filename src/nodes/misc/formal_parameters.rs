@@ -1,5 +1,6 @@
 use crate::ast::AstType2;
-use crate::{symbol::arguments::ArgumentsSource, transformer::Transformer, Analyzer};
+use crate::entity::arguments::ArgumentsSource;
+use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::FormalParameters;
 
 use super::binding_pattern::BindingPatternSource;

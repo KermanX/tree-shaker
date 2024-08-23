@@ -1,6 +1,5 @@
-pub mod arguments;
+use super::arguments::ArgumentsSource;
 use crate::{analyzer::Analyzer, entity::EntityValue};
-use arguments::ArgumentsSource;
 use oxc::{
   ast::ast::{
     AssignmentExpression, BindingRestElement, Class, FormalParameter, Function, UsingDeclaration,

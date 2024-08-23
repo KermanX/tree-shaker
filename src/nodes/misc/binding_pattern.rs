@@ -1,5 +1,6 @@
 use crate::ast::AstType2;
-use crate::{entity::EntityValue, symbol::SymbolSource, transformer::Transformer, Analyzer};
+use crate::entity::source::SymbolSource;
+use crate::{entity::EntityValue, transformer::Transformer, Analyzer};
 use oxc::{
   ast::ast::{
     ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,

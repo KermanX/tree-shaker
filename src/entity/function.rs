@@ -1,5 +1,5 @@
-use super::EntityValue;
-use crate::{symbol::arguments::ArgumentsSource, Analyzer};
+use super::{arguments::ArgumentsSource, EntityValue};
+use crate::Analyzer;
 use oxc::span::Span;
 
 #[derive(Debug, Default, Clone)]

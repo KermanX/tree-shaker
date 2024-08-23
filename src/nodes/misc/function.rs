@@ -1,7 +1,8 @@
 use crate::ast::AstType2;
+use crate::entity::arguments::ArgumentsSource;
+use crate::entity::source::SymbolSource;
 use crate::{
   entity::{function::FunctionEntity, EntityValue},
-  symbol::{arguments::ArgumentsSource, SymbolSource},
   transformer::Transformer,
   Analyzer,
 };

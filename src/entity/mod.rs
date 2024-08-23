@@ -1,3 +1,4 @@
+pub mod arguments;
 pub mod array;
 pub mod conversion;
 pub mod function;
@@ -5,6 +6,7 @@ pub mod object;
 pub mod operations;
 pub mod simple_literal;
 pub mod simplify;
+pub mod source;
 pub mod symbol;
 
 use array::ArrayEntity;

@@ -1,9 +1,8 @@
-use crate::{
-  symbol::arguments::{ArgumentsSource, ArgumentsSourceUnknown},
-  Analyzer,
+use super::{
+  arguments::{ArgumentsSource, ArgumentsSourceUnknown},
+  EntityValue,
 };
-
-use super::EntityValue;
+use crate::Analyzer;
 use std::rc::Rc;
 
 impl EntityValue {

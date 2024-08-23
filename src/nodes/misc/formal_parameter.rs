@@ -1,6 +1,7 @@
 use super::binding_pattern::BindingPatternSource;
 use crate::ast::AstType2;
-use crate::{entity::EntityValue, symbol::SymbolSource, transformer::Transformer, Analyzer};
+use crate::entity::source::SymbolSource;
+use crate::{entity::EntityValue, transformer::Transformer, Analyzer};
 use oxc::{allocator::Vec, ast::ast::FormalParameter, semantic::SymbolId};
 
 const AST_TYPE: AstType2 = AstType2::FormalParameter;
