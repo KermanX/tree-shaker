@@ -1,30 +1,33 @@
 use crate::ast::AstType2;
-use crate::entity::simple_literal::{combine_simple_literal, SimpleLiteral};
-use crate::{build_effect_from_arr, entity::EntityValue, transformer::Transformer, Analyzer};
+use crate::entity::collector::LiteralCollector;
+use crate::entity::entity::Entity;
+use crate::entity::unknown::UnknownEntity;
+use crate::{build_effect_from_arr, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{CallExpression, Expression, TSTypeParameterInstantiation};
 
 const AST_TYPE: AstType2 = AstType2::CallExpression;
 
-#[derive(Debug, Default, Clone)]
-pub struct Data {
+#[derive(Debug, Default)]
+pub struct Data<'a> {
   need_call: bool,
-  ret_val: SimpleLiteral,
+  ret_collector: LiteralCollector<'a>,
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_call_expression(&mut self, node: &'a CallExpression) -> (bool, EntityValue) {
-    let (callee_effect, callee_val) = self.exec_expression(&node.callee);
-
-    let (args_effect, args_val) = self.exec_arguments(&node.arguments);
+  pub(crate) fn exec_call_expression(&mut self, node: &'a CallExpression) -> Entity<'a> {
+    let callee = self.exec_expression(&node.callee);
+    let args = self.exec_arguments(&node.arguments);
 
     // TODO: Track `this`. Refer https://github.com/oxc-project/oxc/issues/4341
-    let (call_effect, ret_val) = callee_val.call(self, EntityValue::Unknown, args_val);
+    let ret = callee.call(self, &UnknownEntity::new_unknown(), &args);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
-    combine_simple_literal(&mut data.ret_val, &ret_val);
+    data.ret_collector.collect(&ret);
+
+    let call_effect = true; // TODO: p4
     data.need_call |= call_effect;
 
-    (callee_effect || args_effect || call_effect, ret_val)
+    ret
   }
 }
 
@@ -39,7 +42,7 @@ impl<'a> Transformer<'a> {
     let CallExpression { span, callee, arguments, optional, .. } = node;
 
     if need_val && !data.need_call {
-      if let Some(simple_literal) = self.build_simple_literal(span, &data.ret_val) {
+      if let Some(simple_literal) = data.ret_collector.build_expr(&self.ast_builder, span) {
         // Simplified to a simple literal
         let callee = self.transform_expression(callee, false);
         let arguments =

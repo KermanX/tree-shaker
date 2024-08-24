@@ -41,10 +41,9 @@ pub fn tree_shake(source_text: &str) -> TreeShakeReturn {
   // Step 1: Analyze the program
   let mut analyzer = Analyzer::new(&allocator, sematic);
   analyzer.exec_program(ast1);
-  let Analyzer { data, .. } = analyzer;
 
   // Step 3: Remove dead code (transform)
-  let transformer = Transformer::new(&allocator, data);
+  let transformer = Transformer::new(analyzer);
   let mut program = transformer.transform_program(ast2);
 
   // Step 4: Minify

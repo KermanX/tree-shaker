@@ -1,24 +1,35 @@
-use super::source::SymbolSource;
-use crate::ast::Arguments;
+use super::entity::{Entity, EntityTrait};
+use std::rc::Rc;
 
-pub(crate) trait ArgumentsSource<'a> {
-  fn resolve(&self, length: usize) -> (Vec<SymbolSource<'a>>, SymbolSource<'a>);
+#[derive(Debug)]
+pub(crate) struct ArgumentsEntity<'a> {
+  pub(crate) arguments: Vec<(bool, Entity<'a>)>,
 }
 
-pub(crate) struct ArgumentsSourceFromNode<'a> {
-  pub(crate) node: &'a Arguments<'a>,
-}
+impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
+  fn consume_self(&self, _analyzer: &mut crate::analyzer::Analyzer<'a>) {
+    unreachable!()
+  }
 
-impl<'a> ArgumentsSource<'a> for ArgumentsSourceFromNode<'a> {
-  fn resolve(&self, length: usize) -> (Vec<SymbolSource<'a>>, SymbolSource<'a>) {
-    todo!()
+  fn consume_as_unknown(&self, _analyzer: &mut crate::analyzer::Analyzer<'a>) {
+    unreachable!()
+  }
+
+  fn consume_as_array(
+    &self,
+    analyzer: &mut crate::analyzer::Analyzer<'a>,
+    length: usize,
+  ) -> (Vec<Entity<'a>>, Entity<'a>) {
+    todo!("p4")
+  }
+
+  fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
+    unreachable!()
   }
 }
 
-pub(crate) struct ArgumentsSourceUnknown {}
-
-impl<'a> ArgumentsSource<'a> for ArgumentsSourceUnknown {
-  fn resolve(&self, length: usize) -> (Vec<SymbolSource<'a>>, SymbolSource<'a>) {
-    (vec![SymbolSource::Unknown; length], SymbolSource::Unknown)
+impl<'a> ArgumentsEntity<'a> {
+  pub(crate) fn new(arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
+    Rc::new(Self { arguments })
   }
 }

@@ -1,25 +1,68 @@
 mod function_scope;
 mod loop_scope;
+mod variable_scope;
 
 use function_scope::FunctionScope;
 use loop_scope::LoopScope;
+use variable_scope::VariableScope;
+
+use crate::analyzer::Analyzer;
 
 #[derive(Debug, Default)]
 pub(crate) struct ScopeContext<'a> {
-  function_scopes: Vec<FunctionScope<'a>>,
-  loop_scopes: Vec<LoopScope<'a>>,
+  pub function_scopes: Vec<FunctionScope<'a>>,
+  pub loop_scopes: Vec<LoopScope<'a>>,
+  pub variable_scopes: Vec<VariableScope<'a>>,
 }
 
 impl<'a> ScopeContext<'a> {
   pub(crate) fn new() -> Self {
-    ScopeContext { function_scopes: Vec::new(), loop_scopes: Vec::new() }
+    ScopeContext {
+      function_scopes: vec![],
+      loop_scopes: vec![],
+      variable_scopes: vec![VariableScope::new()],
+    }
+  }
+}
+
+impl<'a> Analyzer<'a> {
+  pub(crate) fn function_scope(&self) -> &FunctionScope<'a> {
+    self.scope_context.function_scopes.last().unwrap()
   }
 
-  pub(crate) fn function_scope(&mut self) -> &mut FunctionScope<'a> {
-    self.function_scopes.last_mut().unwrap()
+  pub(crate) fn loop_scope(&self) -> &LoopScope<'a> {
+    self.scope_context.loop_scopes.last().unwrap()
   }
 
-  pub(crate) fn loop_scope(&mut self) -> &mut LoopScope<'a> {
-    self.loop_scopes.last_mut().unwrap()
+  pub(crate) fn variable_scope(&self) -> &VariableScope<'a> {
+    self.scope_context.variable_scopes.last().unwrap()
+  }
+
+  pub(crate) fn function_scope_mut(&mut self) -> &mut FunctionScope<'a> {
+    self.scope_context.function_scopes.last_mut().unwrap()
+  }
+
+  pub(crate) fn loop_scope_mut(&mut self) -> &mut LoopScope<'a> {
+    self.scope_context.loop_scopes.last_mut().unwrap()
+  }
+
+  pub(crate) fn variable_scope_mut(&mut self) -> &mut VariableScope<'a> {
+    self.scope_context.variable_scopes.last_mut().unwrap()
+  }
+
+  pub(crate) fn push_function_scope(&mut self) {
+    self.scope_context.function_scopes.push(FunctionScope::new());
+  }
+
+  pub(crate) fn pop_function_scope(&mut self) -> FunctionScope<'a> {
+    self.scope_context.function_scopes.pop().unwrap()
+  }
+
+  pub(crate) fn push_variable_scope(&mut self) {
+    self.scope_context.variable_scopes.push(VariableScope::new());
+  }
+
+  pub(crate) fn pop_variable_scope(&mut self) -> VariableScope<'a> {
+    self.scope_context.variable_scopes.pop().unwrap()
   }
 }

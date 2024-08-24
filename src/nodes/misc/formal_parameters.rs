@@ -1,9 +1,7 @@
 use crate::ast::AstType2;
-use crate::entity::arguments::ArgumentsSource;
+use crate::entity::entity::Entity;
 use crate::{transformer::Transformer, Analyzer};
-use oxc::ast::ast::FormalParameters;
-
-use super::binding_pattern::BindingPatternSource;
+use oxc::ast::ast::{FormalParameter, FormalParameters};
 
 const AST_TYPE: AstType2 = AstType2::FormalParameters;
 
@@ -14,21 +12,16 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_formal_parameters(
     &mut self,
     node: &'a FormalParameters<'a>,
-    args: &'a dyn ArgumentsSource<'a>,
+    args: Entity<'a>,
   ) {
-    let resolved = args.resolve(node.items.len());
+    let resolved = self.consume_as_array(&args, node.items.len());
 
     for (param, arg) in node.items.iter().zip(resolved.0) {
-      self.exec_formal_parameter(param, arg);
+      self.exec_binding_pattern(&param.pattern, arg);
     }
 
     if let Some(rest) = &node.rest {
-      let init_val = self.calc_source(resolved.1);
-      self.exec_binding_rest_element(
-        rest,
-        BindingPatternSource::BindingRestElement(rest),
-        init_val,
-      );
+      self.exec_binding_rest_element(rest, resolved.1);
     }
   }
 }
@@ -44,7 +37,11 @@ impl<'a> Transformer<'a> {
     let mut transformed_items = self.ast_builder.vec();
 
     for param in items {
-      transformed_items.append(&mut self.transform_formal_parameter(param));
+      let FormalParameter { span, decorators, pattern, .. } = param;
+      let pattern =
+        self.transform_binding_pattern(pattern).unwrap_or(self.build_unused_binding_pattern(span));
+      transformed_items
+        .push(self.ast_builder.formal_parameter(span, decorators, pattern, None, false, false));
     }
 
     let transformed_rest = match rest {

@@ -1,20 +1,14 @@
 mod call_expression;
 mod literals;
+mod logical_expression;
 mod object_expression;
 
-use crate::ast::AstType2;
-use crate::{entity::EntityValue, transformer::Transformer, Analyzer};
+use crate::entity::entity::Entity;
+use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::Expression;
 
-const AST_TYPE: AstType2 = AstType2::Expression;
-
-#[derive(Debug, Default, Clone)]
-pub struct Data {
-  val: EntityValue,
-}
-
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_expression(&mut self, node: &'a Expression) -> (bool, EntityValue) {
+  pub(crate) fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
     let val = match node {
       Expression::NumericLiteral(node) => self.exc_numeric_literal(node),
       Expression::StringLiteral(node) => self.exec_string_literal(node),
@@ -26,15 +20,7 @@ impl<'a> Analyzer<'a> {
       _ => todo!(),
     };
 
-    self.set_data(AST_TYPE, node, Data { val: val.1.clone() });
-
     val
-  }
-
-  pub(crate) fn calc_expression(&self, node: &'a Expression) -> EntityValue {
-    let data = self.get_data::<Data>(AST_TYPE, node);
-
-    data.val.clone()
   }
 }
 

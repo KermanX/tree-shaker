@@ -8,16 +8,16 @@ const AST_TYPE: AstType2 = AstType2::Declaration;
 pub struct Data {}
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_declaration(&mut self, node: &'a Declaration<'a>) -> bool {
+  pub(crate) fn exec_declaration(&mut self, node: &'a Declaration<'a>) {
     match node {
       Declaration::VariableDeclaration(node) => {
-        let mut init_effect = false;
         for declarator in &node.declarations {
-          init_effect |= self.exec_variable_declarator(declarator);
+          self.exec_variable_declarator(declarator);
         }
-        init_effect
       }
-      Declaration::FunctionDeclaration(node) => self.exec_function(node).0,
+      Declaration::FunctionDeclaration(node) => {
+        self.exec_function(node);
+      }
       _ => todo!(),
     }
   }
@@ -41,9 +41,9 @@ impl<'a> Transformer<'a> {
           Some(self.ast_builder.declaration_variable(span, kind, transformed_decls, false))
         }
       }
-      Declaration::FunctionDeclaration(node) => {
-        self.transform_function(node.unbox()).map(|f| self.ast_builder.declaration_from_function(f))
-      }
+      Declaration::FunctionDeclaration(node) => self
+        .transform_function(node.unbox(), false)
+        .map(|f| self.ast_builder.declaration_from_function(f)),
       _ => todo!(),
     }
   }

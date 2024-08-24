@@ -1,34 +1,26 @@
-use crate::ast::AstType2;
-use crate::{
-  analyzer::Analyzer,
-  entity::{object::ObjectEntity, EntityValue},
-  transformer::Transformer,
-};
+use crate::entity::entity::Entity;
+use crate::entity::object::ObjectEntity;
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::{Expression, ObjectExpression, ObjectPropertyKind};
-
-const AST_TYPE: AstType2 = AstType2::ObjectExpression;
+use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_object_expression(
-    &mut self,
-    node: &'a ObjectExpression,
-  ) -> (bool, EntityValue) {
-    let mut effect = false;
-    let mut value = ObjectEntity::default();
+  pub(crate) fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
+    let effect = false;
+    let mut object = ObjectEntity::default();
 
     for property in &node.properties {
       match property {
         ObjectPropertyKind::ObjectProperty(node) => {
-          let (key_effect, key_val) = self.exec_property_key(&node.key);
-          let (value_effect, value_val) = self.exec_expression(&node.value);
-          effect |= key_effect || value_effect;
-          value.init_property(&key_val, value_val.clone());
+          let key = self.exec_property_key(&node.key);
+          let value = self.exec_expression(&node.value);
+          object.set_property(key, value);
         }
         ObjectPropertyKind::SpreadProperty(node) => todo!(),
       }
     }
 
-    (effect, EntityValue::Object(value))
+    Rc::new(object)
   }
 }
 

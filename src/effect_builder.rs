@@ -20,11 +20,11 @@ macro_rules! build_effect {
       let mut exprs = $builder.vec();
       $($x.map(|e| exprs.push(e));)*
       if exprs.is_empty() {
-        Some($val)
+        $val
       }
       else {
         exprs.push($val);
-        Some($builder.expression_sequence($span, exprs))
+        $builder.expression_sequence($span, exprs)
       }
     }
   };

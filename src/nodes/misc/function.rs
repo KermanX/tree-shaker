@@ -1,68 +1,49 @@
-use crate::ast::AstType2;
-use crate::entity::arguments::ArgumentsSource;
-use crate::entity::source::SymbolSource;
-use crate::{
-  entity::{function::FunctionEntity, EntityValue},
-  transformer::Transformer,
-  Analyzer,
-};
+use crate::entity::dep::EntityDep;
+use crate::entity::entity::Entity;
+use crate::entity::function::FunctionEntity;
+use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::Function;
 
-const AST_TYPE: AstType2 = AstType2::Function;
-
-#[derive(Debug, Default, Clone)]
-pub struct Data {
-  referred: bool,
-}
-
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_function(&mut self, node: &'a Function) -> (bool, EntityValue) {
+  pub(crate) fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
+    let entity: Entity<'a> = FunctionEntity::new(EntityDep::Function(node));
+
     if let Some(id) = &node.id {
-      self.declare_symbol(SymbolSource::Function(node), id.symbol_id.get().unwrap());
+      let symbol = id.symbol_id.get().unwrap();
+      self.variable_scope_mut().declare(symbol, entity.clone());
     }
 
-    self.set_data(AST_TYPE, node, Data { referred: self.exporting });
-
-    (false, EntityValue::Function(FunctionEntity::new(node.span)))
-  }
-
-  pub(crate) fn calc_function(&self, node: &'a Function<'a>) -> EntityValue {
-    EntityValue::Function(FunctionEntity::new(node.span))
-  }
-
-  pub(crate) fn refer_function(&mut self, node: &'a Function<'a>) {
-    let data = self.load_data::<Data>(AST_TYPE, node);
-    data.referred = true;
+    entity
   }
 
   pub(crate) fn call_function(
     &mut self,
     node: &'a Function<'a>,
-    this: EntityValue,
-    args: &'a dyn ArgumentsSource<'a>,
-  ) -> (bool, EntityValue) {
-    self.exec_formal_parameters(&node.params, args);
+    this: Entity<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    self.push_variable_scope();
+    self.push_function_scope();
 
-    let mut has_effect = false;
+    self.exec_formal_parameters(&node.params, args);
 
     if let Some(body) = &node.body {
       for statement in &body.statements {
-        has_effect |= self.exec_statement(statement);
+        self.exec_statement(statement);
       }
     }
 
-    (has_effect, todo!())
+    self.pop_variable_scope();
+    self.pop_function_scope().returned_value()
   }
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_function(&self, node: Function<'a>) -> Option<Function<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
-
-    if !data.referred {
-      return None;
+  pub fn transform_function(&self, node: Function<'a>, need_val: bool) -> Option<Function<'a>> {
+    if need_val || self.is_referred(EntityDep::Function(&node)) {
+      Some(node)
+    } else {
+      None
     }
-
-    todo!()
   }
 }

@@ -13,30 +13,27 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_if_statement(&mut self, node: &'a IfStatement) -> bool {
-    let (test_effect, test_val) = self.exec_expression(&node.test);
+  pub(crate) fn exec_if_statement(&mut self, node: &'a IfStatement) {
+    let test = self.exec_expression(&node.test);
 
-    let (maybe_true, maybe_false, indeterminate) = match test_val.to_boolean() {
+    let (maybe_true, maybe_false, indeterminate) = match test.test_truthy() {
       Some(true) => (true, false, None),
       Some(false) => (false, true, None),
       None => (true, true, Some(self.start_indeterminate())),
     };
 
-    let mut effect = test_effect;
     if maybe_true {
-      effect |= self.exec_statement(&node.consequent);
+      self.exec_statement(&node.consequent);
     }
     if maybe_false {
       if let Some(alternate) = &node.alternate {
-        effect |= self.exec_statement(alternate);
+        self.exec_statement(alternate);
       }
     }
 
     indeterminate.map(|prev| self.end_indeterminate(prev));
 
     self.set_data(AST_TYPE, node, Data { maybe_true, maybe_false });
-
-    effect
   }
 }
 

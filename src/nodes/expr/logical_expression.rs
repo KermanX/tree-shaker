@@ -1,5 +1,7 @@
 use crate::ast::AstType2;
-use crate::{analyzer::Analyzer, build_effect, entity::EntityValue, Transformer};
+use crate::entity::entity::Entity;
+use crate::entity::union::UnionEntity;
+use crate::{analyzer::Analyzer, build_effect, Transformer};
 use oxc::{
   ast::ast::{Expression, LogicalExpression, LogicalOperator},
   span::GetSpan,
@@ -15,44 +17,36 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_logical_expression(
-    &mut self,
-    node: &'a LogicalExpression,
-  ) -> (bool, EntityValue) {
-    let (left_effect, left_val) = self.exec_expression(&node.left);
-    let mut right_effect = false;
-    let mut exec_right = || {
-      let (effect, val) = self.exec_expression(&node.right);
-      right_effect = effect;
-      val
-    };
+  pub(crate) fn exec_logical_expression(&mut self, node: &'a LogicalExpression<'a>) -> Entity<'a> {
+    let left = self.exec_expression(&node.left);
+    let mut exec_right = || self.exec_expression(&node.right);
     let mut exec_unknown =
-      || (EntityValue::Union(vec![Rc::new(left_val.clone()), Rc::new(exec_right())]), true, true);
+      || (Rc::new(UnionEntity(vec![left.clone(), exec_right()])) as Entity<'a>, true, true);
 
     let (value, need_left_val, need_right_val) = match &node.operator {
-      LogicalOperator::And => match left_val.to_boolean() {
+      LogicalOperator::And => match left.test_truthy() {
         Some(true) => (exec_right(), false, true),
-        Some(false) => (left_val, true, false),
+        Some(false) => (left, true, false),
         None => exec_unknown(),
       },
-      LogicalOperator::Or => match left_val.to_boolean() {
-        Some(true) => (left_val, true, false),
+      LogicalOperator::Or => match left.test_truthy() {
+        Some(true) => (left, true, false),
         Some(false) => (exec_right(), false, true),
         None => exec_unknown(),
       },
-      LogicalOperator::Coalesce => match left_val.is_null_or_undefined() {
+      LogicalOperator::Coalesce => match left.test_nullish() {
         Some(true) => (exec_right(), false, true),
-        Some(false) => (left_val, true, false),
+        Some(false) => (left, true, false),
         None => exec_unknown(),
       },
     };
 
     let data = self.load_data::<Data>(AST_TYPE, node);
 
-    data.need_left |= left_effect || need_left_val;
+    data.need_left |= need_left_val;
     data.need_right |= need_right_val;
 
-    (left_effect || right_effect, value)
+    value
   }
 }
 
@@ -84,8 +78,8 @@ impl<'a> Transformer<'a> {
           left
         }
       }
-      (false, true) => build_effect!(self.ast_builder, span, left; right.unwrap()),
-      (false, false) => unreachable!(),
+      (false, true) => Some(build_effect!(self.ast_builder, span, left; right.unwrap())),
+      (false, false) => build_effect!(self.ast_builder, span, left),
     }
   }
 }

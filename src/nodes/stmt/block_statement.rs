@@ -2,14 +2,10 @@ use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::{BlockStatement, Statement};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_block_statement(&mut self, node: &'a BlockStatement) -> bool {
-    let mut has_effect = false;
-
+  pub(crate) fn exec_block_statement(&mut self, node: &'a BlockStatement) {
     for statement in &node.body {
-      has_effect |= self.exec_statement(statement);
+      self.exec_statement(statement);
     }
-
-    has_effect
   }
 }
 

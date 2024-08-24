@@ -1,73 +1,56 @@
-use std::{cell::LazyCell, rc::Rc};
-
-use super::EntityValue;
+use super::{
+  entity::{Entity, EntityTrait},
+  literal::LiteralEntity,
+  unknown::UnknownEntity,
+};
+use crate::analyzer::Analyzer;
 use rustc_hash::FxHashMap;
 
-#[derive(Debug, Clone)]
-pub struct ObjectEntity {
-  string_keyed: FxHashMap<String, Rc<EntityValue>>,
-  symbol_keyed: FxHashMap<usize, Rc<EntityValue>>,
-  pub rest: Rc<EntityValue>,
+#[derive(Debug, Default)]
+pub(crate) struct ObjectEntity<'a> {
+  string_keyed: FxHashMap<&'a str, Entity<'a>>,
+  // TODO: symbol_keyed
+  rest: Option<Entity<'a>>,
 }
 
-impl Default for ObjectEntity {
-  fn default() -> Self {
-    ObjectEntity {
-      string_keyed: FxHashMap::default(),
-      symbol_keyed: FxHashMap::default(),
-      rest: Rc::new(EntityValue::Undefined),
+impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
+  fn consume_self(&self, analyzer: &mut Analyzer<'a>) {}
+
+  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
+    for (_, value) in &self.string_keyed {
+      value.consume_self(analyzer);
+    }
+    if let Some(rest) = &self.rest {
+      rest.consume_self(analyzer);
     }
   }
-}
 
-impl ObjectEntity {
-  pub fn init_property(&mut self, key: &EntityValue, value: EntityValue) {
-    match key.to_property_key() {
-      EntityValue::StringLiteral(key) => {
-        self.string_keyed.insert(key, Rc::new(value));
-      }
-      EntityValue::Symbol(key) => {
-        self.symbol_keyed.insert(key.id, Rc::new(value));
-      }
-      _ => {
-        // TODO:
-        self.rest = match self.rest.as_ref() {
-          EntityValue::Union(values) => {
-            let mut values = values.clone();
-            values.push(Rc::new(value));
-            Rc::new(EntityValue::Union(values))
-          }
-          _ => Rc::new(EntityValue::Union(vec![Rc::new(value), self.rest.clone()])),
+  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
+    // FIXME: p4 rest
+    match key.get_literal() {
+      Some(LiteralEntity::String(key)) => {
+        if let Some(value) = self.string_keyed.get(key) {
+          value.clone()
+        } else {
+          UnknownEntity::new_unknown()
         }
       }
-    }
-  }
-
-  pub fn get_property(&self, key: &EntityValue) -> Rc<EntityValue> {
-    // TODO: builtin properties
-    match key.to_property_key() {
-      EntityValue::StringLiteral(key) => {
-        self.string_keyed.get(&key).map_or_else(|| self.rest.clone(), Rc::clone)
-      }
-      EntityValue::UnknownString => {
-        let mut values: Vec<Rc<EntityValue>> =
-          self.string_keyed.values().map(|v| v.clone()).collect();
-        values.push(self.rest.clone());
-        Rc::new(EntityValue::Union(values).simplify())
-      }
-      EntityValue::Symbol(key) => {
-        self.symbol_keyed.get(&key.id).map_or_else(|| self.rest.clone(), Rc::clone)
-      }
-      EntityValue::UnknownSymbol => {
-        // TODO:
-        Rc::new(EntityValue::Unknown)
-      }
-      EntityValue::Union(keys) => Rc::new(EntityValue::Union(
-        keys.iter().map(|key| self.get_property(key)).collect::<Vec<Rc<EntityValue>>>(),
-      )),
-      _ => unreachable!(),
+      _ => UnknownEntity::new_unknown(),
     }
   }
 }
 
-pub const UNKNOWN_OBJECT: LazyCell<ObjectEntity> = LazyCell::new(|| ObjectEntity::default());
+impl<'a> ObjectEntity<'a> {
+  pub(crate) fn set_property(&mut self, key: Entity<'a>, value: Entity<'a>) {
+    match key.get_literal() {
+      Some(LiteralEntity::String(key)) => {
+        self.string_keyed.insert(key, value);
+      }
+      _ => todo!("p4"),
+    }
+  }
+
+  pub(crate) fn set_rest(&mut self, rest: Entity<'a>) {
+    self.rest = Some(rest);
+  }
+}

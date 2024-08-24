@@ -1,6 +1,6 @@
 use crate::{
   ast::{Arguments, AstType2},
-  entity::arguments::{ArgumentsSource, ArgumentsSourceFromNode},
+  entity::{arguments::ArgumentsEntity, entity::Entity},
   transformer::Transformer,
   Analyzer,
 };
@@ -12,19 +12,15 @@ use oxc::{
 const AST_TYPE: AstType2 = AstType2::Arguments;
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_arguments(
-    &mut self,
-    node: &'a Arguments<'a>,
-  ) -> (bool, &'a dyn ArgumentsSource<'a>) {
-    let mut effect = false;
+  pub(crate) fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> Entity<'a> {
+    let mut arguments = vec![];
     for argument in node {
-      let expression = match argument {
-        Argument::SpreadElement(node) => &node.argument,
-        node => node.to_expression(),
-      };
-      effect |= self.exec_expression(expression).0;
+      arguments.push(match argument {
+        Argument::SpreadElement(node) => (true, self.exec_expression(&node.argument)),
+        node => (false, self.exec_expression(node.to_expression())),
+      })
     }
-    (effect, self.allocator.alloc(ArgumentsSourceFromNode { node }))
+    ArgumentsEntity::new(arguments)
   }
 }
 

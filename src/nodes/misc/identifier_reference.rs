@@ -1,5 +1,7 @@
 use crate::ast::AstType2;
-use crate::{entity::EntityValue, transformer::Transformer, Analyzer};
+use crate::entity::entity::Entity;
+use crate::entity::unknown::UnknownEntity;
+use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::IdentifierReference;
 
 const AST_TYPE: AstType2 = AstType2::IdentifierReference;
@@ -12,8 +14,8 @@ pub struct Data {
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_identifier_reference_read(
     &mut self,
-    node: &'a IdentifierReference,
-  ) -> (bool, EntityValue) {
+    node: &'a IdentifierReference<'a>,
+  ) -> Entity<'a> {
     let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
     assert!(reference.is_read());
     let symbol = reference.symbol_id();
@@ -21,10 +23,10 @@ impl<'a> Analyzer<'a> {
     self.set_data(AST_TYPE, node, Data { resolvable: symbol.is_some() });
 
     if let Some(symbol) = symbol {
-      (false, self.calc_symbol(&symbol))
+      self.variable_scope().get(&symbol)
     } else {
       // TODO: Handle globals
-      (true, EntityValue::Unknown)
+      UnknownEntity::new_unknown()
     }
   }
 

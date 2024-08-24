@@ -1,7 +1,7 @@
-use super::binding_pattern::BindingPatternSource;
 use crate::ast::AstType2;
-use crate::{entity::EntityValue, transformer::Transformer, Analyzer};
-use oxc::{ast::ast::BindingRestElement, semantic::SymbolId};
+use crate::entity::entity::Entity;
+use crate::{transformer::Transformer, Analyzer};
+use oxc::ast::ast::BindingRestElement;
 
 const AST_TYPE: AstType2 = AstType2::BindingRestElement;
 
@@ -12,26 +12,9 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_binding_rest_element(
     &mut self,
     node: &'a BindingRestElement<'a>,
-    source: BindingPatternSource<'a>,
-    init_val: EntityValue,
-  ) -> bool {
-    self.exec_binding_pattern(&node.argument, source, init_val)
-  }
-
-  pub(crate) fn calc_binding_rest_element(
-    &self,
-    node: &'a BindingRestElement<'a>,
-    symbol: SymbolId,
-  ) -> Option<EntityValue> {
-    self.calc_binding_pattern(&node.argument, symbol)
-  }
-
-  pub(crate) fn refer_binding_rest_element(
-    &mut self,
-    node: &'a BindingRestElement<'a>,
-    symbol: SymbolId,
+    init_val: Entity<'a>,
   ) {
-    self.refer_binding_pattern(&node.argument, symbol)
+    self.exec_binding_pattern(&node.argument, init_val)
   }
 }
 

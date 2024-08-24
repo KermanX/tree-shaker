@@ -12,24 +12,25 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_while_statement(&mut self, node: &'a WhileStatement) -> bool {
-    let (test_effect, test_val) = self.exec_expression(&node.test);
+  pub(crate) fn exec_while_statement(&mut self, node: &'a WhileStatement) {
+    let test = self.exec_expression(&node.test);
 
-    let (need_body, indeterminate) = match test_val.to_boolean() {
+    let (need_body, indeterminate) = match test.test_truthy() {
       Some(true) => (true, None),
       Some(false) => (false, None),
       None => (true, Some(self.start_indeterminate())),
     };
 
-    let body_effect = need_body && self.exec_statement(&node.body);
+    if need_body {
+      self.exec_statement(&node.body);
+    }
 
     indeterminate.map(|prev| self.end_indeterminate(prev));
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
-
-    data.need_loop |= test_effect || body_effect;
-
-    test_effect || body_effect
+    // TODO: p4, scope related!
+    // let data = self.load_data::<Data>(AST_TYPE, node);
+    // data.need_loop |= test_effect || body_effect;
+    // test_effect || body_effect
   }
 }
 

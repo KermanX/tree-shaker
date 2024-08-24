@@ -1,14 +1,13 @@
 use crate::{
+  analyzer::Analyzer,
   ast::AstType2,
-  entity::EntityValue,
-  utils::{DataPlaceholder, ExtraData},
+  data::{DataPlaceholder, ExtraData, ReferredNodes},
+  entity::dep::EntityDep,
 };
 use oxc::{
   allocator::Allocator,
   ast::{
-    ast::{
-      BindingPattern, Expression, NumberBase, Program, Statement, TSTypeAnnotation, UnaryOperator,
-    },
+    ast::{BindingPattern, Expression, Program, Statement, TSTypeAnnotation, UnaryOperator},
     AstBuilder,
   },
   span::{GetSpan, SourceType, Span, SPAN},
@@ -20,13 +19,15 @@ use std::{
 
 pub(crate) struct Transformer<'a> {
   allocator: &'a Allocator,
-  pub ast_builder: AstBuilder<'a>,
-  pub data: ExtraData<'a>,
+  pub(crate) ast_builder: AstBuilder<'a>,
+  pub(crate) data: ExtraData<'a>,
+  pub(crate) referred_nodes: ReferredNodes<'a>,
 }
 
 impl<'a> Transformer<'a> {
-  pub fn new(allocator: &'a Allocator, data: ExtraData<'a>) -> Self {
-    Transformer { allocator, ast_builder: AstBuilder::new(allocator), data }
+  pub fn new(analyzer: Analyzer<'a>) -> Self {
+    let Analyzer { allocator, data, referred_nodes, .. } = analyzer;
+    Transformer { allocator, ast_builder: AstBuilder::new(allocator), data, referred_nodes }
   }
 
   pub fn transform_program(&self, ast: &'a mut Program<'a>) -> Program<'a> {
@@ -49,30 +50,6 @@ impl<'a> Transformer<'a> {
       }
     }
     self.ast_builder.program(span, source_type, hashbang, directives, new_statements)
-  }
-
-  pub(crate) fn entity_to_expression(
-    &self,
-    span: Span,
-    value: &EntityValue,
-  ) -> Option<Expression<'a>> {
-    match value {
-      EntityValue::StringLiteral(s) => {
-        Some(self.ast_builder.expression_string_literal(span, s.clone()))
-      }
-      EntityValue::NumberLiteral(n) => Some(self.ast_builder.expression_numeric_literal(
-        span,
-        *n,
-        n.to_string(),
-        NumberBase::Decimal,
-      )),
-      EntityValue::BooleanLiteral(b) => Some(self.ast_builder.expression_boolean_literal(span, *b)),
-      EntityValue::Null => Some(self.ast_builder.expression_null_literal(span)),
-      EntityValue::Undefined => {
-        Some(self.ast_builder.expression_identifier_reference(span, "undefined"))
-      }
-      _ => None,
-    }
   }
 }
 
@@ -104,5 +81,11 @@ impl<'a> Transformer<'a> {
 
   pub(crate) fn get_data<D: Default + 'a>(&self, ast_type: AstType2, node: &dyn GetSpan) -> &'a D {
     self.get_data_by_span(ast_type, node.span())
+  }
+}
+
+impl<'a> Transformer<'a> {
+  pub(crate) fn is_referred(&self, node: EntityDep<'a>) -> bool {
+    self.referred_nodes.contains(&node)
   }
 }

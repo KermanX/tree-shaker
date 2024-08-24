@@ -21,18 +21,19 @@ const AST_TYPE: AstType2 = AstType2::Statement;
 pub struct Data {}
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_statement(&mut self, node: &'a Statement) -> bool {
+  pub(crate) fn exec_statement(&mut self, node: &'a Statement) {
     match node {
       match_declaration!(Statement) => {
         let node = node.to_declaration();
-        self.exec_declaration(node)
+        self.exec_declaration(node);
       }
       match_module_declaration!(Statement) => {
         let node = node.to_module_declaration();
         self.exec_module_declaration(node);
-        false
       }
-      Statement::ExpressionStatement(node) => self.exec_expression(&node.expression).0,
+      Statement::ExpressionStatement(node) => {
+        self.exec_expression(&node.expression);
+      }
       Statement::BlockStatement(node) => self.exec_block_statement(node),
       Statement::IfStatement(node) => self.exec_if_statement(node),
       Statement::WhileStatement(node) => self.exec_while_statement(node),

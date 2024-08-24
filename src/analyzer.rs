@@ -1,7 +1,12 @@
-use crate::{ast::AstType2, entity::source::SymbolSource, scope::ScopeContext, utils::ExtraData};
+use crate::{
+  ast::AstType2,
+  data::{ExtraData, ReferredNodes},
+  entity::{dep::EntityDep, entity::Entity},
+  scope::ScopeContext,
+};
 use oxc::{
   allocator::Allocator,
-  ast::ast::{Function, Program},
+  ast::ast::Program,
   semantic::{Semantic, SymbolId},
   span::{GetSpan, Span},
 };
@@ -11,9 +16,8 @@ use std::mem;
 pub(crate) struct Analyzer<'a> {
   pub(crate) allocator: &'a Allocator,
   pub(crate) sematic: Semantic<'a>,
-  pub(crate) functions: FxHashMap<Span, &'a Function<'a>>,
-  pub(crate) symbol_source: FxHashMap<SymbolId, SymbolSource<'a>>,
   pub(crate) data: ExtraData<'a>,
+  pub(crate) referred_nodes: ReferredNodes<'a>,
   pub(crate) indeterminate: bool,
   pub(crate) exporting: bool,
   pub(crate) exports: Vec<SymbolId>,
@@ -25,9 +29,8 @@ impl<'a> Analyzer<'a> {
     Analyzer {
       allocator,
       sematic,
-      functions: FxHashMap::default(),
-      symbol_source: FxHashMap::default(),
-      data: FxHashMap::default(),
+      data: Default::default(),
+      referred_nodes: Default::default(),
       indeterminate: false,
       exporting: false,
       exports: Vec::new(),
@@ -42,7 +45,7 @@ impl<'a> Analyzer<'a> {
 
     for symbol in self.exports.clone() {
       // TODO: Should consume the symbol
-      self.read_symbol(&symbol);
+      self.consume_entity(&self.variable_scope().get(&symbol));
     }
   }
 }
@@ -110,5 +113,29 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn end_indeterminate(&mut self, prev: IndeterminateBackup) {
     self.indeterminate = prev.0;
+  }
+
+  pub(crate) fn exec_indeterminate<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
+    let backup = self.start_indeterminate();
+    let result = f(self);
+    self.end_indeterminate(backup);
+    result
+  }
+}
+
+impl<'a> Analyzer<'a> {
+  pub fn declare_symbol(&mut self, symbol: SymbolId, entity: Entity<'a>) {
+    if self.exporting {
+      self.exports.push(symbol);
+    }
+    self.variable_scope_mut().declare(symbol, entity)
+  }
+
+  pub(crate) fn refer_dep(&mut self, node: EntityDep<'a>) {
+    self.referred_nodes.insert(node);
+  }
+
+  pub(crate) fn is_referred(&self, node: &EntityDep<'a>) -> bool {
+    self.referred_nodes.contains(node)
   }
 }
