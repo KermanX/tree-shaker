@@ -1,11 +1,4 @@
 use crate::entity::{entity::Entity, union::UnionEntity};
-use oxc::ast::ast::{ArrowFunctionExpression, Function};
-
-#[derive(Debug)]
-pub(crate) enum FunctionScopeNode<'a> {
-  Function(&'a Function<'a>),
-  Arrow(&'a ArrowFunctionExpression<'a>),
-}
 
 #[derive(Debug)]
 pub(crate) struct FunctionScope<'a> {

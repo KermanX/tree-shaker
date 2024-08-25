@@ -42,12 +42,3 @@ May not be very fast, but should generates the least code possible.
 > Tree shake v.s. Minify:
 >
 > In this project, tree shake is to remove the dead code, while minify is to reduce the code size. They are different steps in the process.
-
-## Implementation
-
-1. `exec_x`: Execute the code.
-    - Expressions: returns the value as entity.
-    - Declarations: register the symbol sources.
-2. `calc_x`: Get entity from symbol source.
-3. `refer_x`: Mark the symbol source as used.
-4. `transform_x`: Transform the code.
