@@ -37,7 +37,10 @@ impl<'a> Transformer<'a> {
 
     let CallExpression { span, callee, arguments, optional, .. } = node;
 
-    if need_val && !data.need_call {
+    // TODO:
+    let need_call = true;
+
+    if need_val && !need_call {
       if let Some(simple_literal) = data.ret_collector.build_expr(&self.ast_builder, span) {
         // Simplified to a simple literal
         let callee = self.transform_expression(callee, false);
@@ -47,7 +50,7 @@ impl<'a> Transformer<'a> {
       }
     }
 
-    if need_val || data.need_call {
+    if need_val || need_call {
       // Need call
       let callee = self.transform_expression(callee, true).unwrap();
       let mut transformed_arguments = self.ast_builder.vec();

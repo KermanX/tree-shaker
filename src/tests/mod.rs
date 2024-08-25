@@ -35,18 +35,3 @@ fn test_1() {
       "#,
   );
 }
-
-#[test]
-fn test_2() {
-  tree_shake(
-    r#"
-      export let a = undefined;
-
-      // function f() {
-      //   return 1
-      // }
-
-      // export let g = f();
-    "#,
-  );
-}

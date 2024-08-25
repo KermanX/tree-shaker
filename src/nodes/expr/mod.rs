@@ -48,7 +48,7 @@ impl<'a> Transformer<'a> {
 
     let span = node.span();
     let literal = need_val.then(|| data.collector.build_expr(&self.ast_builder, span)).flatten();
-    let need_val = literal.is_none();
+    let need_val = need_val && literal.is_none();
 
     let inner = match node {
       Expression::NumericLiteral(_)
@@ -74,6 +74,9 @@ impl<'a> Transformer<'a> {
 
       _ => todo!(),
     };
+
+    println!("inner: {:#?}\n", inner);
+    println!("literal: {:#?}", literal);
 
     if let Some(literal) = literal {
       Some(build_effect!(&self.ast_builder, span, inner; literal))
