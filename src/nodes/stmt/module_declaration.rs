@@ -5,17 +5,15 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
     match node {
       ModuleDeclaration::ExportNamedDeclaration(node) => {
-        self.exporting = true;
-        node.declaration.as_ref().map(|declaration| self.exec_declaration(declaration));
+        node.declaration.as_ref().map(|declaration| self.exec_declaration(declaration, true));
         for specifier in &node.specifiers {
           match &specifier.local {
             ModuleExportName::IdentifierReference(node) => {
-              self.exec_identifier_reference_export(node);
+              self.exec_identifier_reference_read(node, true);
             }
             _ => unreachable!(),
           }
         }
-        self.exporting = false;
       }
       ModuleDeclaration::ExportDefaultDeclaration(_node) => {
         todo!()

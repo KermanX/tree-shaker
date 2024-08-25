@@ -4,13 +4,13 @@ use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
 use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_variable_declarator(&mut self, node: &'a VariableDeclarator) {
+  pub(crate) fn exec_variable_declarator(&mut self, node: &'a VariableDeclarator, exporting: bool) {
     let init = match &node.init {
       Some(init) => self.exec_expression(init),
       None => Rc::new(LiteralEntity::Undefined),
     };
 
-    self.exec_binding_pattern(&node.id, init);
+    self.exec_binding_pattern(&node.id, init, exporting);
   }
 }
 

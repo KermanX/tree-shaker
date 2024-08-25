@@ -5,13 +5,13 @@ use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
+  pub(crate) fn exec_function(&mut self, node: &'a Function<'a>, exporting: bool) -> Entity<'a> {
     let dep = self.new_entity_dep(EntityDepNode::Function(node));
     let entity = FunctionEntity::new(dep);
 
     if let Some(id) = &node.id {
       let symbol = id.symbol_id.get().unwrap();
-      self.variable_scope_mut().declare(symbol, entity.clone());
+      self.declare_symbol(symbol, entity.clone(), exporting);
     }
 
     entity

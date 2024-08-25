@@ -23,7 +23,6 @@ pub(crate) struct Analyzer<'a> {
   pub(crate) data: ExtraData<'a>,
   pub(crate) referred_nodes: ReferredNodes<'a>,
   pub(crate) indeterminate: bool,
-  pub(crate) exporting: bool,
   pub(crate) exports: Vec<SymbolId>,
   pub(crate) scope_context: ScopeContext<'a>,
 }
@@ -36,7 +35,6 @@ impl<'a> Analyzer<'a> {
       data: Default::default(),
       referred_nodes: Default::default(),
       indeterminate: false,
-      exporting: false,
       exports: Vec::new(),
       scope_context: ScopeContext::new(),
     }
@@ -47,7 +45,14 @@ impl<'a> Analyzer<'a> {
       self.exec_statement(statement);
     }
 
+    debug_assert_eq!(self.scope_context.function_scopes.len(), 1);
+    debug_assert_eq!(self.scope_context.loop_scopes.len(), 0);
+    debug_assert_eq!(self.scope_context.variable_scopes.len(), 1);
+
+    println!("{:?}", self.exports);
+
     for symbol in self.exports.clone() {
+      println!("{:?}", self.sematic.symbols().get_name(symbol));
       let entity = self.get_symbol(&symbol).clone();
       self.consume_entity(&entity);
     }
@@ -107,8 +112,8 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn declare_symbol(&mut self, symbol: SymbolId, entity: Entity<'a>) {
-    if self.exporting {
+  pub fn declare_symbol(&mut self, symbol: SymbolId, entity: Entity<'a>, exporting: bool) {
+    if exporting {
       self.exports.push(symbol);
     }
     self.variable_scope_mut().declare(symbol, entity)

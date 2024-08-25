@@ -17,11 +17,11 @@ impl<'a> Analyzer<'a> {
     let resolved = self.consume_as_array(&args, node.items.len());
 
     for (param, arg) in node.items.iter().zip(resolved.0) {
-      self.exec_binding_pattern(&param.pattern, arg);
+      self.exec_binding_pattern(&param.pattern, arg, false);
     }
 
     if let Some(rest) = &node.rest {
-      self.exec_binding_rest_element(rest, resolved.1);
+      self.exec_binding_rest_element(rest, resolved.1, false);
     }
   }
 }

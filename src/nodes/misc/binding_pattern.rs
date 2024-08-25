@@ -1,9 +1,6 @@
 use crate::{
   entity::{
-    dep::{EntityDep, EntityDepNode},
-    entity::Entity,
-    forwarded::ForwardedEntity,
-    literal::LiteralEntity,
+    dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity,
     union::UnionEntity,
   },
   transformer::Transformer,
@@ -18,20 +15,25 @@ use oxc::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_binding_pattern(&mut self, node: &'a BindingPattern<'a>, init: Entity<'a>) {
+  pub(crate) fn exec_binding_pattern(
+    &mut self,
+    node: &'a BindingPattern<'a>,
+    init: Entity<'a>,
+    exporting: bool,
+  ) {
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
         let symbol = node.symbol_id.get().unwrap();
         let dep = self.new_entity_dep(EntityDepNode::BindingIdentifier(node));
-        self.declare_symbol(symbol, ForwardedEntity::new(init, vec![dep]));
+        self.declare_symbol(symbol, ForwardedEntity::new(init, vec![dep]), exporting);
       }
       BindingPatternKind::ObjectPattern(node) => {
         for property in &node.properties {
           let key = self.exec_property_key(&property.key);
-          self.exec_binding_pattern(&property.value, init.get_property(&key));
+          self.exec_binding_pattern(&property.value, init.get_property(&key), exporting);
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element(rest, todo!());
+          self.exec_binding_rest_element(rest, todo!(), exporting);
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
@@ -39,11 +41,11 @@ impl<'a> Analyzer<'a> {
           if let Some(element) = element {
             let key = LiteralEntity::new_string(self.allocator.alloc(index.to_string()).as_str());
             // FIXME: get_property !== iterate
-            self.exec_binding_pattern(element, init.get_property(&key));
+            self.exec_binding_pattern(element, init.get_property(&key), exporting);
           }
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element(rest, todo!());
+          self.exec_binding_rest_element(rest, todo!(), exporting);
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {

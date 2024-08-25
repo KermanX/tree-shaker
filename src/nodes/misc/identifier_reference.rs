@@ -15,10 +15,15 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_identifier_reference_read(
     &mut self,
     node: &'a IdentifierReference<'a>,
+    exporting: bool,
   ) -> Entity<'a> {
     let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
     assert!(reference.is_read());
     let symbol = reference.symbol_id();
+
+    if exporting {
+      self.exports.push(symbol.unwrap());
+    }
 
     self.set_data(AST_TYPE, node, Data { resolvable: symbol.is_some() });
 
@@ -29,13 +34,6 @@ impl<'a> Analyzer<'a> {
       self.refer_global_dep();
       UnknownEntity::new_unknown()
     }
-  }
-
-  pub(crate) fn exec_identifier_reference_export(&mut self, node: &'a IdentifierReference) {
-    let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
-    assert!(reference.is_read());
-    let symbol = reference.symbol_id().unwrap();
-    self.exports.push(symbol);
   }
 }
 

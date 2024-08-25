@@ -2,15 +2,15 @@ use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::{Declaration, VariableDeclaration};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_declaration(&mut self, node: &'a Declaration<'a>) {
+  pub(crate) fn exec_declaration(&mut self, node: &'a Declaration<'a>, exporting: bool) {
     match node {
       Declaration::VariableDeclaration(node) => {
         for declarator in &node.declarations {
-          self.exec_variable_declarator(declarator);
+          self.exec_variable_declarator(declarator, exporting);
         }
       }
       Declaration::FunctionDeclaration(node) => {
-        self.exec_function(node);
+        self.exec_function(node, exporting);
       }
       _ => todo!(),
     }

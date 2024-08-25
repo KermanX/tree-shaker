@@ -47,11 +47,14 @@ fn test_2() {
     r#"
 let x = 1;
 
-export function f1() {
-  return x;
+export function f1(a) {
+  if (a)
+    return x;
+  else
+    effect;
 }
 
-export const t = f1();
+export const t = f1(true);
 
 export function f2() {
   effect;
@@ -59,7 +62,7 @@ export function f2() {
 
 f2();
 
-const y = f2();
+const r = f2();
 "#,
   );
 }

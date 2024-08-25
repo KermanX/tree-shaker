@@ -3,7 +3,7 @@ source: src/tests/mod.rs
 expression: result
 ---
 let x = 1;
-export function f1() {
+export function f1(__unused_0) {
 	return 1;
 }
 export const t = 1;
@@ -11,4 +11,4 @@ export function f2() {
 	effect;
 }
 f2();
-const __unused_0 = f2();
+const __unused_1 = f2();

@@ -24,7 +24,7 @@ impl<'a> Analyzer<'a> {
       Expression::NumericLiteral(node) => self.exc_numeric_literal(node),
       Expression::StringLiteral(node) => self.exec_string_literal(node),
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
-      Expression::Identifier(node) => self.exec_identifier_reference_read(node),
+      Expression::Identifier(node) => self.exec_identifier_reference_read(node, false),
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
       Expression::CallExpression(node) => self.exec_call_expression(node),
       Expression::ObjectExpression(node) => self.exec_object_expression(node),

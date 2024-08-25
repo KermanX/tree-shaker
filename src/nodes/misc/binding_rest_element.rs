@@ -13,8 +13,9 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a BindingRestElement<'a>,
     init_val: Entity<'a>,
+    exporting: bool,
   ) {
-    self.exec_binding_pattern(&node.argument, init_val)
+    self.exec_binding_pattern(&node.argument, init_val, exporting)
   }
 }
 
