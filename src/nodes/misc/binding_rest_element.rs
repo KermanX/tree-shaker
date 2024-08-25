@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_binding_rest_element(
-    &self,
+    &mut self,
     node: BindingRestElement<'a>,
   ) -> Option<BindingRestElement<'a>> {
     let BindingRestElement { span, argument, .. } = node;

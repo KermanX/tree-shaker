@@ -40,7 +40,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_identifier_reference_read(
-    &self,
+    &mut self,
     node: IdentifierReference<'a>,
     need_val: bool,
   ) -> Option<IdentifierReference<'a>> {

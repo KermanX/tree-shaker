@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_if_statement(&self, node: IfStatement<'a>) -> Option<Statement<'a>> {
+  pub(crate) fn transform_if_statement(&mut self, node: IfStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let IfStatement { span, test, consequent, alternate, .. } = node;

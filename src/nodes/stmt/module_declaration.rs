@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_module_declaration(
-    &self,
+    &mut self,
     node: ModuleDeclaration<'a>,
   ) -> ModuleDeclaration<'a> {
     match node {

@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_object_expression(
-    &self,
+    &mut self,
     node: ObjectExpression<'a>,
   ) -> Option<Expression<'a>> {
     // TODO:  !!!!

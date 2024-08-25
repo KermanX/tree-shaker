@@ -39,7 +39,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_function(&self, node: Function<'a>, need_val: bool) -> Option<Function<'a>> {
+  pub fn transform_function(&mut self, node: Function<'a>, need_val: bool) -> Option<Function<'a>> {
     if need_val || self.is_referred(EntityDep::Function(&node)) {
       Some(node)
     } else {

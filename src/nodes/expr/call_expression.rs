@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_call_expression(
-    &self,
+    &mut self,
     node: CallExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

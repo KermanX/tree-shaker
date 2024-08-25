@@ -1,7 +1,6 @@
 use super::{
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
-  unknown::UnknownEntity,
 };
 use crate::analyzer::Analyzer;
 use std::rc::Rc;

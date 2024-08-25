@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_variable_declarator(
-    &self,
+    &mut self,
     node: VariableDeclarator<'a>,
   ) -> Option<VariableDeclarator<'a>> {
     let VariableDeclarator { span, kind, id, init, .. } = node;

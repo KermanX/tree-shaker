@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_declaration(&self, node: Declaration<'a>) -> Option<Declaration<'a>> {
+  pub(crate) fn transform_declaration(&mut self, node: Declaration<'a>) -> Option<Declaration<'a>> {
     match node {
       Declaration::VariableDeclaration(node) => {
         let VariableDeclaration { span, kind, declarations, .. } = node.unbox();

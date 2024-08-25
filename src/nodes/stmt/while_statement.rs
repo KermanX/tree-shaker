@@ -42,7 +42,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_while_statement(
-    &self,
+    &mut self,
     node: WhileStatement<'a>,
   ) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, &node);

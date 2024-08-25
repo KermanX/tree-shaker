@@ -124,7 +124,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_binding_pattern(
-    &self,
+    &mut self,
     node: BindingPattern<'a>,
   ) -> Option<BindingPattern<'a>> {
     let BindingPattern { kind, .. } = node;

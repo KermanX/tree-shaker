@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_logical_expression(
-    &self,
+    &mut self,
     node: LogicalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

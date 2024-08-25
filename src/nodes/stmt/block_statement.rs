@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_block_statement(
-    &self,
+    &mut self,
     node: BlockStatement<'a>,
   ) -> Option<Statement<'a>> {
     let BlockStatement { span, body, .. } = node;

@@ -40,7 +40,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_expression(
-    &self,
+    &mut self,
     node: Expression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
