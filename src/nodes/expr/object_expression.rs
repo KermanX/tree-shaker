@@ -6,7 +6,6 @@ use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
-    let effect = false;
     let mut object = ObjectEntity::default();
 
     for property in &node.properties {

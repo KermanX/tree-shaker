@@ -13,6 +13,7 @@ pub(crate) struct ScopeContext<'a> {
   pub function_scopes: Vec<FunctionScope<'a>>,
   pub loop_scopes: Vec<LoopScope<'a>>,
   pub variable_scopes: Vec<VariableScope<'a>>,
+  pub indeterminate_scopes: Vec<bool>,
 }
 
 impl<'a> ScopeContext<'a> {
@@ -21,6 +22,7 @@ impl<'a> ScopeContext<'a> {
       function_scopes: vec![],
       loop_scopes: vec![],
       variable_scopes: vec![VariableScope::new()],
+      indeterminate_scopes: vec![false],
     }
   }
 }
@@ -64,5 +66,13 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn pop_variable_scope(&mut self) -> VariableScope<'a> {
     self.scope_context.variable_scopes.pop().unwrap()
+  }
+
+  pub(crate) fn push_indeterminate_scope(&mut self, indeterminate: bool) {
+    self.scope_context.indeterminate_scopes.push(indeterminate);
+  }
+
+  pub(crate) fn pop_indeterminate_scope(&mut self) -> bool {
+    self.scope_context.indeterminate_scopes.pop().unwrap()
   }
 }

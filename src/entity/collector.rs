@@ -1,9 +1,6 @@
 use super::{entity::Entity, literal::LiteralEntity};
 use oxc::{
-  ast::{
-    ast::{BigintBase, Expression, NumberBase},
-    AstBuilder,
-  },
+  ast::{ast::Expression, AstBuilder},
   span::Span,
 };
 
@@ -46,18 +43,6 @@ impl<'a> LiteralCollector<'a> {
     ast_builder: &AstBuilder<'a>,
     span: Span,
   ) -> Option<Expression<'a>> {
-    self.collected.as_ref().map(|literal| match literal {
-      LiteralEntity::String(value) => ast_builder.expression_string_literal(span, *value),
-      LiteralEntity::Number(value, raw) => {
-        ast_builder.expression_numeric_literal(span, value.0, *raw, NumberBase::Decimal)
-      }
-      LiteralEntity::BigInt(value) => {
-        ast_builder.expression_big_int_literal(span, *value, BigintBase::Decimal)
-      }
-      LiteralEntity::Boolean(value) => ast_builder.expression_boolean_literal(span, *value),
-      LiteralEntity::Symbol(value) => todo!(),
-      LiteralEntity::Null => ast_builder.expression_null_literal(span),
-      LiteralEntity::Undefined => ast_builder.expression_identifier_reference(span, "undefined"),
-    })
+    self.collected.as_ref().map(|literal| literal.build_expr(ast_builder, span))
   }
 }

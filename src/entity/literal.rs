@@ -1,7 +1,13 @@
-use std::rc::Rc;
-
 use super::entity::{Entity, EntityTrait};
 use crate::{analyzer::Analyzer, utils::F64WithEq};
+use oxc::{
+  ast::{
+    ast::{BigintBase, Expression, NumberBase},
+    AstBuilder,
+  },
+  span::Span,
+};
+use std::rc::Rc;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum LiteralEntity<'a> {
@@ -44,5 +50,25 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 impl<'a> LiteralEntity<'a> {
   pub(crate) fn new_string(value: &'a str) -> Entity<'a> {
     Rc::new(LiteralEntity::String(value))
+  }
+
+  pub(crate) fn new_undefined() -> Entity<'a> {
+    Rc::new(LiteralEntity::Undefined)
+  }
+
+  pub(crate) fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Expression<'a> {
+    match self {
+      LiteralEntity::String(value) => ast_builder.expression_string_literal(span, *value),
+      LiteralEntity::Number(value, raw) => {
+        ast_builder.expression_numeric_literal(span, value.0, *raw, NumberBase::Decimal)
+      }
+      LiteralEntity::BigInt(value) => {
+        ast_builder.expression_big_int_literal(span, *value, BigintBase::Decimal)
+      }
+      LiteralEntity::Boolean(value) => ast_builder.expression_boolean_literal(span, *value),
+      LiteralEntity::Symbol(value) => todo!(),
+      LiteralEntity::Null => ast_builder.expression_null_literal(span),
+      LiteralEntity::Undefined => ast_builder.expression_identifier_reference(span, "undefined"),
+    }
   }
 }

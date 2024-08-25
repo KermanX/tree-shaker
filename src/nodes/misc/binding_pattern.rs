@@ -1,11 +1,6 @@
-use std::rc::Rc;
-
 use crate::{
-  analyzer,
   entity::{
-    dep::EntityDep,
-    entity::{Entity, EntityTrait},
-    literal::LiteralEntity,
+    dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity,
     union::UnionEntity,
   },
   transformer::Transformer,
@@ -13,64 +8,11 @@ use crate::{
 };
 use oxc::{
   ast::ast::{
-    ArrayPattern, BindingIdentifier, BindingPattern, BindingPatternKind, BindingProperty,
-    ObjectPattern, TSTypeAnnotation,
+    ArrayPattern, BindingPattern, BindingPatternKind, BindingProperty, ObjectPattern,
+    TSTypeAnnotation,
   },
   span::GetSpan,
 };
-
-#[derive(Debug)]
-struct BindingIdentifierEntity<'a> {
-  val: Entity<'a>,
-  dep: EntityDep<'a>,
-}
-
-impl<'a> EntityTrait<'a> for BindingIdentifierEntity<'a> {
-  fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
-    self.val.consume_self(analyzer);
-    analyzer.refer_dep(self.dep);
-  }
-
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    self.val.consume_as_unknown(analyzer);
-    analyzer.refer_dep(self.dep);
-  }
-
-  fn consume_as_array(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    length: usize,
-  ) -> (Vec<Entity<'a>>, Entity<'a>) {
-    analyzer.refer_dep(self.dep);
-    self.val.consume_as_array(analyzer, length)
-  }
-
-  fn test_truthy(&self) -> Option<bool> {
-    self.val.test_truthy()
-  }
-
-  fn test_nullish(&self) -> Option<bool> {
-    self.val.test_nullish()
-  }
-
-  fn get_literal(&self) -> Option<LiteralEntity<'a>> {
-    self.val.get_literal()
-  }
-
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    self.val.get_property(key)
-  }
-
-  fn call(&self, analyzer: &mut Analyzer<'a>, this: &Entity<'a>, args: &Entity<'a>) -> Entity<'a> {
-    self.val.call(analyzer, this, args)
-  }
-}
-
-impl<'a> BindingIdentifierEntity<'a> {
-  pub(crate) fn new(val: Entity<'a>, dep: EntityDep<'a>) -> Entity<'a> {
-    Rc::new(Self { val, dep })
-  }
-}
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_binding_pattern(&mut self, node: &'a BindingPattern<'a>, init: Entity<'a>) {
@@ -79,7 +21,7 @@ impl<'a> Analyzer<'a> {
         let symbol = node.symbol_id.get().unwrap();
         self.declare_symbol(
           symbol,
-          BindingIdentifierEntity::new(init, EntityDep::BindingIdentifier(node)),
+          ForwardedEntity::new(init, vec![EntityDep::BindingIdentifier(node)]),
         );
       }
       BindingPatternKind::ObjectPattern(node) => {
@@ -108,9 +50,12 @@ impl<'a> Analyzer<'a> {
         let binding_val = match is_nullable {
           Some(true) => self.exec_expression(&node.right),
           Some(false) => init.clone(),
-          None => self.exec_indeterminate(|s| {
-            UnionEntity::new(vec![s.exec_expression(&node.right), init.clone()])
-          }),
+          None => {
+            self.push_indeterminate_scope(true);
+            let value = UnionEntity::new(vec![self.exec_expression(&node.right), init.clone()]);
+            self.pop_indeterminate_scope();
+            value
+          }
         };
       }
     }

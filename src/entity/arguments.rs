@@ -1,4 +1,7 @@
-use super::entity::{Entity, EntityTrait};
+use super::{
+  entity::{Entity, EntityTrait},
+  unknown::UnknownEntity,
+};
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -17,10 +20,19 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
   fn consume_as_array(
     &self,
-    analyzer: &mut crate::analyzer::Analyzer<'a>,
+    _analyzer: &mut crate::analyzer::Analyzer<'a>,
     length: usize,
   ) -> (Vec<Entity<'a>>, Entity<'a>) {
-    todo!("p4")
+    let mut result = Vec::new();
+    for i in 0..length.min(self.arguments.len()) {
+      let (is_spread, entity) = &self.arguments[i];
+      assert!(!is_spread, "TODO:");
+      result.push(entity.clone());
+    }
+    for _ in 0..length.saturating_sub(self.arguments.len()) {
+      result.push(UnknownEntity::new_unknown());
+    }
+    (result, UnknownEntity::new_unknown())
   }
 
   fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {

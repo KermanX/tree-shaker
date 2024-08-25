@@ -1,6 +1,6 @@
 use super::{
   entity::{Entity, EntityTrait},
-  unknown::UnknownEntity,
+  literal::LiteralEntity,
 };
 use crate::analyzer::Analyzer;
 use std::rc::Rc;
@@ -27,14 +27,35 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     length: usize,
   ) -> (Vec<Entity<'a>>, Entity<'a>) {
     // FIXME: May have the same result
-    for entity in &self.0 {
-      entity.consume_as_array(analyzer, length);
-    }
-    let mut result = Vec::new();
+    let mut elements = Vec::new();
     for _ in 0..length {
-      result.push(UnknownEntity::new_unknown());
+      elements.push(Vec::new());
     }
-    (result, UnknownEntity::new_unknown())
+    let mut rest = Vec::new();
+    for entity in &self.0 {
+      let result = entity.consume_as_array(analyzer, length);
+      for (i, element) in elements.iter_mut().enumerate() {
+        element.push(result.0[i].clone());
+      }
+      rest.push(result.1);
+    }
+    (elements.into_iter().map(UnionEntity::new).collect(), UnionEntity::new(rest))
+  }
+
+  fn call(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    this: &Entity<'a>,
+    args: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
+    let mut effect = false;
+    let mut ret_val = Vec::new();
+    for entity in &self.0 {
+      let result = entity.call(analyzer, this, args);
+      effect |= result.0;
+      ret_val.push(result.1);
+    }
+    (effect, UnionEntity::new(ret_val))
   }
 
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
@@ -43,6 +64,16 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
       result.push(entity.get_property(key));
     }
     Rc::new(UnionEntity(result))
+  }
+
+  fn get_literal(&self) -> Option<LiteralEntity<'a>> {
+    let result = self.0.first().unwrap().get_literal()?;
+    for entity in &self.0[1..] {
+      if entity.get_literal()? != result {
+        return None;
+      }
+    }
+    Some(result)
   }
 
   fn test_truthy(&self) -> Option<bool> {

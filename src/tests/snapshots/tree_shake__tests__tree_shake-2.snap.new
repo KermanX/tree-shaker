@@ -1,0 +1,6 @@
+---
+source: src/tests/mod.rs
+assertion_line: 4
+expression: output
+---
+export let a;

@@ -5,7 +5,6 @@ mod module_declaration;
 mod return_statement;
 mod while_statement;
 
-use crate::ast::AstType2;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::{
   ast::{
@@ -14,11 +13,6 @@ use oxc::{
   },
   span::GetSpan,
 };
-
-const AST_TYPE: AstType2 = AstType2::Statement;
-
-#[derive(Debug, Default, Clone)]
-pub struct Data {}
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_statement(&mut self, node: &'a Statement) {
@@ -37,6 +31,7 @@ impl<'a> Analyzer<'a> {
       Statement::BlockStatement(node) => self.exec_block_statement(node),
       Statement::IfStatement(node) => self.exec_if_statement(node),
       Statement::WhileStatement(node) => self.exec_while_statement(node),
+      Statement::ReturnStatement(node) => self.exec_return_statement(node),
       _ => todo!(),
     }
   }
@@ -63,6 +58,7 @@ impl<'a> Transformer<'a> {
       Statement::BlockStatement(node) => self.transform_block_statement(node.unbox()),
       Statement::IfStatement(node) => self.transform_if_statement(node.unbox()),
       Statement::WhileStatement(node) => self.transform_while_statement(node.unbox()),
+      Statement::ReturnStatement(node) => self.transform_return_statement(node.unbox()),
       _ => todo!(),
     }
   }

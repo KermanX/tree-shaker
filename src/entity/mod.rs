@@ -2,6 +2,7 @@ pub mod arguments;
 pub mod collector;
 pub mod dep;
 pub mod entity;
+pub mod forwarded;
 pub mod function;
 pub mod literal;
 pub mod object;

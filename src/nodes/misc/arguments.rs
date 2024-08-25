@@ -1,5 +1,5 @@
 use crate::{
-  ast::{Arguments, AstType2},
+  ast::Arguments,
   entity::{arguments::ArgumentsEntity, entity::Entity},
   transformer::Transformer,
   Analyzer,
@@ -8,8 +8,6 @@ use oxc::{
   ast::ast::{Argument, Expression},
   span::GetSpan,
 };
-
-const AST_TYPE: AstType2 = AstType2::Arguments;
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> Entity<'a> {
@@ -40,7 +38,6 @@ impl<'a> Transformer<'a> {
   }
 
   pub(crate) fn transform_argument_no_val(&self, node: Argument<'a>) -> Option<Expression<'a>> {
-    let span = node.span();
     match node {
       Argument::SpreadElement(node) => self.transform_expression(node.unbox().argument, false),
       _ => self.transform_expression(node.try_into().unwrap(), false),

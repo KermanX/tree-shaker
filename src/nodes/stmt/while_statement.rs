@@ -16,16 +16,22 @@ impl<'a> Analyzer<'a> {
     let test = self.exec_expression(&node.test);
 
     let (need_body, indeterminate) = match test.test_truthy() {
-      Some(true) => (true, None),
-      Some(false) => (false, None),
-      None => (true, Some(self.start_indeterminate())),
+      Some(true) => (true, false),
+      Some(false) => (false, false),
+      None => (true, true),
     };
+
+    if indeterminate {
+      self.push_indeterminate_scope(true)
+    }
 
     if need_body {
       self.exec_statement(&node.body);
     }
 
-    indeterminate.map(|prev| self.end_indeterminate(prev));
+    if indeterminate {
+      self.pop_indeterminate_scope();
+    }
 
     // TODO: p4, scope related!
     // let data = self.load_data::<Data>(AST_TYPE, node);

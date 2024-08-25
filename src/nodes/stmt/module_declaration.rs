@@ -1,11 +1,5 @@
-use crate::ast::AstType2;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::{ExportNamedDeclaration, ModuleDeclaration, ModuleExportName};
-
-const AST_TYPE: AstType2 = AstType2::ModuleDeclaration;
-
-#[derive(Debug, Default, Clone)]
-pub struct Data {}
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
@@ -23,7 +17,7 @@ impl<'a> Analyzer<'a> {
         }
         self.exporting = false;
       }
-      ModuleDeclaration::ExportDefaultDeclaration(node) => {
+      ModuleDeclaration::ExportDefaultDeclaration(_node) => {
         todo!()
       }
       _ => todo!(),

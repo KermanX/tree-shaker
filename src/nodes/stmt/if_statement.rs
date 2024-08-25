@@ -17,10 +17,14 @@ impl<'a> Analyzer<'a> {
     let test = self.exec_expression(&node.test);
 
     let (maybe_true, maybe_false, indeterminate) = match test.test_truthy() {
-      Some(true) => (true, false, None),
-      Some(false) => (false, true, None),
-      None => (true, true, Some(self.start_indeterminate())),
+      Some(true) => (true, false, false),
+      Some(false) => (false, true, false),
+      None => (true, true, true),
     };
+
+    if indeterminate {
+      self.push_indeterminate_scope(true)
+    }
 
     if maybe_true {
       self.exec_statement(&node.consequent);
@@ -31,7 +35,9 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    indeterminate.map(|prev| self.end_indeterminate(prev));
+    if indeterminate {
+      self.pop_indeterminate_scope();
+    }
 
     self.set_data(AST_TYPE, node, Data { maybe_true, maybe_false });
   }

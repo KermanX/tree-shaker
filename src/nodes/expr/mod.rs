@@ -3,9 +3,20 @@ mod literals;
 mod logical_expression;
 mod object_expression;
 
+use crate::ast::AstType2;
+use crate::build_effect;
+use crate::entity::collector::LiteralCollector;
 use crate::entity::entity::Entity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::Expression;
+use oxc::span::GetSpan;
+
+const AST_TYPE: AstType2 = AstType2::Expression;
+
+#[derive(Debug, Default)]
+struct Data<'a> {
+  collector: LiteralCollector<'a>,
+}
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
@@ -20,6 +31,9 @@ impl<'a> Analyzer<'a> {
       _ => todo!(),
     };
 
+    let data = self.load_data::<Data>(AST_TYPE, node);
+    data.collector.collect(&val);
+
     val
   }
 }
@@ -30,7 +44,13 @@ impl<'a> Transformer<'a> {
     node: Expression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    match node {
+    let data = self.get_data::<Data>(AST_TYPE, &node);
+
+    let span = node.span();
+    let literal = need_val.then(|| data.collector.build_expr(&self.ast_builder, span)).flatten();
+    let need_val = literal.is_none();
+
+    let inner = match node {
       Expression::NumericLiteral(_)
       | Expression::StringLiteral(_)
       | Expression::BooleanLiteral(_) => {
@@ -53,6 +73,12 @@ impl<'a> Transformer<'a> {
       Expression::ObjectExpression(node) => self.transform_object_expression(node.unbox()),
 
       _ => todo!(),
+    };
+
+    if let Some(literal) = literal {
+      Some(build_effect!(&self.ast_builder, span, inner; literal))
+    } else {
+      inner
     }
   }
 }

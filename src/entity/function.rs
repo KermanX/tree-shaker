@@ -24,17 +24,17 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     analyzer: &mut crate::analyzer::Analyzer<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> Entity<'a> {
+  ) -> (bool, Entity<'a>) {
     self.consume_self(analyzer);
     match &self.source {
       EntityDep::Function(node) => analyzer.call_function(node, this.clone(), args.clone()),
       EntityDep::ArrowFunctionExpression(node) => todo!(),
-      _ => UnknownEntity::new_unknown(),
+      _ => (true, UnknownEntity::new_unknown()),
     }
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    todo!()
+  fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
+    todo!("built-ins")
   }
 
   fn test_truthy(&self) -> Option<bool> {

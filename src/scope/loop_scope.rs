@@ -17,3 +17,5 @@ pub(crate) struct LoopScope<'a> {
   pub(crate) broken: Option<bool>,
   pub(crate) continued: Option<bool>,
 }
+
+impl<'a> LoopScope<'a> {}

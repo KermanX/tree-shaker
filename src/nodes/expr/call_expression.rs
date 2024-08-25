@@ -19,13 +19,11 @@ impl<'a> Analyzer<'a> {
     let args = self.exec_arguments(&node.arguments);
 
     // TODO: Track `this`. Refer https://github.com/oxc-project/oxc/issues/4341
-    let ret = callee.call(self, &UnknownEntity::new_unknown(), &args);
+    let (effect, ret) = callee.call(self, &UnknownEntity::new_unknown(), &args);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
+    data.need_call |= effect;
     data.ret_collector.collect(&ret);
-
-    let call_effect = true; // TODO: p4
-    data.need_call |= call_effect;
 
     ret
   }

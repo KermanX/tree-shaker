@@ -1,14 +1,15 @@
-use core::hash::Hash;
-use core::hash::Hasher;
-use oxc::ast::ast::ArrowFunctionExpression;
-use oxc::ast::ast::BindingIdentifier;
-use oxc::{ast::ast::Function, span::GetSpan};
+use core::hash::{Hash, Hasher};
+use oxc::{
+  ast::ast::{ArrowFunctionExpression, BindingIdentifier, Function, ReturnStatement},
+  span::GetSpan,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum EntityDep<'a> {
   Function(&'a Function<'a>),
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
   BindingIdentifier(&'a BindingIdentifier<'a>),
+  ReturnStatement(&'a ReturnStatement<'a>),
 }
 
 impl<'a> PartialEq for EntityDep<'a> {
@@ -19,6 +20,7 @@ impl<'a> PartialEq for EntityDep<'a> {
         a.span() == b.span()
       }
       (EntityDep::BindingIdentifier(a), EntityDep::BindingIdentifier(b)) => a.span() == b.span(),
+      (EntityDep::ReturnStatement(a), EntityDep::ReturnStatement(b)) => a.span() == b.span(),
       _ => false,
     }
   }
@@ -32,6 +34,7 @@ impl<'a> Hash for EntityDep<'a> {
       EntityDep::Function(a) => a.span(),
       EntityDep::ArrowFunctionExpression(a) => a.span(),
       EntityDep::BindingIdentifier(a) => a.span(),
+      EntityDep::ReturnStatement(a) => a.span(),
     };
     span.hash(state);
   }

@@ -5,9 +5,6 @@ use crate::{
 use oxc::ast::ast::{BigIntLiteral, BooleanLiteral, NumericLiteral, StringLiteral};
 use std::rc::Rc;
 
-#[derive(Debug, Default, Clone)]
-pub struct Data {}
-
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_string_literal(&mut self, node: &'a StringLiteral) -> Entity<'a> {
     Rc::new(LiteralEntity::String(node.value.as_str()))

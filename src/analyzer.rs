@@ -102,27 +102,6 @@ impl<'a> Analyzer<'a> {
   }
 }
 
-pub(crate) struct IndeterminateBackup(bool);
-
-impl<'a> Analyzer<'a> {
-  pub(crate) fn start_indeterminate(&mut self) -> IndeterminateBackup {
-    let prev = self.indeterminate;
-    self.indeterminate = true;
-    IndeterminateBackup(prev)
-  }
-
-  pub(crate) fn end_indeterminate(&mut self, prev: IndeterminateBackup) {
-    self.indeterminate = prev.0;
-  }
-
-  pub(crate) fn exec_indeterminate<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
-    let backup = self.start_indeterminate();
-    let result = f(self);
-    self.end_indeterminate(backup);
-    result
-  }
-}
-
 impl<'a> Analyzer<'a> {
   pub fn declare_symbol(&mut self, symbol: SymbolId, entity: Entity<'a>) {
     if self.exporting {

@@ -16,10 +16,21 @@ pub(crate) struct FunctionScope<'a> {
 
 impl<'a> FunctionScope<'a> {
   pub(crate) fn new() -> Self {
-    FunctionScope { returned: None, returned_value: Vec::new() }
+    FunctionScope { returned: Some(false), returned_value: Vec::new() }
   }
 
   pub(crate) fn returned_value(self) -> Entity<'a> {
     UnionEntity::new(self.returned_value)
+  }
+
+  pub(crate) fn on_return(&mut self, indeterminate: bool, value: Entity<'a>) {
+    match self.returned {
+      Some(true) => unreachable!(),
+      Some(false) => {
+        self.returned = indeterminate.then(|| true);
+      }
+      None => {}
+    }
+    self.returned_value.push(value);
   }
 }
