@@ -38,7 +38,6 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    self.refer_deps(analyzer);
     self.val.call(analyzer, this, args)
   }
 

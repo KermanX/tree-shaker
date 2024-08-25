@@ -2,7 +2,6 @@ use crate::{
   ast::AstType2,
   data::{ExtraData, ReferredNodes},
   entity::{
-    self,
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
   },
@@ -11,7 +10,7 @@ use crate::{
 use oxc::{
   allocator::Allocator,
   ast::ast::Program,
-  semantic::{ScopeId, Semantic, SymbolId},
+  semantic::{Semantic, SymbolId},
   span::{GetSpan, Span},
 };
 use rustc_hash::FxHashMap;
@@ -49,12 +48,9 @@ impl<'a> Analyzer<'a> {
     debug_assert_eq!(self.scope_context.loop_scopes.len(), 0);
     debug_assert_eq!(self.scope_context.variable_scopes.len(), 1);
 
-    println!("{:?}", self.exports);
-
     for symbol in self.exports.clone() {
-      println!("{:?}", self.sematic.symbols().get_name(symbol));
       let entity = self.get_symbol(&symbol).clone();
-      self.consume_entity(&entity);
+      entity.consume_as_unknown(self);
     }
   }
 }

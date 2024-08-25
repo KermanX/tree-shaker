@@ -39,17 +39,3 @@ pub(crate) trait EntityTrait<'a>: Debug {
 }
 
 pub(crate) type Entity<'a> = Rc<dyn EntityTrait<'a> + 'a>;
-
-impl<'a> Analyzer<'a> {
-  pub(crate) fn consume_entity(&mut self, entity: &Entity<'a>) {
-    entity.consume_self(self);
-  }
-
-  pub(crate) fn consume_as_array(
-    &mut self,
-    entity: &Entity<'a>,
-    length: usize,
-  ) -> (Vec<Entity<'a>>, Entity<'a>) {
-    entity.consume_as_array(self, length)
-  }
-}

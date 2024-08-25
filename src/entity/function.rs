@@ -25,7 +25,6 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    self.consume_self(analyzer);
     match &self.source.node {
       EntityDepNode::Function(node) => analyzer.call_function(node, this.clone(), args.clone()),
       EntityDepNode::ArrowFunctionExpression(node) => todo!(),
