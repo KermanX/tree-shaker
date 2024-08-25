@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   data::{DataPlaceholder, ExtraData, ReferredNodes},
-  entity::dep::EntityDep,
+  entity::dep::{EntityDep, EntityDepNode},
 };
 use oxc::{
   allocator::Allocator,
@@ -85,7 +85,7 @@ impl<'a> Transformer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn is_referred(&self, node: EntityDep<'a>) -> bool {
+  pub(crate) fn is_referred(&self, node: EntityDepNode<'a>) -> bool {
     self.referred_nodes.contains(&node)
   }
 }

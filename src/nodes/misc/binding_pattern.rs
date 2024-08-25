@@ -1,6 +1,9 @@
 use crate::{
   entity::{
-    dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity,
+    dep::{EntityDep, EntityDepNode},
+    entity::Entity,
+    forwarded::ForwardedEntity,
+    literal::LiteralEntity,
     union::UnionEntity,
   },
   transformer::Transformer,
@@ -19,10 +22,8 @@ impl<'a> Analyzer<'a> {
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
         let symbol = node.symbol_id.get().unwrap();
-        self.declare_symbol(
-          symbol,
-          ForwardedEntity::new(init, vec![EntityDep::BindingIdentifier(node)]),
-        );
+        let dep = self.new_entity_dep(EntityDepNode::BindingIdentifier(node));
+        self.declare_symbol(symbol, ForwardedEntity::new(init, vec![dep]));
       }
       BindingPatternKind::ObjectPattern(node) => {
         for property in &node.properties {
@@ -60,66 +61,6 @@ impl<'a> Analyzer<'a> {
       }
     }
   }
-
-  // pub(crate) fn calc_binding_pattern(
-  //   &self,
-  //   node: &'a BindingPattern<'a>,
-  //   symbol: SymbolId,
-  // ) -> Option<Entity> {
-  //   let data = self.get_data::<Data>(AST_TYPE, node);
-
-  //   match &node.kind {
-  //     BindingPatternKind::BindingIdentifier(node) => {
-  //       (node.symbol_id.get().unwrap() == symbol).then(|| data.init_val.clone())
-  //     }
-  //     BindingPatternKind::ObjectPattern(node) => {
-  //       for property in &node.properties {
-  //         if let Some(val) = self.calc_binding_pattern(&property.value, symbol) {
-  //           return Some(val);
-  //         }
-  //       }
-  //       node.rest.as_ref().and_then(|rest| self.calc_binding_rest_element(rest, symbol))
-  //     }
-  //     BindingPatternKind::ArrayPattern(node) => {
-  //       for element in &node.elements {
-  //         if let Some(element) = element {
-  //           if let Some(val) = self.calc_binding_pattern(&element, symbol) {
-  //             return Some(val);
-  //           }
-  //         }
-  //       }
-  //       node.rest.as_ref().and_then(|rest| self.calc_binding_rest_element(rest, symbol))
-  //     }
-  //     BindingPatternKind::AssignmentPattern(node) => self.calc_binding_pattern(&node.left, symbol),
-  //   }
-  // }
-
-  // pub(crate) fn refer_binding_pattern(&mut self, node: &'a BindingPattern, symbol: SymbolId) {
-  //   let data = self.load_data::<Data>(AST_TYPE, node);
-
-  //   match &node.kind {
-  //     BindingPatternKind::BindingIdentifier(node) => {
-  //       data.referred |= node.symbol_id.get().unwrap() == symbol;
-  //     }
-  //     BindingPatternKind::ObjectPattern(node) => {
-  //       for property in &node.properties {
-  //         self.refer_binding_pattern(&property.value, symbol);
-  //       }
-  //       node.rest.as_ref().map(|rest| self.refer_binding_rest_element(rest, symbol));
-  //     }
-  //     BindingPatternKind::ArrayPattern(node) => {
-  //       for element in &node.elements {
-  //         if let Some(element) = element {
-  //           self.refer_binding_pattern(&element, symbol);
-  //         }
-  //       }
-  //       node.rest.as_ref().map(|rest| self.refer_binding_rest_element(rest, symbol));
-  //     }
-  //     BindingPatternKind::AssignmentPattern(node) => {
-  //       self.refer_binding_pattern(&node.left, symbol);
-  //     }
-  //   }
-  // }
 }
 
 impl<'a> Transformer<'a> {
@@ -131,7 +72,7 @@ impl<'a> Transformer<'a> {
 
     match kind {
       BindingPatternKind::BindingIdentifier(node) => {
-        if self.is_referred(EntityDep::BindingIdentifier(&node)) {
+        if self.is_referred(EntityDepNode::BindingIdentifier(&node)) {
           Some(self.ast_builder.binding_pattern(
             self.ast_builder.binding_pattern_kind_from_binding_identifier(node),
             None::<TSTypeAnnotation>,

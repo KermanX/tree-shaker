@@ -42,12 +42,20 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     (elements.into_iter().map(UnionEntity::new).collect(), UnionEntity::new(rest))
   }
 
-  fn call(&self, analyzer: &mut Analyzer<'a>, this: &Entity<'a>, args: &Entity<'a>) -> Entity<'a> {
+  fn call(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    this: &Entity<'a>,
+    args: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
+    let mut has_effect = false;
     let mut ret_val = Vec::new();
     for entity in &self.0 {
-      ret_val.push(entity.call(analyzer, this, args));
+      let result = entity.call(analyzer, this, args);
+      has_effect |= result.0;
+      ret_val.push(result.1);
     }
-    UnionEntity::new(ret_val)
+    (has_effect, UnionEntity::new(ret_val))
   }
 
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {

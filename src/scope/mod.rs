@@ -1,12 +1,10 @@
 mod function_scope;
 mod loop_scope;
 mod variable_scope;
-
+use crate::analyzer::Analyzer;
 use function_scope::FunctionScope;
 use loop_scope::LoopScope;
 use variable_scope::VariableScope;
-
-use crate::analyzer::Analyzer;
 
 #[derive(Debug, Default)]
 pub(crate) struct ScopeContext<'a> {
@@ -19,7 +17,7 @@ pub(crate) struct ScopeContext<'a> {
 impl<'a> ScopeContext<'a> {
   pub(crate) fn new() -> Self {
     ScopeContext {
-      function_scopes: vec![],
+      function_scopes: vec![FunctionScope::new()],
       loop_scopes: vec![],
       variable_scopes: vec![VariableScope::new()],
       indeterminate_scopes: vec![false],

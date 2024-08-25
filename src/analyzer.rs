@@ -1,13 +1,17 @@
 use crate::{
   ast::AstType2,
   data::{ExtraData, ReferredNodes},
-  entity::{dep::EntityDep, entity::Entity},
+  entity::{
+    self,
+    dep::{EntityDep, EntityDepNode},
+    entity::Entity,
+  },
   scope::ScopeContext,
 };
 use oxc::{
   allocator::Allocator,
   ast::ast::Program,
-  semantic::{Semantic, SymbolId},
+  semantic::{ScopeId, Semantic, SymbolId},
   span::{GetSpan, Span},
 };
 use rustc_hash::FxHashMap;
@@ -44,8 +48,8 @@ impl<'a> Analyzer<'a> {
     }
 
     for symbol in self.exports.clone() {
-      // TODO: Should consume the symbol
-      self.consume_entity(&self.variable_scope().get(&symbol));
+      let entity = self.get_symbol(&symbol).clone();
+      self.consume_entity(&entity);
     }
   }
 }
@@ -110,11 +114,43 @@ impl<'a> Analyzer<'a> {
     self.variable_scope_mut().declare(symbol, entity)
   }
 
-  pub(crate) fn refer_dep(&mut self, node: EntityDep<'a>) {
-    self.referred_nodes.insert(node);
+  pub(crate) fn new_entity_dep(&self, node: EntityDepNode<'a>) -> EntityDep<'a> {
+    EntityDep {
+      node,
+      scope_path: self.scope_context.function_scopes.iter().map(|x| x.id).collect(),
+    }
   }
 
-  pub(crate) fn is_referred(&self, node: &EntityDep<'a>) -> bool {
+  pub(crate) fn get_symbol(&self, symbol: &SymbolId) -> &Entity<'a> {
+    for scope in self.scope_context.variable_scopes.iter().rev() {
+      if let Some(entity) = scope.get(symbol) {
+        return entity;
+      }
+    }
+    unreachable!()
+  }
+
+  pub(crate) fn refer_dep(&mut self, dep: &EntityDep<'a>) {
+    self.referred_nodes.insert(dep.node);
+
+    let mut diff = false;
+    for (i, scope) in self.scope_context.function_scopes.iter_mut().enumerate() {
+      if diff {
+        scope.has_effect = true;
+      } else if dep.scope_path.get(i).is_some_and(|id| *id != scope.id) {
+        diff = true;
+        scope.has_effect = false;
+      }
+    }
+  }
+
+  pub(crate) fn refer_global_dep(&mut self) {
+    for scope in self.scope_context.function_scopes.iter_mut() {
+      scope.has_effect = true;
+    }
+  }
+
+  pub(crate) fn is_referred(&self, node: &EntityDepNode<'a>) -> bool {
     self.referred_nodes.contains(node)
   }
 }

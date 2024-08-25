@@ -1,0 +1,14 @@
+---
+source: src/tests/mod.rs
+expression: result
+---
+let x = 1;
+export function f1() {
+	return x;
+}
+export const t = 1;
+export function f2() {
+	effect;
+}
+f2();
+const __unused_0 = f2();

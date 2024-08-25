@@ -9,6 +9,7 @@ const AST_TYPE: AstType2 = AstType2::CallExpression;
 
 #[derive(Debug, Default)]
 pub struct Data<'a> {
+  has_effect: bool,
   ret_collector: LiteralCollector<'a>,
 }
 
@@ -18,9 +19,10 @@ impl<'a> Analyzer<'a> {
     let args = self.exec_arguments(&node.arguments);
 
     // TODO: Track `this`. Refer https://github.com/oxc-project/oxc/issues/4341
-    let ret_val = callee.call(self, &UnknownEntity::new_unknown(), &args);
+    let (has_effect, ret_val) = callee.call(self, &UnknownEntity::new_unknown(), &args);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
+    data.has_effect |= has_effect;
     data.ret_collector.collect(&ret_val);
 
     ret_val
@@ -37,8 +39,7 @@ impl<'a> Transformer<'a> {
 
     let CallExpression { span, callee, arguments, optional, .. } = node;
 
-    // TODO:
-    let need_call = true;
+    let need_call = data.has_effect;
 
     if need_val && !need_call {
       if let Some(simple_literal) = data.ret_collector.build_expr(&self.ast_builder, span) {

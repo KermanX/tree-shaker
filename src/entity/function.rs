@@ -1,5 +1,5 @@
 use super::{
-  dep::EntityDep,
+  dep::{EntityDep, EntityDepNode},
   entity::{Entity, EntityTrait},
   unknown::UnknownEntity,
 };
@@ -12,7 +12,7 @@ pub(crate) struct FunctionEntity<'a> {
 
 impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn consume_self(&self, analyzer: &mut crate::analyzer::Analyzer<'a>) {
-    analyzer.refer_dep(self.source);
+    analyzer.refer_dep(&self.source);
   }
 
   fn consume_as_unknown(&self, analyzer: &mut crate::analyzer::Analyzer<'a>) {
@@ -24,12 +24,12 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     analyzer: &mut crate::analyzer::Analyzer<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> Entity<'a> {
+  ) -> (bool, Entity<'a>) {
     self.consume_self(analyzer);
-    match &self.source {
-      EntityDep::Function(node) => analyzer.call_function(node, this.clone(), args.clone()),
-      EntityDep::ArrowFunctionExpression(node) => todo!(),
-      _ => UnknownEntity::new_unknown(),
+    match &self.source.node {
+      EntityDepNode::Function(node) => analyzer.call_function(node, this.clone(), args.clone()),
+      EntityDepNode::ArrowFunctionExpression(node) => todo!(),
+      _ => unreachable!(),
     }
   }
 

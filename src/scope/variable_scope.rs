@@ -20,7 +20,7 @@ impl<'a> VariableScope<'a> {
     assert!(self.set(symbol, entity).is_none());
   }
 
-  pub fn get(&self, symbol: &SymbolId) -> Entity<'a> {
-    self.variables.get(symbol).unwrap().clone()
+  pub fn get(&self, symbol: &SymbolId) -> Option<&Entity<'a>> {
+    self.variables.get(symbol)
   }
 }

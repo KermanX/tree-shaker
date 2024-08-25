@@ -23,9 +23,10 @@ impl<'a> Analyzer<'a> {
     self.set_data(AST_TYPE, node, Data { resolvable: symbol.is_some() });
 
     if let Some(symbol) = symbol {
-      self.variable_scope().get(&symbol)
+      self.get_symbol(&symbol).clone()
     } else {
       // TODO: Handle globals
+      self.refer_global_dep();
       UnknownEntity::new_unknown()
     }
   }

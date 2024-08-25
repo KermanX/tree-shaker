@@ -1,40 +1,51 @@
 use core::hash::{Hash, Hasher};
 use oxc::{
   ast::ast::{ArrowFunctionExpression, BindingIdentifier, Function, ReturnStatement},
+  semantic::ScopeId,
   span::GetSpan,
 };
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) enum EntityDep<'a> {
+pub(crate) enum EntityDepNode<'a> {
   Function(&'a Function<'a>),
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
   BindingIdentifier(&'a BindingIdentifier<'a>),
   ReturnStatement(&'a ReturnStatement<'a>),
 }
 
-impl<'a> PartialEq for EntityDep<'a> {
+#[derive(Debug, Clone)]
+pub(crate) struct EntityDep<'a> {
+  pub node: EntityDepNode<'a>,
+  pub scope_path: Vec<ScopeId>,
+}
+
+impl<'a> PartialEq for EntityDepNode<'a> {
   fn eq(&self, other: &Self) -> bool {
     match (self, other) {
-      (EntityDep::Function(a), EntityDep::Function(b)) => a.span() == b.span(),
-      (EntityDep::ArrowFunctionExpression(a), EntityDep::ArrowFunctionExpression(b)) => {
+      (EntityDepNode::Function(a), EntityDepNode::Function(b)) => a.span() == b.span(),
+      (EntityDepNode::ArrowFunctionExpression(a), EntityDepNode::ArrowFunctionExpression(b)) => {
         a.span() == b.span()
       }
-      (EntityDep::BindingIdentifier(a), EntityDep::BindingIdentifier(b)) => a.span() == b.span(),
-      (EntityDep::ReturnStatement(a), EntityDep::ReturnStatement(b)) => a.span() == b.span(),
+      (EntityDepNode::BindingIdentifier(a), EntityDepNode::BindingIdentifier(b)) => {
+        a.span() == b.span()
+      }
+      (EntityDepNode::ReturnStatement(a), EntityDepNode::ReturnStatement(b)) => {
+        a.span() == b.span()
+      }
       _ => false,
     }
   }
 }
 
-impl<'a> Eq for EntityDep<'a> {}
+impl<'a> Eq for EntityDepNode<'a> {}
 
-impl<'a> Hash for EntityDep<'a> {
+impl<'a> Hash for EntityDepNode<'a> {
   fn hash<H: Hasher>(&self, state: &mut H) {
     let span = match self {
-      EntityDep::Function(a) => a.span(),
-      EntityDep::ArrowFunctionExpression(a) => a.span(),
-      EntityDep::BindingIdentifier(a) => a.span(),
-      EntityDep::ReturnStatement(a) => a.span(),
+      EntityDepNode::Function(a) => a.span(),
+      EntityDepNode::ArrowFunctionExpression(a) => a.span(),
+      EntityDepNode::BindingIdentifier(a) => a.span(),
+      EntityDepNode::ReturnStatement(a) => a.span(),
     };
     span.hash(state);
   }
