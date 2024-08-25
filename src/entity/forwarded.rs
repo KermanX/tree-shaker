@@ -48,12 +48,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     self.val.get_property(key)
   }
 
-  fn call(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  fn call(&self, analyzer: &mut Analyzer<'a>, this: &Entity<'a>, args: &Entity<'a>) -> Entity<'a> {
     self.val.call(analyzer, this, args)
   }
 }

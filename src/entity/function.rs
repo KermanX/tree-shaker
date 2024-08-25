@@ -24,12 +24,12 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     analyzer: &mut crate::analyzer::Analyzer<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     self.consume_self(analyzer);
     match &self.source {
       EntityDep::Function(node) => analyzer.call_function(node, this.clone(), args.clone()),
       EntityDep::ArrowFunctionExpression(node) => todo!(),
-      _ => (true, UnknownEntity::new_unknown()),
+      _ => UnknownEntity::new_unknown(),
     }
   }
 

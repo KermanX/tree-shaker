@@ -1,6 +1,7 @@
 use super::{
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
+  unknown::UnknownEntity,
 };
 use crate::analyzer::Analyzer;
 use std::rc::Rc;
@@ -42,20 +43,12 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     (elements.into_iter().map(UnionEntity::new).collect(), UnionEntity::new(rest))
   }
 
-  fn call(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    let mut effect = false;
+  fn call(&self, analyzer: &mut Analyzer<'a>, this: &Entity<'a>, args: &Entity<'a>) -> Entity<'a> {
     let mut ret_val = Vec::new();
     for entity in &self.0 {
-      let result = entity.call(analyzer, this, args);
-      effect |= result.0;
-      ret_val.push(result.1);
+      ret_val.push(entity.call(analyzer, this, args));
     }
-    (effect, UnionEntity::new(ret_val))
+    UnionEntity::new(ret_val)
   }
 
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {

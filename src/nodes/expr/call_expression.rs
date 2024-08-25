@@ -9,7 +9,6 @@ const AST_TYPE: AstType2 = AstType2::CallExpression;
 
 #[derive(Debug, Default)]
 pub struct Data<'a> {
-  need_call: bool,
   ret_collector: LiteralCollector<'a>,
 }
 
@@ -19,13 +18,12 @@ impl<'a> Analyzer<'a> {
     let args = self.exec_arguments(&node.arguments);
 
     // TODO: Track `this`. Refer https://github.com/oxc-project/oxc/issues/4341
-    let (effect, ret) = callee.call(self, &UnknownEntity::new_unknown(), &args);
+    let ret_val = callee.call(self, &UnknownEntity::new_unknown(), &args);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
-    data.need_call |= effect;
-    data.ret_collector.collect(&ret);
+    data.ret_collector.collect(&ret_val);
 
-    ret
+    ret_val
   }
 }
 

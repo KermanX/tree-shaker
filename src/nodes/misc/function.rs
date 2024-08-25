@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
     node: &'a Function<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     self.push_variable_scope();
     self.push_function_scope();
 
@@ -33,11 +33,8 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    // TODO: p4
-    let has_effect = true;
-
     self.pop_variable_scope();
-    (has_effect, self.pop_function_scope().returned_value())
+    self.pop_function_scope().returned_value()
   }
 }
 

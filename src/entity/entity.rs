@@ -23,8 +23,8 @@ pub(crate) trait EntityTrait<'a>: Debug {
     _analyzer: &mut Analyzer<'a>,
     _this: &Entity<'a>,
     _args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    (true, UnknownEntity::new_unknown())
+  ) -> Entity<'a> {
+    UnknownEntity::new_unknown()
   }
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a>;
   fn get_literal(&self) -> Option<LiteralEntity<'a>> {
