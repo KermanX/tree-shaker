@@ -7,6 +7,7 @@ mod while_statement;
 
 use crate::{transformer::Transformer, Analyzer};
 use oxc::{
+  allocator::Vec,
   ast::{
     ast::{ExpressionStatement, Statement},
     match_declaration, match_module_declaration,
@@ -61,5 +62,19 @@ impl<'a> Transformer<'a> {
       Statement::ReturnStatement(node) => self.transform_return_statement(node.unbox()),
       _ => todo!(),
     }
+  }
+
+  pub(crate) fn transform_statements(
+    &mut self,
+    nodes: Vec<'a, Statement<'a>>,
+  ) -> Vec<'a, Statement<'a>> {
+    let mut result = self.ast_builder.vec::<Statement>();
+    for node in nodes {
+      let new_statement = self.transform_statement(node);
+      if let Some(transformed) = new_statement {
+        result.push(transformed);
+      }
+    }
+    result
   }
 }

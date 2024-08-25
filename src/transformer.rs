@@ -31,7 +31,7 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn transform_program(&mut self, ast: &'a mut Program<'a>) -> Program<'a> {
-    let Program { span, source_type, hashbang, directives, body: old_statements, .. } =
+    let Program { span, source_type, hashbang, directives, body, .. } =
       mem::replace(
         ast,
         self.ast_builder.program(
@@ -42,14 +42,8 @@ impl<'a> Transformer<'a> {
           self.ast_builder.vec(),
         ),
       );
-    let mut new_statements = self.ast_builder.vec::<Statement>();
-    for statement in old_statements {
-      let new_statement = self.transform_statement(statement);
-      if let Some(new_statement) = new_statement {
-        new_statements.push(new_statement);
-      }
-    }
-    self.ast_builder.program(span, source_type, hashbang, directives, new_statements)
+    let body = self.transform_statements(body);
+    self.ast_builder.program(span, source_type, hashbang, directives, body)
   }
 }
 

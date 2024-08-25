@@ -4,7 +4,7 @@ expression: result
 ---
 let x = 1;
 export function f1() {
-	return x;
+	return 1;
 }
 export const t = 1;
 export function f2() {

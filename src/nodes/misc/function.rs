@@ -2,7 +2,7 @@ use crate::entity::dep::EntityDepNode;
 use crate::entity::entity::Entity;
 use crate::entity::function::FunctionEntity;
 use crate::{transformer::Transformer, Analyzer};
-use oxc::ast::ast::Function;
+use oxc::ast::ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration};
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
@@ -27,12 +27,7 @@ impl<'a> Analyzer<'a> {
     self.push_function_scope();
 
     self.exec_formal_parameters(&node.params, args);
-
-    if let Some(body) = &node.body {
-      for statement in &body.statements {
-        self.exec_statement(statement);
-      }
-    }
+    self.exec_function_body(node.body.as_ref().unwrap());
 
     self.pop_variable_scope();
     self.pop_function_scope().get_result()
@@ -42,7 +37,24 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_function(&mut self, node: Function<'a>, need_val: bool) -> Option<Function<'a>> {
     if need_val || self.is_referred(EntityDepNode::Function(&node)) {
-      Some(node)
+      let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
+
+      let params = self.transform_formal_parameters(params.unbox());
+      let body = self.transform_function_body(body.unwrap().unbox());
+
+      Some(self.ast_builder.function(
+        r#type,
+        span,
+        id,
+        generator,
+        r#async,
+        false,
+        None::<TSTypeParameterDeclaration>,
+        None::<TSThisParameter>,
+        params,
+        None::<TSTypeAnnotation>,
+        Some(body),
+      ))
     } else {
       None
     }
