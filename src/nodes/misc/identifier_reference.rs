@@ -18,6 +18,7 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
     if node.name == "undefined" {
+      self.set_data(AST_TYPE, node, Data { resolvable: true });
       return LiteralEntity::new_undefined();
     }
 

@@ -3,6 +3,5 @@ source: src/tests/mod.rs
 expression: result
 ---
 export function f() {
-	let __unused_7009 = { x: void 0 };
 	return 1;
 }
