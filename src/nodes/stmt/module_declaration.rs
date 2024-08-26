@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
         for specifier in &node.specifiers {
           match &specifier.local {
             ModuleExportName::IdentifierReference(node) => {
-              self.exec_identifier_reference_read(node, true);
+              self.exec_identifier_reference_export(node);
             }
             _ => unreachable!(),
           }
