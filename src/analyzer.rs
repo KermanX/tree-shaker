@@ -21,7 +21,6 @@ pub(crate) struct Analyzer<'a> {
   pub(crate) sematic: Semantic<'a>,
   pub(crate) data: ExtraData<'a>,
   pub(crate) referred_nodes: ReferredNodes<'a>,
-  pub(crate) indeterminate: bool,
   pub(crate) exports: Vec<SymbolId>,
   pub(crate) scope_context: ScopeContext<'a>,
 }
@@ -33,7 +32,6 @@ impl<'a> Analyzer<'a> {
       sematic,
       data: Default::default(),
       referred_nodes: Default::default(),
-      indeterminate: false,
       exports: Vec::new(),
       scope_context: ScopeContext::new(),
     }

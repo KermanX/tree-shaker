@@ -38,6 +38,10 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.last().unwrap()
   }
 
+  pub(crate) fn indeterminate_scope(&self) -> bool {
+    *self.scope_context.indeterminate_scopes.last().unwrap()
+  }
+
   pub(crate) fn function_scope_mut(&mut self) -> &mut FunctionScope<'a> {
     self.scope_context.function_scopes.last_mut().unwrap()
   }
@@ -48,6 +52,10 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn variable_scope_mut(&mut self) -> &mut VariableScope<'a> {
     self.scope_context.variable_scopes.last_mut().unwrap()
+  }
+
+  pub(crate) fn set_indeterminate_scope(&mut self, new_value: bool) {
+    *self.scope_context.indeterminate_scopes.last_mut().unwrap() = new_value;
   }
 
   pub(crate) fn push_function_scope(&mut self) {

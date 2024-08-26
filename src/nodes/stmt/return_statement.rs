@@ -11,7 +11,7 @@ use oxc::ast::ast::{ReturnStatement, Statement};
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_return_statement(&mut self, node: &'a ReturnStatement) {
-    let indeterminate = self.indeterminate;
+    let indeterminate = self.indeterminate_scope();
     let value = node
       .argument
       .as_ref()
