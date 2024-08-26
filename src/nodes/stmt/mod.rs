@@ -1,4 +1,5 @@
 mod block_statement;
+mod break_statement;
 mod declaration;
 mod if_statement;
 mod module_declaration;
@@ -32,6 +33,7 @@ impl<'a> Analyzer<'a> {
       Statement::BlockStatement(node) => self.exec_block_statement(node),
       Statement::IfStatement(node) => self.exec_if_statement(node),
       Statement::WhileStatement(node) => self.exec_while_statement(node),
+      Statement::BreakStatement(node) => self.exec_break_statement(node),
       Statement::ReturnStatement(node) => self.exec_return_statement(node),
       _ => todo!(),
     }

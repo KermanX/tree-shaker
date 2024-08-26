@@ -1,21 +1,18 @@
-use oxc::ast::ast::{
-  DoWhileStatement, ForInStatement, ForOfStatement, ForStatement, WhileStatement,
-};
-
-#[derive(Debug)]
-pub(crate) enum LoopScopeNode<'a> {
-  While(&'a WhileStatement<'a>),
-  DoWhile(&'a DoWhileStatement<'a>),
-  For(&'a ForStatement<'a>),
-  ForIn(&'a ForInStatement<'a>),
-  ForOf(&'a ForOfStatement<'a>),
-}
+use oxc::ast::ast::LabelIdentifier;
 
 #[derive(Debug)]
 pub(crate) struct LoopScope<'a> {
-  pub(crate) node: LoopScopeNode<'a>,
+  pub(crate) label: Option<&'a str>,
   pub(crate) broken: Option<bool>,
   pub(crate) continued: Option<bool>,
 }
 
-impl<'a> LoopScope<'a> {}
+impl<'a> LoopScope<'a> {
+  pub(crate) fn new(label: Option<&'a LabelIdentifier<'a>>) -> Self {
+    LoopScope {
+      label: label.map(|label| label.name.as_str()),
+      broken: Some(false),
+      continued: Some(false),
+    }
+  }
+}

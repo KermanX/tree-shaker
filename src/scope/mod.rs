@@ -4,6 +4,7 @@ mod variable_scope;
 use crate::analyzer::Analyzer;
 use function_scope::FunctionScope;
 use loop_scope::LoopScope;
+use oxc::ast::ast::LabelIdentifier;
 use variable_scope::VariableScope;
 
 #[derive(Debug, Default)]
@@ -64,6 +65,14 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn pop_function_scope(&mut self) -> FunctionScope<'a> {
     self.scope_context.function_scopes.pop().unwrap()
+  }
+
+  pub(crate) fn push_loop_scope(&mut self, label: Option<&'a LabelIdentifier<'a>>) {
+    self.scope_context.loop_scopes.push(LoopScope::new(label));
+  }
+
+  pub(crate) fn pop_loop_scope(&mut self) -> LoopScope<'a> {
+    self.scope_context.loop_scopes.pop().unwrap()
   }
 
   pub(crate) fn push_variable_scope(&mut self) {

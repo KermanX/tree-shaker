@@ -5,6 +5,14 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_block_statement(&mut self, node: &'a BlockStatement) {
     for statement in &node.body {
       self.exec_statement(statement);
+      if matches!(
+        statement,
+        Statement::ReturnStatement(_)
+          | Statement::BreakStatement(_)
+          | Statement::ContinueStatement(_)
+      ) {
+        break;
+      }
     }
   }
 }

@@ -12,11 +12,15 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_while_statement(&mut self, node: &'a WhileStatement) {
+  pub(crate) fn exec_while_statement(&mut self, node: &'a WhileStatement<'a>) {
     // This may be indeterminate. However, we can't know it until we execute the test.
     // And there should be no same level break/continue statement in test.
     // `a: while(() => { break a }) { }` is illegal.
     let test = self.exec_expression(&node.test);
+
+    // TODO: label
+    self.push_loop_scope(None);
+    self.push_variable_scope();
 
     let (need_body, indeterminate) = match test.test_truthy() {
       Some(true) => (true, false),
@@ -36,10 +40,8 @@ impl<'a> Analyzer<'a> {
       self.pop_indeterminate_scope();
     }
 
-    // TODO: p4, scope related!
-    // let data = self.load_data::<Data>(AST_TYPE, node);
-    // data.need_loop |= test_effect || body_effect;
-    // test_effect || body_effect
+    self.pop_variable_scope();
+    self.pop_loop_scope();
   }
 }
 
