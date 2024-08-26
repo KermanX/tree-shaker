@@ -1,15 +1,17 @@
+use super::loop_scope::LoopScope;
 use crate::entity::{entity::Entity, literal::LiteralEntity, union::UnionEntity};
 
 #[derive(Debug)]
 pub(crate) struct FunctionScope<'a> {
   /// `None` for indeterminate
-  pub(crate) returned: Option<bool>,
-  pub(crate) returned_value: Vec<Entity<'a>>,
+  pub returned: Option<bool>,
+  pub returned_value: Vec<Entity<'a>>,
+  pub loop_scopes: Vec<LoopScope<'a>>,
 }
 
 impl<'a> FunctionScope<'a> {
   pub(crate) fn new() -> Self {
-    FunctionScope { returned: Some(false), returned_value: Vec::new() }
+    FunctionScope { returned: Some(false), returned_value: Vec::new(), loop_scopes: Vec::new() }
   }
 
   pub(crate) fn ret_val(self) -> Entity<'a> {

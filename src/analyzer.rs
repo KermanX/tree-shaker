@@ -43,7 +43,6 @@ impl<'a> Analyzer<'a> {
     }
 
     debug_assert_eq!(self.scope_context.function_scopes.len(), 1);
-    debug_assert_eq!(self.scope_context.loop_scopes.len(), 0);
     debug_assert_eq!(self.scope_context.variable_scopes.len(), 1);
 
     for symbol in self.exports.clone() {

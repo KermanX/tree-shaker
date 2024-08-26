@@ -10,7 +10,6 @@ use variable_scope::VariableScope;
 #[derive(Debug, Default)]
 pub(crate) struct ScopeContext<'a> {
   pub function_scopes: Vec<FunctionScope<'a>>,
-  pub loop_scopes: Vec<LoopScope<'a>>,
   pub variable_scopes: Vec<VariableScope<'a>>,
   pub indeterminate_scopes: Vec<bool>,
 }
@@ -19,7 +18,6 @@ impl<'a> ScopeContext<'a> {
   pub(crate) fn new() -> Self {
     ScopeContext {
       function_scopes: vec![FunctionScope::new()],
-      loop_scopes: vec![],
       variable_scopes: vec![VariableScope::new()],
       indeterminate_scopes: vec![false],
     }
@@ -32,7 +30,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub(crate) fn loop_scope(&self) -> &LoopScope<'a> {
-    self.scope_context.loop_scopes.last().unwrap()
+    self.function_scope().loop_scopes.last().unwrap()
   }
 
   pub(crate) fn variable_scope(&self) -> &VariableScope<'a> {
@@ -48,7 +46,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub(crate) fn loop_scope_mut(&mut self) -> &mut LoopScope<'a> {
-    self.scope_context.loop_scopes.last_mut().unwrap()
+    self.function_scope_mut().loop_scopes.last_mut().unwrap()
   }
 
   pub(crate) fn variable_scope_mut(&mut self) -> &mut VariableScope<'a> {
@@ -68,11 +66,11 @@ impl<'a> Analyzer<'a> {
   }
 
   pub(crate) fn push_loop_scope(&mut self, label: Option<&'a LabelIdentifier<'a>>) {
-    self.scope_context.loop_scopes.push(LoopScope::new(label));
+    self.function_scope_mut().loop_scopes.push(LoopScope::new(label));
   }
 
   pub(crate) fn pop_loop_scope(&mut self) -> LoopScope<'a> {
-    self.scope_context.loop_scopes.pop().unwrap()
+    self.function_scope_mut().loop_scopes.pop().unwrap()
   }
 
   pub(crate) fn push_variable_scope(&mut self) {
