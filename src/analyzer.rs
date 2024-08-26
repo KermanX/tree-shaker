@@ -23,6 +23,7 @@ pub(crate) struct Analyzer<'a> {
   pub(crate) referred_nodes: ReferredNodes<'a>,
   pub(crate) exports: Vec<SymbolId>,
   pub(crate) scope_context: ScopeContext<'a>,
+  pub(crate) current_label: Option<&'a str>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -34,6 +35,7 @@ impl<'a> Analyzer<'a> {
       referred_nodes: Default::default(),
       exports: Vec::new(),
       scope_context: ScopeContext::new(),
+      current_label: None,
     }
   }
 

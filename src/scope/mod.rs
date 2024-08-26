@@ -7,7 +7,7 @@ use crate::analyzer::Analyzer;
 use cf_scope::CfScope;
 use function_scope::FunctionScope;
 use loop_scope::LoopScope;
-use oxc::{ast::ast::LabelIdentifier, semantic::ScopeId};
+use oxc::semantic::ScopeId;
 use variable_scope::VariableScope;
 
 #[derive(Debug, Default)]
@@ -35,6 +35,21 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn loop_scope(&self) -> &LoopScope<'a> {
     self.function_scope().loop_scopes.last().unwrap()
+  }
+
+  pub(crate) fn loop_scope_by_label(&self, label: Option<&'a str>) -> &LoopScope<'a> {
+    if let Some(label) = label {
+      for scope in self.function_scope().loop_scopes.iter().rev() {
+        if let Some(scope_label) = scope.label {
+          if scope_label == label {
+            return scope;
+          }
+        }
+      }
+      unreachable!();
+    } else {
+      self.loop_scope()
+    }
   }
 
   pub(crate) fn variable_scope(&self) -> &VariableScope<'a> {
@@ -69,7 +84,8 @@ impl<'a> Analyzer<'a> {
     scope
   }
 
-  pub(crate) fn push_loop_scope(&mut self, label: Option<&'a LabelIdentifier<'a>>) {
+  pub(crate) fn push_loop_scope(&mut self) {
+    let label = self.current_label;
     let cf_scope_id = self.push_cf_scope(Some(false));
     self.function_scope_mut().loop_scopes.push(LoopScope::new(label, cf_scope_id));
   }

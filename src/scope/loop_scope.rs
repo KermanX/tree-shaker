@@ -1,4 +1,4 @@
-use oxc::{ast::ast::LabelIdentifier, semantic::ScopeId};
+use oxc::semantic::ScopeId;
 
 #[derive(Debug)]
 pub(crate) struct LoopScope<'a> {
@@ -7,10 +7,7 @@ pub(crate) struct LoopScope<'a> {
 }
 
 impl<'a> LoopScope<'a> {
-  pub(crate) fn new(label: Option<&'a LabelIdentifier<'a>>, cf_scope_id: ScopeId) -> Self {
-    LoopScope {
-      label: label.map(|label| label.name.as_str()),
-      cf_scope_id,
-    }
+  pub(crate) fn new(label: Option<&'a str>, cf_scope_id: ScopeId) -> Self {
+    LoopScope { label, cf_scope_id }
   }
 }

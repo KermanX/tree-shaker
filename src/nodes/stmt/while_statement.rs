@@ -24,8 +24,7 @@ impl<'a> Analyzer<'a> {
       None => (true, true),
     };
 
-    // TODO: label
-    self.push_loop_scope(None);
+    self.push_loop_scope();
     self.push_variable_scope();
     self.push_cf_scope(if indeterminate { None } else { Some(false) });
 
