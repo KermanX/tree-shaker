@@ -70,10 +70,12 @@ impl<'a> Analyzer<'a> {
   }
 
   pub(crate) fn push_loop_scope(&mut self, label: Option<&'a LabelIdentifier<'a>>) {
-    self.function_scope_mut().loop_scopes.push(LoopScope::new(label));
+    let cf_scope_id = self.push_cf_scope(Some(false));
+    self.function_scope_mut().loop_scopes.push(LoopScope::new(label, cf_scope_id));
   }
 
   pub(crate) fn pop_loop_scope(&mut self) -> LoopScope<'a> {
+    self.pop_cf_scope();
     self.function_scope_mut().loop_scopes.pop().unwrap()
   }
 

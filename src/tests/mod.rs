@@ -88,3 +88,16 @@ export function f() {
 "#,
   );
 }
+
+#[test]
+fn test_4() {
+  tree_shake_snapshot!(
+    r#"
+export function f() {
+  while (a) {
+    effect1;
+  }
+}
+"#,
+  );
+}

@@ -1,0 +1,7 @@
+---
+source: src/tests/mod.rs
+expression: result
+---
+export function f() {
+	while (a) effect1;
+}

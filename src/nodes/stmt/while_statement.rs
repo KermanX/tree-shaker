@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
     // `a: while(() => { break a }) { }` is illegal.
     let test = self.exec_expression(&node.test);
 
-    let (need_body, indeterminate) = match test.test_truthy() {
+    let (need_loop, indeterminate) = match test.test_truthy() {
       Some(true) => (true, false),
       Some(false) => (false, false),
       None => (true, true),
@@ -29,13 +29,16 @@ impl<'a> Analyzer<'a> {
     self.push_variable_scope();
     self.push_cf_scope(if indeterminate { None } else { Some(false) });
 
-    if need_body {
+    if need_loop {
       self.exec_statement(&node.body);
     }
 
     self.pop_cf_scope();
     self.pop_variable_scope();
     self.pop_loop_scope();
+
+    let data = self.load_data::<Data>(AST_TYPE, node);
+    data.need_loop |= need_loop;
   }
 }
 
