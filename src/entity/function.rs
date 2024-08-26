@@ -19,7 +19,9 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     self.consume_self(analyzer);
-    self.call(analyzer, &UnknownEntity::new_unknown(), &UnknownEntity::new_unknown());
+    let (_, ret_val) =
+      self.call(analyzer, &UnknownEntity::new_unknown(), &UnknownEntity::new_unknown());
+    ret_val.consume_as_unknown(analyzer);
   }
 
   fn call(
