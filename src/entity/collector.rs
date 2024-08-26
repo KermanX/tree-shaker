@@ -41,7 +41,11 @@ impl<'a> LiteralCollector<'a> {
 
   #[inline]
   pub(crate) fn get_entity_on_invalid(&self, entity: Entity<'a>) -> Entity<'a> {
-    CollectedEntity::new(entity, self.collected.clone())
+    if self.collected.borrow().is_empty() {
+      entity
+    } else {
+      CollectedEntity::new(entity, self.collected.clone())
+    }
   }
 
   pub(crate) fn collected(&self) -> Option<LiteralEntity<'a>> {
