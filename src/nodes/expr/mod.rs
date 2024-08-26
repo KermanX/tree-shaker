@@ -20,7 +20,7 @@ struct Data<'a> {
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
-    let val = match node {
+    let entity = match node {
       Expression::NumericLiteral(node) => self.exc_numeric_literal(node),
       Expression::StringLiteral(node) => self.exec_string_literal(node),
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
@@ -32,9 +32,7 @@ impl<'a> Analyzer<'a> {
     };
 
     let data = self.load_data::<Data>(AST_TYPE, node);
-    data.collector.collect(&val);
-
-    val
+    data.collector.collect(entity)
   }
 }
 

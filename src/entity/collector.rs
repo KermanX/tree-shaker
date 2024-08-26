@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use super::{entity::Entity, literal::LiteralEntity};
 use oxc::{
   ast::{ast::Expression, AstBuilder},
@@ -12,20 +14,25 @@ pub(crate) struct LiteralCollector<'a> {
 }
 
 impl<'a> LiteralCollector<'a> {
-  pub(crate) fn collect(&mut self, entity: &Entity<'a>) {
+  pub(crate) fn collect(&mut self, entity: Entity<'a>) -> Entity<'a> {
     if self.invalid {
-      return;
+      return entity;
     }
     if let Some(literal) = entity.get_literal() {
       if let Some(collected) = &self.collected {
         if collected != &literal {
           self.invalid = true;
+          return entity;
+        } else {
+          return Rc::new(literal);
         }
       } else {
         self.collected = Some(literal);
+        return Rc::new(literal);
       }
     } else {
       self.invalid = true;
+      return entity;
     }
   }
 

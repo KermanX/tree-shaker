@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::BindingIdentifier(node) => {
         let symbol = node.symbol_id.get().unwrap();
         let dep = self.new_entity_dep(EntityDepNode::BindingIdentifier(node));
-        self.declare_symbol(symbol, ForwardedEntity::new(init, vec![dep]), exporting);
+        self.declare_symbol(symbol, ForwardedEntity::new(init, dep), exporting);
       }
       BindingPatternKind::ObjectPattern(node) => {
         for property in &node.properties {

@@ -17,7 +17,7 @@ pub struct Data<'a> {
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_property_key(&mut self, node: &'a PropertyKey) -> Entity<'a> {
-    let value = match node {
+    let entity = match node {
       PropertyKey::StaticIdentifier(node) => Rc::new(LiteralEntity::String(node.name.as_str())),
       PropertyKey::PrivateIdentifier(node) => todo!(),
       node => {
@@ -27,9 +27,7 @@ impl<'a> Analyzer<'a> {
     };
 
     let data = self.load_data::<Data>(AST_TYPE, node);
-    data.collector.collect(&value);
-
-    value
+    data.collector.collect(entity)
   }
 }
 
