@@ -1,5 +1,6 @@
 use crate::ast::AstType2;
 use crate::entity::entity::Entity;
+use crate::entity::literal::LiteralEntity;
 use crate::entity::unknown::UnknownEntity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::IdentifierReference;
@@ -16,6 +17,10 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
+    if node.name == "undefined" {
+      return LiteralEntity::new_undefined();
+    }
+
     let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
     assert!(reference.is_read());
     let symbol = reference.symbol_id();
