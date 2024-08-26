@@ -3,6 +3,7 @@ mod conditional_expression;
 mod literals;
 mod logical_expression;
 mod object_expression;
+mod sequence_expression;
 mod static_member_expression;
 
 use crate::ast::AstType2;
@@ -32,6 +33,7 @@ impl<'a> Analyzer<'a> {
       Expression::CallExpression(node) => self.exec_call_expression(node),
       Expression::StaticMemberExpression(node) => self.exec_static_member_expression(node),
       Expression::ObjectExpression(node) => self.exec_object_expression(node),
+      Expression::SequenceExpression(node) => self.exec_sequence_expression(node),
       _ => todo!(),
     };
 
@@ -77,6 +79,9 @@ impl<'a> Transformer<'a> {
       }
       Expression::ObjectExpression(node) => {
         self.transform_object_expression(node.unbox(), need_val)
+      }
+      Expression::SequenceExpression(node) => {
+        self.transform_sequence_expression(node.unbox(), need_val)
       }
       _ => todo!(),
     };
