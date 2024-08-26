@@ -7,7 +7,7 @@ use crate::{
 use oxc::{
   allocator::Allocator,
   ast::{
-    ast::{BindingPattern, Expression, Program, TSTypeAnnotation, UnaryOperator},
+    ast::{BindingPattern, Expression, NumberBase, Program, TSTypeAnnotation, UnaryOperator},
     AstBuilder,
   },
   span::{GetSpan, SourceType, Span, SPAN},
@@ -57,6 +57,10 @@ impl<'a> Transformer<'a> {
       None::<TSTypeAnnotation>,
       false,
     )
+  }
+
+  pub(crate) fn build_unused_expression(&self, span: Span) -> Expression<'a> {
+    self.ast_builder.expression_numeric_literal(span, 0.0f64, "0", NumberBase::Decimal)
   }
 
   pub(crate) fn build_negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {

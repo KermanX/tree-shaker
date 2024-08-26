@@ -73,7 +73,7 @@ impl<'a> Transformer<'a> {
 
       Expression::CallExpression(node) => self.transform_call_expression(node.unbox(), need_val),
 
-      Expression::ObjectExpression(node) => self.transform_object_expression(node.unbox()),
+      Expression::ObjectExpression(node) => self.transform_object_expression(node.unbox(), need_val),
 
       _ => todo!(),
     };
