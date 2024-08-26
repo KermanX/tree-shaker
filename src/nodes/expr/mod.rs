@@ -75,9 +75,6 @@ impl<'a> Transformer<'a> {
       _ => todo!(),
     };
 
-    println!("inner: {:#?}\n", inner);
-    println!("literal: {:#?}", literal);
-
     if let Some(literal) = literal {
       Some(build_effect!(&self.ast_builder, span, inner; literal))
     } else {

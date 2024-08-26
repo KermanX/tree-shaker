@@ -8,9 +8,8 @@ use oxc::ast::ast::{CallExpression, Expression, TSTypeParameterInstantiation};
 const AST_TYPE: AstType2 = AstType2::CallExpression;
 
 #[derive(Debug, Default)]
-pub struct Data<'a> {
+pub struct Data {
   has_effect: bool,
-  ret_collector: LiteralCollector<'a>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -23,7 +22,6 @@ impl<'a> Analyzer<'a> {
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
-    data.ret_collector.collect(&ret_val);
 
     ret_val
   }
@@ -41,16 +39,6 @@ impl<'a> Transformer<'a> {
 
     let need_call = data.has_effect;
 
-    if need_val && !need_call {
-      if let Some(simple_literal) = data.ret_collector.build_expr(&self.ast_builder, span) {
-        // Simplified to a simple literal
-        let callee = self.transform_expression(callee, false);
-        let arguments =
-          arguments.into_iter().map(|arg| self.transform_argument_no_val(arg)).collect::<Vec<_>>();
-        return build_effect_from_arr!(self.ast_builder, span, vec![callee], arguments; simple_literal);
-      }
-    }
-
     if need_val || need_call {
       // Need call
       let callee = self.transform_expression(callee, true).unwrap();
@@ -66,7 +54,7 @@ impl<'a> Transformer<'a> {
         optional,
       ))
     } else {
-      // Only need effect
+      // Only need effects in callee and args
       let callee = self.transform_expression(callee, false);
       let arguments =
         arguments.into_iter().map(|arg| self.transform_argument_no_val(arg)).collect::<Vec<_>>();

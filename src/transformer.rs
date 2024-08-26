@@ -31,17 +31,16 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn transform_program(&mut self, ast: &'a mut Program<'a>) -> Program<'a> {
-    let Program { span, source_type, hashbang, directives, body, .. } =
-      mem::replace(
-        ast,
-        self.ast_builder.program(
-          SPAN,
-          SourceType::default(),
-          None,
-          self.ast_builder.vec(),
-          self.ast_builder.vec(),
-        ),
-      );
+    let Program { span, source_type, hashbang, directives, body, .. } = mem::replace(
+      ast,
+      self.ast_builder.program(
+        SPAN,
+        SourceType::default(),
+        None,
+        self.ast_builder.vec(),
+        self.ast_builder.vec(),
+      ),
+    );
     let body = self.transform_statements(body);
     self.ast_builder.program(span, source_type, hashbang, directives, body)
   }
