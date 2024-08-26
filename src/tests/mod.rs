@@ -78,7 +78,7 @@ fn test_3() {
 export function f() {
   function g(a) {
     if (a)
-      log('effect')
+      console.log('effect')
     else
       return 'str'
   }

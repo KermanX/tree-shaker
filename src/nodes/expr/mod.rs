@@ -3,6 +3,7 @@ mod conditional_expression;
 mod literals;
 mod logical_expression;
 mod object_expression;
+mod static_member_expression;
 
 use crate::ast::AstType2;
 use crate::build_effect;
@@ -29,6 +30,7 @@ impl<'a> Analyzer<'a> {
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
       Expression::ConditionalExpression(node) => self.exec_conditional_expression(node),
       Expression::CallExpression(node) => self.exec_call_expression(node),
+      Expression::StaticMemberExpression(node) => self.exec_static_member_expression(node),
       Expression::ObjectExpression(node) => self.exec_object_expression(node),
       _ => todo!(),
     };
@@ -60,7 +62,6 @@ impl<'a> Transformer<'a> {
           None
         }
       }
-
       Expression::Identifier(node) => self
         .transform_identifier_reference_read(node.unbox(), need_val)
         .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
@@ -70,11 +71,13 @@ impl<'a> Transformer<'a> {
       Expression::ConditionalExpression(node) => {
         self.transform_conditional_expression(node.unbox(), need_val)
       }
-
       Expression::CallExpression(node) => self.transform_call_expression(node.unbox(), need_val),
-
-      Expression::ObjectExpression(node) => self.transform_object_expression(node.unbox(), need_val),
-
+      Expression::StaticMemberExpression(node) => {
+        self.transform_static_member_expression(node.unbox(), need_val)
+      }
+      Expression::ObjectExpression(node) => {
+        self.transform_object_expression(node.unbox(), need_val)
+      }
       _ => todo!(),
     };
 
