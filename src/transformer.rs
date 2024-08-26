@@ -13,8 +13,7 @@ use oxc::{
   span::{GetSpan, SourceType, Span, SPAN},
 };
 use std::{
-  mem,
-  sync::atomic::{AtomicUsize, Ordering},
+  hash::{DefaultHasher, Hasher}, mem, sync::{atomic::{AtomicUsize, Ordering}, LazyLock}
 };
 
 pub(crate) struct Transformer<'a> {
@@ -46,11 +45,12 @@ impl<'a> Transformer<'a> {
   }
 }
 
-static COUNTER: AtomicUsize = AtomicUsize::new(0);
-
 impl<'a> Transformer<'a> {
   pub(crate) fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
-    let name = format!("__unused_{}", COUNTER.fetch_add(1, Ordering::Relaxed));
+    let mut hasher = DefaultHasher::new();
+    hasher.write_u32(span.start);
+    hasher.write_u32(span.end);
+    let name = format!("__unused_{:04X}", hasher.finish() % 0xFFFF);
     self.ast_builder.binding_pattern(
       self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
       None::<TSTypeAnnotation>,

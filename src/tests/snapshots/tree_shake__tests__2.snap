@@ -7,4 +7,4 @@ export function f2() {
 	effect;
 }
 f2();
-const __unused_0 = f2();
+const __unused_3E11 = f2();

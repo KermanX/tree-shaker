@@ -70,3 +70,21 @@ const r = f2();
 "#,
   );
 }
+
+#[test]
+fn test_3() {
+  tree_shake_snapshot!(
+    r#"
+export function f() {
+  function g(a) {
+    if (a)
+      log('effect')
+    else
+      return 'str'
+  }
+  let { ["x"]: y = 1 } = { x: g('') && undefined || g(1) }
+  return y
+}
+"#,
+  );
+}

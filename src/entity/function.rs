@@ -54,6 +54,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
   }
+
+  fn test_is_undefined(&self) -> Option<bool> {
+    Some(false)
+  }
 }
 
 impl<'a> FunctionEntity<'a> {

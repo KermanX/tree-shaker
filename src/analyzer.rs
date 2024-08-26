@@ -114,7 +114,7 @@ impl<'a> Analyzer<'a> {
         return entity;
       }
     }
-    unreachable!()
+    panic!("Unexpected undeclared Symbol {:?}", self.sematic.symbols().get_name(*symbol));
   }
 
   pub(crate) fn refer_dep(&mut self, dep: &EntityDep<'a>) {

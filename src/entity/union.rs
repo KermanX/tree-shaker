@@ -85,6 +85,26 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     }
     Some(result)
   }
+
+  fn test_nullish(&self) -> Option<bool> {
+    let result = self.0.first().unwrap().test_nullish()?;
+    for entity in &self.0[1..] {
+      if entity.test_nullish()? != result {
+        return None;
+      }
+    }
+    Some(result)
+  }
+
+  fn test_is_undefined(&self) -> Option<bool> {
+    let result = self.0.first().unwrap().test_is_undefined()?;
+    for entity in &self.0[1..] {
+      if entity.test_is_undefined()? != result {
+        return None;
+      }
+    }
+    Some(result)
+  }
 }
 
 impl<'a> UnionEntity<'a> {

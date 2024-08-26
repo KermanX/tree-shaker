@@ -45,6 +45,10 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn test_nullish(&self) -> Option<bool> {
     Some(matches!(self, LiteralEntity::Null | LiteralEntity::Undefined))
   }
+
+  fn test_is_undefined(&self) -> Option<bool> {
+    Some(matches!(self, LiteralEntity::Undefined))
+  }
 }
 
 impl<'a> LiteralEntity<'a> {

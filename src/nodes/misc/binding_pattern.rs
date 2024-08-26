@@ -1,4 +1,5 @@
 use crate::{
+  ast::AstType2,
   entity::{
     dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity,
     union::UnionEntity,
@@ -8,11 +9,16 @@ use crate::{
 };
 use oxc::{
   ast::ast::{
-    ArrayPattern, BindingPattern, BindingPatternKind, BindingProperty, ObjectPattern,
-    TSTypeAnnotation,
+    ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,
+    ObjectPattern, TSTypeAnnotation,
   },
   span::GetSpan,
 };
+
+#[derive(Debug, Default)]
+struct AssignmentPatternData {
+  need_right: bool,
+}
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_binding_pattern(
@@ -49,17 +55,22 @@ impl<'a> Analyzer<'a> {
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {
-        let is_nullable = init.test_nullish();
-        let binding_val = match is_nullable {
+        let is_undefined = init.test_is_undefined();
+        let binding_val = match is_undefined {
           Some(true) => self.exec_expression(&node.right),
-          Some(false) => init.clone(),
+          Some(false) => init,
           None => {
             self.push_cf_scope(None);
-            let value = UnionEntity::new(vec![self.exec_expression(&node.right), init.clone()]);
+            let value = UnionEntity::new(vec![self.exec_expression(&node.right), init]);
             self.pop_cf_scope();
             value
           }
         };
+        self.exec_binding_pattern(&node.left, binding_val, exporting);
+
+        let data =
+          self.load_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
+        data.need_right |= !matches!(is_undefined, Some(false));
       }
     }
   }
@@ -144,27 +155,29 @@ impl<'a> Transformer<'a> {
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {
-        // let AssignmentPattern { span, left, right, .. } = node.unbox();
-        // let left_span = left.span();
-        // let left: Option<BindingPattern> = self.transform_binding_pattern(left);
-        // let right = match data.init_val.is_null_or_undefined() {
-        //   Some(false) => None,
-        //   _ => self.transform_expression(right, left.is_some()),
-        // };
-        // if let Some(right) = right {
-        //   Some(self.ast_builder.binding_pattern(
-        //     self.ast_builder.binding_pattern_kind_assignment_pattern(
-        //       span,
-        //       left.unwrap_or(self.build_unused_binding_pattern(left_span)),
-        //       right,
-        //     ),
-        //     None::<TSTypeAnnotation>,
-        //     false,
-        //   ))
-        // } else {
-        //   left
-        // }
-        todo!("p4")
+        let data =
+          self.get_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
+
+        let AssignmentPattern { span, left, right, .. } = node.unbox();
+
+        let left_span = left.span();
+        let left = self.transform_binding_pattern(left);
+        let right =
+          data.need_right.then(|| self.transform_expression(right, left.is_some())).flatten();
+
+        if let Some(right) = right {
+          Some(self.ast_builder.binding_pattern(
+            self.ast_builder.binding_pattern_kind_assignment_pattern(
+              span,
+              left.unwrap_or(self.build_unused_binding_pattern(left_span)),
+              right,
+            ),
+            None::<TSTypeAnnotation>,
+            false,
+          ))
+        } else {
+          left
+        }
       }
     }
   }

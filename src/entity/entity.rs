@@ -36,6 +36,9 @@ pub(crate) trait EntityTrait<'a>: Debug {
   fn test_nullish(&self) -> Option<bool> {
     None
   }
+  fn test_is_undefined(&self) -> Option<bool> {
+    None
+  }
 }
 
 pub(crate) type Entity<'a> = Rc<dyn EntityTrait<'a> + 'a>;

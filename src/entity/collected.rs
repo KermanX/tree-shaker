@@ -64,6 +64,10 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
   fn test_nullish(&self) -> Option<bool> {
     self.val.test_nullish()
   }
+
+  fn test_is_undefined(&self) -> Option<bool> {
+    self.val.test_is_undefined()
+  }
 }
 
 impl<'a> CollectedEntity<'a> {

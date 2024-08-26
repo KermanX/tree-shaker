@@ -52,6 +52,13 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
       _ => Some(false),
     }
   }
+
+  fn test_is_undefined(&self) -> Option<bool> {
+    match &self.kind {
+      UnknownEntityKind::Unknown => None,
+      _ => Some(false),
+    }
+  }
 }
 
 impl<'a> UnknownEntity<'a> {

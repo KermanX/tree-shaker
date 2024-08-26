@@ -38,6 +38,22 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       _ => UnknownEntity::new_unknown(),
     }
   }
+
+  fn get_literal(&self) -> Option<LiteralEntity<'a>> {
+    None
+  }
+
+  fn test_truthy(&self) -> Option<bool> {
+    Some(true)
+  }
+
+  fn test_nullish(&self) -> Option<bool> {
+    Some(false)
+  }
+
+  fn test_is_undefined(&self) -> Option<bool> {
+    Some(false)
+  }
 }
 
 impl<'a> ObjectEntity<'a> {
