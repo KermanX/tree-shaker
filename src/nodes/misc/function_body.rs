@@ -3,13 +3,10 @@ use oxc::ast::ast::FunctionBody;
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_function_body(&mut self, node: &'a FunctionBody<'a>) {
-    'outer: for statement in &node.statements {
-      match self.function_scope().returned {
-        Some(true) => break 'outer,
-        None => {
-          self.set_indeterminate_scope(true);
-        }
-        _ => {}
+    let cf_scope_id = self.function_scope().cf_scope_id;
+    for statement in &node.statements {
+      if self.is_exited(cf_scope_id) {
+        break;
       }
       self.exec_statement(statement);
     }

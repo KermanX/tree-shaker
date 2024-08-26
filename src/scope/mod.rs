@@ -1,25 +1,29 @@
+mod cf_scope;
 mod function_scope;
 mod loop_scope;
 mod variable_scope;
+
 use crate::analyzer::Analyzer;
+use cf_scope::CfScope;
 use function_scope::FunctionScope;
 use loop_scope::LoopScope;
-use oxc::ast::ast::LabelIdentifier;
+use oxc::{ast::ast::LabelIdentifier, semantic::ScopeId};
 use variable_scope::VariableScope;
 
 #[derive(Debug, Default)]
 pub(crate) struct ScopeContext<'a> {
   pub function_scopes: Vec<FunctionScope<'a>>,
   pub variable_scopes: Vec<VariableScope<'a>>,
-  pub indeterminate_scopes: Vec<bool>,
+  pub cf_scopes: Vec<CfScope>,
 }
 
 impl<'a> ScopeContext<'a> {
   pub(crate) fn new() -> Self {
+    let cf_scope_0 = CfScope::new(Some(false));
     ScopeContext {
-      function_scopes: vec![FunctionScope::new()],
+      function_scopes: vec![FunctionScope::new(cf_scope_0.id)],
       variable_scopes: vec![VariableScope::new()],
-      indeterminate_scopes: vec![false],
+      cf_scopes: vec![cf_scope_0],
     }
   }
 }
@@ -37,8 +41,8 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.last().unwrap()
   }
 
-  pub(crate) fn indeterminate_scope(&self) -> bool {
-    *self.scope_context.indeterminate_scopes.last().unwrap()
+  pub(crate) fn cf_scope(&self) -> CfScope {
+    *self.scope_context.cf_scopes.last().unwrap()
   }
 
   pub(crate) fn function_scope_mut(&mut self) -> &mut FunctionScope<'a> {
@@ -53,16 +57,16 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.last_mut().unwrap()
   }
 
-  pub(crate) fn set_indeterminate_scope(&mut self, new_value: bool) {
-    *self.scope_context.indeterminate_scopes.last_mut().unwrap() = new_value;
-  }
-
   pub(crate) fn push_function_scope(&mut self) {
-    self.scope_context.function_scopes.push(FunctionScope::new());
+    let cf_scope_id = self.push_cf_scope(Some(false));
+    self.scope_context.function_scopes.push(FunctionScope::new(cf_scope_id));
   }
 
   pub(crate) fn pop_function_scope(&mut self) -> FunctionScope<'a> {
-    self.scope_context.function_scopes.pop().unwrap()
+    self.pop_cf_scope();
+    let scope = self.scope_context.function_scopes.pop().unwrap();
+    debug_assert!(scope.loop_scopes.is_empty());
+    scope
   }
 
   pub(crate) fn push_loop_scope(&mut self, label: Option<&'a LabelIdentifier<'a>>) {
@@ -81,11 +85,33 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.pop().unwrap()
   }
 
-  pub(crate) fn push_indeterminate_scope(&mut self, indeterminate: bool) {
-    self.scope_context.indeterminate_scopes.push(indeterminate);
+  pub(crate) fn push_cf_scope(&mut self, exited: Option<bool>) -> ScopeId {
+    let cf_scope = CfScope::new(exited);
+    let id = cf_scope.id;
+    self.scope_context.cf_scopes.push(cf_scope);
+    id
   }
 
-  pub(crate) fn pop_indeterminate_scope(&mut self) -> bool {
-    self.scope_context.indeterminate_scopes.pop().unwrap()
+  pub(crate) fn pop_cf_scope(&mut self) -> CfScope {
+    self.scope_context.cf_scopes.pop().unwrap()
+  }
+
+  pub(crate) fn exit_to(&mut self, cf_scope_id: ScopeId) {
+    for cf_scope in self.scope_context.cf_scopes.iter_mut().rev() {
+      let is_indeterminate = cf_scope.is_indeterminate();
+      cf_scope.exited = Some(true);
+      if cf_scope.id == cf_scope_id || is_indeterminate {
+        break;
+      }
+    }
+  }
+
+  pub(crate) fn is_exited(&self, cf_scope_id: ScopeId) -> bool {
+    for cf_scope in self.scope_context.cf_scopes.iter().rev() {
+      if cf_scope.id == cf_scope_id {
+        return cf_scope.must_exited();
+      }
+    }
+    unreachable!()
   }
 }

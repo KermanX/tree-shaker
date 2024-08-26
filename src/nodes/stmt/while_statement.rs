@@ -18,28 +18,22 @@ impl<'a> Analyzer<'a> {
     // `a: while(() => { break a }) { }` is illegal.
     let test = self.exec_expression(&node.test);
 
-    // TODO: label
-    self.push_loop_scope(None);
-    self.push_variable_scope();
-
     let (need_body, indeterminate) = match test.test_truthy() {
       Some(true) => (true, false),
       Some(false) => (false, false),
       None => (true, true),
     };
 
-    if indeterminate {
-      self.push_indeterminate_scope(true)
-    }
+    // TODO: label
+    self.push_loop_scope(None);
+    self.push_variable_scope();
+    self.push_cf_scope(if indeterminate { None } else { Some(false) });
 
     if need_body {
       self.exec_statement(&node.body);
     }
 
-    if indeterminate {
-      self.pop_indeterminate_scope();
-    }
-
+    self.pop_cf_scope();
     self.pop_variable_scope();
     self.pop_loop_scope();
   }

@@ -7,14 +7,17 @@ use oxc::ast::ast::{ReturnStatement, Statement};
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_return_statement(&mut self, node: &'a ReturnStatement) {
-    let indeterminate = self.indeterminate_scope();
     let value = node
       .argument
       .as_ref()
       .map_or_else(|| LiteralEntity::new_undefined(), |expr| self.exec_expression(expr));
     let dep = self.new_entity_dep(EntityDepNode::ReturnStatement(node));
     let value = ForwardedEntity::new(value, dep);
-    self.function_scope_mut().on_return(indeterminate, value);
+
+    let function_scope = self.function_scope_mut();
+    function_scope.returned_value.push(value);
+    let cf_scope_id = function_scope.cf_scope_id;
+    self.exit_to(cf_scope_id);
   }
 }
 

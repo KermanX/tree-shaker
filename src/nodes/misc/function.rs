@@ -25,12 +25,10 @@ impl<'a> Analyzer<'a> {
   ) -> (bool, Entity<'a>) {
     self.push_variable_scope();
     self.push_function_scope();
-    self.push_indeterminate_scope(false);
 
     self.exec_formal_parameters(&node.params, args);
     self.exec_function_body(node.body.as_ref().unwrap());
 
-    self.pop_indeterminate_scope();
     let has_effect = self.pop_variable_scope().has_effect;
     let ret_val = self.pop_function_scope().ret_val();
     (has_effect, ret_val)

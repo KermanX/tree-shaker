@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
     };
 
     if indeterminate {
-      self.push_indeterminate_scope(true)
+      self.push_cf_scope(None);
     }
 
     if maybe_true {
@@ -36,7 +36,7 @@ impl<'a> Analyzer<'a> {
     }
 
     if indeterminate {
-      self.pop_indeterminate_scope();
+      self.pop_cf_scope();
     }
 
     self.set_data(AST_TYPE, node, Data { maybe_true, maybe_false });

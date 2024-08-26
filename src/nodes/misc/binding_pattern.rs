@@ -54,9 +54,9 @@ impl<'a> Analyzer<'a> {
           Some(true) => self.exec_expression(&node.right),
           Some(false) => init.clone(),
           None => {
-            self.push_indeterminate_scope(true);
+            self.push_cf_scope(None);
             let value = UnionEntity::new(vec![self.exec_expression(&node.right), init.clone()]);
-            self.pop_indeterminate_scope();
+            self.pop_cf_scope();
             value
           }
         };
