@@ -1,7 +1,7 @@
 use crate::ast::AstType2;
 use crate::entity::entity::Entity;
 use crate::entity::union::UnionEntity;
-use crate::{analyzer::Analyzer, build_effect, Transformer};
+use crate::{analyzer::Analyzer, Transformer};
 use oxc::{
   ast::ast::{Expression, LogicalExpression, LogicalOperator},
   span::GetSpan,
@@ -12,39 +12,45 @@ const AST_TYPE: AstType2 = AstType2::LogicalExpression;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
-  need_left: bool,
+  need_left_val: bool,
   need_right: bool,
 }
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_logical_expression(&mut self, node: &'a LogicalExpression<'a>) -> Entity<'a> {
     let left = self.exec_expression(&node.left);
-    let mut exec_right = || self.exec_expression(&node.right);
-    let mut exec_unknown =
-      || (Rc::new(UnionEntity(vec![left.clone(), exec_right()])) as Entity<'a>, true, true);
 
-    let (value, need_left_val, need_right_val) = match &node.operator {
+    let exec_right = |analyzer: &mut Analyzer<'a>| analyzer.exec_expression(&node.right);
+
+    let exec_unknown = |analyzer: &mut Analyzer<'a>| {
+      analyzer.push_cf_scope(None);
+      let right = analyzer.exec_expression(&node.right);
+      analyzer.pop_cf_scope();
+      (Rc::new(UnionEntity(vec![left.clone(), right])) as Entity<'a>, true, true)
+    };
+
+    let (value, need_left_val, need_right) = match &node.operator {
       LogicalOperator::And => match left.test_truthy() {
-        Some(true) => (exec_right(), false, true),
+        Some(true) => (exec_right(self), false, true),
         Some(false) => (left, true, false),
-        None => exec_unknown(),
+        None => exec_unknown(self),
       },
       LogicalOperator::Or => match left.test_truthy() {
         Some(true) => (left, true, false),
-        Some(false) => (exec_right(), false, true),
-        None => exec_unknown(),
+        Some(false) => (exec_right(self), false, true),
+        None => exec_unknown(self),
       },
       LogicalOperator::Coalesce => match left.test_nullish() {
-        Some(true) => (exec_right(), false, true),
+        Some(true) => (exec_right(self), false, true),
         Some(false) => (left, true, false),
-        None => exec_unknown(),
+        None => exec_unknown(self),
       },
     };
 
     let data = self.load_data::<Data>(AST_TYPE, node);
 
-    data.need_left |= need_left_val;
-    data.need_right |= need_right_val;
+    data.need_left_val |= need_left_val;
+    data.need_right |= need_right;
 
     value
   }
@@ -59,27 +65,16 @@ impl<'a> Transformer<'a> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
     let span = node.span();
 
-    let need_left = need_val && data.need_left;
-    let need_right = need_val && data.need_right;
+    let left = self.transform_expression(node.left, need_val && data.need_left_val);
+    let right = data.need_right.then(|| self.transform_expression(node.right, need_val)).flatten();
 
-    let left = self.transform_expression(node.left, need_left);
-    let right = self.transform_expression(node.right, need_right);
-    match (need_left, need_right) {
-      (true, true) => Some(self.ast_builder.expression_logical(
-        span,
-        left.unwrap(),
-        node.operator,
-        right.unwrap(),
-      )),
-      (true, false) => {
-        if let Some(right) = right {
-          Some(self.ast_builder.expression_logical(span, left.unwrap(), node.operator, right))
-        } else {
-          left
-        }
+    match (left, right) {
+      (Some(left), Some(right)) => {
+        Some(self.ast_builder.expression_logical(span, left, node.operator, right))
       }
-      (false, true) => Some(build_effect!(self.ast_builder, span, left; right.unwrap())),
-      (false, false) => build_effect!(self.ast_builder, span, left),
+      (Some(left), None) => Some(left),
+      (None, Some(right)) => Some(right),
+      (None, None) => None,
     }
   }
 }

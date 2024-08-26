@@ -39,7 +39,10 @@ impl<'a> Analyzer<'a> {
       self.pop_cf_scope();
     }
 
-    self.set_data(AST_TYPE, node, Data { maybe_true, maybe_false });
+    let data = self.load_data::<Data>(AST_TYPE, node);
+
+    data.maybe_true |= maybe_true;
+    data.maybe_false |= maybe_false;
   }
 }
 

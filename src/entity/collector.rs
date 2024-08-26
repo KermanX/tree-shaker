@@ -48,7 +48,6 @@ impl<'a> LiteralCollector<'a> {
     if self.invalid {
       None
     } else {
-      assert!(self.literal.is_some());
       self.literal
     }
   }

@@ -4,7 +4,7 @@ expression: result
 ---
 export function f() {
 	function g(__unused_4053) {
-		log("effect");
+		return;
 	}
 	let { x: y = 1 } = { x: (g("") && void 0, g(1)) };
 	return y;

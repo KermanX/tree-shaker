@@ -13,7 +13,8 @@ use oxc::{
   span::{GetSpan, SourceType, Span, SPAN},
 };
 use std::{
-  hash::{DefaultHasher, Hasher}, mem, sync::{atomic::{AtomicUsize, Ordering}, LazyLock}
+  hash::{DefaultHasher, Hasher},
+  mem,
 };
 
 pub(crate) struct Transformer<'a> {

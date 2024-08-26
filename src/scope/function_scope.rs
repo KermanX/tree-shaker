@@ -1,4 +1,4 @@
-use super::{cf_scope, loop_scope::LoopScope};
+use super::loop_scope::LoopScope;
 use crate::entity::{entity::Entity, literal::LiteralEntity, union::UnionEntity};
 use oxc::semantic::ScopeId;
 
