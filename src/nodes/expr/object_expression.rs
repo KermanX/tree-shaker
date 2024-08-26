@@ -69,6 +69,10 @@ impl<'a> Transformer<'a> {
       });
     }
 
-    Some(self.ast_builder.expression_object(span, transformed_properties, None))
+    if !need_val && transformed_properties.is_empty() {
+      None
+    } else {
+      Some(self.ast_builder.expression_object(span, transformed_properties, None))
+    }
   }
 }
