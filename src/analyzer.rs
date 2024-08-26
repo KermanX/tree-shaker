@@ -104,7 +104,7 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn new_entity_dep(&self, node: EntityDepNode<'a>) -> EntityDep<'a> {
     EntityDep {
       node,
-      scope_path: self.scope_context.function_scopes.iter().map(|x| x.id).collect(),
+      scope_path: self.scope_context.variable_scopes.iter().map(|x| x.id).collect(),
     }
   }
 
@@ -121,7 +121,7 @@ impl<'a> Analyzer<'a> {
     self.referred_nodes.insert(dep.node);
 
     let mut diff = false;
-    for (i, scope) in self.scope_context.function_scopes.iter_mut().enumerate() {
+    for (i, scope) in self.scope_context.variable_scopes.iter_mut().enumerate() {
       if diff {
         scope.has_effect = true;
       } else if dep.scope_path.get(i).is_some_and(|id| *id != scope.id) {
@@ -132,7 +132,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub(crate) fn refer_global_dep(&mut self) {
-    for scope in self.scope_context.function_scopes.iter_mut() {
+    for scope in self.scope_context.variable_scopes.iter_mut() {
       scope.has_effect = true;
     }
   }

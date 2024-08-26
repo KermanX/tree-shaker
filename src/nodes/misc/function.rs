@@ -31,8 +31,9 @@ impl<'a> Analyzer<'a> {
     self.exec_function_body(node.body.as_ref().unwrap());
 
     self.pop_indeterminate_scope();
-    self.pop_variable_scope();
-    self.pop_function_scope().get_result()
+    let has_effect = self.pop_variable_scope().has_effect;
+    let ret_val = self.pop_function_scope().ret_val();
+    (has_effect, ret_val)
   }
 }
 
