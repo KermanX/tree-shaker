@@ -3,6 +3,6 @@ source: src/tests/mod.rs
 expression: result
 ---
 export function f() {
-	let { x: y = 1 } = { x: void 0 };
-	return y;
+	let __unused_7009 = { x: void 0 };
+	return 1;
 }

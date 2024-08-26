@@ -45,8 +45,8 @@ impl<'a> Transformer<'a> {
       }
       _ => {
         let data = self.get_data::<Data>(AST_TYPE, &node);
-        if let Some(literal) = data.collector.collected() {
-          if let LiteralEntity::String(s) = literal {
+        if let Some(LiteralEntity::String(s)) = data.collector.collected() {
+          if need_val {
             let span = node.span();
             let expr = self.transform_expression(TryFrom::try_from(node).unwrap(), false);
             if let Some(expr) = expr {
@@ -64,7 +64,7 @@ impl<'a> Transformer<'a> {
               Some((false, self.ast_builder.property_key_identifier_name(span, s)))
             }
           } else {
-            unreachable!()
+            None
           }
         } else {
           let expr = self.transform_expression(node.try_into().unwrap(), need_val);
