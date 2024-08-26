@@ -2,12 +2,12 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   data::{DataPlaceholder, ExtraData, ReferredNodes},
-  entity::dep::{EntityDep, EntityDepNode},
+  entity::dep::EntityDepNode,
 };
 use oxc::{
   allocator::Allocator,
   ast::{
-    ast::{BindingPattern, Expression, Program, Statement, TSTypeAnnotation, UnaryOperator},
+    ast::{BindingPattern, Expression, Program, TSTypeAnnotation, UnaryOperator},
     AstBuilder,
   },
   span::{GetSpan, SourceType, Span, SPAN},

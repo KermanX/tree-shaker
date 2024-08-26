@@ -1,10 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{
-    dep::{EntityDep, EntityDepNode},
-    forwarded::ForwardedEntity,
-    literal::LiteralEntity,
-  },
+  entity::{dep::EntityDepNode, forwarded::ForwardedEntity, literal::LiteralEntity},
   transformer::Transformer,
 };
 use oxc::ast::ast::{ReturnStatement, Statement};

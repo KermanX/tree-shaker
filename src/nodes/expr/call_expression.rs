@@ -1,5 +1,4 @@
 use crate::ast::AstType2;
-use crate::entity::collector::LiteralCollector;
 use crate::entity::entity::Entity;
 use crate::entity::unknown::UnknownEntity;
 use crate::{build_effect_from_arr, transformer::Transformer, Analyzer};

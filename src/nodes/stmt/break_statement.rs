@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::analyzer::Analyzer;
 use oxc::ast::ast::BreakStatement;
 
 impl<'a> Analyzer<'a> {

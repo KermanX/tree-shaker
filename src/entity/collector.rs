@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use super::{collected::CollectedEntity, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity, union::UnionEntity};
+use super::{collected::CollectedEntity, entity::Entity, literal::LiteralEntity};
 use oxc::{
   ast::{ast::Expression, AstBuilder},
   span::Span,

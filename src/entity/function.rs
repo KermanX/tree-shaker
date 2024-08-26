@@ -5,7 +5,7 @@ use super::{
   unknown::UnknownEntity,
 };
 use crate::analyzer::Analyzer;
-use std::{rc::Rc, vec};
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub(crate) struct FunctionEntity<'a> {
