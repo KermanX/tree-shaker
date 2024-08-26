@@ -9,17 +9,17 @@ use std::rc::Rc;
 #[derive(Debug)]
 pub(crate) struct ForwardedEntity<'a> {
   val: Entity<'a>,
-  deps: Vec<EntityDep<'a>>,
+  dep: EntityDep<'a>,
 }
 
 impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
-    self.refer_deps(analyzer);
+    analyzer.refer_dep(&self.dep);
     self.val.consume_self(analyzer)
   }
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    self.refer_deps(analyzer);
+    analyzer.refer_dep(&self.dep);
     self.val.consume_as_unknown(analyzer)
   }
 
@@ -28,7 +28,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     length: usize,
   ) -> (Vec<Entity<'a>>, Entity<'a>) {
-    self.refer_deps(analyzer);
+    analyzer.refer_dep(&self.dep);
     self.val.consume_as_array(analyzer, length)
   }
 
@@ -42,7 +42,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
   }
 
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    ForwardedEntity::new(self.val.get_property(key), self.deps.clone())
+    ForwardedEntity::new(self.val.get_property(key), self.dep.clone())
   }
 
   fn get_literal(&self) -> Option<LiteralEntity<'a>> {
@@ -59,13 +59,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
 }
 
 impl<'a> ForwardedEntity<'a> {
-  pub(crate) fn new(val: Entity<'a>, deps: Vec<EntityDep<'a>>) -> Entity<'a> {
-    Rc::new(Self { val, deps })
-  }
-
-  fn refer_deps(&self, analyzer: &mut Analyzer<'a>) {
-    for dep in &self.deps {
-      analyzer.refer_dep(dep);
-    }
+  pub(crate) fn new(val: Entity<'a>, dep: EntityDep<'a>) -> Entity<'a> {
+    Rc::new(Self { val, dep })
   }
 }

@@ -34,7 +34,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
         if has_effect {
           self.consume_self(analyzer);
         }
-        (has_effect, ForwardedEntity::new(ret_val, vec![self.source.clone()]))
+        (has_effect, ForwardedEntity::new(ret_val, self.source.clone()))
       }
       EntityDepNode::ArrowFunctionExpression(node) => todo!(),
       _ => unreachable!(),

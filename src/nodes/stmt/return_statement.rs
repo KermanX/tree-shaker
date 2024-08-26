@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
       .as_ref()
       .map_or_else(|| LiteralEntity::new_undefined(), |expr| self.exec_expression(expr));
     let dep = self.new_entity_dep(EntityDepNode::ReturnStatement(node));
-    let value = ForwardedEntity::new(value, vec![dep]);
+    let value = ForwardedEntity::new(value, dep);
     self.function_scope_mut().on_return(indeterminate, value);
   }
 }
