@@ -1,4 +1,5 @@
 use crate::ast::AstType2;
+use crate::build_effect;
 use crate::entity::entity::Entity;
 use crate::entity::union::UnionEntity;
 use crate::{analyzer::Analyzer, Transformer};
@@ -70,7 +71,11 @@ impl<'a> Transformer<'a> {
 
     match (left, right) {
       (Some(left), Some(right)) => {
-        Some(self.ast_builder.expression_logical(span, left, node.operator, right))
+        if need_val && data.need_left_val {
+          Some(self.ast_builder.expression_logical(span, left, node.operator, right))
+        } else {
+          Some(build_effect!(self.ast_builder, span, Some(left); right))
+        }
       }
       (Some(left), None) => Some(left),
       (None, Some(right)) => Some(right),

@@ -1,4 +1,5 @@
 mod call_expression;
+mod conditional_expression;
 mod literals;
 mod logical_expression;
 mod object_expression;
@@ -26,6 +27,7 @@ impl<'a> Analyzer<'a> {
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
       Expression::Identifier(node) => self.exec_identifier_reference_read(node),
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
+      Expression::ConditionalExpression(node) => self.exec_conditional_expression(node),
       Expression::CallExpression(node) => self.exec_call_expression(node),
       Expression::ObjectExpression(node) => self.exec_object_expression(node),
       _ => todo!(),
@@ -64,6 +66,9 @@ impl<'a> Transformer<'a> {
         .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
       Expression::LogicalExpression(node) => {
         self.transform_logical_expression(node.unbox(), need_val)
+      }
+      Expression::ConditionalExpression(node) => {
+        self.transform_conditional_expression(node.unbox(), need_val)
       }
 
       Expression::CallExpression(node) => self.transform_call_expression(node.unbox(), need_val),
