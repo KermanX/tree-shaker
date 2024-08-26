@@ -47,9 +47,13 @@ fn test_2() {
     r#"
 let x = 1;
 
-export function f1(a) {
-  if (a)
+function f1(a) {
+  function closure() {
     return x;
+  }
+
+  if (a)
+    return closure();
   else
     effect;
 }

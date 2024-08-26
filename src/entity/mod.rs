@@ -1,4 +1,5 @@
 pub mod arguments;
+pub mod collected;
 pub mod collector;
 pub mod dep;
 pub mod entity;

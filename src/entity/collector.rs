@@ -1,6 +1,6 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
-use super::{entity::Entity, literal::LiteralEntity};
+use super::{collected::CollectedEntity, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity, union::UnionEntity};
 use oxc::{
   ast::{ast::Expression, AstBuilder},
   span::Span,
@@ -9,39 +9,47 @@ use oxc::{
 #[derive(Debug, Default)]
 pub(crate) struct LiteralCollector<'a> {
   /// None if no literal is collected
-  collected: Option<LiteralEntity<'a>>,
+  literal: Option<LiteralEntity<'a>>,
+  /// Collected literal entities
+  collected: Rc<RefCell<Vec<Entity<'a>>>>,
   invalid: bool,
 }
 
 impl<'a> LiteralCollector<'a> {
   pub(crate) fn collect(&mut self, entity: Entity<'a>) -> Entity<'a> {
     if self.invalid {
-      return entity;
-    }
-    if let Some(literal) = entity.get_literal() {
-      if let Some(collected) = &self.collected {
+      self.get_entity_on_invalid(entity)
+    } else if let Some(literal) = entity.get_literal() {
+      if let Some(collected) = &self.literal {
         if collected != &literal {
           self.invalid = true;
-          return entity;
+          self.get_entity_on_invalid(entity)
         } else {
-          return Rc::new(literal);
+          self.collected.borrow_mut().push(entity);
+          Rc::new(literal)
         }
       } else {
-        self.collected = Some(literal);
-        return Rc::new(literal);
+        self.literal = Some(literal);
+        self.collected.borrow_mut().push(entity);
+        Rc::new(literal)
       }
     } else {
       self.invalid = true;
-      return entity;
+      self.get_entity_on_invalid(entity)
     }
+  }
+
+  #[inline]
+  pub(crate) fn get_entity_on_invalid(&self, entity: Entity<'a>) -> Entity<'a> {
+    CollectedEntity::new(entity, self.collected.clone())
   }
 
   pub(crate) fn collected(&self) -> Option<LiteralEntity<'a>> {
     if self.invalid {
       None
     } else {
-      assert!(self.collected.is_some());
-      self.collected
+      assert!(self.literal.is_some());
+      self.literal
     }
   }
 
@@ -50,6 +58,6 @@ impl<'a> LiteralCollector<'a> {
     ast_builder: &AstBuilder<'a>,
     span: Span,
   ) -> Option<Expression<'a>> {
-    self.collected.as_ref().map(|literal| literal.build_expr(ast_builder, span))
+    self.literal.as_ref().map(|literal| literal.build_expr(ast_builder, span))
   }
 }

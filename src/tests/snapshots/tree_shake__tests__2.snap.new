@@ -1,0 +1,11 @@
+---
+source: src/tests/mod.rs
+assertion_line: 46
+expression: result
+---
+export const t = 1;
+export function f2() {
+	effect;
+}
+f2();
+const __unused_0 = f2();
