@@ -1,10 +1,10 @@
 # Tree Shaker Prototype
 
-\[WIP\] This is a **prototype** of a JavaScript tree shaker.
+\[WIP\] This is a JavaScript tree shaker based on [Oxc](https://oxc.rs).
 
 ## Goal
 
-Tree shake the following code:
+Tree shake the following code (this already works!):
 
 ```js
 export function f() {
@@ -28,6 +28,13 @@ export function f() {
 ```
 
 May not be very fast, but should generates the least code possible.
+
+## Todo
+
+- Implement all AST nodes
+- Implement built-in objects and properties
+- Test against fixtures from other tree shakers like Rollup
+- Test against test262 (is this possible?)
 
 ## Approach
 
