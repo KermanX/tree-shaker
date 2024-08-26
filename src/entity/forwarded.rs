@@ -41,20 +41,20 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     self.val.call(analyzer, this, args)
   }
 
-  fn test_truthy(&self) -> Option<bool> {
-    self.val.test_truthy()
-  }
-
-  fn test_nullish(&self) -> Option<bool> {
-    self.val.test_nullish()
+  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
+    ForwardedEntity::new(self.val.get_property(key), self.deps.clone())
   }
 
   fn get_literal(&self) -> Option<LiteralEntity<'a>> {
     self.val.get_literal()
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    self.val.get_property(key)
+  fn test_truthy(&self) -> Option<bool> {
+    self.val.test_truthy()
+  }
+
+  fn test_nullish(&self) -> Option<bool> {
+    self.val.test_nullish()
   }
 }
 

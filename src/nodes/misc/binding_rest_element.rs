@@ -1,12 +1,6 @@
-use crate::ast::AstType2;
 use crate::entity::entity::Entity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::BindingRestElement;
-
-const AST_TYPE: AstType2 = AstType2::BindingRestElement;
-
-#[derive(Debug, Default, Clone)]
-pub struct Data {}
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_binding_rest_element(

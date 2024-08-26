@@ -93,18 +93,6 @@ impl<'a> Analyzer<'a> {
   ) -> &'a mut D {
     self.load_data_by_span(ast_type, node.span())
   }
-
-  pub(crate) fn get_data_by_span<D: Default + 'a>(&self, ast_type: AstType2, span: Span) -> &'a D {
-    let existing = self.data.get(&ast_type).and_then(|map| map.get(&span));
-    match existing {
-      Some(boxed) => unsafe { mem::transmute(boxed.as_ref()) },
-      None => self.allocator.alloc(D::default()),
-    }
-  }
-
-  pub(crate) fn get_data<D: Default + 'a>(&self, ast_type: AstType2, node: &dyn GetSpan) -> &'a D {
-    self.get_data_by_span(ast_type, node.span())
-  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -149,9 +137,5 @@ impl<'a> Analyzer<'a> {
     for scope in self.scope_context.function_scopes.iter_mut() {
       scope.has_effect = true;
     }
-  }
-
-  pub(crate) fn is_referred(&self, node: &EntityDepNode<'a>) -> bool {
-    self.referred_nodes.contains(node)
   }
 }
