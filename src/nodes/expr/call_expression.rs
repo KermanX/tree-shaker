@@ -47,9 +47,9 @@ impl<'a> Transformer<'a> {
       }
       Some(self.ast_builder.expression_call(
         span,
-        transformed_arguments,
         callee,
         None::<TSTypeParameterInstantiation>,
+        transformed_arguments,
         optional,
       ))
     } else {
