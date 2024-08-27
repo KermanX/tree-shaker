@@ -43,4 +43,12 @@ export function main() {
     }
     effect2;
   }
+
+  while(1) {
+    effect1;
+    return;
+    effect2;
+  }
+
+  effect3;
 }

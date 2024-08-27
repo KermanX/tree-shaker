@@ -123,13 +123,4 @@ impl<'a> Analyzer<'a> {
       }
     }
   }
-
-  pub(crate) fn is_exited(&self, cf_scope_id: ScopeId) -> bool {
-    for cf_scope in self.scope_context.cf_scopes.iter().rev() {
-      if cf_scope.id == cf_scope_id {
-        return cf_scope.must_exited();
-      }
-    }
-    unreachable!()
-  }
 }

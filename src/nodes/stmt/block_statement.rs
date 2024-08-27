@@ -39,6 +39,7 @@ impl<'a> Transformer<'a> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let BlockStatement { span, body, .. } = node;
+
     let mut statements = self.ast_builder.vec();
 
     for statement in body {
