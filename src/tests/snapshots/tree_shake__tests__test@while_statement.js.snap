@@ -8,7 +8,6 @@ export function main() {
 	while (sth) {
 		effect1;
 		break;
-		effect2;
 	}
 	while (sth) {
 		effect1;
@@ -19,7 +18,6 @@ export function main() {
 		while (sth2) {
 			effect2;
 			break;
-			effect3;
 		}
 		effect2;
 	}
