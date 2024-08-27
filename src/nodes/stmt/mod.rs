@@ -37,7 +37,7 @@ impl<'a> Analyzer<'a> {
       Statement::BreakStatement(node) => self.exec_break_statement(node),
       Statement::ReturnStatement(node) => self.exec_return_statement(node),
       Statement::LabeledStatement(node) => self.exec_labeled_statement(node),
-      _ => todo!(),
+      _ => todo!("Stmt at span {:?}", node.span()),
     }
 
     self.current_label = None;
@@ -65,6 +65,7 @@ impl<'a> Transformer<'a> {
       Statement::BlockStatement(node) => self.transform_block_statement(node.unbox()),
       Statement::IfStatement(node) => self.transform_if_statement(node.unbox()),
       Statement::WhileStatement(node) => self.transform_while_statement(node.unbox()),
+      Statement::BreakStatement(node) => self.transform_break_statement(node.unbox()),
       Statement::ReturnStatement(node) => self.transform_return_statement(node.unbox()),
       Statement::LabeledStatement(node) => self.transform_labeled_statement(node.unbox()),
       _ => todo!(),
