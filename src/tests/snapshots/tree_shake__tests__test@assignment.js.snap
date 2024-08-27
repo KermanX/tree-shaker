@@ -1,0 +1,8 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(&input)
+input_file: src/tests/fixtures/assignment.js
+---
+export function main() {
+	return 2;
+}

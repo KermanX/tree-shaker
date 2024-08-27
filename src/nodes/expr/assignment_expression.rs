@@ -18,11 +18,18 @@ impl<'a> Transformer<'a> {
     node: AssignmentExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let AssignmentExpression { span, left, operator, right } = node;
+    let AssignmentExpression { span, operator, left, right } = node;
 
     let left = self.transform_assignment_target(left);
-    let right = self.transform_expression(right, left.is_some());
+    let right = self.transform_expression(right, need_val || left.is_some());
 
-    todo!()
+    match (left, right) {
+      (Some(left), Some(right)) => {
+        Some(self.ast_builder.expression_assignment(span, operator, left, right))
+      }
+      (None, Some(right)) => Some(right),
+      (None, None) => None,
+      _ => unreachable!(),
+    }
   }
 }
