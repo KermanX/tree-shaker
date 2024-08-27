@@ -16,13 +16,16 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_if_statement(&mut self, node: &'a IfStatement) {
     let test = self.exec_expression(&node.test);
 
-    let (maybe_true, maybe_false, indeterminate) = match test.test_truthy() {
-      Some(true) => (true, false, false),
-      Some(false) => (false, true, false),
-      None => (true, true, true),
+    let (maybe_true, maybe_false) = match test.test_truthy() {
+      Some(true) => (true, false),
+      Some(false) => (false, true),
+      None => (true, true),
     };
 
+    let indeterminate = maybe_true && maybe_false;
+
     if indeterminate {
+      test.consume_self(self);
       self.push_cf_scope(None);
     }
 

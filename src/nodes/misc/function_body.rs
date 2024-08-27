@@ -51,7 +51,6 @@ impl<'a> Transformer<'a> {
       }
     }
 
-    let transformed_statements = self.transform_statements(transformed_statements);
     self.ast_builder.function_body(span, directives, transformed_statements)
   }
 }

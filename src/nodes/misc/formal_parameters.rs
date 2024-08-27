@@ -38,10 +38,15 @@ impl<'a> Transformer<'a> {
 
     for param in items {
       let FormalParameter { span, decorators, pattern, .. } = param;
-      let pattern =
-        self.transform_binding_pattern(pattern).unwrap_or(self.build_unused_binding_pattern(span));
-      transformed_items
-        .push(self.ast_builder.formal_parameter(span, decorators, pattern, None, false, false));
+      let pattern = self.transform_binding_pattern(pattern);
+      transformed_items.push(self.ast_builder.formal_parameter(
+        span,
+        decorators,
+        pattern.unwrap_or_else(|| self.build_unused_binding_pattern(span)),
+        None,
+        false,
+        false,
+      ));
     }
 
     let transformed_rest = match rest {
