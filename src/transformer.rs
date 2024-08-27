@@ -30,17 +30,8 @@ impl<'a> Transformer<'a> {
     Transformer { allocator, ast_builder: AstBuilder::new(allocator), data, referred_nodes }
   }
 
-  pub fn transform_program(&mut self, ast: &'a mut Program<'a>) -> Program<'a> {
-    let Program { span, source_type, hashbang, directives, body, .. } = mem::replace(
-      ast,
-      self.ast_builder.program(
-        SPAN,
-        SourceType::default(),
-        None,
-        self.ast_builder.vec(),
-        self.ast_builder.vec(),
-      ),
-    );
+  pub fn transform_program(&mut self, ast: Program<'a>) -> Program<'a> {
+    let Program { span, source_type, hashbang, directives, body, .. } = ast;
     let body = self.transform_statements(body);
     self.ast_builder.program(span, source_type, hashbang, directives, body)
   }
