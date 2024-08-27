@@ -2,6 +2,8 @@
 
 \[WIP\] This is a JavaScript tree shaker based on [Oxc](https://oxc.rs).
 
+> If this project goes well, I personally hope it can become part of the Oxc or Rolldown project.
+
 ## Goal
 
 Tree shake the following code (this already works!):
