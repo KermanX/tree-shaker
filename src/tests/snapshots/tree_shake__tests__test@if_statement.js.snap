@@ -1,0 +1,8 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(&input)
+input_file: src/tests/fixtures/if_statement.js
+---
+export function main() {
+	return 1;
+}

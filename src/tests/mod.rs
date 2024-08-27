@@ -1,103 +1,15 @@
+use insta::{assert_snapshot, glob};
+use std::fs;
+
 fn tree_shake(input: &str) -> String {
   let result = crate::tree_shake(input);
   result.codegen_return.source_text
 }
 
-macro_rules! tree_shake_snapshot {
-  ($input: expr $(,)?) => {
-    let result = tree_shake($input);
-    insta::assert_snapshot!(result);
-  };
-}
-
 #[test]
-fn test_1() {
-  tree_shake_snapshot!(
-    r#"
-export let a = 1 && 2;
-export { b };
-let c = 3;
-let { ["b"]: b, d } = { b: 2, d: effect };
-
-let t = 0;
-if (t) {
-  effect3;
-}
-else {
-  effect4;
-}
-
-if (effect) {
-  effect5;
-}
-
-while(0) {
-  effect6;
-}
-
-while(effect7) {
-  0;
-}"#,
-  );
-}
-
-#[test]
-fn test_2() {
-  tree_shake_snapshot!(
-    r#"
-let x = 1;
-
-function f1(a) {
-  function closure() {
-    return x;
-  }
-
-  if (a)
-    return closure();
-  else
-    effect;
-}
-
-export const t = f1(true);
-
-export function f2() {
-  effect;
-}
-
-f2();
-
-const r = f2();
-"#,
-  );
-}
-
-#[test]
-fn test_3() {
-  tree_shake_snapshot!(
-    r#"
-export function f() {
-  function g(a) {
-    if (a)
-      console.log('effect')
-    else
-      return 'str'
-  }
-  let { ["x"]: y = 1 } = { x: g('') ? undefined : g(1) }
-  return y
-}
-"#,
-  );
-}
-
-#[test]
-fn test_4() {
-  tree_shake_snapshot!(
-    r#"
-export function f() {
-  while (a) {
-    effect1;
-  }
-}
-"#,
-  );
+fn test() {
+  glob!("fixtures/**/*.js", |path| {
+    let input = fs::read_to_string(path).unwrap();
+    assert_snapshot!(tree_shake(&input));
+  });
 }
