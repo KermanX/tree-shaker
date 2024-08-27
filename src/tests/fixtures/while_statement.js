@@ -22,11 +22,11 @@ export function main() {
     effect2;
   }
 
-  // while(sth) {
-  //   effect1;
-  //   continue;
-  //   effect2;
-  // }
+  while(sth) {
+    effect1;
+    continue;
+    effect2;
+  }
 
   while(sth) {
     effect1;

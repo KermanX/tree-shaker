@@ -38,8 +38,6 @@ impl<'a> Transformer<'a> {
   ) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
-    println!("span: {:?}", data.last_stmt);
-
     let BlockStatement { span, body, .. } = node;
     let mut statements = self.ast_builder.vec();
 

@@ -11,6 +11,10 @@ export function main() {
 	}
 	while (sth) {
 		effect1;
+		continue;
+	}
+	while (sth) {
+		effect1;
 		return;
 	}
 	while (sth1) {
