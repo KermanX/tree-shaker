@@ -39,6 +39,7 @@ impl<'a> Analyzer<'a> {
       Statement::ContinueStatement(node) => self.exec_continue_statement(node),
       Statement::ReturnStatement(node) => self.exec_return_statement(node),
       Statement::LabeledStatement(node) => self.exec_labeled_statement(node),
+      Statement::EmptyStatement(node) => {},
       _ => todo!("Stmt at span {:?}", node.span()),
     }
 
@@ -71,6 +72,7 @@ impl<'a> Transformer<'a> {
       Statement::ContinueStatement(node) => self.transform_continue_statement(node.unbox()),
       Statement::ReturnStatement(node) => self.transform_return_statement(node.unbox()),
       Statement::LabeledStatement(node) => self.transform_labeled_statement(node.unbox()),
+      Statement::EmptyStatement(_) => None,
       _ => todo!(),
     }
   }
