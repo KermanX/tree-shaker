@@ -78,7 +78,7 @@ impl<'a> Transformer<'a> {
               None,
             ));
           }
-          (None, None) => {}
+          (None, None) => statements.push(self.ast_builder.statement_expression(test.span(), test)),
         }
       }
       (Some(body), None) | (None, Some(body)) => {
