@@ -1,4 +1,6 @@
 mod arguments;
+mod assignment_target;
+mod assignment_target_pattern;
 mod binding_pattern;
 mod binding_rest_element;
 mod formal_parameters;
@@ -6,4 +8,5 @@ mod function;
 mod function_body;
 mod identifier_reference;
 mod property_key;
+mod simple_assignment_target;
 mod variable_declarator;

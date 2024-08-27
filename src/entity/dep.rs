@@ -2,6 +2,7 @@ use core::hash::{Hash, Hasher};
 use oxc::{
   ast::ast::{
     ArrowFunctionExpression, BindingIdentifier, Function, LabelIdentifier, ReturnStatement,
+    SimpleAssignmentTarget,
   },
   semantic::ScopeId,
   span::GetSpan,
@@ -14,6 +15,7 @@ pub(crate) enum EntityDepNode<'a> {
   BindingIdentifier(&'a BindingIdentifier<'a>),
   ReturnStatement(&'a ReturnStatement<'a>),
   LabelIdentifier(&'a LabelIdentifier<'a>),
+  SimpleAssignmentTarget(&'a SimpleAssignmentTarget<'a>),
 }
 
 #[derive(Debug, Clone)]
@@ -53,6 +55,7 @@ impl<'a> Hash for EntityDepNode<'a> {
       EntityDepNode::BindingIdentifier(a) => a.span(),
       EntityDepNode::ReturnStatement(a) => a.span(),
       EntityDepNode::LabelIdentifier(a) => a.span(),
+      EntityDepNode::SimpleAssignmentTarget(a) => a.span(),
     };
     span.hash(state);
   }

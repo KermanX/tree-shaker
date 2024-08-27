@@ -39,9 +39,32 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn exec_identifier_reference_export(&mut self, node: &'a IdentifierReference<'a>) {
     let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
-    assert!(reference.is_read());
+    debug_assert!(reference.is_read());
     let symbol = reference.symbol_id();
     self.exports.push(symbol.unwrap());
+  }
+
+  pub(crate) fn exec_identifier_reference_write(
+    &mut self,
+    node: &'a IdentifierReference<'a>,
+    value: Entity<'a>,
+  ) {
+    if node.name == "undefined" {
+      // TODO: Throw warning
+    }
+
+    let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
+    debug_assert!(reference.is_write());
+    let symbol = reference.symbol_id();
+
+    self.set_data(AST_TYPE, node, Data { resolvable: symbol.is_some() });
+
+    if let Some(symbol) = symbol {
+      self.set_symbol(&symbol, value);
+    } else {
+      // TODO: Handle globals
+      self.refer_global_dep();
+    }
   }
 }
 

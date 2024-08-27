@@ -33,4 +33,8 @@ impl<'a> VariableScope<'a> {
   pub fn get(&self, symbol: &SymbolId) -> Option<&Entity<'a>> {
     self.variables.get(symbol)
   }
+
+  pub fn has(&self, symbol: &SymbolId) -> bool {
+    self.variables.contains_key(symbol)
+  }
 }

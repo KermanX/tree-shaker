@@ -1,3 +1,4 @@
+mod assignment_expression;
 mod call_expression;
 mod conditional_expression;
 mod literals;
@@ -36,6 +37,7 @@ impl<'a> Analyzer<'a> {
       Expression::ObjectExpression(node) => self.exec_object_expression(node),
       Expression::ParenthesizedExpression(node) => self.exec_parenthesized_expression(node),
       Expression::SequenceExpression(node) => self.exec_sequence_expression(node),
+      Expression::AssignmentExpression(node) => self.exec_assignment_expression(node),
       _ => todo!("Expr at span {:?}", node.span()),
     };
 
@@ -87,6 +89,9 @@ impl<'a> Transformer<'a> {
       }
       Expression::SequenceExpression(node) => {
         self.transform_sequence_expression(node.unbox(), need_val)
+      }
+      Expression::AssignmentExpression(node) => {
+        self.transform_assignment_expression(node.unbox(), need_val)
       }
       _ => todo!(),
     };

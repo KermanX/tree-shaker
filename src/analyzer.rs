@@ -4,6 +4,7 @@ use crate::{
   entity::{
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
+    union::UnionEntity,
   },
   scope::ScopeContext,
 };
@@ -114,6 +115,22 @@ impl<'a> Analyzer<'a> {
     for scope in self.scope_context.variable_scopes.iter().rev() {
       if let Some(entity) = scope.get(symbol) {
         return entity;
+      }
+    }
+    panic!("Unexpected undeclared Symbol {:?}", self.sematic.symbols().get_name(*symbol));
+  }
+
+  pub(crate) fn set_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
+    let indeterminate = self.cf_scope().is_indeterminate();
+    for scope in self.scope_context.variable_scopes.iter_mut().rev() {
+      if let Some(old_val) = scope.get(symbol) {
+        scope
+          .set(
+            *symbol,
+            if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },
+          )
+          .unwrap();
+        return;
       }
     }
     panic!("Unexpected undeclared Symbol {:?}", self.sematic.symbols().get_name(*symbol));

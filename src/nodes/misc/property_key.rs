@@ -16,7 +16,7 @@ pub struct Data<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_property_key(&mut self, node: &'a PropertyKey) -> Entity<'a> {
+  pub(crate) fn exec_property_key(&mut self, node: &'a PropertyKey<'a>) -> Entity<'a> {
     let entity = match node {
       PropertyKey::StaticIdentifier(node) => Rc::new(LiteralEntity::String(node.name.as_str())),
       PropertyKey::PrivateIdentifier(node) => todo!(),
