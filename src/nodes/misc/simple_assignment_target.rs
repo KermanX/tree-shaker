@@ -38,14 +38,12 @@ impl<'a> Transformer<'a> {
         todo!()
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
-        let IdentifierReference { span, name, .. } = node.unbox();
-        if referred {
-          Some(self.ast_builder.assignment_target_simple(
-            self.ast_builder.simple_assignment_target_identifier_reference(span, name),
-          ))
-        } else {
-          None
-        }
+        let inner = self.transform_identifier_reference_write(node.unbox(), referred);
+        inner.map(|inner| {
+          self.ast_builder.assignment_target_simple(
+            self.ast_builder.simple_assignment_target_from_identifier_reference(inner),
+          )
+        })
       }
       _ => unreachable!(),
     }

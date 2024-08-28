@@ -67,29 +67,18 @@ impl<'a> Transformer<'a> {
     match (data.maybe_true, data.maybe_false) {
       (true, true) => {
         // Both cases are possible
-        match (consequent, alternate) {
+        return match (consequent, alternate) {
           (Some(consequent), alternate) => {
-            statements.push(self.ast_builder.statement_if(
-              span,
-              test.unwrap(),
-              consequent,
-              alternate,
-            ));
+            Some(self.ast_builder.statement_if(span, test.unwrap(), consequent, alternate))
           }
-          (None, Some(alternate)) => {
-            statements.push(self.ast_builder.statement_if(
-              span,
-              self.build_negate_expression(test.unwrap()),
-              alternate,
-              None,
-            ));
-          }
-          (None, None) => {
-            test.map(|test| {
-              statements.push(self.ast_builder.statement_expression(test.span(), test))
-            });
-          }
-        }
+          (None, Some(alternate)) => Some(self.ast_builder.statement_if(
+            span,
+            self.build_negate_expression(test.unwrap()),
+            alternate,
+            None,
+          )),
+          (None, None) => test.map(|test| self.ast_builder.statement_expression(test.span(), test)),
+        };
       }
       (true, false) => {
         // Only one case is possible

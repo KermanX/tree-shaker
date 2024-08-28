@@ -78,4 +78,14 @@ impl<'a> Transformer<'a> {
 
     (!data.resolvable || need_val).then(|| node)
   }
+
+  pub(crate) fn transform_identifier_reference_write(
+    &mut self,
+    node: IdentifierReference<'a>,
+    need_write: bool,
+  ) -> Option<IdentifierReference<'a>> {
+    let data = self.get_data::<Data>(AST_TYPE, &node);
+
+    (!data.resolvable || need_write).then(|| node)
+  }
 }

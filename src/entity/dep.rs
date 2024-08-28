@@ -40,6 +40,9 @@ impl<'a> PartialEq for EntityDepNode<'a> {
       (EntityDepNode::LabelIdentifier(a), EntityDepNode::LabelIdentifier(b)) => {
         a.span() == b.span()
       }
+      (EntityDepNode::SimpleAssignmentTarget(a), EntityDepNode::SimpleAssignmentTarget(b)) => {
+        a.span() == b.span()
+      }
       _ => false,
     }
   }

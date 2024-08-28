@@ -3,6 +3,13 @@ source: src/tests/mod.rs
 expression: tree_shake(&input)
 input_file: src/tests/fixtures/assignment.js
 ---
-export function main() {
+export function f1() {
 	return 2;
+}
+export function f2(__unused_E8B5) {
+	return 2;
+}
+export function f3(a, b) {
+	if (b) a = 2;
+	return a;
 }

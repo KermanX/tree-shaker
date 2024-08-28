@@ -109,6 +109,11 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 
 impl<'a> UnionEntity<'a> {
   pub(crate) fn new(entities: Vec<Entity<'a>>) -> Entity<'a> {
-    Rc::new(UnionEntity(entities))
+    debug_assert!(!entities.is_empty());
+    if entities.len() == 1 {
+      entities.first().unwrap().clone()
+    } else {
+      Rc::new(UnionEntity(entities))
+    }
   }
 }
