@@ -106,8 +106,6 @@ impl<'a> Transformer<'a> {
 
     if statements.is_empty() {
       None
-    } else if statements.len() == 1 {
-      Some(statements.pop().unwrap())
     } else {
       Some(self.ast_builder.statement_block(span, statements))
     }
