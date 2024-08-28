@@ -3,16 +3,17 @@
 export function test_typeof(unknown) {
   return {
     s1: typeof 1,
-    s2: typeof 'a',
-    s3: typeof true,
-    // s4: typeof null,
-    s5: typeof undefined,
-    s6: typeof {},
-    // s7: typeof [],
-    s8: typeof f1,
-    // s9: typeof Symbol('a'),
-    s10: typeof unknown,
-    s11: typeof (unknown ? 'a' : 'b'),
-    s12: typeof (unknown ? 'a' : 1),
+    s2: typeof 1n,
+    s3: typeof 'a',
+    s4: typeof true,
+    s5: typeof null,
+    s6: typeof undefined,
+    s7: typeof {},
+    // s8: typeof [],
+    s9: typeof f1,
+    // s10: typeof Symbol('a'),
+    s11: typeof unknown,
+    s12: typeof (unknown ? 'a' : 'b'),
+    s13: typeof (unknown ? 'a' : 1),
   }
 }

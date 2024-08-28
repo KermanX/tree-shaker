@@ -27,9 +27,11 @@ struct Data<'a> {
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
     let entity = match node {
-      Expression::NumericLiteral(node) => self.exc_numeric_literal(node),
       Expression::StringLiteral(node) => self.exec_string_literal(node),
+      Expression::NumericLiteral(node) => self.exc_numeric_literal(node),
+      Expression::BigIntLiteral(node) => self.exc_big_int_literal(node),
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
+      Expression::NullLiteral(node) => self.exec_null_literal(node),
       Expression::Identifier(node) => self.exec_identifier_reference_read(node),
       Expression::UnaryExpression(node) => self.exec_unary_expression(node),
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
@@ -61,9 +63,11 @@ impl<'a> Transformer<'a> {
     let need_val = need_val && literal.is_none();
 
     let inner = match node {
-      Expression::NumericLiteral(_)
-      | Expression::StringLiteral(_)
-      | Expression::BooleanLiteral(_) => {
+      Expression::StringLiteral(_)
+      | Expression::NumericLiteral(_)
+      | Expression::BigIntLiteral(_)
+      | Expression::BooleanLiteral(_)
+      | Expression::NullLiteral(_) => {
         if need_val {
           Some(node)
         } else {

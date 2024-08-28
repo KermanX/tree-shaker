@@ -6,13 +6,15 @@ input_file: src/tests/fixtures/unary_expression.js
 export function test_typeof(unknown) {
 	return {
 		s1: "number",
-		s2: "string",
-		s3: "boolean",
-		s5: "undefined",
-		s6: "object",
-		s8: typeof f1,
-		s10: typeof unknown,
-		s11: "string",
-		s12: typeof (unknown ? "a" : 1)
+		s2: "bigint",
+		s3: "string",
+		s4: "boolean",
+		s5: "object",
+		s6: "undefined",
+		s7: "object",
+		s9: typeof f1,
+		s11: typeof unknown,
+		s12: "string",
+		s13: typeof (unknown ? "a" : 1)
 	};
 }

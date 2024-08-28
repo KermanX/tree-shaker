@@ -2,7 +2,7 @@ use crate::{
   entity::{entity::Entity, literal::LiteralEntity},
   Analyzer,
 };
-use oxc::ast::ast::{BigIntLiteral, BooleanLiteral, NumericLiteral, StringLiteral};
+use oxc::ast::ast::{BigIntLiteral, BooleanLiteral, NullLiteral, NumericLiteral, StringLiteral};
 use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
@@ -20,5 +20,9 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn exec_boolean_literal(&mut self, node: &'a BooleanLiteral) -> Entity<'a> {
     Rc::new(LiteralEntity::Boolean(node.value))
+  }
+
+  pub(crate) fn exec_null_literal(&mut self, _node: &'a NullLiteral) -> Entity<'a> {
+    Rc::new(LiteralEntity::Null)
   }
 }
