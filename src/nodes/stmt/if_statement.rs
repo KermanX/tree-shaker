@@ -55,45 +55,59 @@ impl<'a> Transformer<'a> {
 
     let IfStatement { span, test, consequent, alternate, .. } = node;
 
-    let test = self.transform_expression(test, data.maybe_true && data.maybe_false);
-    let consequent = data.maybe_true.then(|| self.transform_statement(consequent));
-    let alternate =
-      data.maybe_false.then(|| alternate.and_then(|alt| self.transform_statement(alt)));
+    let consequent = self.transform_statement(consequent);
+    let alternate = alternate.and_then(|alt| self.transform_statement(alt));
+
+    let need_test_val =
+      data.maybe_true && data.maybe_false && (consequent.is_some() || alternate.is_some());
+    let test = self.transform_expression(test, need_test_val);
 
     let mut statements = self.ast_builder.vec();
 
-    match (consequent, alternate) {
-      (Some(consequent), Some(alternate)) => {
+    match (data.maybe_true, data.maybe_false) {
+      (true, true) => {
         // Both cases are possible
-        let test = test.unwrap();
         match (consequent, alternate) {
-          (Some(consequent), Some(alternate)) => {
-            statements.push(self.ast_builder.statement_if(span, test, consequent, Some(alternate)));
-          }
-          (Some(consequent), None) => {
-            statements.push(self.ast_builder.statement_if(span, test, consequent, None));
+          (Some(consequent), alternate) => {
+            statements.push(self.ast_builder.statement_if(
+              span,
+              test.unwrap(),
+              consequent,
+              alternate,
+            ));
           }
           (None, Some(alternate)) => {
             statements.push(self.ast_builder.statement_if(
               span,
-              self.build_negate_expression(test),
+              self.build_negate_expression(test.unwrap()),
               alternate,
               None,
             ));
           }
-          (None, None) => statements.push(self.ast_builder.statement_expression(test.span(), test)),
+          (None, None) => {
+            test.map(|test| {
+              statements.push(self.ast_builder.statement_expression(test.span(), test))
+            });
+          }
         }
       }
-      (Some(body), None) | (None, Some(body)) => {
+      (true, false) => {
         // Only one case is possible
         test.map(|test| statements.push(self.ast_builder.statement_expression(test.span(), test)));
-        body.map(|body| statements.push(body));
+        consequent.map(|body| statements.push(body));
       }
-      (None, None) => unreachable!(),
+      (false, true) => {
+        // Only one case is possible
+        test.map(|test| statements.push(self.ast_builder.statement_expression(test.span(), test)));
+        alternate.map(|body| statements.push(body));
+      }
+      (false, false) => unreachable!(),
     };
 
     if statements.is_empty() {
       None
+    } else if statements.len() == 1 {
+      Some(statements.pop().unwrap())
     } else {
       Some(self.ast_builder.statement_block(span, statements))
     }
