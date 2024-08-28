@@ -58,6 +58,15 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     (has_effect, UnionEntity::new(ret_val))
   }
 
+  fn get_typeof(&self) -> Entity<'a> {
+    let mut result = Vec::new();
+    // TODO: collect literals
+    for entity in &self.0 {
+      result.push(entity.get_typeof());
+    }
+    Rc::new(UnionEntity(result))
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     let mut result = Vec::new();
     for entity in &self.0 {

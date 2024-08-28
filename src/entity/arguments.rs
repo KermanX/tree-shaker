@@ -35,6 +35,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     (result, UnknownEntity::new_unknown())
   }
 
+  fn get_typeof(&self) -> Entity<'a> {
+    unreachable!()
+  }
+
   fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
     unreachable!()
   }

@@ -25,6 +25,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
   }
 
+  fn get_typeof(&self) -> Entity<'a> {
+    LiteralEntity::new_string("object")
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     // FIXME: p4 rest
     match key.get_literal() {

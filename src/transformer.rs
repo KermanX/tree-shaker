@@ -54,6 +54,10 @@ impl<'a> Transformer<'a> {
     self.ast_builder.expression_numeric_literal(span, 0.0f64, "0", NumberBase::Decimal)
   }
 
+  pub(crate) fn build_undefined(&self, span: Span) -> Expression<'a> {
+    self.ast_builder.expression_identifier_reference(span, "undefined")
+  }
+
   pub(crate) fn build_negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {
     self.ast_builder.expression_unary(expression.span(), UnaryOperator::LogicalNot, expression)
   }

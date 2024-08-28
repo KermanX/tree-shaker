@@ -2,6 +2,7 @@ use super::{
   dep::{EntityDep, EntityDepNode},
   entity::{Entity, EntityTrait},
   forwarded::ForwardedEntity,
+  literal::LiteralEntity,
   unknown::UnknownEntity,
 };
 use crate::analyzer::Analyzer;
@@ -41,6 +42,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       EntityDepNode::ArrowFunctionExpression(node) => todo!(),
       _ => unreachable!(),
     }
+  }
+
+  fn get_typeof(&self) -> Entity<'a> {
+    LiteralEntity::new_string("function")
   }
 
   fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {

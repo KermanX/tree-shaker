@@ -26,6 +26,7 @@ pub(crate) trait EntityTrait<'a>: Debug {
   ) -> (bool, Entity<'a>) {
     (true, UnknownEntity::new_unknown())
   }
+  fn get_typeof(&self) -> Entity<'a>;
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a>;
   fn get_literal(&self) -> Option<LiteralEntity<'a>> {
     None

@@ -16,12 +16,26 @@ pub(crate) enum LiteralEntity<'a> {
   BigInt(&'a str),
   Boolean(bool),
   Symbol(usize),
+  NaN,
   Null,
   Undefined,
 }
 
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
+
+  fn get_typeof(&self) -> Entity<'a> {
+    LiteralEntity::new_string(match self {
+      LiteralEntity::String(_) => "string",
+      LiteralEntity::Number(_, _) => "number",
+      LiteralEntity::BigInt(_) => "bigint",
+      LiteralEntity::Boolean(_) => "boolean",
+      LiteralEntity::Symbol(_) => "symbol",
+      LiteralEntity::NaN => "number",
+      LiteralEntity::Null => "object",
+      LiteralEntity::Undefined => "undefined",
+    })
+  }
 
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     todo!()
@@ -38,7 +52,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::BigInt(value) => !value.is_empty(),
       LiteralEntity::Boolean(value) => *value,
       LiteralEntity::Symbol(_) => true,
-      LiteralEntity::Null | LiteralEntity::Undefined => false,
+      LiteralEntity::NaN | LiteralEntity::Null | LiteralEntity::Undefined => false,
     })
   }
 
@@ -56,6 +70,10 @@ impl<'a> LiteralEntity<'a> {
     Rc::new(LiteralEntity::String(value))
   }
 
+  pub(crate) fn new_boolean(value: bool) -> Entity<'a> {
+    Rc::new(LiteralEntity::Boolean(value))
+  }
+
   pub(crate) fn new_undefined() -> Entity<'a> {
     Rc::new(LiteralEntity::Undefined)
   }
@@ -71,6 +89,7 @@ impl<'a> LiteralEntity<'a> {
       }
       LiteralEntity::Boolean(value) => ast_builder.expression_boolean_literal(span, *value),
       LiteralEntity::Symbol(value) => todo!(),
+      LiteralEntity::NaN => ast_builder.expression_identifier_reference(span, "NaN"),
       LiteralEntity::Null => ast_builder.expression_null_literal(span),
       LiteralEntity::Undefined => ast_builder.expression_identifier_reference(span, "undefined"),
     }

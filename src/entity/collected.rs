@@ -49,6 +49,11 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.val.call(analyzer, this, args)
   }
 
+  fn get_typeof(&self) -> Entity<'a> {
+    // TODO: Verify this
+    CollectedEntity::new(self.val.get_typeof(), self.collected.clone())
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     CollectedEntity::new(self.val.get_property(key), self.collected.clone())
   }

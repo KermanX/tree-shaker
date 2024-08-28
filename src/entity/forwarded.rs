@@ -41,6 +41,10 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     self.val.call(analyzer, this, args)
   }
 
+  fn get_typeof(&self) -> Entity<'a> {
+    ForwardedEntity::new(self.val.get_typeof(), self.dep.clone())
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     ForwardedEntity::new(self.val.get_property(key), self.dep.clone())
   }

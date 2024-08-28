@@ -1,0 +1,18 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(&input)
+input_file: src/tests/fixtures/unary_expression.js
+---
+export function test_typeof(unknown) {
+	return {
+		s1: "number",
+		s2: "string",
+		s3: "boolean",
+		s5: "undefined",
+		s6: "object",
+		s8: typeof f1,
+		s10: typeof unknown,
+		s11: "string",
+		s12: typeof (unknown ? "a" : 1)
+	};
+}

@@ -7,6 +7,7 @@ mod object_expression;
 mod parenthesized_expression;
 mod sequence_expression;
 mod static_member_expression;
+mod unary_expression;
 
 use crate::ast::AstType2;
 use crate::build_effect;
@@ -30,6 +31,7 @@ impl<'a> Analyzer<'a> {
       Expression::StringLiteral(node) => self.exec_string_literal(node),
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
       Expression::Identifier(node) => self.exec_identifier_reference_read(node),
+      Expression::UnaryExpression(node) => self.exec_unary_expression(node),
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
       Expression::ConditionalExpression(node) => self.exec_conditional_expression(node),
       Expression::CallExpression(node) => self.exec_call_expression(node),
@@ -71,6 +73,7 @@ impl<'a> Transformer<'a> {
       Expression::Identifier(node) => self
         .transform_identifier_reference_read(node.unbox(), need_val)
         .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
+      Expression::UnaryExpression(node) => self.transform_unary_expression(node.unbox(), need_val),
       Expression::LogicalExpression(node) => {
         self.transform_logical_expression(node.unbox(), need_val)
       }
