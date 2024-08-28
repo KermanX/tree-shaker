@@ -1,3 +1,5 @@
+// @minify
+
 export function main() {
   while(false) {
     0

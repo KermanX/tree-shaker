@@ -23,11 +23,11 @@ use oxc::{
 use transformer::Transformer;
 
 pub struct TreeShakeReturn {
-  pub minifier_return: MinifierReturn,
+  pub minifier_return: Option<MinifierReturn>,
   pub codegen_return: CodegenReturn,
 }
 
-pub fn tree_shake(source_text: &str) -> TreeShakeReturn {
+pub fn tree_shake(source_text: &str, do_minify: bool) -> TreeShakeReturn {
   let allocator = Allocator::default();
   let source_type = SourceType::default();
   let parser = Parser::new(&allocator, source_text, source_type);
@@ -47,8 +47,10 @@ pub fn tree_shake(source_text: &str) -> TreeShakeReturn {
   let mut program = transformer.transform_program(ast2);
 
   // Step 4: Minify
-  let minifier = Minifier::new(MinifierOptions::default());
-  let minifier_return = minifier.build(&allocator, &mut program);
+  let minifier_return = do_minify.then(|| {
+    let mut minifier = Minifier::new(MinifierOptions::default());
+    minifier.build(&allocator, &mut program)
+  });
 
   // Step 5: Generate output
   let codegen = CodeGenerator::new();

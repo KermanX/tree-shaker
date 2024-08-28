@@ -1,3 +1,5 @@
+// @minify
+
 export function f() {
   function g(a) {
     if (a)

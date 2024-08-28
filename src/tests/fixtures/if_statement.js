@@ -1,3 +1,5 @@
+// @minify
+
 export function truthy() {
   s1 ; if (1) {2} else {3}
   s2 ; if (1) {e} else {3}

@@ -2,7 +2,8 @@ use insta::{assert_snapshot, glob};
 use std::fs;
 
 fn tree_shake(input: &str) -> String {
-  let result = crate::tree_shake(input);
+  let do_minify = input.contains("@minify");
+  let result = crate::tree_shake(input, do_minify);
   result.codegen_return.source_text
 }
 
