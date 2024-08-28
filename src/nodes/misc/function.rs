@@ -7,11 +7,11 @@ use oxc::ast::ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameter
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_function(&mut self, node: &'a Function<'a>, exporting: bool) -> Entity<'a> {
     let dep = self.new_entity_dep(EntityDepNode::Function(node));
-    let entity = FunctionEntity::new(dep);
+    let entity = FunctionEntity::new(dep.clone());
 
     if let Some(id) = &node.id {
       let symbol = id.symbol_id.get().unwrap();
-      self.declare_symbol(symbol, entity.clone(), exporting);
+      self.declare_symbol(symbol, dep, entity.clone(), exporting);
     }
 
     entity

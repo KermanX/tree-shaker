@@ -4,6 +4,7 @@ use crate::{
   entity::{
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
+    forwarded::ForwardedEntity,
     union::UnionEntity,
   },
   scope::ScopeContext,
@@ -18,13 +19,14 @@ use rustc_hash::FxHashMap;
 use std::mem;
 
 pub(crate) struct Analyzer<'a> {
-  pub(crate) allocator: &'a Allocator,
-  pub(crate) sematic: Semantic<'a>,
-  pub(crate) data: ExtraData<'a>,
-  pub(crate) referred_nodes: ReferredNodes<'a>,
-  pub(crate) exports: Vec<SymbolId>,
-  pub(crate) scope_context: ScopeContext<'a>,
-  pub(crate) current_label: Option<&'a str>,
+  pub allocator: &'a Allocator,
+  pub sematic: Semantic<'a>,
+  pub data: ExtraData<'a>,
+  pub referred_nodes: ReferredNodes<'a>,
+  pub exports: Vec<SymbolId>,
+  pub decls_deps: FxHashMap<SymbolId, EntityDep<'a>>,
+  pub scope_context: ScopeContext<'a>,
+  pub current_label: Option<&'a str>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -35,6 +37,7 @@ impl<'a> Analyzer<'a> {
       data: Default::default(),
       referred_nodes: Default::default(),
       exports: Vec::new(),
+      decls_deps: Default::default(),
       scope_context: ScopeContext::new(),
       current_label: None,
     }
@@ -97,10 +100,17 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn declare_symbol(&mut self, symbol: SymbolId, entity: Entity<'a>, exporting: bool) {
+  pub fn declare_symbol(
+    &mut self,
+    symbol: SymbolId,
+    dep: EntityDep<'a>,
+    entity: Entity<'a>,
+    exporting: bool,
+  ) {
     if exporting {
       self.exports.push(symbol);
     }
+    self.decls_deps.insert(symbol, dep);
     self.variable_scope_mut().declare(symbol, entity)
   }
 
@@ -122,14 +132,14 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn set_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
     let indeterminate = self.cf_scope().is_indeterminate();
+    let decl_dep = self.decls_deps.get(symbol).unwrap();
     for scope in self.scope_context.variable_scopes.iter_mut().rev() {
       if let Some(old_val) = scope.get(symbol) {
-        scope
-          .set(
-            *symbol,
-            if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },
-          )
-          .unwrap();
+        let entity = ForwardedEntity::new(
+          if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },
+          decl_dep.clone(),
+        );
+        scope.set(*symbol, entity).unwrap();
         return;
       }
     }

@@ -1,7 +1,7 @@
 ---
 source: src/tests/mod.rs
 expression: tree_shake(&input)
-input_file: src/tests/fixtures/assignment.js
+input_file: src/tests/fixtures/assignment_expression.js
 ---
 export function f1() {
 	return 2;
@@ -11,5 +11,12 @@ export function f2(__unused_E8B5) {
 }
 export function f3(a, b) {
 	if (b) a = 2;
+	return a;
+}
+export function f4(__unused_7C4F, b) {
+	return 3;
+}
+export function f5(a, b) {
+	a = b;
 	return a;
 }

@@ -13,3 +13,14 @@ export function f3(a, b) {
   if (b) a = 2;
   return a;
 }
+
+export function f4(a, b) {
+  if (b) a = 2;
+  a = 3
+  return a;
+}
+
+export function f5(a, b) {
+  a = b;
+  return a;
+}
