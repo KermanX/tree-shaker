@@ -48,7 +48,7 @@ pub fn tree_shake(source_text: &str, do_minify: bool) -> TreeShakeReturn {
 
   // Step 4: Minify
   let minifier_return = do_minify.then(|| {
-    let mut minifier = Minifier::new(MinifierOptions::default());
+    let minifier = Minifier::new(MinifierOptions::default());
     minifier.build(&allocator, &mut program)
   });
 

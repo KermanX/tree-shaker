@@ -4,7 +4,7 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::ast::{
-  ast::{AssignmentTarget, IdentifierReference, SimpleAssignmentTarget},
+  ast::{AssignmentTarget, SimpleAssignmentTarget},
   match_member_expression,
 };
 

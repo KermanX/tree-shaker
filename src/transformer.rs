@@ -10,7 +10,7 @@ use oxc::{
     ast::{BindingPattern, Expression, NumberBase, Program, TSTypeAnnotation, UnaryOperator},
     AstBuilder,
   },
-  span::{GetSpan, SourceType, Span, SPAN},
+  span::{GetSpan, Span},
 };
 use std::{
   hash::{DefaultHasher, Hasher},
