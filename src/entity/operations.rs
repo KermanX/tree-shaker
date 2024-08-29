@@ -42,17 +42,10 @@ impl<'a> EntityOpHost<'a> {
     }
     if lhs_t.contains(TypeofResult::BigInt) && rhs_t.contains(TypeofResult::BigInt) {
       // Possibly bigint
-      match (lhs_lit, rhs_lit) {
-        (Some(LiteralEntity::BigInt(l)), Some(LiteralEntity::BigInt(r))) => {
-          values.push(LiteralEntity::new_big_int(todo!()));
-        }
-        _ => {
-          values.push(UnknownEntity::new_with_deps(
-            UnknownEntityKind::BigInt,
-            vec![lhs.clone(), rhs.clone()],
-          ));
-        }
-      }
+      values.push(UnknownEntity::new_with_deps(
+        UnknownEntityKind::BigInt,
+        vec![lhs.clone(), rhs.clone()],
+      ));
     }
     if !lhs_t.difference(TypeofResult::Number | TypeofResult::BigInt).is_empty()
       || !rhs_t.difference(TypeofResult::Number | TypeofResult::BigInt).is_empty()
