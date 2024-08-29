@@ -45,6 +45,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     UnknownEntity::new(UnknownEntityKind::String, self.deps.clone())
   }
 
+  fn get_to_property_key(&self) -> Entity<'a> {
+    UnknownEntity::new(UnknownEntityKind::Unknown, self.deps.clone())
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     // TODO: Builtin properties
     let mut deps = self.deps.clone();

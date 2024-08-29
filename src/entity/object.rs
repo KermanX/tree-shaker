@@ -36,6 +36,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     UnknownEntity::new(UnknownEntityKind::String, vec![Rc::new(self.clone())])
   }
 
+  fn get_to_property_key(&self) -> Entity<'a> {
+    self.get_to_string()
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     // FIXME: p4 rest
     match key.get_literal() {
@@ -69,6 +73,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
 impl<'a> ObjectEntity<'a> {
   pub(crate) fn set_property(&mut self, key: Entity<'a>, value: Entity<'a>) {
+    let key = key.get_to_property_key();
     match key.get_literal() {
       Some(LiteralEntity::String(key)) => {
         self.string_keyed.insert(key, value);

@@ -59,6 +59,10 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     CollectedEntity::new(self.val.get_to_string(), self.collected.clone())
   }
 
+  fn get_to_property_key(&self) -> Entity<'a> {
+    CollectedEntity::new(self.val.get_to_property_key(), self.collected.clone())
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     CollectedEntity::new(self.val.get_property(key), self.collected.clone())
   }

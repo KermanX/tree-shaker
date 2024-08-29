@@ -50,6 +50,13 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     })
   }
 
+  fn get_to_property_key(&self) -> Entity<'a> {
+    match self {
+      LiteralEntity::Symbol(_) => Rc::new(self.clone()),
+      _ => self.get_to_string(),
+    }
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     todo!()
   }

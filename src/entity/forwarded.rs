@@ -50,6 +50,10 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     ForwardedEntity::new(self.val.get_to_string(), self.dep.clone())
   }
 
+  fn get_to_property_key(&self) -> Entity<'a> {
+    ForwardedEntity::new(self.val.get_to_property_key(), self.dep.clone())
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     ForwardedEntity::new(self.val.get_property(key), self.dep.clone())
   }

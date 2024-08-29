@@ -54,6 +54,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     UnknownEntity::new(UnknownEntityKind::String, vec![Rc::new(self.clone())])
   }
 
+  fn get_to_property_key(&self) -> Entity<'a> {
+    self.get_to_string()
+  }
+
   fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
     todo!("built-ins")
   }

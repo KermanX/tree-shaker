@@ -77,6 +77,15 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     Rc::new(UnionEntity(result))
   }
 
+  fn get_to_property_key(&self) -> Entity<'a> {
+    let mut result = Vec::new();
+    // TODO: dedupe
+    for entity in &self.0 {
+      result.push(entity.get_to_property_key());
+    }
+    Rc::new(UnionEntity(result))
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     let mut result = Vec::new();
     for entity in &self.0 {

@@ -28,6 +28,7 @@ pub(crate) trait EntityTrait<'a>: Debug {
   }
   fn get_typeof(&self) -> Entity<'a>;
   fn get_to_string(&self) -> Entity<'a>;
+  fn get_to_property_key(&self) -> Entity<'a>;
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a>;
   fn get_literal(&self) -> Option<LiteralEntity<'a>> {
     None
