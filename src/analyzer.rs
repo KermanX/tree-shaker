@@ -154,11 +154,9 @@ impl<'a> Analyzer<'a> {
 
     let mut diff = false;
     for (i, scope) in self.scope_context.variable_scopes.iter_mut().enumerate() {
-      if diff {
-        scope.has_effect = true;
-      } else if dep.scope_path.get(i).is_some_and(|id| *id != scope.id) {
+      if diff || dep.scope_path.get(i) != Some(&scope.id) {
         diff = true;
-        scope.has_effect = false;
+        scope.has_effect = true;
       }
     }
   }
