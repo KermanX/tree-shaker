@@ -1,0 +1,15 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(&input)
+input_file: src/tests/fixtures/binary_expression.js
+---
+export const add_result = {
+	s1: 2,
+	s2: "1a",
+	s3: "1true",
+	s4: "1null",
+	s5: "a1",
+	s6: "aa",
+	s7: "atrue",
+	s8: {} + {}
+};

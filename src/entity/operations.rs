@@ -25,6 +25,8 @@ impl<'a> EntityOpHost<'a> {
 
     let mut values = vec![];
 
+    println!("lhs_t: {:?}, rhs_t: {:?}", lhs_t, rhs_t);
+
     if lhs_t.contains(TypeofResult::Number) && rhs_t.contains(TypeofResult::Number) {
       // Possibly number
       match (lhs_lit, rhs_lit) {
@@ -50,8 +52,8 @@ impl<'a> EntityOpHost<'a> {
         }
       }
     }
-    if !lhs_t.difference(TypeofResult::String | TypeofResult::BigInt).is_empty()
-      || !rhs_t.difference(TypeofResult::String | TypeofResult::BigInt).is_empty()
+    if !lhs_t.difference(TypeofResult::Number | TypeofResult::BigInt).is_empty()
+      || !rhs_t.difference(TypeofResult::Number | TypeofResult::BigInt).is_empty()
     {
       let lhs_str = lhs.get_to_string();
       let rhs_str = rhs.get_to_string();
