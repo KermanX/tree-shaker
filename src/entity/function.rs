@@ -51,7 +51,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn get_to_string(&self) -> Entity<'a> {
     // FIXME: No Rc::new + clone
-    UnknownEntity::new(UnknownEntityKind::String, vec![Rc::new(self.clone())])
+    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![Rc::new(self.clone())])
   }
 
   fn get_to_property_key(&self) -> Entity<'a> {
@@ -60,6 +60,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
     todo!("built-ins")
+  }
+
+  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+    UnknownEntity::new_unknown_to_array_result(length, vec![Rc::new(self.clone())])
   }
 
   fn test_typeof(&self) -> TypeofResult {

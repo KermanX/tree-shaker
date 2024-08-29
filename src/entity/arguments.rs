@@ -19,23 +19,6 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
-  fn consume_as_array(
-    &self,
-    _analyzer: &mut crate::analyzer::Analyzer<'a>,
-    length: usize,
-  ) -> (Vec<Entity<'a>>, Entity<'a>) {
-    let mut result = Vec::new();
-    for i in 0..length.min(self.arguments.len()) {
-      let (is_spread, entity) = &self.arguments[i];
-      assert!(!is_spread, "TODO:");
-      result.push(entity.clone());
-    }
-    for _ in 0..length.saturating_sub(self.arguments.len()) {
-      result.push(UnknownEntity::new_unknown());
-    }
-    (result, UnknownEntity::new_unknown())
-  }
-
   fn get_typeof(&self) -> Entity<'a> {
     unreachable!()
   }
@@ -50,6 +33,19 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
   fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
     unreachable!()
+  }
+
+  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+    let mut result = Vec::new();
+    for i in 0..length.min(self.arguments.len()) {
+      let (is_spread, entity) = &self.arguments[i];
+      assert!(!is_spread, "TODO:");
+      result.push(entity.clone());
+    }
+    for _ in 0..length.saturating_sub(self.arguments.len()) {
+      result.push(UnknownEntity::new_unknown());
+    }
+    (result, UnknownEntity::new_unknown())
   }
 
   fn test_typeof(&self) -> TypeofResult {

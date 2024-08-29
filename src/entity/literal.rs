@@ -10,7 +10,11 @@ use oxc::{
   },
   span::Span,
 };
-use std::rc::Rc;
+use rustc_hash::FxHashSet;
+use std::{
+  hash::{Hash, Hasher},
+  rc::Rc,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum LiteralEntity<'a> {
@@ -26,6 +30,7 @@ pub(crate) enum LiteralEntity<'a> {
 
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
+  fn consume_as_unknown(&self, _analyzer: &mut Analyzer<'a>) {}
 
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string(self.test_typeof().to_string().unwrap())
@@ -61,8 +66,14 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     todo!()
   }
 
-  fn get_literal(&self) -> Option<LiteralEntity<'a>> {
-    Some(*self)
+  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+    unreachable!()
+  }
+
+  fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
+    let mut result = FxHashSet::default();
+    result.insert(*self);
+    Some(result)
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -91,6 +102,42 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     Some(matches!(self, LiteralEntity::Null | LiteralEntity::Undefined))
+  }
+}
+
+impl<'a> Hash for LiteralEntity<'a> {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    match self {
+      LiteralEntity::String(value) => {
+        state.write_u8(0);
+        value.hash(state);
+      }
+      LiteralEntity::Number(_, raw) => {
+        state.write_u8(1);
+        raw.hash(state);
+      }
+      LiteralEntity::BigInt(value) => {
+        state.write_u8(2);
+        value.hash(state);
+      }
+      LiteralEntity::Boolean(value) => {
+        state.write_u8(3);
+        value.hash(state);
+      }
+      LiteralEntity::Symbol(value) => {
+        state.write_u8(4);
+        value.hash(state);
+      }
+      LiteralEntity::NaN => {
+        state.write_u8(5);
+      }
+      LiteralEntity::Null => {
+        state.write_u8(6);
+      }
+      LiteralEntity::Undefined => {
+        state.write_u8(7);
+      }
+    }
   }
 }
 

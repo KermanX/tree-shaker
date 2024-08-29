@@ -4,6 +4,7 @@ use super::{
   typeof_result::TypeofResult,
 };
 use crate::analyzer::Analyzer;
+use rustc_hash::FxHashSet;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -20,27 +21,6 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.0 {
       entity.consume_as_unknown(analyzer);
     }
-  }
-
-  fn consume_as_array(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    length: usize,
-  ) -> (Vec<Entity<'a>>, Entity<'a>) {
-    // FIXME: May have the same result
-    let mut elements = Vec::new();
-    for _ in 0..length {
-      elements.push(Vec::new());
-    }
-    let mut rest = Vec::new();
-    for entity in &self.0 {
-      let result = entity.consume_as_array(analyzer, length);
-      for (i, element) in elements.iter_mut().enumerate() {
-        element.push(result.0[i].clone());
-      }
-      rest.push(result.1);
-    }
-    (elements.into_iter().map(UnionEntity::new).collect(), UnionEntity::new(rest))
   }
 
   fn call(
@@ -94,12 +74,27 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     Rc::new(UnionEntity(result))
   }
 
-  fn get_literal(&self) -> Option<LiteralEntity<'a>> {
-    let result = self.0.first().unwrap().get_literal()?;
-    for entity in &self.0[1..] {
-      if entity.get_literal()? != result {
-        return None;
+  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+    // FIXME: May have the same result
+    let mut elements = Vec::new();
+    for _ in 0..length {
+      elements.push(Vec::new());
+    }
+    let mut rest = Vec::new();
+    for entity in &self.0 {
+      let result = entity.get_to_array(length);
+      for (i, element) in elements.iter_mut().enumerate() {
+        element.push(result.0[i].clone());
       }
+      rest.push(result.1);
+    }
+    (elements.into_iter().map(UnionEntity::new).collect(), UnionEntity::new(rest))
+  }
+
+  fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
+    let mut result = self.0.first().unwrap().get_to_literals()?;
+    for entity in &self.0[1..] {
+      result.extend(entity.get_to_literals()?);
     }
     Some(result)
   }

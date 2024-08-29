@@ -4,6 +4,7 @@ use super::{
   typeof_result::TypeofResult,
 };
 use crate::analyzer::Analyzer;
+use rustc_hash::FxHashSet;
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug)]
@@ -25,17 +26,6 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
       entity.consume_as_unknown(analyzer);
     }
     self.val.consume_as_unknown(analyzer)
-  }
-
-  fn consume_as_array(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    length: usize,
-  ) -> (Vec<Entity<'a>>, Entity<'a>) {
-    for entity in self.collected.borrow().iter() {
-      entity.consume_as_array(analyzer, length);
-    }
-    self.val.consume_as_array(analyzer, length)
   }
 
   fn call(
@@ -67,8 +57,15 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     CollectedEntity::new(self.val.get_property(key), self.collected.clone())
   }
 
-  fn get_literal(&self) -> Option<LiteralEntity<'a>> {
-    self.val.get_literal()
+  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+    for entity in self.collected.borrow().iter() {
+      entity.get_to_array(length);
+    }
+    self.val.get_to_array(length)
+  }
+
+  fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
+    self.val.get_to_literals()
   }
 
   fn test_typeof(&self) -> TypeofResult {

@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
     node: &'a FormalParameters<'a>,
     args: Entity<'a>,
   ) {
-    let resolved = args.consume_as_array(self, node.items.len());
+    let resolved = args.get_to_array(node.items.len());
 
     for (param, arg) in node.items.iter().zip(resolved.0) {
       self.exec_binding_pattern(&param.pattern, arg, false);

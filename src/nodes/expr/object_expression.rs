@@ -16,7 +16,10 @@ impl<'a> Analyzer<'a> {
           let value = self.exec_expression(&node.value);
           object.set_property(key, value);
         }
-        ObjectPropertyKind::SpreadProperty(node) => todo!(),
+        ObjectPropertyKind::SpreadProperty(node) => {
+          let argument = self.exec_expression(&node.argument);
+          object.set_spread(argument)
+        }
       }
     }
 

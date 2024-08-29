@@ -3,6 +3,7 @@ pub mod collected;
 pub mod collector;
 pub mod dep;
 pub mod entity;
+pub mod entry;
 pub mod forwarded;
 pub mod function;
 pub mod literal;

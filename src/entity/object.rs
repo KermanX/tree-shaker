@@ -1,26 +1,28 @@
-use std::rc::Rc;
-
 use super::{
   entity::{Entity, EntityTrait},
+  entry::EntryEntity,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
+  union::UnionEntity,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashMap;
+use std::rc::Rc;
 
 #[derive(Debug, Default, Clone)]
 pub(crate) struct ObjectEntity<'a> {
   string_keyed: FxHashMap<&'a str, Entity<'a>>,
   // TODO: symbol_keyed
   rest: Option<Entity<'a>>,
+  common: Vec<Entity<'a>>,
 }
 
 impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>) {}
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    for (_, value) in &self.string_keyed {
+    for (_, value) in self.string_keyed.iter() {
       value.consume_self(analyzer);
     }
     if let Some(rest) = &self.rest {
@@ -33,29 +35,37 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   }
 
   fn get_to_string(&self) -> Entity<'a> {
-    UnknownEntity::new(UnknownEntityKind::String, vec![Rc::new(self.clone())])
+    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![Rc::new(self.clone())])
   }
 
   fn get_to_property_key(&self) -> Entity<'a> {
     self.get_to_string()
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    // FIXME: p4 rest
-    match key.get_literal() {
-      Some(LiteralEntity::String(key)) => {
-        if let Some(value) = self.string_keyed.get(key) {
-          value.clone()
-        } else {
-          UnknownEntity::new_unknown()
-        }
-      }
-      _ => UnknownEntity::new_unknown(),
-    }
+  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+    todo!()
   }
 
-  fn get_literal(&self) -> Option<LiteralEntity<'a>> {
-    None
+  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
+    let key = key.get_to_property_key();
+    if let Some(key_literals) = key.get_to_literals() {
+      let mut values = self.common.clone();
+      for key_literal in key_literals {
+        match key_literal {
+          LiteralEntity::String(key) => {
+            if let Some(value) = self.string_keyed.get(key) {
+              values.push(value.clone());
+            } else {
+              todo!("rest");
+            }
+          }
+          _ => todo!("rest"),
+        }
+      }
+      EntryEntity::new(UnionEntity::new(values), key.clone())
+    } else {
+      EntryEntity::new(UnknownEntity::new_unknown(), key.clone())
+    }
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -74,15 +84,31 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 impl<'a> ObjectEntity<'a> {
   pub(crate) fn set_property(&mut self, key: Entity<'a>, value: Entity<'a>) {
     let key = key.get_to_property_key();
-    match key.get_literal() {
-      Some(LiteralEntity::String(key)) => {
-        self.string_keyed.insert(key, value);
+    if let Some(key_literals) = key.get_to_literals() {
+      let determinate = key_literals.len() == 1;
+      for key_literal in key_literals {
+        match key_literal {
+          LiteralEntity::String(key) => {
+            let existing = self.string_keyed.get(key);
+            if determinate || existing.is_none() {
+              self.string_keyed.insert(key, value.clone());
+            } else {
+              let existing = existing.unwrap();
+              let union = UnionEntity::new(vec![existing.clone(), value.clone()]);
+              self.string_keyed.insert(key, union);
+            }
+          }
+          _ => {
+            // self.common.push(ForwardedEntity::new(value.clone(), key.clone()));
+          }
+        }
       }
-      _ => todo!("p4"),
+    } else {
+      // self.common.push(ForwardedEntity::new(value.clone(), key.clone()));
     }
   }
 
-  pub(crate) fn set_rest(&mut self, rest: Entity<'a>) {
-    self.rest = Some(rest);
+  pub(crate) fn set_spread(&mut self, argument: Entity<'a>) {
+    todo!()
   }
 }

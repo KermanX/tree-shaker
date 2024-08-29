@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
       UnaryOperator::LogicalNot => match argument.test_truthy() {
         Some(true) => LiteralEntity::new_boolean(false),
         Some(false) => LiteralEntity::new_boolean(true),
-        None => UnknownEntity::new(UnknownEntityKind::Boolean, vec![argument]),
+        None => UnknownEntity::new_with_deps(UnknownEntityKind::Boolean, vec![argument]),
       },
       UnaryOperator::BitwiseNot => {
         todo!()

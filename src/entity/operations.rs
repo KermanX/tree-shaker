@@ -25,8 +25,6 @@ impl<'a> EntityOpHost<'a> {
 
     let mut values = vec![];
 
-    println!("lhs_t: {:?}, rhs_t: {:?}", lhs_t, rhs_t);
-
     if lhs_t.contains(TypeofResult::Number) && rhs_t.contains(TypeofResult::Number) {
       // Possibly number
       match (lhs_lit, rhs_lit) {
@@ -35,8 +33,10 @@ impl<'a> EntityOpHost<'a> {
           values.push(LiteralEntity::new_number(val.into(), self.allocator.alloc(val.to_string())));
         }
         _ => {
-          values
-            .push(UnknownEntity::new(UnknownEntityKind::Number, vec![lhs.clone(), rhs.clone()]));
+          values.push(UnknownEntity::new_with_deps(
+            UnknownEntityKind::Number,
+            vec![lhs.clone(), rhs.clone()],
+          ));
         }
       }
     }
@@ -47,8 +47,10 @@ impl<'a> EntityOpHost<'a> {
           values.push(LiteralEntity::new_big_int(todo!()));
         }
         _ => {
-          values
-            .push(UnknownEntity::new(UnknownEntityKind::BigInt, vec![lhs.clone(), rhs.clone()]));
+          values.push(UnknownEntity::new_with_deps(
+            UnknownEntityKind::BigInt,
+            vec![lhs.clone(), rhs.clone()],
+          ));
         }
       }
     }
@@ -67,7 +69,8 @@ impl<'a> EntityOpHost<'a> {
           values.push(LiteralEntity::new_string(self.allocator.alloc(val)));
         }
         _ => {
-          values.push(UnknownEntity::new(UnknownEntityKind::String, vec![lhs_str, rhs_str]));
+          values
+            .push(UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![lhs_str, rhs_str]));
         }
       }
     }
