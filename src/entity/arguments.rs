@@ -1,5 +1,6 @@
 use super::{
   entity::{Entity, EntityTrait},
+  typeof_result::TypeofResult,
   unknown::UnknownEntity,
 };
 use std::rc::Rc;
@@ -40,6 +41,18 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   }
 
   fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
+    unreachable!()
+  }
+
+  fn test_typeof(&self) -> TypeofResult {
+    unreachable!()
+  }
+
+  fn test_truthy(&self) -> Option<bool> {
+    unreachable!()
+  }
+
+  fn test_nullish(&self) -> Option<bool> {
     unreachable!()
   }
 }

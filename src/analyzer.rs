@@ -5,6 +5,7 @@ use crate::{
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
     forwarded::ForwardedEntity,
+    operations::EntityOpHost,
     union::UnionEntity,
   },
   scope::ScopeContext,
@@ -27,6 +28,7 @@ pub(crate) struct Analyzer<'a> {
   pub decls_deps: FxHashMap<SymbolId, EntityDep<'a>>,
   pub scope_context: ScopeContext<'a>,
   pub current_label: Option<&'a str>,
+  pub entity_op: EntityOpHost<'a>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -40,6 +42,7 @@ impl<'a> Analyzer<'a> {
       decls_deps: Default::default(),
       scope_context: ScopeContext::new(),
       current_label: None,
+      entity_op: EntityOpHost::new(allocator),
     }
   }
 

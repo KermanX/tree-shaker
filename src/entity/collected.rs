@@ -1,6 +1,7 @@
 use super::{
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
+  typeof_result::TypeofResult,
 };
 use crate::analyzer::Analyzer;
 use std::{cell::RefCell, rc::Rc};
@@ -62,16 +63,16 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.val.get_literal()
   }
 
+  fn test_typeof(&self) -> TypeofResult {
+    self.val.test_typeof()
+  }
+
   fn test_truthy(&self) -> Option<bool> {
     self.val.test_truthy()
   }
 
   fn test_nullish(&self) -> Option<bool> {
     self.val.test_nullish()
-  }
-
-  fn test_is_undefined(&self) -> Option<bool> {
-    self.val.test_is_undefined()
   }
 }
 

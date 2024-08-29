@@ -880,6 +880,7 @@ dependencies = [
 name = "tree-shake"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "dashmap",
  "insta",
  "oxc",

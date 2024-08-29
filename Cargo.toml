@@ -6,6 +6,7 @@ edition = "2021"
 [lib]
 
 [dependencies]
+bitflags = "2.6.0"
 dashmap = "6.0.1"
 insta = { version = "1.39.0", features = ["glob"] }
 oxc = { version = "0.25.0", features = ["codegen", "semantic", "minifier"] }

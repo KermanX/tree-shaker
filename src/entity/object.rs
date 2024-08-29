@@ -1,6 +1,7 @@
 use super::{
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
+  typeof_result::TypeofResult,
   unknown::UnknownEntity,
 };
 use crate::analyzer::Analyzer;
@@ -47,15 +48,15 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     None
   }
 
+  fn test_typeof(&self) -> TypeofResult {
+    TypeofResult::Object
+  }
+
   fn test_truthy(&self) -> Option<bool> {
     Some(true)
   }
 
   fn test_nullish(&self) -> Option<bool> {
-    Some(false)
-  }
-
-  fn test_is_undefined(&self) -> Option<bool> {
     Some(false)
   }
 }

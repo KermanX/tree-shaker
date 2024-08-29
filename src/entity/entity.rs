@@ -1,4 +1,4 @@
-use super::{literal::LiteralEntity, unknown::UnknownEntity};
+use super::{literal::LiteralEntity, typeof_result::TypeofResult, unknown::UnknownEntity};
 use crate::analyzer::Analyzer;
 use std::{fmt::Debug, rc::Rc};
 
@@ -31,14 +31,18 @@ pub(crate) trait EntityTrait<'a>: Debug {
   fn get_literal(&self) -> Option<LiteralEntity<'a>> {
     None
   }
-  fn test_truthy(&self) -> Option<bool> {
-    None
-  }
-  fn test_nullish(&self) -> Option<bool> {
-    None
-  }
+  fn test_typeof(&self) -> TypeofResult;
+  fn test_truthy(&self) -> Option<bool>;
+  fn test_nullish(&self) -> Option<bool>;
+
   fn test_is_undefined(&self) -> Option<bool> {
-    None
+    let t = self.test_typeof();
+    match ((t & TypeofResult::Undefined), (t & !TypeofResult::Undefined)) {
+      (TypeofResult::_None, TypeofResult::_None) => unreachable!(),
+      (TypeofResult::_None, _) => Some(true),
+      (_, TypeofResult::_None) => Some(false),
+      _ => None,
+    }
   }
 }
 

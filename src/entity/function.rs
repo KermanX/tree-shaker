@@ -3,6 +3,7 @@ use super::{
   entity::{Entity, EntityTrait},
   forwarded::ForwardedEntity,
   literal::LiteralEntity,
+  typeof_result::TypeofResult,
   unknown::UnknownEntity,
 };
 use crate::analyzer::Analyzer;
@@ -52,15 +53,15 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     todo!("built-ins")
   }
 
+  fn test_typeof(&self) -> TypeofResult {
+    TypeofResult::Function
+  }
+
   fn test_truthy(&self) -> Option<bool> {
     Some(true)
   }
 
   fn test_nullish(&self) -> Option<bool> {
-    Some(false)
-  }
-
-  fn test_is_undefined(&self) -> Option<bool> {
     Some(false)
   }
 }

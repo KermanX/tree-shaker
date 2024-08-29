@@ -1,4 +1,7 @@
-use super::entity::{Entity, EntityTrait};
+use super::{
+  entity::{Entity, EntityTrait},
+  typeof_result::TypeofResult,
+};
 use crate::{analyzer::Analyzer, utils::F64WithEq};
 use oxc::{
   ast::{
@@ -25,16 +28,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
 
   fn get_typeof(&self) -> Entity<'a> {
-    LiteralEntity::new_string(match self {
-      LiteralEntity::String(_) => "string",
-      LiteralEntity::Number(_, _) => "number",
-      LiteralEntity::BigInt(_) => "bigint",
-      LiteralEntity::Boolean(_) => "boolean",
-      LiteralEntity::Symbol(_) => "symbol",
-      LiteralEntity::NaN => "number",
-      LiteralEntity::Null => "object",
-      LiteralEntity::Undefined => "undefined",
-    })
+    LiteralEntity::new_string(self.test_typeof().to_string().unwrap())
   }
 
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
@@ -43,6 +37,19 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn get_literal(&self) -> Option<LiteralEntity<'a>> {
     Some(*self)
+  }
+
+  fn test_typeof(&self) -> TypeofResult {
+    match self {
+      LiteralEntity::String(_) => TypeofResult::String,
+      LiteralEntity::Number(_, _) => TypeofResult::Number,
+      LiteralEntity::BigInt(_) => TypeofResult::BigInt,
+      LiteralEntity::Boolean(_) => TypeofResult::Boolean,
+      LiteralEntity::Symbol(_) => TypeofResult::Symbol,
+      LiteralEntity::NaN => TypeofResult::Number,
+      LiteralEntity::Null => TypeofResult::Object,
+      LiteralEntity::Undefined => TypeofResult::Undefined,
+    }
   }
 
   fn test_truthy(&self) -> Option<bool> {
@@ -59,15 +66,19 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn test_nullish(&self) -> Option<bool> {
     Some(matches!(self, LiteralEntity::Null | LiteralEntity::Undefined))
   }
-
-  fn test_is_undefined(&self) -> Option<bool> {
-    Some(matches!(self, LiteralEntity::Undefined))
-  }
 }
 
 impl<'a> LiteralEntity<'a> {
   pub(crate) fn new_string(value: &'a str) -> Entity<'a> {
     Rc::new(LiteralEntity::String(value))
+  }
+
+  pub(crate) fn new_number(value: F64WithEq, raw: &'a str) -> Entity<'a> {
+    Rc::new(LiteralEntity::Number(value, raw))
+  }
+
+  pub(crate) fn new_big_int(value: &'a str) -> Entity<'a> {
+    Rc::new(LiteralEntity::BigInt(value))
   }
 
   pub(crate) fn new_boolean(value: bool) -> Entity<'a> {
@@ -92,6 +103,19 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::NaN => ast_builder.expression_identifier_reference(span, "NaN"),
       LiteralEntity::Null => ast_builder.expression_null_literal(span),
       LiteralEntity::Undefined => ast_builder.expression_identifier_reference(span, "undefined"),
+    }
+  }
+
+  pub(crate) fn to_string(&self) -> String {
+    match self {
+      LiteralEntity::String(value) => value.to_string(),
+      LiteralEntity::Number(_value, raw) => raw.to_string(),
+      LiteralEntity::BigInt(value) => value.to_string(),
+      LiteralEntity::Boolean(value) => value.to_string(),
+      LiteralEntity::Symbol(value) => value.to_string(),
+      LiteralEntity::NaN => "NaN".to_string(),
+      LiteralEntity::Null => "null".to_string(),
+      LiteralEntity::Undefined => "undefined".to_string(),
     }
   }
 }

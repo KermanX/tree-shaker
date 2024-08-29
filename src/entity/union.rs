@@ -1,6 +1,7 @@
 use super::{
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
+  typeof_result::TypeofResult,
 };
 use crate::analyzer::Analyzer;
 use std::rc::Rc;
@@ -85,6 +86,14 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     Some(result)
   }
 
+  fn test_typeof(&self) -> TypeofResult {
+    let mut result = TypeofResult::_None;
+    for entity in &self.0 {
+      result |= entity.test_typeof();
+    }
+    result
+  }
+
   fn test_truthy(&self) -> Option<bool> {
     let result = self.0.first().unwrap().test_truthy()?;
     for entity in &self.0[1..] {
@@ -99,16 +108,6 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     let result = self.0.first().unwrap().test_nullish()?;
     for entity in &self.0[1..] {
       if entity.test_nullish()? != result {
-        return None;
-      }
-    }
-    Some(result)
-  }
-
-  fn test_is_undefined(&self) -> Option<bool> {
-    let result = self.0.first().unwrap().test_is_undefined()?;
-    for entity in &self.0[1..] {
-      if entity.test_is_undefined()? != result {
         return None;
       }
     }

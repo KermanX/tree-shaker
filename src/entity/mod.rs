@@ -7,5 +7,7 @@ pub mod forwarded;
 pub mod function;
 pub mod literal;
 pub mod object;
+pub mod operations;
+pub mod typeof_result;
 pub mod union;
 pub mod unknown;
