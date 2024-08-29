@@ -31,6 +31,25 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     LiteralEntity::new_string(self.test_typeof().to_string().unwrap())
   }
 
+  fn get_to_string(&self) -> Entity<'a> {
+    LiteralEntity::new_string(match self {
+      LiteralEntity::String(value) => *value,
+      LiteralEntity::Number(_, raw) => *raw,
+      LiteralEntity::BigInt(value) => *value,
+      LiteralEntity::Boolean(value) => {
+        if *value {
+          "true"
+        } else {
+          "false"
+        }
+      }
+      LiteralEntity::Symbol(value) => todo!(),
+      LiteralEntity::NaN => "NaN",
+      LiteralEntity::Null => "null",
+      LiteralEntity::Undefined => "undefined",
+    })
+  }
+
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
     todo!()
   }

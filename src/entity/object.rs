@@ -1,13 +1,15 @@
+use std::rc::Rc;
+
 use super::{
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
-  unknown::UnknownEntity,
+  unknown::{UnknownEntity, UnknownEntityKind},
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashMap;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub(crate) struct ObjectEntity<'a> {
   string_keyed: FxHashMap<&'a str, Entity<'a>>,
   // TODO: symbol_keyed
@@ -28,6 +30,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string("object")
+  }
+
+  fn get_to_string(&self) -> Entity<'a> {
+    UnknownEntity::new(UnknownEntityKind::String, vec![Rc::new(self.clone())])
   }
 
   fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {

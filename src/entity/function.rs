@@ -4,12 +4,12 @@ use super::{
   forwarded::ForwardedEntity,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
-  unknown::UnknownEntity,
+  unknown::{UnknownEntity, UnknownEntityKind},
 };
 use crate::analyzer::Analyzer;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct FunctionEntity<'a> {
   pub(crate) source: EntityDep<'a>,
 }
@@ -47,6 +47,11 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string("function")
+  }
+
+  fn get_to_string(&self) -> Entity<'a> {
+    // FIXME: No Rc::new + clone
+    UnknownEntity::new(UnknownEntityKind::String, vec![Rc::new(self.clone())])
   }
 
   fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {

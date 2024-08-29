@@ -40,6 +40,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
+  fn get_to_string(&self) -> Entity<'a> {
+    unreachable!()
+  }
+
   fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
     unreachable!()
   }
