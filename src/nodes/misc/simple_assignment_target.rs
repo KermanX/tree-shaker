@@ -16,8 +16,11 @@ impl<'a> Analyzer<'a> {
   ) {
     let dep = self.new_entity_dep(EntityDepNode::SimpleAssignmentTarget(node));
     match node {
-      match_member_expression!(SimpleAssignmentTarget) => {
-        todo!()
+      SimpleAssignmentTarget::StaticMemberExpression(node) => {
+        self.exec_static_member_expression_write(node, value)
+      }
+      SimpleAssignmentTarget::ComputedMemberExpression(node) => {
+        // self.exec_computed_member_expression_write(node, value)
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
         self.exec_identifier_reference_write(node, ForwardedEntity::new(value, dep))
@@ -32,13 +35,16 @@ impl<'a> Transformer<'a> {
     &mut self,
     node: SimpleAssignmentTarget<'a>,
   ) -> Option<AssignmentTarget<'a>> {
-    let referred = self.is_referred(EntityDepNode::SimpleAssignmentTarget(&node));
+    let need_write = self.is_referred(EntityDepNode::SimpleAssignmentTarget(&node));
     match node {
-      match_member_expression!(SimpleAssignmentTarget) => {
+      SimpleAssignmentTarget::StaticMemberExpression(node) => {
+        self.transform_static_member_expression_write(node.unbox(), need_write)
+      }
+      SimpleAssignmentTarget::ComputedMemberExpression(node) => {
         todo!()
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
-        let inner = self.transform_identifier_reference_write(node.unbox(), referred);
+        let inner = self.transform_identifier_reference_write(node.unbox(), need_write);
         inner.map(|inner| {
           self.ast_builder.assignment_target_simple(
             self.ast_builder.simple_assignment_target_from_identifier_reference(inner),
