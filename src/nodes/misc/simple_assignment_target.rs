@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
     let dep = self.new_entity_dep(EntityDepNode::SimpleAssignmentTarget(node));
     match node {
       SimpleAssignmentTarget::StaticMemberExpression(node) => {
-        self.exec_static_member_expression_write(node, value)
+        self.exec_static_member_expression_write(node, value, dep)
       }
       SimpleAssignmentTarget::ComputedMemberExpression(node) => {
         // self.exec_computed_member_expression_write(node, value)

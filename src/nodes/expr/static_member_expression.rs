@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{entity::Entity, literal::LiteralEntity},
+  entity::{dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity},
   transformer::Transformer,
 };
 use oxc::ast::ast::{AssignmentTarget, Expression, StaticMemberExpression};
@@ -20,10 +20,11 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a StaticMemberExpression<'a>,
     value: Entity<'a>,
+    dep: EntityDep<'a>,
   ) {
     let object = self.exec_expression(&node.object);
     let key = LiteralEntity::new_string(node.property.name.as_str());
-    object.set_property(&key, value);
+    object.set_property(&key, ForwardedEntity::new(value, dep));
   }
 }
 

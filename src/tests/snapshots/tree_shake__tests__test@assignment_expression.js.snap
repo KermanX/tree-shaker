@@ -20,3 +20,8 @@ export function f5(a, b) {
 	a = b;
 	return a;
 }
+export function f6(a, b) {
+	a.p = b;
+	effect;
+	return a;
+}

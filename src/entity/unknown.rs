@@ -126,10 +126,9 @@ impl<'a> UnknownEntity<'a> {
     deps: Vec<Entity<'a>>,
   ) -> (Vec<Entity<'a>>, Entity<'a>) {
     let mut result = Vec::new();
-    let unknown = UnknownEntity::new_unknown_with_deps(deps);
     for _ in 0..length {
-      result.push(unknown.clone());
+      result.push(UnknownEntity::new_unknown_with_deps(deps.clone()));
     }
-    (result, unknown)
+    (result, UnknownEntity::new_unknown_with_deps(deps))
   }
 }
