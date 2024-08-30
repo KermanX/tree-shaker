@@ -32,11 +32,16 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
   fn consume_as_unknown(&self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn get_property(&self, _key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(&self, analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> (bool, Entity<'a>) {
     todo!("built-ins")
   }
 
-  fn set_property(&self, _key: &Entity<'a>, _value: Entity<'a>) -> bool {
+  fn set_property(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    _key: &Entity<'a>,
+    _value: Entity<'a>,
+  ) -> bool {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       // TODO: throw warning
     }

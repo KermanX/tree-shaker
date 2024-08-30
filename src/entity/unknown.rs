@@ -39,14 +39,14 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
     // TODO: Builtin properties
     let mut deps = self.deps.borrow().clone();
     deps.push(key.clone());
     (true, UnknownEntity::new_with_deps(UnknownEntityKind::Unknown, deps))
   }
 
-  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
     // TODO: Builtin properties
     let mut deps = self.deps.borrow_mut();
     deps.push(key.clone());

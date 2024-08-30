@@ -3,6 +3,7 @@ use super::{
   literal::LiteralEntity,
   typeof_result::TypeofResult,
 };
+use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 use std::rc::Rc;
 
@@ -23,18 +24,18 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     self.value.consume_as_unknown(analyzer);
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>) {
-    let (has_effect, value) = self.value.get_property(key);
+  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+    let (has_effect, value) = self.value.get_property(analyzer, key);
     (has_effect, EntryEntity::new(value, self.key.clone()))
   }
 
-  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool {
-    self.value.set_property(key, value)
+  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+    self.value.set_property(analyzer, key, value)
   }
 
   fn call(
     &self,
-    analyzer: &mut crate::analyzer::Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {

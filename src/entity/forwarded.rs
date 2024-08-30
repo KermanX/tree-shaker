@@ -25,13 +25,13 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     self.val.consume_as_unknown(analyzer)
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>) {
-    let (has_effect, value) = self.val.get_property(key);
+  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+    let (has_effect, value) = self.val.get_property(analyzer, key);
     (has_effect, ForwardedEntity::new(value, self.dep.clone()))
   }
 
-  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool {
-    self.val.set_property(key, value)
+  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+    self.val.set_property(analyzer, key, value)
   }
 
   fn call(

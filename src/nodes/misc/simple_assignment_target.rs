@@ -3,10 +3,7 @@ use crate::{
   entity::{dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity},
   transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{AssignmentTarget, SimpleAssignmentTarget},
-  match_member_expression,
-};
+use oxc::ast::ast::{AssignmentTarget, SimpleAssignmentTarget};
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_simple_assignment_target(

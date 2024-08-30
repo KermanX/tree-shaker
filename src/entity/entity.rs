@@ -7,8 +7,8 @@ pub(crate) trait EntityTrait<'a>: Debug {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>);
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>);
 
-  fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>);
-  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool;
+  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>);
+  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool;
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,

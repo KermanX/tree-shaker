@@ -1,7 +1,8 @@
 use super::{
-  entity::{self, Entity, EntityTrait},
+  entity::{Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
+  utils::collect_effect_and_value,
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
@@ -23,21 +24,18 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     }
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>) {
-    let mut has_effect = false;
+  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
     let mut values = Vec::new();
     for entity in &self.0 {
-      let (effect, value) = entity.get_property(key);
-      has_effect |= effect;
-      values.push(value);
+      values.push(entity.get_property(analyzer, key));
     }
-    (has_effect, Rc::new(UnionEntity(values)))
+    collect_effect_and_value(values)
   }
 
-  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
     let mut has_effect = false;
     for entity in &self.0 {
-      has_effect |= entity.set_property(key, value.clone());
+      has_effect |= entity.set_property(analyzer, key, value.clone());
     }
     has_effect
   }
@@ -48,14 +46,11 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    let mut has_effect = false;
-    let mut ret_val = Vec::new();
+    let mut values = Vec::new();
     for entity in &self.0 {
-      let result = entity.call(analyzer, this, args);
-      has_effect |= result.0;
-      ret_val.push(result.1);
+      values.push(entity.call(analyzer, this, args));
     }
-    (has_effect, UnionEntity::new(ret_val))
+    collect_effect_and_value(values)
   }
 
   fn get_typeof(&self) -> Entity<'a> {

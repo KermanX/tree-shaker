@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
     let object = self.exec_expression(&node.object);
     let key = LiteralEntity::new_string(node.property.name.as_str());
     // TODO: handle optional
-    let (has_effect, value) = object.get_property(&key);
+    let (has_effect, value) = object.get_property(self, &key);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
@@ -37,7 +37,7 @@ impl<'a> Analyzer<'a> {
   ) {
     let object = self.exec_expression(&node.object);
     let key = LiteralEntity::new_string(node.property.name.as_str());
-    let has_effect = object.set_property(&key, ForwardedEntity::new(value, dep));
+    let has_effect = object.set_property(self, &key, ForwardedEntity::new(value, dep));
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;

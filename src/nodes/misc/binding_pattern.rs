@@ -48,7 +48,8 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         for property in &node.properties {
           let key = self.exec_property_key(&property.key);
-          self.exec_binding_pattern(&property.value, init.get_property(&key), exporting);
+          let effect_and_init = init.get_property(self, &key);
+          self.exec_binding_pattern(&property.value, effect_and_init, exporting);
         }
         if let Some(rest) = &node.rest {
           self.exec_binding_rest_element(rest, todo!(), exporting);
@@ -58,8 +59,9 @@ impl<'a> Analyzer<'a> {
         for (index, element) in node.elements.iter().enumerate() {
           if let Some(element) = element {
             let key = LiteralEntity::new_string(self.allocator.alloc(index.to_string()).as_str());
+            let effect_and_init = init.get_property(self, &key);
             // FIXME: get_property !== iterate
-            self.exec_binding_pattern(element, init.get_property(&key), exporting);
+            self.exec_binding_pattern(element, effect_and_init, exporting);
           }
         }
         if let Some(rest) = &node.rest {

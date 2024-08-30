@@ -39,7 +39,7 @@ impl<'a> Analyzer<'a> {
       Statement::ContinueStatement(node) => self.exec_continue_statement(node),
       Statement::ReturnStatement(node) => self.exec_return_statement(node),
       Statement::LabeledStatement(node) => self.exec_labeled_statement(node),
-      Statement::EmptyStatement(node) => {}
+      Statement::EmptyStatement(_) => {}
       _ => todo!("Stmt at span {:?}", node.span()),
     }
 
