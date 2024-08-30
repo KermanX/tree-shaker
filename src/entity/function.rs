@@ -26,11 +26,11 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     ret_val.consume_as_unknown(analyzer);
   }
 
-  fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
+  fn get_property(&self, _key: &Entity<'a>) ->(bool, Entity<'a>) {
     todo!("built-ins")
   }
 
-  fn set_property(&self, _key: &Entity<'a>, _value: Entity<'a>) {
+  fn set_property(&self, _key: &Entity<'a>, _value: Entity<'a>) -> bool {
     todo!("built-ins")
   }
 

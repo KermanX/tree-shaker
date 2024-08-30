@@ -28,11 +28,12 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.val.consume_as_unknown(analyzer)
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    CollectedEntity::new(self.val.get_property(key), self.collected.clone())
+  fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>) {
+    let (has_effect, value) = self.val.get_property(key);
+    (has_effect, CollectedEntity::new(value, self.collected.clone()))
   }
 
-  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool {
     // self.collected are all literals, setting their properties has no effect
     self.val.set_property(key, value)
   }

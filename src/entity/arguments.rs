@@ -19,11 +19,11 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
-  fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
+  fn get_property(&self, _key: &Entity<'a>) -> (bool, Entity<'a>) {
     unreachable!()
   }
 
-  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool {
     unreachable!()
   }
 

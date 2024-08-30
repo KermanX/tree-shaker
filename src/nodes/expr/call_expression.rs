@@ -36,9 +36,9 @@ impl<'a> Transformer<'a> {
 
     let CallExpression { span, callee, arguments, optional, .. } = node;
 
-    let need_call = data.has_effect;
+    let need_call = need_val || data.has_effect;
 
-    if need_val || need_call {
+    if need_call {
       // Need call
       let callee = self.transform_expression(callee, true).unwrap();
       let mut transformed_arguments = self.ast_builder.vec();

@@ -23,18 +23,23 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     }
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    let mut result = Vec::new();
+  fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>) {
+    let mut has_effect = false;
+    let mut values = Vec::new();
     for entity in &self.0 {
-      result.push(entity.get_property(key));
+      let (effect, value) = entity.get_property(key);
+      has_effect |= effect;
+      values.push(value);
     }
-    Rc::new(UnionEntity(result))
+    (has_effect, Rc::new(UnionEntity(values)))
   }
 
-  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool {
+    let mut has_effect = false;
     for entity in &self.0 {
-      entity.set_property(key, value.clone());
+      has_effect |= entity.set_property(key, value.clone());
     }
+    has_effect
   }
 
   fn call(

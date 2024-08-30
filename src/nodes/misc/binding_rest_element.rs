@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
     init_val: Entity<'a>,
     exporting: bool,
   ) {
-    self.exec_binding_pattern(&node.argument, init_val, exporting)
+    self.exec_binding_pattern(&node.argument, (false, init_val), exporting)
   }
 }
 

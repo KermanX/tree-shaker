@@ -181,4 +181,5 @@ pub(crate) enum AstType2 {
   Expression,
   Statement,
   Arguments,
+  StaticMemberExpression,
 }

@@ -30,46 +30,54 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
+  fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>) {
     let key = key.get_to_property_key();
     let string_keyed = self.string_keyed.borrow();
     if let Some(key_literals) = key.get_to_literals() {
+      let mut has_effect = false;
       let mut values = self.common.borrow().clone();
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
             if let Some(value) = string_keyed.get(key) {
+              // TODO: getter call + effect
               values.push(value.clone());
             } else {
+              has_effect = true;
               todo!("rest");
             }
           }
           _ => todo!("rest"),
         }
       }
-      EntryEntity::new(UnionEntity::new(values), key.clone())
+      (has_effect, EntryEntity::new(UnionEntity::new(values), key.clone()))
     } else {
-      EntryEntity::new(UnknownEntity::new_unknown(), key.clone())
+      (true, EntryEntity::new(UnknownEntity::new_unknown(), key.clone()))
     }
   }
 
-  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool {
     let key = key.get_to_property_key();
     let mut string_keyed = self.string_keyed.borrow_mut();
     let mut common = self.common.borrow_mut();
     if let Some(key_literals) = key.get_to_literals() {
+      let mut has_effect = false;
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
+            // TODO: setter call + effect
             string_keyed.insert(key, value.clone());
           }
           _ => {
+            has_effect = true;
             common.push(EntryEntity::new(value.clone(), key.clone()));
           }
         }
       }
+      has_effect
     } else {
       common.push(EntryEntity::new(value.clone(), key.clone()));
+      true
     }
   }
 

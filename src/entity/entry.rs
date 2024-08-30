@@ -23,12 +23,13 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     self.value.consume_as_unknown(analyzer);
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    EntryEntity::new(self.value.get_property(key), self.key.clone())
+  fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>) {
+    let (has_effect, value) = self.value.get_property(key);
+    (has_effect, EntryEntity::new(value, self.key.clone()))
   }
 
-  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
-    self.value.set_property(key, value);
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool {
+    self.value.set_property(key, value)
   }
 
   fn call(

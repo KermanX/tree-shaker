@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
     let resolved = args.get_to_array(node.items.len());
 
     for (param, arg) in node.items.iter().zip(resolved.0) {
-      self.exec_binding_pattern(&param.pattern, arg, false);
+      self.exec_binding_pattern(&param.pattern, (false, arg), false);
     }
 
     if let Some(rest) = &node.rest {

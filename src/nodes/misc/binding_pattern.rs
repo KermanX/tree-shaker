@@ -16,6 +16,11 @@ use oxc::{
 };
 
 #[derive(Debug, Default)]
+struct BindingIdentifierData {
+  has_effect: bool,
+}
+
+#[derive(Debug, Default)]
 struct AssignmentPatternData {
   need_right: bool,
 }
@@ -24,11 +29,18 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_binding_pattern(
     &mut self,
     node: &'a BindingPattern<'a>,
-    init: Entity<'a>,
+    effect_and_init: (bool, Entity<'a>),
     exporting: bool,
   ) {
+    let (effect, init) = effect_and_init;
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
+        if effect {
+          let data =
+            self.load_data::<BindingIdentifierData>(AstType2::BindingIdentifier, node.as_ref());
+          data.has_effect = true;
+        }
+
         let symbol = node.symbol_id.get().unwrap();
         let dep = self.new_entity_dep(EntityDepNode::BindingIdentifier(node));
         self.declare_symbol(symbol, dep.clone(), ForwardedEntity::new(init, dep), exporting);
@@ -66,7 +78,7 @@ impl<'a> Analyzer<'a> {
             value
           }
         };
-        self.exec_binding_pattern(&node.left, binding_val, exporting);
+        self.exec_binding_pattern(&node.left, (false, binding_val), exporting);
 
         let data =
           self.load_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
@@ -92,7 +104,9 @@ impl<'a> Transformer<'a> {
             false,
           ))
         } else {
-          None
+          let data =
+            self.get_data::<BindingIdentifierData>(AstType2::BindingIdentifier, node.as_ref());
+          data.has_effect.then(|| self.build_unused_binding_pattern(node.span()))
         }
       }
       BindingPatternKind::ObjectPattern(node) => {

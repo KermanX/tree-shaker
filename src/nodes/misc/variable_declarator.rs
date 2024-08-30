@@ -10,7 +10,7 @@ impl<'a> Analyzer<'a> {
       None => Rc::new(LiteralEntity::Undefined),
     };
 
-    self.exec_binding_pattern(&node.id, init, exporting);
+    self.exec_binding_pattern(&node.id, (false, init), exporting);
   }
 }
 
