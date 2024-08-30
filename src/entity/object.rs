@@ -9,6 +9,7 @@ use super::{
   utils::collect_effect_and_value,
 };
 use crate::analyzer::Analyzer;
+use oxc::ast::ast::PropertyKind;
 use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
@@ -24,7 +25,7 @@ pub(crate) struct ObjectEntity<'a> {
 enum ObjectPropertyKind<'a> {
   Field(Entity<'a>),
   /// (Getter, Setter)
-  Property(Option<FunctionEntity<'a>>, Option<FunctionEntity<'a>>),
+  Property(Option<Entity<'a>>, Option<Entity<'a>>),
 }
 
 type ObjectProperty<'a> = Vec<ObjectPropertyKind<'a>>;
@@ -192,7 +193,7 @@ impl<'a> ObjectEntity<'a> {
     }
   }
 
-  pub(crate) fn init_field(&self, key: Entity<'a>, value: Entity<'a>) {
+  pub(crate) fn init_property(&self, kind: PropertyKind, key: Entity<'a>, value: Entity<'a>) {
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let definite = key_literals.len() == 1;
@@ -200,7 +201,33 @@ impl<'a> ObjectEntity<'a> {
         match key_literal {
           LiteralEntity::String(key) => {
             let mut string_keyed = self.string_keyed.borrow_mut();
-            let property = ObjectPropertyKind::Field(value.clone());
+            let existing = string_keyed.get_mut(key);
+            let reused_property = definite
+              .then(|| {
+                existing.and_then(|existing| {
+                  for property in existing.iter() {
+                    match property {
+                      ObjectPropertyKind::Property(getter, setter) => {
+                        return Some((getter.clone(), setter.clone()));
+                      }
+                      _ => {}
+                    }
+                  }
+                  None
+                })
+              })
+              .flatten();
+            let property = match kind {
+              PropertyKind::Init => ObjectPropertyKind::Field(value.clone()),
+              PropertyKind::Get => ObjectPropertyKind::Property(
+                Some(value.clone()),
+                reused_property.and_then(|(_, setter)| setter),
+              ),
+              PropertyKind::Set => ObjectPropertyKind::Property(
+                reused_property.and_then(|(getter, _)| getter),
+                Some(value.clone()),
+              ),
+            };
             let existing = string_keyed.get_mut(key);
             if definite || existing.is_none() {
               string_keyed.insert(key, vec![property]);

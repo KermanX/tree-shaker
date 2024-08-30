@@ -1,7 +1,9 @@
 use crate::entity::entity::Entity;
 use crate::entity::object::ObjectEntity;
 use crate::{analyzer::Analyzer, transformer::Transformer};
-use oxc::ast::ast::{Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind};
+use oxc::ast::ast::{
+  Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, PropertyKind,
+};
 use oxc::span::GetSpan;
 use std::rc::Rc;
 
@@ -14,7 +16,7 @@ impl<'a> Analyzer<'a> {
         ObjectPropertyKind::ObjectProperty(node) => {
           let key = self.exec_property_key(&node.key);
           let value = self.exec_expression(&node.value);
-          object.init_field(key, value);
+          object.init_property(node.kind, key, value)
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);
