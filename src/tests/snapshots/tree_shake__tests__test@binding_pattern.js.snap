@@ -1,0 +1,15 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(&input)
+input_file: src/tests/fixtures/binding_pattern.js
+---
+export function main() {
+	let { a } = { a: 1 };
+	effect(a);
+	let { b: c } = { b: 2 };
+	effect(c);
+	effect(3);
+	let { [1]: e } = { [1]: 4 };
+	effect(e);
+	let { g: { h: __unused_C412, i: { j: __unused_C822 } } } = unknown;
+}

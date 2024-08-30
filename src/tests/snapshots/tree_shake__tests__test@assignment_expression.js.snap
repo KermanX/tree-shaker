@@ -22,6 +22,7 @@ export function f5(a, b) {
 }
 export function f6(a, b) {
 	a.p = b;
+	global.p = 1;
 	effect;
 	return a;
 }
