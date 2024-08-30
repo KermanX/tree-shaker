@@ -1,4 +1,4 @@
-export function main() {
+export function main(unknown) {
   let { a } = { a: 1 };
   effect(a);
 
@@ -11,7 +11,6 @@ export function main() {
   let { [0 + 1] : e } = { 1: 4 };
   effect(e);
 
+  // Destructing unknown has effect
   let { g: { h, i: { j } } } = unknown;
-  
-  
 }

@@ -111,7 +111,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 }
 
 impl<'a> ObjectEntity<'a> {
-  pub(crate) fn set_property(&self, key: Entity<'a>, value: Entity<'a>) {
+  pub(crate) fn init_property(&self, key: Entity<'a>, value: Entity<'a>) {
     let key = key.get_to_property_key();
     let mut string_keyed = self.string_keyed.borrow_mut();
     if let Some(key_literals) = key.get_to_literals() {
@@ -119,12 +119,12 @@ impl<'a> ObjectEntity<'a> {
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
-            let existing = string_keyed.get(key);
-            if determinate || existing.is_none() {
+            if determinate {
               string_keyed.insert(key, value.clone());
             } else {
-              let existing = existing.unwrap();
-              let union = UnionEntity::new(vec![existing.clone(), value.clone()]);
+              let existing =
+                string_keyed.get(key).map_or_else(|| LiteralEntity::new_undefined(), Rc::clone);
+              let union = UnionEntity::new(vec![existing, value.clone()]);
               string_keyed.insert(key, union);
             }
           }
@@ -138,7 +138,7 @@ impl<'a> ObjectEntity<'a> {
     }
   }
 
-  pub(crate) fn set_spread(&mut self, argument: Entity<'a>) {
+  pub(crate) fn init_spread(&mut self, argument: Entity<'a>) {
     todo!()
   }
 }
@@ -148,7 +148,7 @@ impl<'a> ObjectEntity<'a> {
     Self {
       string_keyed: RefCell::new(FxHashMap::default()),
       rest: RefCell::new(None),
-      common: RefCell::new(vec![LiteralEntity::new_undefined()]),
+      common: RefCell::new(vec![]),
     }
   }
 }
