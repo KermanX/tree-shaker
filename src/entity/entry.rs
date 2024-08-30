@@ -23,6 +23,14 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     self.value.consume_as_unknown(analyzer);
   }
 
+  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
+    EntryEntity::new(self.value.get_property(key), self.key.clone())
+  }
+
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+    self.value.set_property(key, value);
+  }
+
   fn call(
     &self,
     analyzer: &mut crate::analyzer::Analyzer<'a>,
@@ -43,10 +51,6 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
 
   fn get_to_property_key(&self) -> Entity<'a> {
     EntryEntity::new(self.value.get_to_property_key(), self.key.clone())
-  }
-
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    EntryEntity::new(self.value.get_property(key), self.key.clone())
   }
 
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {

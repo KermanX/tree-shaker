@@ -1,5 +1,5 @@
 use super::{
-  entity::{Entity, EntityTrait},
+  entity::{self, Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
 };
@@ -20,6 +20,20 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     for entity in &self.0 {
       entity.consume_as_unknown(analyzer);
+    }
+  }
+
+  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
+    let mut result = Vec::new();
+    for entity in &self.0 {
+      result.push(entity.get_property(key));
+    }
+    Rc::new(UnionEntity(result))
+  }
+
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+    for entity in &self.0 {
+      entity.set_property(key, value.clone());
     }
   }
 
@@ -62,14 +76,6 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     // TODO: dedupe
     for entity in &self.0 {
       result.push(entity.get_to_property_key());
-    }
-    Rc::new(UnionEntity(result))
-  }
-
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    let mut result = Vec::new();
-    for entity in &self.0 {
-      result.push(entity.get_property(key));
     }
     Rc::new(UnionEntity(result))
   }

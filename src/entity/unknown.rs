@@ -4,7 +4,7 @@ use super::{
   typeof_result::TypeofResult,
 };
 use crate::analyzer::Analyzer;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum UnknownEntityKind {
@@ -23,47 +23,53 @@ pub(crate) enum UnknownEntityKind {
 #[derive(Debug, Clone)]
 pub(crate) struct UnknownEntity<'a> {
   pub kind: UnknownEntityKind,
-  pub deps: Vec<Entity<'a>>,
+  pub deps: RefCell<Vec<Entity<'a>>>,
 }
 
 impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
-    for dep in &self.deps {
+    for dep in self.deps.borrow().iter() {
       dep.consume_self(analyzer);
     }
   }
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    for dep in &self.deps {
+    for dep in self.deps.borrow().iter() {
       dep.consume_as_unknown(analyzer);
     }
+  }
+
+  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
+    // TODO: Builtin properties
+    let mut deps = self.deps.borrow().clone();
+    deps.push(key.clone());
+    UnknownEntity::new_with_deps(UnknownEntityKind::Unknown, deps)
+  }
+
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+    let mut deps = self.deps.borrow_mut();
+    deps.push(key.clone());
+    deps.push(value);
   }
 
   fn get_typeof(&self) -> Entity<'a> {
     if let Some(str) = self.test_typeof().to_string() {
       LiteralEntity::new_string(str)
     } else {
-      UnknownEntity::new_with_deps(UnknownEntityKind::String, self.deps.clone())
+      UnknownEntity::new_with_deps(UnknownEntityKind::String, self.deps.borrow().clone())
     }
   }
 
   fn get_to_string(&self) -> Entity<'a> {
-    UnknownEntity::new_with_deps(UnknownEntityKind::String, self.deps.clone())
+    UnknownEntity::new_with_deps(UnknownEntityKind::String, self.deps.borrow().clone())
   }
 
   fn get_to_property_key(&self) -> Entity<'a> {
-    UnknownEntity::new_with_deps(UnknownEntityKind::Unknown, self.deps.clone())
-  }
-
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    // TODO: Builtin properties
-    let mut deps = self.deps.clone();
-    deps.push(key.clone());
-    Rc::new(Self { kind: UnknownEntityKind::Unknown, deps })
+    UnknownEntity::new_with_deps(UnknownEntityKind::Unknown, self.deps.borrow().clone())
   }
 
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    UnknownEntity::new_unknown_to_array_result(length, self.deps.clone())
+    UnknownEntity::new_unknown_to_array_result(length, self.deps.borrow().clone())
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -100,7 +106,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
 impl<'a> UnknownEntity<'a> {
   pub fn new_with_deps(kind: UnknownEntityKind, deps: Vec<Entity<'a>>) -> Entity<'a> {
-    Rc::new(Self { kind, deps })
+    Rc::new(Self { kind, deps: RefCell::new(deps) })
   }
 
   pub fn new(kind: UnknownEntityKind) -> Entity<'a> {

@@ -19,6 +19,14 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
+  fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
+    unreachable!()
+  }
+
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+    unreachable!()
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     unreachable!()
   }
@@ -28,10 +36,6 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   }
 
   fn get_to_property_key(&self) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
     unreachable!()
   }
 

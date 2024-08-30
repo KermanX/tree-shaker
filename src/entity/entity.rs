@@ -7,6 +7,8 @@ pub(crate) trait EntityTrait<'a>: Debug {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>);
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>);
 
+  fn get_property(&self, key: &Entity<'a>) -> Entity<'a>;
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>);
   fn call(
     &self,
     _analyzer: &mut Analyzer<'a>,
@@ -19,7 +21,6 @@ pub(crate) trait EntityTrait<'a>: Debug {
   fn get_typeof(&self) -> Entity<'a>;
   fn get_to_string(&self) -> Entity<'a>;
   fn get_to_property_key(&self) -> Entity<'a>;
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a>;
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>);
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
     None

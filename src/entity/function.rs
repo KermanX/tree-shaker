@@ -26,6 +26,14 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     ret_val.consume_as_unknown(analyzer);
   }
 
+  fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
+    todo!("built-ins")
+  }
+
+  fn set_property(&self, _key: &Entity<'a>, _value: Entity<'a>) {
+    todo!("built-ins")
+  }
+
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
@@ -56,10 +64,6 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn get_to_property_key(&self) -> Entity<'a> {
     self.get_to_string()
-  }
-
-  fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
-    todo!("built-ins")
   }
 
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {

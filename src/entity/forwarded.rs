@@ -25,6 +25,14 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     self.val.consume_as_unknown(analyzer)
   }
 
+  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
+    ForwardedEntity::new(self.val.get_property(key), self.dep.clone())
+  }
+
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+    self.val.set_property(key, value)
+  }
+
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
@@ -44,10 +52,6 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
 
   fn get_to_property_key(&self) -> Entity<'a> {
     ForwardedEntity::new(self.val.get_to_property_key(), self.dep.clone())
-  }
-
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    ForwardedEntity::new(self.val.get_property(key), self.dep.clone())
   }
 
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {

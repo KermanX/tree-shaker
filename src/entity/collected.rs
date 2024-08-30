@@ -28,6 +28,15 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.val.consume_as_unknown(analyzer)
   }
 
+  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
+    CollectedEntity::new(self.val.get_property(key), self.collected.clone())
+  }
+
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+    // self.collected are all literals, setting their properties has no effect
+    self.val.set_property(key, value)
+  }
+
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
@@ -51,10 +60,6 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
   fn get_to_property_key(&self) -> Entity<'a> {
     CollectedEntity::new(self.val.get_to_property_key(), self.collected.clone())
-  }
-
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    CollectedEntity::new(self.val.get_property(key), self.collected.clone())
   }
 
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {

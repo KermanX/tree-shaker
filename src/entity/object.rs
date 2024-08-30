@@ -8,25 +8,68 @@ use super::{
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashMap;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct ObjectEntity<'a> {
-  string_keyed: FxHashMap<&'a str, Entity<'a>>,
+  string_keyed: RefCell<FxHashMap<&'a str, Entity<'a>>>,
   // TODO: symbol_keyed
-  rest: Option<Entity<'a>>,
-  common: Vec<Entity<'a>>,
+  rest: RefCell<Option<Entity<'a>>>,
+  common: RefCell<Vec<Entity<'a>>>,
 }
 
 impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>) {}
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    for (_, value) in self.string_keyed.iter() {
+    for (_, value) in self.string_keyed.borrow().iter() {
       value.consume_self(analyzer);
     }
-    if let Some(rest) = &self.rest {
+    if let Some(rest) = self.rest.borrow().as_ref() {
       rest.consume_self(analyzer);
+    }
+  }
+
+  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
+    let key = key.get_to_property_key();
+    let string_keyed = self.string_keyed.borrow();
+    if let Some(key_literals) = key.get_to_literals() {
+      let mut values = self.common.borrow().clone();
+      for key_literal in key_literals {
+        match key_literal {
+          LiteralEntity::String(key) => {
+            if let Some(value) = string_keyed.get(key) {
+              values.push(value.clone());
+            } else {
+              todo!("rest");
+            }
+          }
+          _ => todo!("rest"),
+        }
+      }
+      EntryEntity::new(UnionEntity::new(values), key.clone())
+    } else {
+      EntryEntity::new(UnknownEntity::new_unknown(), key.clone())
+    }
+  }
+
+  fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) {
+    let key = key.get_to_property_key();
+    let mut string_keyed = self.string_keyed.borrow_mut();
+    let mut common = self.common.borrow_mut();
+    if let Some(key_literals) = key.get_to_literals() {
+      for key_literal in key_literals {
+        match key_literal {
+          LiteralEntity::String(key) => {
+            string_keyed.insert(key, value.clone());
+          }
+          _ => {
+            common.push(EntryEntity::new(value.clone(), key.clone()));
+          }
+        }
+      }
+    } else {
+      common.push(EntryEntity::new(value.clone(), key.clone()));
     }
   }
 
@@ -46,28 +89,6 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     todo!()
   }
 
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    let key = key.get_to_property_key();
-    if let Some(key_literals) = key.get_to_literals() {
-      let mut values = self.common.clone();
-      for key_literal in key_literals {
-        match key_literal {
-          LiteralEntity::String(key) => {
-            if let Some(value) = self.string_keyed.get(key) {
-              values.push(value.clone());
-            } else {
-              todo!("rest");
-            }
-          }
-          _ => todo!("rest"),
-        }
-      }
-      EntryEntity::new(UnionEntity::new(values), key.clone())
-    } else {
-      EntryEntity::new(UnknownEntity::new_unknown(), key.clone())
-    }
-  }
-
   fn test_typeof(&self) -> TypeofResult {
     TypeofResult::Object
   }
@@ -82,20 +103,21 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 }
 
 impl<'a> ObjectEntity<'a> {
-  pub(crate) fn set_property(&mut self, key: Entity<'a>, value: Entity<'a>) {
+  pub(crate) fn set_property(&self, key: Entity<'a>, value: Entity<'a>) {
     let key = key.get_to_property_key();
+    let mut string_keyed = self.string_keyed.borrow_mut();
     if let Some(key_literals) = key.get_to_literals() {
       let determinate = key_literals.len() == 1;
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
-            let existing = self.string_keyed.get(key);
+            let existing = string_keyed.get(key);
             if determinate || existing.is_none() {
-              self.string_keyed.insert(key, value.clone());
+              string_keyed.insert(key, value.clone());
             } else {
               let existing = existing.unwrap();
               let union = UnionEntity::new(vec![existing.clone(), value.clone()]);
-              self.string_keyed.insert(key, union);
+              string_keyed.insert(key, union);
             }
           }
           _ => {
@@ -110,5 +132,15 @@ impl<'a> ObjectEntity<'a> {
 
   pub(crate) fn set_spread(&mut self, argument: Entity<'a>) {
     todo!()
+  }
+}
+
+impl<'a> ObjectEntity<'a> {
+  pub(crate) fn new_empty() -> ObjectEntity<'a> {
+    Self {
+      string_keyed: RefCell::new(FxHashMap::default()),
+      rest: RefCell::new(None),
+      common: RefCell::new(vec![LiteralEntity::new_undefined()]),
+    }
   }
 }

@@ -32,6 +32,17 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
   fn consume_as_unknown(&self, _analyzer: &mut Analyzer<'a>) {}
 
+  fn get_property(&self, _key: &Entity<'a>) -> Entity<'a> {
+    todo!("built-ins")
+  }
+
+  fn set_property(&self, _key: &Entity<'a>, _value: Entity<'a>) {
+    if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
+      // TODO: throw warning
+    }
+    // No effect
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string(self.test_typeof().to_string().unwrap())
   }
@@ -60,10 +71,6 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::Symbol(_) => Rc::new(self.clone()),
       _ => self.get_to_string(),
     }
-  }
-
-  fn get_property(&self, key: &Entity<'a>) -> Entity<'a> {
-    todo!()
   }
 
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
