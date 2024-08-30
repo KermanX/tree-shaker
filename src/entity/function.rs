@@ -45,17 +45,17 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    match &self.source.node {
-      EntityDepNode::Function(node) => {
-        let (has_effect, ret_val) = analyzer.call_function(node, this.clone(), args.clone());
-        if has_effect {
-          self.consume_self(analyzer);
-        }
-        (has_effect, ForwardedEntity::new(ret_val, self.source.clone()))
+    let (has_effect, ret_val) = match &self.source.node {
+      EntityDepNode::Function(node) => analyzer.call_function(node, this.clone(), args.clone()),
+      EntityDepNode::ArrowFunctionExpression(node) => {
+        analyzer.call_arrow_function_expression(node, this.clone(), args.clone())
       }
-      EntityDepNode::ArrowFunctionExpression(node) => todo!(),
       _ => unreachable!(),
+    };
+    if has_effect {
+      self.consume_self(analyzer);
     }
+    (has_effect, ForwardedEntity::new(ret_val, self.source.clone()))
   }
 
   fn get_typeof(&self) -> Entity<'a> {

@@ -1,3 +1,4 @@
+mod arrow_function_expression;
 mod assignment_expression;
 mod binary_expression;
 mod call_expression;
@@ -38,6 +39,7 @@ impl<'a> Analyzer<'a> {
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
       Expression::NullLiteral(node) => self.exec_null_literal(node),
       Expression::Identifier(node) => self.exec_identifier_reference_read(node),
+      Expression::ArrowFunctionExpression(node) => self.exec_arrow_function_expression(node),
       Expression::UnaryExpression(node) => self.exec_unary_expression(node),
       Expression::BinaryExpression(node) => self.exec_binary_expression(node),
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
@@ -85,6 +87,9 @@ impl<'a> Transformer<'a> {
       Expression::Identifier(node) => self
         .transform_identifier_reference_read(node.unbox(), need_val)
         .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
+      Expression::ArrowFunctionExpression(node) => {
+        self.transform_arrow_function_expression(node.unbox(), need_val)
+      }
       Expression::UnaryExpression(node) => self.transform_unary_expression(node.unbox(), need_val),
       Expression::BinaryExpression(node) => {
         self.transform_binary_expression(node.unbox(), need_val)
