@@ -38,7 +38,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn set_property(
     &self,
-    analyzer: &mut Analyzer<'a>,
+    _analyzer: &mut Analyzer<'a>,
     _key: &Entity<'a>,
     _value: Entity<'a>,
   ) -> bool {

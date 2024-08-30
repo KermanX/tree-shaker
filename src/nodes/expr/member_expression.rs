@@ -1,5 +1,9 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, build_effect, entity::{dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity}, transformer::Transformer
+  analyzer::Analyzer,
+  ast::AstType2,
+  build_effect,
+  entity::{dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity},
+  transformer::Transformer,
 };
 use oxc::ast::ast::{
   AssignmentTarget, ComputedMemberExpression, Expression, MemberExpression, StaticMemberExpression,

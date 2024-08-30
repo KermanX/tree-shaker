@@ -22,11 +22,16 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     }
   }
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(&self, _analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> (bool, Entity<'a>) {
     unreachable!()
   }
 
-  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  fn set_property(
+    &self,
+    _analyzer: &mut Analyzer<'a>,
+    _key: &Entity<'a>,
+    _value: Entity<'a>,
+  ) -> bool {
     unreachable!()
   }
 
