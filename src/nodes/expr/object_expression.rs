@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
-    let mut object = ObjectEntity::default();
+    let mut object = ObjectEntity::new_empty_object();
 
     for property in &node.properties {
       match property {
