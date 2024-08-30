@@ -4,10 +4,10 @@ mod call_expression;
 mod conditional_expression;
 mod literals;
 mod logical_expression;
+mod member_expression;
 mod object_expression;
 mod parenthesized_expression;
 mod sequence_expression;
-mod static_member_expression;
 mod unary_expression;
 
 use crate::ast::AstType2;
@@ -16,6 +16,7 @@ use crate::entity::collector::LiteralCollector;
 use crate::entity::entity::Entity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::Expression;
+use oxc::ast::match_member_expression;
 use oxc::span::GetSpan;
 
 const AST_TYPE: AstType2 = AstType2::Expression;
@@ -28,6 +29,9 @@ struct Data<'a> {
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
     let entity = match node {
+      match_member_expression!(Expression) => {
+        self.exec_member_expression_read(node.to_member_expression())
+      }
       Expression::StringLiteral(node) => self.exec_string_literal(node),
       Expression::NumericLiteral(node) => self.exc_numeric_literal(node),
       Expression::BigIntLiteral(node) => self.exc_big_int_literal(node),
@@ -39,7 +43,6 @@ impl<'a> Analyzer<'a> {
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
       Expression::ConditionalExpression(node) => self.exec_conditional_expression(node),
       Expression::CallExpression(node) => self.exec_call_expression(node),
-      Expression::StaticMemberExpression(node) => self.exec_static_member_expression_read(node),
       Expression::ObjectExpression(node) => self.exec_object_expression(node),
       Expression::ParenthesizedExpression(node) => self.exec_parenthesized_expression(node),
       Expression::SequenceExpression(node) => self.exec_sequence_expression(node),
@@ -65,6 +68,9 @@ impl<'a> Transformer<'a> {
     let need_val = need_val && literal.is_none();
 
     let inner = match node {
+      match_member_expression!(Expression) => {
+        self.transform_member_expression_read(node.try_into().unwrap(), need_val)
+      }
       Expression::StringLiteral(_)
       | Expression::NumericLiteral(_)
       | Expression::BigIntLiteral(_)
@@ -90,9 +96,6 @@ impl<'a> Transformer<'a> {
         self.transform_conditional_expression(node.unbox(), need_val)
       }
       Expression::CallExpression(node) => self.transform_call_expression(node.unbox(), need_val),
-      Expression::StaticMemberExpression(node) => {
-        self.transform_static_member_expression_read(node.unbox(), need_val)
-      }
       Expression::ObjectExpression(node) => {
         self.transform_object_expression(node.unbox(), need_val)
       }

@@ -3,7 +3,10 @@ use crate::{
   entity::{dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::{AssignmentTarget, SimpleAssignmentTarget};
+use oxc::ast::{
+  ast::{AssignmentTarget, SimpleAssignmentTarget},
+  match_member_expression,
+};
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_simple_assignment_target(
@@ -13,11 +16,8 @@ impl<'a> Analyzer<'a> {
   ) {
     let dep = self.new_entity_dep(EntityDepNode::SimpleAssignmentTarget(node));
     match node {
-      SimpleAssignmentTarget::StaticMemberExpression(node) => {
-        self.exec_static_member_expression_write(node, value, dep)
-      }
-      SimpleAssignmentTarget::ComputedMemberExpression(node) => {
-        // self.exec_computed_member_expression_write(node, value)
+      match_member_expression!(SimpleAssignmentTarget) => {
+        self.exec_member_expression_write(node.to_member_expression(), value, dep)
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
         self.exec_identifier_reference_write(node, ForwardedEntity::new(value, dep))
@@ -34,11 +34,8 @@ impl<'a> Transformer<'a> {
   ) -> Option<AssignmentTarget<'a>> {
     let need_write = self.is_referred(EntityDepNode::SimpleAssignmentTarget(&node));
     match node {
-      SimpleAssignmentTarget::StaticMemberExpression(node) => {
-        self.transform_static_member_expression_write(node.unbox(), need_write)
-      }
-      SimpleAssignmentTarget::ComputedMemberExpression(node) => {
-        todo!()
+      match_member_expression!(SimpleAssignmentTarget) => {
+        self.transform_member_expression_write(node.try_into().unwrap(), need_write)
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
         let inner = self.transform_identifier_reference_write(node.unbox(), need_write);
