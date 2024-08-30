@@ -15,8 +15,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
-  fn consume_as_unknown(&self, _analyzer: &mut crate::analyzer::Analyzer<'a>) {
-    unreachable!()
+  fn consume_as_unknown(&self, analyzer: &mut crate::analyzer::Analyzer<'a>) {
+    for (_, entity) in &self.arguments {
+      entity.consume_as_unknown(analyzer);
+    }
   }
 
   fn get_property(&self, _key: &Entity<'a>) -> (bool, Entity<'a>) {

@@ -11,10 +11,12 @@ pub(crate) trait EntityTrait<'a>: Debug {
   fn set_property(&self, key: &Entity<'a>, value: Entity<'a>) -> bool;
   fn call(
     &self,
-    _analyzer: &mut Analyzer<'a>,
-    _this: &Entity<'a>,
-    _args: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    this: &Entity<'a>,
+    args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
+    this.consume_as_unknown(analyzer);
+    args.consume_as_unknown(analyzer);
     (true, UnknownEntity::new_unknown())
   }
 
