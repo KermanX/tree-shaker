@@ -34,23 +34,25 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   }
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    for dep in self.deps.borrow().iter() {
+    let mut deps = self.deps.borrow_mut();
+    for dep in deps.iter() {
       dep.consume_as_unknown(analyzer);
     }
+    deps.clear();
   }
 
   fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
     // TODO: Builtin properties
-    let mut deps = self.deps.borrow().clone();
-    deps.push(key.clone());
-    (true, UnknownEntity::new_with_deps(UnknownEntityKind::Unknown, deps))
+    self.consume_as_unknown(analyzer);
+    key.consume_self(analyzer);
+    (true, UnknownEntity::new_unknown())
   }
 
   fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
     // TODO: Builtin properties
-    let mut deps = self.deps.borrow_mut();
-    deps.push(key.clone());
-    deps.push(value);
+    self.consume_as_unknown(analyzer);
+    key.consume_self(analyzer);
+    value.consume_as_unknown(analyzer);
     true
   }
 
