@@ -39,6 +39,7 @@ impl<'a> Analyzer<'a> {
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
       Expression::NullLiteral(node) => self.exec_null_literal(node),
       Expression::Identifier(node) => self.exec_identifier_reference_read(node),
+      Expression::FunctionExpression(node) => self.exec_function(node, false),
       Expression::ArrowFunctionExpression(node) => self.exec_arrow_function_expression(node),
       Expression::UnaryExpression(node) => self.exec_unary_expression(node),
       Expression::BinaryExpression(node) => self.exec_binary_expression(node),
@@ -87,6 +88,9 @@ impl<'a> Transformer<'a> {
       Expression::Identifier(node) => self
         .transform_identifier_reference_read(node.unbox(), need_val)
         .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
+      Expression::FunctionExpression(node) => self
+        .transform_function(node.unbox(), need_val)
+        .map(|f| self.ast_builder.expression_from_function(f)),
       Expression::ArrowFunctionExpression(node) => {
         self.transform_arrow_function_expression(node.unbox(), need_val)
       }
