@@ -50,26 +50,24 @@ impl<'a> Analyzer<'a> {
         self.declare_symbol(symbol, dep.clone(), ForwardedEntity::new(init, dep), exporting);
       }
       BindingPatternKind::ObjectPattern(node) => {
-        let has_rest = node.rest.is_some();
         let mut enumerated_keys = vec![];
         for property in &node.properties {
           let key = self.exec_property_key(&property.key);
           enumerated_keys.push(key.clone());
-          let (effect, init) = init.get_property(self, &key);
-          self.exec_binding_pattern(&property.value, (effect || has_rest, init), exporting);
+          let effect_and_init = init.get_property(self, &key);
+          self.exec_binding_pattern(&property.value, effect_and_init, exporting);
         }
         if let Some(rest) = &node.rest {
           self.exec_binding_rest_element_from_obj(rest, init, exporting, enumerated_keys);
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
-        let has_rest = node.rest.is_some();
         for (index, element) in node.elements.iter().enumerate() {
           if let Some(element) = element {
             let key = LiteralEntity::new_string(self.allocator.alloc(index.to_string()).as_str());
-            let (effect, init) = init.get_property(self, &key);
+            let effect_and_init = init.get_property(self, &key);
             // FIXME: get_property !== iterate
-            self.exec_binding_pattern(element, (effect || has_rest, init), exporting);
+            self.exec_binding_pattern(element, effect_and_init, exporting);
           }
         }
         if let Some(rest) = &node.rest {
@@ -122,6 +120,9 @@ impl<'a> Transformer<'a> {
       }
       BindingPatternKind::ObjectPattern(node) => {
         let ObjectPattern { span, properties, rest, .. } = node.unbox();
+
+        let rest = rest.and_then(|rest| self.transform_binding_rest_element(rest.unbox()));
+
         let mut transformed_properties = self.ast_builder.vec();
         for property in properties {
           let BindingProperty { span, key, value, shorthand, .. } = property;
@@ -131,7 +132,7 @@ impl<'a> Transformer<'a> {
             let (computed, key) = self.transform_property_key(key, true).unwrap();
             transformed_properties
               .push(self.ast_builder.binding_property(span, key, value, shorthand, computed));
-          } else if let Some((computed, key)) = self.transform_property_key(key, false) {
+          } else if let Some((computed, key)) = self.transform_property_key(key, rest.is_some()) {
             transformed_properties.push(self.ast_builder.binding_property(
               span,
               key,
@@ -141,7 +142,6 @@ impl<'a> Transformer<'a> {
             ));
           }
         }
-        let rest = rest.and_then(|rest| self.transform_binding_rest_element(rest.unbox()));
         if transformed_properties.is_empty() && rest.is_none() {
           None
         } else {
@@ -158,11 +158,13 @@ impl<'a> Transformer<'a> {
       }
       BindingPatternKind::ArrayPattern(node) => {
         let ArrayPattern { span, elements, rest, .. } = node.unbox();
+
         let mut transformed_elements = self.ast_builder.vec();
         for element in elements {
           transformed_elements
             .push(element.and_then(|element| self.transform_binding_pattern(element)));
         }
+
         let rest = rest.and_then(|rest| self.transform_binding_rest_element(rest.unbox()));
 
         while transformed_elements.last().is_none() {

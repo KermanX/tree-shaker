@@ -31,7 +31,7 @@ impl<'a> Analyzer<'a> {
       object.delete_property(self, &key);
     }
 
-    self.exec_binding_pattern(&node.argument, (false, init), exporting);
+    self.exec_binding_pattern(&node.argument, (has_effect, init), exporting);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;

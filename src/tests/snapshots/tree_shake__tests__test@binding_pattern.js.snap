@@ -19,4 +19,9 @@ export function with_rest(unknown) {
 	effect(1, rest.b);
 	let { b: __unused_19B7,...__unused_DEBA } = unknown;
 	let { c: __unused_51E4,...__unused_BE17 } = rest2;
+	let { d } = {
+		d: unknown,
+		e: unknown
+	};
+	effect(d);
 }

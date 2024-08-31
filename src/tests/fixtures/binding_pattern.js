@@ -21,4 +21,7 @@ export function with_rest(unknown) {
 
   let { b, ...rest2 } = unknown;
   let { c, ...rest3 } = rest2;
+
+  let { d, e, ...unused } = { d: unknown, e: unknown };
+  effect(d);
 }
