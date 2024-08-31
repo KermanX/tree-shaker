@@ -62,6 +62,7 @@ impl<'a> Analyzer<'a> {
     if let Some(symbol) = symbol {
       self.set_symbol(&symbol, value);
     } else {
+      value.consume_as_unknown(self);
       // TODO: Handle globals
       self.refer_global_dep();
     }
