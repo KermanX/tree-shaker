@@ -119,6 +119,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
       _ => Some(false),
     }
   }
+
+  fn test_is_completely_unknown(&self) -> bool {
+    matches!(self.kind, UnknownEntityKind::Unknown)
+  }
 }
 
 impl<'a> UnknownEntity<'a> {

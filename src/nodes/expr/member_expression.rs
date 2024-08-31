@@ -2,7 +2,10 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity},
+  entity::{
+    dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity,
+    union::UnionEntity,
+  },
   transformer::Transformer,
 };
 use oxc::ast::ast::{
@@ -14,6 +17,7 @@ const AST_TYPE: AstType2 = AstType2::MemberExpression;
 #[derive(Debug, Default)]
 struct Data {
   has_effect: bool,
+  need_optional: bool,
 }
 
 impl<'a> Analyzer<'a> {
@@ -22,14 +26,35 @@ impl<'a> Analyzer<'a> {
     node: &'a MemberExpression<'a>,
   ) -> Entity<'a> {
     let object = self.exec_expression(node.object());
+
+    let indeterminate = if node.optional() {
+      match object.test_nullish() {
+        Some(true) => return LiteralEntity::new_undefined(),
+        Some(false) => false,
+        None => true,
+      }
+    } else {
+      false
+    };
+
+    if indeterminate {
+      self.push_cf_scope(None, false);
+    }
+
     let key = self.exec_key(node);
     // TODO: handle optional
     let (has_effect, value) = object.get_property(self, &key);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
+    data.need_optional |= indeterminate;
 
-    value
+    if indeterminate {
+      self.pop_cf_scope();
+      UnionEntity::new(vec![value, LiteralEntity::new_undefined()])
+    } else {
+      value
+    }
   }
 
   pub(crate) fn exec_member_expression_write(
@@ -69,7 +94,7 @@ impl<'a> Transformer<'a> {
 
     match node {
       MemberExpression::ComputedMemberExpression(node) => {
-        let ComputedMemberExpression { span, object, expression, optional, .. } = node.unbox();
+        let ComputedMemberExpression { span, object, expression, .. } = node.unbox();
 
         let object = self.transform_expression(object, need_read);
         let key = self.transform_expression(expression, need_read);
@@ -78,14 +103,14 @@ impl<'a> Transformer<'a> {
             span,
             object.unwrap(),
             key.unwrap(),
-            optional,
+            data.need_optional,
           )))
         } else {
           build_effect!(&self.ast_builder, span, object, key)
         }
       }
       MemberExpression::StaticMemberExpression(node) => {
-        let StaticMemberExpression { span, object, property, optional, .. } = node.unbox();
+        let StaticMemberExpression { span, object, property, .. } = node.unbox();
 
         let object = self.transform_expression(object, need_read);
         if need_read {
@@ -93,7 +118,7 @@ impl<'a> Transformer<'a> {
             span,
             object.unwrap(),
             property,
-            optional,
+            data.need_optional,
           )))
         } else {
           object

@@ -157,7 +157,12 @@ impl<'a> UnionEntity<'a> {
     if entities.len() == 1 {
       entities.first().unwrap().clone()
     } else {
-      Rc::new(UnionEntity(entities))
+      let has_unknown = entities.iter().any(|entity| entity.test_is_completely_unknown());
+      if has_unknown {
+        UnknownEntity::new_unknown()
+      } else {
+        Rc::new(UnionEntity(entities))
+      }
     }
   }
 }

@@ -47,7 +47,6 @@ pub(crate) trait EntityTrait<'a>: Debug {
   fn test_typeof(&self) -> TypeofResult;
   fn test_truthy(&self) -> Option<bool>;
   fn test_nullish(&self) -> Option<bool>;
-
   fn test_is_undefined(&self) -> Option<bool> {
     let t = self.test_typeof();
     match (t == TypeofResult::Undefined, t.contains(TypeofResult::Undefined)) {
@@ -55,6 +54,9 @@ pub(crate) trait EntityTrait<'a>: Debug {
       (false, true) => None,
       (false, false) => Some(false),
     }
+  }
+  fn test_is_completely_unknown(&self) -> bool {
+    false
   }
 }
 

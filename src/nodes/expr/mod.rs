@@ -2,6 +2,7 @@ mod arrow_function_expression;
 mod assignment_expression;
 mod binary_expression;
 mod call_expression;
+mod chain_expression;
 mod conditional_expression;
 mod literals;
 mod logical_expression;
@@ -50,6 +51,7 @@ impl<'a> Analyzer<'a> {
       Expression::ParenthesizedExpression(node) => self.exec_parenthesized_expression(node),
       Expression::SequenceExpression(node) => self.exec_sequence_expression(node),
       Expression::AssignmentExpression(node) => self.exec_assignment_expression(node),
+      Expression::ChainExpression(node) => self.exec_chain_expression(node),
       _ => todo!("Expr at span {:?}", node.span()),
     };
 
@@ -117,6 +119,7 @@ impl<'a> Transformer<'a> {
       Expression::AssignmentExpression(node) => {
         self.transform_assignment_expression(node.unbox(), need_val)
       }
+      Expression::ChainExpression(node) => self.transform_chain_expression(node.unbox(), need_val),
       _ => todo!(),
     };
 
