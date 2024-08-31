@@ -42,6 +42,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+    unreachable!()
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     unreachable!()
   }

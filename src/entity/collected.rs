@@ -34,7 +34,9 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
   }
 
   fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
-    // self.collected are all literals, setting their properties has no effect
+    for entity in self.collected.borrow().iter() {
+      entity.consume_self(analyzer);
+    }
     self.val.set_property(analyzer, key, value)
   }
 
@@ -42,10 +44,17 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     &self,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
-    self.collected.borrow().iter().for_each(|entity| {
-      entity.enumerate_properties(analyzer);
-    });
+    for entity in self.collected.borrow().iter() {
+      entity.consume_self(analyzer);
+    }
     self.val.enumerate_properties(analyzer)
+  }
+
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+    for entity in self.collected.borrow().iter() {
+      entity.consume_self(analyzer);
+    }
+    self.val.delete_property(analyzer, key)
   }
 
   fn call(

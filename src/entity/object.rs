@@ -204,6 +204,36 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     (has_effect, result)
   }
 
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+    let key = key.get_to_property_key();
+    if let Some(key_literals) = key.get_to_literals() {
+      let definite = key_literals.len() == 1;
+      let mut deleted = self.rest.borrow().values.len() > 0;
+      for key_literal in key_literals {
+        match key_literal {
+          LiteralEntity::String(key) => {
+            let mut string_keyed = self.string_keyed.borrow_mut();
+            if definite {
+              deleted |= string_keyed.remove(key).is_some();
+            } else if let Some(property) = string_keyed.get_mut(key) {
+              property.definite = false;
+              deleted = true;
+            }
+          }
+          LiteralEntity::Symbol(_) => todo!(),
+          _ => unreachable!(),
+        }
+      }
+      deleted
+    } else {
+      let mut string_keyed = self.string_keyed.borrow_mut();
+      for property in string_keyed.values_mut() {
+        property.definite = false;
+      }
+      true
+    }
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string("object")
   }

@@ -13,6 +13,7 @@ pub(crate) trait EntityTrait<'a>: Debug {
     &self,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>);
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool;
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,

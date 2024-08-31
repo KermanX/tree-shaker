@@ -58,6 +58,11 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     (false, vec![])
   }
 
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+    // No effect
+    false
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string(self.test_typeof().to_string().unwrap())
   }

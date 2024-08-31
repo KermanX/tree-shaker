@@ -48,6 +48,10 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     )
   }
 
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+    self.val.delete_property(analyzer, key)
+  }
+
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,

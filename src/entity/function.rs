@@ -27,7 +27,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   }
 
   fn get_property(&self, analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> (bool, Entity<'a>) {
-    todo!("built-ins")
+    todo!("built-ins & extra properties")
   }
 
   fn set_property(
@@ -36,7 +36,13 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     _key: &Entity<'a>,
     _value: Entity<'a>,
   ) -> bool {
-    todo!("built-ins")
+    todo!("built-ins & extra properties")
+  }
+
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+    self.consume_as_unknown(analyzer);
+    key.consume_self(analyzer);
+    true
   }
 
   fn enumerate_properties(

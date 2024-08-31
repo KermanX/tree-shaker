@@ -58,9 +58,15 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
   fn enumerate_properties(
     &self,
-    _analyzer: &mut Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
+    self.consume_as_unknown(analyzer);
     UnknownEntity::new_unknown_to_entries_result(self.deps.borrow().clone())
+  }
+
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> bool {
+    self.consume_as_unknown(analyzer);
+    true
   }
 
   fn get_typeof(&self) -> Entity<'a> {

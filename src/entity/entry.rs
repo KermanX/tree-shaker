@@ -47,6 +47,10 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     )
   }
 
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+    self.value.delete_property(analyzer, key)
+  }
+
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,

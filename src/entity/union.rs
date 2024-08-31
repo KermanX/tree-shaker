@@ -49,6 +49,14 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     UnknownEntity::new_unknown_to_entries_result(self.0.clone())
   }
 
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+    let mut deleted = false;
+    for entity in &self.0 {
+      deleted |= entity.delete_property(analyzer, key);
+    }
+    deleted
+  }
+
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
