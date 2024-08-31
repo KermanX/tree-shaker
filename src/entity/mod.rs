@@ -6,6 +6,7 @@ pub mod entity;
 pub mod entry;
 pub mod forwarded;
 pub mod function;
+pub mod label;
 pub mod literal;
 pub mod object;
 pub mod operations;

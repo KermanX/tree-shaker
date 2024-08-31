@@ -26,7 +26,7 @@ impl<'a> Analyzer<'a> {
 
     if indeterminate {
       test.consume_self(self);
-      self.push_cf_scope(None);
+      self.push_cf_scope(None, false);
     }
 
     if maybe_true {

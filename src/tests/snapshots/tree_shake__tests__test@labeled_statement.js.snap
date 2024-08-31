@@ -4,7 +4,7 @@ expression: tree_shake(&input)
 input_file: src/tests/fixtures/labeled_statement.js
 ---
 export function main() {
-	a: b: {
+	a: {
 		effect1();
 		c: {
 			effect2();

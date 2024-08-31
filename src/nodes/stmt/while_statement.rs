@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
     };
 
     self.push_variable_scope();
-    self.push_cf_scope(if indeterminate { None } else { Some(false) });
+    self.push_cf_scope(if indeterminate { None } else { Some(false) }, true);
 
     if need_loop {
       self.exec_statement(&node.body);

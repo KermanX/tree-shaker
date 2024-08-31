@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
     };
 
     if indeterminate {
-      self.push_cf_scope(None);
+      self.push_cf_scope(None, false);
     }
 
     let result = match (maybe_true, maybe_false) {

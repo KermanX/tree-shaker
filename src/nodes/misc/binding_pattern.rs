@@ -80,7 +80,7 @@ impl<'a> Analyzer<'a> {
           Some(true) => self.exec_expression(&node.right),
           Some(false) => init,
           None => {
-            self.push_cf_scope(None);
+            self.push_cf_scope(None, false);
             let value = UnionEntity::new(vec![self.exec_expression(&node.right), init]);
             self.pop_cf_scope();
             value

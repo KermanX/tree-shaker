@@ -5,6 +5,7 @@ use crate::{
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
     forwarded::ForwardedEntity,
+    label::LabelEntity,
     operations::EntityOpHost,
     union::UnionEntity,
   },
@@ -27,7 +28,7 @@ pub(crate) struct Analyzer<'a> {
   pub exports: Vec<SymbolId>,
   pub decls_deps: FxHashMap<SymbolId, EntityDep<'a>>,
   pub scope_context: ScopeContext<'a>,
-  pub pending_labels: Vec<&'a str>,
+  pub pending_labels: Vec<LabelEntity<'a>>,
   pub entity_op: EntityOpHost<'a>,
 }
 

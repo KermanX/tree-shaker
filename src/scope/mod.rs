@@ -19,7 +19,7 @@ pub(crate) struct ScopeContext<'a> {
 
 impl<'a> ScopeContext<'a> {
   pub(crate) fn new() -> Self {
-    let cf_scope_0 = CfScope::new(vec![], Some(false));
+    let cf_scope_0 = CfScope::new(vec![], Some(false), false);
     ScopeContext {
       function_scopes: vec![FunctionScope::new(cf_scope_0.id)],
       variable_scopes: vec![VariableScope::new()],
@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub(crate) fn push_function_scope(&mut self) {
-    let cf_scope_id = self.push_cf_scope(Some(false));
+    let cf_scope_id = self.push_cf_scope(Some(false), false);
     self.scope_context.function_scopes.push(FunctionScope::new(cf_scope_id));
   }
 
@@ -71,9 +71,9 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.pop().unwrap()
   }
 
-  pub(crate) fn push_cf_scope(&mut self, exited: Option<bool>) -> ScopeId {
+  pub(crate) fn push_cf_scope(&mut self, exited: Option<bool>, is_loop: bool) -> ScopeId {
     let label = mem::take(&mut self.pending_labels);
-    let cf_scope = CfScope::new(label, exited);
+    let cf_scope = CfScope::new(label, exited, is_loop);
     let id = cf_scope.id;
     self.scope_context.cf_scopes.push(cf_scope);
     id
@@ -93,18 +93,34 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub(crate) fn exit_to_label(&mut self, label: Option<&'a str>) {
+  /// If the label is used, `true` is returned.
+  pub(crate) fn exit_to_label(&mut self, label: Option<&'a str>) -> bool {
     if let Some(label) = label {
+      let mut is_closest = true;
+      let mut should_exit = true;
       for cf_scope in self.scope_context.cf_scopes.iter_mut().rev() {
-        let is_indeterminate = cf_scope.is_indeterminate();
-        cf_scope.exited = Some(true);
-        if cf_scope.label.contains(&label) || is_indeterminate {
-          return;
+        if should_exit {
+          cf_scope.exited = Some(true);
+        } else {
+          // Stop exiting outer scopes if one inner scope is indeterminate.
+          should_exit = !cf_scope.is_indeterminate();
+        }
+        if let Some(label_entity) = cf_scope.matches_label(&label) {
+          return if !is_closest || !cf_scope.is_loop {
+            self.referred_nodes.insert(label_entity.node);
+            true
+          } else {
+            false
+          };
+        }
+        if cf_scope.is_loop {
+          is_closest = false;
         }
       }
       unreachable!();
     } else {
       self.cf_scope_mut().exited = Some(true);
+      false
     }
   }
 }
