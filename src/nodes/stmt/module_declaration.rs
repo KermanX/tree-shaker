@@ -1,5 +1,8 @@
 use crate::{transformer::Transformer, Analyzer};
-use oxc::ast::ast::{ExportNamedDeclaration, ModuleDeclaration, ModuleExportName};
+use oxc::ast::ast::{
+  ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
+  ModuleDeclaration, ModuleExportName,
+};
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
@@ -15,8 +18,17 @@ impl<'a> Analyzer<'a> {
           }
         }
       }
-      ModuleDeclaration::ExportDefaultDeclaration(_node) => {
-        todo!()
+      ModuleDeclaration::ExportDefaultDeclaration(node) => {
+        let value = match &node.declaration {
+          ExportDefaultDeclarationKind::FunctionDeclaration(node) => {
+            // Pass `exporting` as `false` because it is actually used as an expression
+            self.exec_function(node, false)
+          }
+          ExportDefaultDeclarationKind::ClassDeclaration(node) => todo!(),
+          node => self.exec_expression(node.to_expression()),
+        };
+        // FIXME: delay this
+        value.consume_as_unknown(self);
       }
       _ => todo!(),
     }
@@ -48,6 +60,21 @@ impl<'a> Transformer<'a> {
           export_kind,
           with_clause,
         )
+      }
+      ModuleDeclaration::ExportDefaultDeclaration(node) => {
+        let ExportDefaultDeclaration { span, declaration, exported, .. } = node.unbox();
+        let declaration = match declaration {
+          ExportDefaultDeclarationKind::FunctionDeclaration(node) => {
+            let function = self.transform_function(node.unbox(), true).unwrap();
+            self.ast_builder.export_default_declaration_kind_from_function(function)
+          }
+          ExportDefaultDeclarationKind::ClassDeclaration(node) => todo!(),
+          node => {
+            let expression = self.transform_expression(node.try_into().unwrap(), true).unwrap();
+            self.ast_builder.export_default_declaration_kind_expression(expression)
+          }
+        };
+        self.ast_builder.module_declaration_export_default_declaration(span, declaration, exported)
       }
       _ => todo!(),
     }
