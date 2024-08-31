@@ -3,7 +3,7 @@ use oxc::ast::ast::{LabeledStatement, Statement};
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_labeled_statement(&mut self, node: &'a LabeledStatement<'a>) {
-    self.current_label = Some(&node.label.name);
+    self.pending_labels.push(&node.label.name);
     self.exec_statement(&node.body);
   }
 }
@@ -17,10 +17,10 @@ impl<'a> Transformer<'a> {
 
     let body = self.transform_statement(body);
 
-    if self.is_referred(EntityDepNode::LabelIdentifier(&label)) {
-      Some(self.ast_builder.statement_labeled(span, label, body.unwrap()))
-    } else {
-      body
-    }
+    // if self.is_referred(EntityDepNode::LabelIdentifier(&label)) {
+    Some(self.ast_builder.statement_labeled(span, label, body.unwrap()))
+    // } else {
+    //   body
+    // }
   }
 }

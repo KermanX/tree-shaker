@@ -42,8 +42,6 @@ impl<'a> Analyzer<'a> {
       Statement::EmptyStatement(_) => {}
       _ => todo!("Stmt at span {:?}", node.span()),
     }
-
-    self.current_label = None;
   }
 }
 

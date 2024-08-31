@@ -24,7 +24,6 @@ impl<'a> Analyzer<'a> {
       None => (true, true),
     };
 
-    self.push_loop_scope();
     self.push_variable_scope();
     self.push_cf_scope(if indeterminate { None } else { Some(false) });
 
@@ -34,7 +33,6 @@ impl<'a> Analyzer<'a> {
 
     self.pop_cf_scope();
     self.pop_variable_scope();
-    self.pop_loop_scope();
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.need_loop |= need_loop;

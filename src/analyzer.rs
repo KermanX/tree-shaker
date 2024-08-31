@@ -27,7 +27,7 @@ pub(crate) struct Analyzer<'a> {
   pub exports: Vec<SymbolId>,
   pub decls_deps: FxHashMap<SymbolId, EntityDep<'a>>,
   pub scope_context: ScopeContext<'a>,
-  pub current_label: Option<&'a str>,
+  pub pending_labels: Vec<&'a str>,
   pub entity_op: EntityOpHost<'a>,
 }
 
@@ -41,7 +41,7 @@ impl<'a> Analyzer<'a> {
       exports: Vec::new(),
       decls_deps: Default::default(),
       scope_context: ScopeContext::new(),
-      current_label: None,
+      pending_labels: Vec::new(),
       entity_op: EntityOpHost::new(allocator),
     }
   }
