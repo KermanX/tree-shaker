@@ -1,11 +1,20 @@
+use crate::ast::AstType2;
+use crate::build_effect;
 use crate::entity::entity::Entity;
 use crate::entity::object::ObjectEntity;
 use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::{
-  Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, PropertyKind,
+  Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, SpreadElement,
 };
-use oxc::span::GetSpan;
+use oxc::span::{GetSpan, SPAN};
 use std::rc::Rc;
+
+const AST_TYPE: AstType2 = AstType2::SpreadElement;
+
+#[derive(Debug, Default)]
+struct Data {
+  has_effect: bool,
+}
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
@@ -16,11 +25,14 @@ impl<'a> Analyzer<'a> {
         ObjectPropertyKind::ObjectProperty(node) => {
           let key = self.exec_property_key(&node.key);
           let value = self.exec_expression(&node.value);
-          object.init_property(node.kind, key, value)
+          object.init_property(node.kind, key, value);
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(argument)
+          let has_effect = object.init_spread(self, argument);
+
+          let data = self.load_data::<Data>(AST_TYPE, node.as_ref());
+          data.has_effect |= has_effect;
         }
       }
     }
@@ -70,7 +82,27 @@ impl<'a> Transformer<'a> {
             }
           }
         }
-        ObjectPropertyKind::SpreadProperty(node) => todo!(),
+        ObjectPropertyKind::SpreadProperty(node) => {
+          let data = self.get_data::<Data>(AST_TYPE, node.as_ref());
+          let need_spread = need_val || data.has_effect;
+
+          let SpreadElement { span, argument, .. } = node.unbox();
+
+          let argument = self.transform_expression(argument, need_spread);
+
+          if let Some(argument) = argument {
+            self.ast_builder.object_property_kind_spread_element(
+              span,
+              if need_spread {
+                argument
+              } else {
+                build_effect!(&self.ast_builder, span, Some(argument); self.build_unused_expression(SPAN))
+              },
+            )
+          } else {
+            continue;
+          }
+        }
       });
     }
 

@@ -19,4 +19,23 @@ export function main() {
   }
   effect(obj3.a);
   obj3.b;
+
+  let obj4 = {
+    a: 1,
+    ...{
+      a: undefined,
+      b: 3
+    }
+  }
+  effect(obj4.a, obj4.b);
+
+  let obj5 = {
+    a: 1,
+    ...{
+      get x() {
+        effect()
+      }
+    }
+  }
+  effect(obj5.a);
 }

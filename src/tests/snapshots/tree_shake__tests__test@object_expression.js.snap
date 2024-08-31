@@ -11,4 +11,19 @@ export function main() {
 	} };
 	effect(2);
 	obj3.b;
+	let obj4 = {
+		a: 1,
+		...{
+			a: undefined,
+			b: 3
+		}
+	};
+	effect(undefined, obj4.b);
+	let obj5 = {
+		a: 1,
+		...{ get x() {
+			effect();
+		} }
+	};
+	effect(obj5.a);
 }

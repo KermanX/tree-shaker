@@ -50,7 +50,7 @@ impl<'a> ObjectProperty<'a> {
 type ObjectPropertyUnion<'a> = Vec<ObjectProperty<'a>>;
 
 impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
-  fn consume_self(&self, analyzer: &mut Analyzer<'a>) {}
+  fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     fn consume_property_as_unknown<'a>(
@@ -274,8 +274,12 @@ impl<'a> ObjectEntity<'a> {
     }
   }
 
-  pub(crate) fn init_spread(&mut self, argument: Entity<'a>) {
-    todo!()
+  pub(crate) fn init_spread(&mut self, analyzer: &mut Analyzer<'a>, argument: Entity<'a>) -> bool {
+    let (has_effect, properties) = argument.enumerate_properties(analyzer);
+    for (key, value) in properties {
+      self.set_property(analyzer, &key, value);
+    }
+    has_effect
   }
 
   fn get_this(&self) -> Entity<'a> {
