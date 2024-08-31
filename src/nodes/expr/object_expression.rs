@@ -18,14 +18,14 @@ struct Data {
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
-    let mut object = ObjectEntity::new_empty_object();
+    let mut object = ObjectEntity::default();
 
     for property in &node.properties {
       match property {
         ObjectPropertyKind::ObjectProperty(node) => {
           let key = self.exec_property_key(&node.key);
           let value = self.exec_expression(&node.value);
-          object.init_property(node.kind, key, value);
+          object.init_property(node.kind, key, value, true);
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);

@@ -36,9 +36,15 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
   fn enumerate_properties(
     &self,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     let (has_effect, properties) = self.value.enumerate_properties(analyzer);
-    (has_effect, properties.into_iter().map(|(key, value)| (key, self.forward(value))).collect())
+    (
+      has_effect,
+      properties
+        .into_iter()
+        .map(|(definite, key, value)| (definite, key, self.forward(value)))
+        .collect(),
+    )
   }
 
   fn call(

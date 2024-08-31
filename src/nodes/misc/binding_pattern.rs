@@ -16,7 +16,7 @@ use oxc::{
 };
 
 #[derive(Debug, Default)]
-struct BindingIdentifierData {
+struct Data {
   has_effect: bool,
 }
 
@@ -39,39 +39,41 @@ impl<'a> Analyzer<'a> {
     exporting: bool,
   ) {
     let (effect, init) = effect_and_init;
+    if effect {
+      let data = self.load_data::<Data>(AstType2::BindingPattern, node);
+      data.has_effect = true;
+    }
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
-        if effect {
-          let data =
-            self.load_data::<BindingIdentifierData>(AstType2::BindingIdentifier, node.as_ref());
-          data.has_effect = true;
-        }
-
         let symbol = node.symbol_id.get().unwrap();
         let dep = self.new_entity_dep(EntityDepNode::BindingIdentifier(node));
         self.declare_symbol(symbol, dep.clone(), ForwardedEntity::new(init, dep), exporting);
       }
       BindingPatternKind::ObjectPattern(node) => {
+        let has_rest = node.rest.is_some();
+        let mut enumerated_keys = vec![];
         for property in &node.properties {
           let key = self.exec_property_key(&property.key);
-          let effect_and_init = init.get_property(self, &key);
-          self.exec_binding_pattern(&property.value, effect_and_init, exporting);
+          enumerated_keys.push(key.clone());
+          let (effect, init) = init.get_property(self, &key);
+          self.exec_binding_pattern(&property.value, (effect || has_rest, init), exporting);
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element(rest, init, exporting);
+          self.exec_binding_rest_element_from_obj(rest, init, exporting, enumerated_keys);
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
+        let has_rest = node.rest.is_some();
         for (index, element) in node.elements.iter().enumerate() {
           if let Some(element) = element {
             let key = LiteralEntity::new_string(self.allocator.alloc(index.to_string()).as_str());
-            let effect_and_init = init.get_property(self, &key);
+            let (effect, init) = init.get_property(self, &key);
             // FIXME: get_property !== iterate
-            self.exec_binding_pattern(element, effect_and_init, exporting);
+            self.exec_binding_pattern(element, (effect || has_rest, init), exporting);
           }
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element(rest, init, exporting);
+          self.exec_binding_rest_element_from_arr(rest, init, exporting);
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {
@@ -101,21 +103,22 @@ impl<'a> Transformer<'a> {
     &mut self,
     node: BindingPattern<'a>,
   ) -> Option<BindingPattern<'a>> {
+    let data = self.get_data::<Data>(AstType2::BindingPattern, &node);
+
+    let span = node.span();
+
     let BindingPattern { kind, .. } = node;
 
-    match kind {
+    let transformed = match kind {
       BindingPatternKind::BindingIdentifier(node) => {
-        if self.is_referred(EntityDepNode::BindingIdentifier(&node)) {
-          Some(self.ast_builder.binding_pattern(
+        let referred = self.is_referred(EntityDepNode::BindingIdentifier(&node));
+        referred.then(|| {
+          self.ast_builder.binding_pattern(
             self.ast_builder.binding_pattern_kind_from_binding_identifier(node),
             None::<TSTypeAnnotation>,
             false,
-          ))
-        } else {
-          let data =
-            self.get_data::<BindingIdentifierData>(AstType2::BindingIdentifier, node.as_ref());
-          data.has_effect.then(|| self.build_unused_binding_pattern(node.span()))
-        }
+          )
+        })
       }
       BindingPatternKind::ObjectPattern(node) => {
         let ObjectPattern { span, properties, rest, .. } = node.unbox();
@@ -201,6 +204,12 @@ impl<'a> Transformer<'a> {
           left
         }
       }
+    };
+
+    if data.has_effect {
+      Some(transformed.unwrap_or_else(|| self.build_unused_binding_pattern(span)))
+    } else {
+      transformed
     }
   }
 }

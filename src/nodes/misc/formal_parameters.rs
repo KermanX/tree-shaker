@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
     }
 
     if let Some(rest) = &node.rest {
-      self.exec_binding_rest_element(rest, resolved.1, false);
+      self.exec_binding_rest_element_from_arr(rest, resolved.1, false);
     }
   }
 }

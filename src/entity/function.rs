@@ -42,7 +42,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn enumerate_properties(
     &self,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     self.consume_as_unknown(analyzer);
     UnknownEntity::new_unknown_to_entries_result(vec![])
   }

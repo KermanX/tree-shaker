@@ -58,8 +58,8 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
   fn enumerate_properties(
     &self,
-    analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    _analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     UnknownEntity::new_unknown_to_entries_result(self.deps.borrow().clone())
   }
 
@@ -145,10 +145,11 @@ impl<'a> UnknownEntity<'a> {
 
   pub fn new_unknown_to_entries_result(
     deps: Vec<Entity<'a>>,
-  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     (
       true,
       vec![(
+        false,
         UnknownEntity::new_unknown_with_deps(deps.clone()),
         UnknownEntity::new_unknown_with_deps(deps),
       )],

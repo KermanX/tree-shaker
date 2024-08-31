@@ -12,7 +12,7 @@ pub(crate) trait EntityTrait<'a>: Debug {
   fn enumerate_properties(
     &self,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>);
+  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>);
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,

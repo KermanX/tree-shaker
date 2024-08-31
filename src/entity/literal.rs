@@ -53,7 +53,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn enumerate_properties(
     &self,
     _analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     // No effect
     (false, vec![])
   }

@@ -41,7 +41,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
   fn enumerate_properties(
     &self,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     self.collected.borrow().iter().for_each(|entity| {
       entity.enumerate_properties(analyzer);
     });

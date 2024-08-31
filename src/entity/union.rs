@@ -44,7 +44,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   fn enumerate_properties(
     &self,
     _analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     // FIXME:
     UnknownEntity::new_unknown_to_entries_result(self.0.clone())
   }
