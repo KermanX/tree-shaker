@@ -26,6 +26,12 @@ struct AssignmentPatternData {
 }
 
 impl<'a> Analyzer<'a> {
+  /// effect_and_init is a tuple of (effect, init)
+  /// effect is a boolean value that indicates whether the binding pattern has an effect:
+  /// ```js
+  /// const { a } = { get a() { effect() }};
+  /// ```
+  /// here `a` has an effect
   pub(crate) fn exec_binding_pattern(
     &mut self,
     node: &'a BindingPattern<'a>,
@@ -52,7 +58,7 @@ impl<'a> Analyzer<'a> {
           self.exec_binding_pattern(&property.value, effect_and_init, exporting);
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element(rest, todo!(), exporting);
+          self.exec_binding_rest_element(rest, init, exporting);
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
@@ -65,7 +71,7 @@ impl<'a> Analyzer<'a> {
           }
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element(rest, todo!(), exporting);
+          self.exec_binding_rest_element(rest, init, exporting);
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {
