@@ -2,12 +2,14 @@ mod cf_scope;
 mod function_scope;
 mod variable_scope;
 
-use std::mem;
-
-use crate::analyzer::Analyzer;
+use crate::{
+  analyzer::Analyzer,
+  entity::{entity::Entity, unknown::UnknownEntity},
+};
 use cf_scope::CfScope;
 use function_scope::FunctionScope;
 use oxc::semantic::ScopeId;
+use std::mem;
 use variable_scope::VariableScope;
 
 #[derive(Debug, Default)]
@@ -21,7 +23,11 @@ impl<'a> ScopeContext<'a> {
   pub(crate) fn new() -> Self {
     let cf_scope_0 = CfScope::new(vec![], Some(false), false);
     ScopeContext {
-      function_scopes: vec![FunctionScope::new(cf_scope_0.id)],
+      function_scopes: vec![FunctionScope::new(
+        cf_scope_0.id,
+        // TODO: global this
+        UnknownEntity::new_unknown(),
+      )],
       variable_scopes: vec![VariableScope::new()],
       cf_scopes: vec![cf_scope_0],
     }
@@ -53,9 +59,9 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf_scopes.last_mut().unwrap()
   }
 
-  pub(crate) fn push_function_scope(&mut self) {
+  pub(crate) fn push_function_scope(&mut self, this: Entity<'a>) {
     let cf_scope_id = self.push_cf_scope(Some(false), false);
-    self.scope_context.function_scopes.push(FunctionScope::new(cf_scope_id));
+    self.scope_context.function_scopes.push(FunctionScope::new(cf_scope_id, this));
   }
 
   pub(crate) fn pop_function_scope(&mut self) -> FunctionScope<'a> {

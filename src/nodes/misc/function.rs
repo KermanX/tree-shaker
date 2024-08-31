@@ -24,7 +24,7 @@ impl<'a> Analyzer<'a> {
     args: Entity<'a>,
   ) -> (bool, Entity<'a>) {
     self.push_variable_scope();
-    self.push_function_scope();
+    self.push_function_scope(this);
 
     self.exec_formal_parameters(&node.params, args);
     self.exec_function_body(node.body.as_ref().unwrap());

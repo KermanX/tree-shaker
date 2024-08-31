@@ -19,11 +19,10 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn call_arrow_function_expression(
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
-    this: Entity<'a>,
     args: Entity<'a>,
   ) -> (bool, Entity<'a>) {
     self.push_variable_scope();
-    self.push_function_scope();
+    self.push_function_scope(self.function_scope().this.clone());
 
     self.exec_formal_parameters(&node.params, args);
     if node.expression {

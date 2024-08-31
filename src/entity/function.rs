@@ -62,7 +62,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     let (has_effect, ret_val) = match &self.source.node {
       EntityDepNode::Function(node) => analyzer.call_function(node, this.clone(), args.clone()),
       EntityDepNode::ArrowFunctionExpression(node) => {
-        analyzer.call_arrow_function_expression(node, this.clone(), args.clone())
+        analyzer.call_arrow_function_expression(node, args.clone())
       }
       _ => unreachable!(),
     };
