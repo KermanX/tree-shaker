@@ -47,7 +47,11 @@ impl<'a> Transformer<'a> {
       let ArrowFunctionExpression { span, expression, r#async, params, body, .. } = node;
 
       let params = self.transform_formal_parameters(params.unbox());
-      let body = self.transform_function_body(body.unbox());
+      let body = if expression {
+        self.transform_function_expression_body(body.unbox())
+      } else {
+        self.transform_function_body(body.unbox())
+      };
 
       Some(self.ast_builder.expression_arrow_function(
         span,
