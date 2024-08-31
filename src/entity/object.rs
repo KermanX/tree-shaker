@@ -92,6 +92,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               rest_added = true;
               let rest = self.rest.borrow();
               values.extend(ObjectProperty::get_value_from_vec(analyzer, &rest, &this));
+              values.push((false, LiteralEntity::new_undefined()));
             }
           }
           LiteralEntity::Symbol(_) => todo!(),
@@ -219,7 +220,7 @@ impl<'a> ObjectEntity<'a> {
     Self {
       string_keyed: RefCell::new(FxHashMap::default()),
       unknown_keyed: RefCell::new(vec![]),
-      rest: RefCell::new(vec![ObjectProperty::Field(LiteralEntity::new_undefined())]),
+      rest: RefCell::new(vec![]),
     }
   }
 
@@ -277,7 +278,7 @@ impl<'a> ObjectEntity<'a> {
   pub(crate) fn init_spread(&mut self, analyzer: &mut Analyzer<'a>, argument: Entity<'a>) -> bool {
     let (has_effect, properties) = argument.enumerate_properties(analyzer);
     for (key, value) in properties {
-      self.set_property(analyzer, &key, value);
+      self.init_property(PropertyKind::Init, key.clone(), value);
     }
     has_effect
   }
