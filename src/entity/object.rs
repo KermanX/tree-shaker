@@ -2,7 +2,6 @@ use super::{
   arguments::ArgumentsEntity,
   entity::{Entity, EntityTrait},
   entry::EntryEntity,
-  function::FunctionEntity,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
@@ -15,48 +14,53 @@ use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub(crate) struct ObjectEntity<'a> {
-  string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
-  unknown_keyed: RefCell<ObjectProperty<'a>>,
+  string_keyed: RefCell<FxHashMap<&'a str, ObjectPropertyUnion<'a>>>,
+  unknown_keyed: RefCell<ObjectPropertyUnion<'a>>,
   // TODO: symbol_keyed
-  rest: RefCell<ObjectProperty<'a>>,
+  rest: RefCell<ObjectPropertyUnion<'a>>,
 }
 
 #[derive(Debug, Clone)]
-enum ObjectPropertyKind<'a> {
+enum ObjectProperty<'a> {
   Field(Entity<'a>),
   /// (Getter, Setter)
   Property(Option<Entity<'a>>, Option<Entity<'a>>),
 }
 
-type ObjectProperty<'a> = Vec<ObjectPropertyKind<'a>>;
-
-fn get_from_property_vec<'a>(
-  analyzer: &mut Analyzer<'a>,
-  vec: &ObjectProperty<'a>,
-  this: &Entity<'a>,
-) -> Vec<(bool, Entity<'a>)> {
-  let mut values = Vec::new();
-  for property in vec {
-    values.push(match property {
-      ObjectPropertyKind::Field(value) => (false, value.clone()),
-      ObjectPropertyKind::Property(Some(getter), _) => {
+impl<'a> ObjectProperty<'a> {
+  pub fn get_value(&self, analyzer: &mut Analyzer<'a>, this: &Entity<'a>) -> (bool, Entity<'a>) {
+    match self {
+      ObjectProperty::Field(value) => (false, value.clone()),
+      ObjectProperty::Property(Some(getter), _) => {
         getter.call(analyzer, this, &ArgumentsEntity::new(vec![]))
       }
       _ => (false, LiteralEntity::new_undefined()),
-    });
+    }
   }
-  values
+
+  pub fn get_value_from_vec(
+    analyzer: &mut Analyzer<'a>,
+    vec: &ObjectPropertyUnion<'a>,
+    this: &Entity<'a>,
+  ) -> Vec<(bool, Entity<'a>)> {
+    vec.iter().map(|property| property.get_value(analyzer, this)).collect()
+  }
 }
+
+type ObjectPropertyUnion<'a> = Vec<ObjectProperty<'a>>;
 
 impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>) {}
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    fn consume_property_as_unknown<'a>(property: &ObjectProperty<'a>, analyzer: &mut Analyzer<'a>) {
+    fn consume_property_as_unknown<'a>(
+      property: &ObjectPropertyUnion<'a>,
+      analyzer: &mut Analyzer<'a>,
+    ) {
       for value in property {
         match value {
-          ObjectPropertyKind::Field(value) => value.consume_as_unknown(analyzer),
-          ObjectPropertyKind::Property(getter, setter) => {
+          ObjectProperty::Field(value) => value.consume_as_unknown(analyzer),
+          ObjectProperty::Property(getter, setter) => {
             getter.as_ref().map(|f| f.consume_as_unknown(analyzer));
             setter.as_ref().map(|f| f.consume_as_unknown(analyzer));
           }
@@ -75,18 +79,19 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     let this = self.get_this();
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
-      let mut values = get_from_property_vec(analyzer, self.unknown_keyed.borrow().as_ref(), &this);
+      let mut values =
+        ObjectProperty::get_value_from_vec(analyzer, self.unknown_keyed.borrow().as_ref(), &this);
       let mut rest_added = false;
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
             let string_keyed = self.string_keyed.borrow();
             if let Some(value) = string_keyed.get(key) {
-              values.extend(get_from_property_vec(analyzer, value, &this));
+              values.extend(ObjectProperty::get_value_from_vec(analyzer, value, &this));
             } else if !rest_added {
               rest_added = true;
               let rest = self.rest.borrow();
-              values.extend(get_from_property_vec(analyzer, &rest, &this));
+              values.extend(ObjectProperty::get_value_from_vec(analyzer, &rest, &this));
             }
           }
           LiteralEntity::Symbol(_) => todo!(),
@@ -117,31 +122,31 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               if definite {
                 *properties = properties
                   .iter()
-                  .filter(|v| matches!(v, ObjectPropertyKind::Property(_, _)))
+                  .filter(|v| matches!(v, ObjectProperty::Property(_, _)))
                   .cloned()
                   .collect::<Vec<_>>();
               }
               for property in properties.iter().chain(self.unknown_keyed.borrow().iter()) {
-                if let ObjectPropertyKind::Property(_, Some(setter)) = property {
+                if let ObjectProperty::Property(_, Some(setter)) = property {
                   has_effect |= setter
                     .call(analyzer, &this, &ArgumentsEntity::new(vec![(false, value.clone())]))
                     .0;
                 }
               }
               if indeterminate || properties.is_empty() {
-                properties.push(ObjectPropertyKind::Field(value.clone()));
+                properties.push(ObjectProperty::Field(value.clone()));
               }
             } else if !rest_added {
               rest_added = true;
               let mut rest = self.rest.borrow_mut();
               for property in rest.iter().chain(self.unknown_keyed.borrow().iter()) {
-                if let ObjectPropertyKind::Property(_, Some(setter)) = property {
+                if let ObjectProperty::Property(_, Some(setter)) = property {
                   has_effect |= setter
                     .call(analyzer, &this, &ArgumentsEntity::new(vec![(false, value.clone())]))
                     .0;
                 }
               }
-              rest.push(ObjectPropertyKind::Field(value.clone()));
+              rest.push(ObjectProperty::Field(value.clone()));
             }
           }
           LiteralEntity::Symbol(_) => todo!(),
@@ -150,9 +155,34 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       }
       has_effect
     } else {
-      self.unknown_keyed.borrow_mut().push(ObjectPropertyKind::Field(EntryEntity::new(value, key)));
+      self.unknown_keyed.borrow_mut().push(ObjectProperty::Field(EntryEntity::new(value, key)));
       self.apply_unknown_to_possible_setters(analyzer)
     }
+  }
+
+  fn enumerate_properties(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    let this = self.get_this();
+    // unknown_keyed = unknown_keyed + rest
+    let mut unknown_keyed =
+      ObjectProperty::get_value_from_vec(analyzer, &self.unknown_keyed.borrow(), &this);
+    unknown_keyed.extend(ObjectProperty::get_value_from_vec(analyzer, &self.rest.borrow(), &this));
+    let mut has_effect = false;
+    let mut result = Vec::new();
+    if unknown_keyed.len() > 0 {
+      let (effect, value) = collect_effect_and_value(unknown_keyed);
+      has_effect |= effect;
+      result.push((UnknownEntity::new_unknown(), value));
+    }
+    for (key, properties) in self.string_keyed.borrow().iter() {
+      let values = ObjectProperty::get_value_from_vec(analyzer, properties, &this);
+      let (effect, value) = collect_effect_and_value(values);
+      has_effect |= effect;
+      result.push((LiteralEntity::new_string(key), value));
+    }
+    (has_effect, result)
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -189,7 +219,7 @@ impl<'a> ObjectEntity<'a> {
     Self {
       string_keyed: RefCell::new(FxHashMap::default()),
       unknown_keyed: RefCell::new(vec![]),
-      rest: RefCell::new(vec![ObjectPropertyKind::Field(LiteralEntity::new_undefined())]),
+      rest: RefCell::new(vec![ObjectProperty::Field(LiteralEntity::new_undefined())]),
     }
   }
 
@@ -207,7 +237,7 @@ impl<'a> ObjectEntity<'a> {
                 existing.and_then(|existing| {
                   for property in existing.iter() {
                     match property {
-                      ObjectPropertyKind::Property(getter, setter) => {
+                      ObjectProperty::Property(getter, setter) => {
                         return Some((getter.clone(), setter.clone()));
                       }
                       _ => {}
@@ -218,12 +248,12 @@ impl<'a> ObjectEntity<'a> {
               })
               .flatten();
             let property = match kind {
-              PropertyKind::Init => ObjectPropertyKind::Field(value.clone()),
-              PropertyKind::Get => ObjectPropertyKind::Property(
+              PropertyKind::Init => ObjectProperty::Field(value.clone()),
+              PropertyKind::Get => ObjectProperty::Property(
                 Some(value.clone()),
                 reused_property.and_then(|(_, setter)| setter),
               ),
-              PropertyKind::Set => ObjectPropertyKind::Property(
+              PropertyKind::Set => ObjectProperty::Property(
                 reused_property.and_then(|(getter, _)| getter),
                 Some(value.clone()),
               ),
@@ -240,7 +270,7 @@ impl<'a> ObjectEntity<'a> {
         }
       }
     } else {
-      self.unknown_keyed.borrow_mut().push(ObjectPropertyKind::Field(EntryEntity::new(value, key)));
+      self.unknown_keyed.borrow_mut().push(ObjectProperty::Field(EntryEntity::new(value, key)));
     }
   }
 
@@ -255,12 +285,12 @@ impl<'a> ObjectEntity<'a> {
   fn apply_unknown_to_possible_setters(&self, analyzer: &mut Analyzer<'a>) -> bool {
     fn apply_unknown_to_vec<'a>(
       analyzer: &mut Analyzer<'a>,
-      vec: &ObjectProperty<'a>,
+      vec: &ObjectPropertyUnion<'a>,
       this: &Entity<'a>,
     ) -> bool {
       let mut has_effect = false;
       for property in vec {
-        if let ObjectPropertyKind::Property(_, Some(setter)) = property {
+        if let ObjectProperty::Property(_, Some(setter)) = property {
           has_effect |= setter
             .call(
               analyzer,

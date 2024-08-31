@@ -27,11 +27,19 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
 
   fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
     let (has_effect, value) = self.val.get_property(analyzer, key);
-    (has_effect, ForwardedEntity::new(value, self.dep.clone()))
+    (has_effect, self.forward(value))
   }
 
   fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
     self.val.set_property(analyzer, key, value)
+  }
+
+  fn enumerate_properties(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    let (has_effect, properties) = self.val.enumerate_properties(analyzer);
+    (has_effect, properties.into_iter().map(|(key, value)| (key, self.forward(value))).collect())
   }
 
   fn call(
@@ -44,23 +52,20 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
   }
 
   fn get_typeof(&self) -> Entity<'a> {
-    ForwardedEntity::new(self.val.get_typeof(), self.dep.clone())
+    self.forward(self.val.get_typeof())
   }
 
   fn get_to_string(&self) -> Entity<'a> {
-    ForwardedEntity::new(self.val.get_to_string(), self.dep.clone())
+    self.forward(self.val.get_to_string())
   }
 
   fn get_to_property_key(&self) -> Entity<'a> {
-    ForwardedEntity::new(self.val.get_to_property_key(), self.dep.clone())
+    self.forward(self.val.get_to_property_key())
   }
 
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
     let (items, rest) = self.val.get_to_array(length);
-    (
-      items.into_iter().map(|item| ForwardedEntity::new(item, self.dep.clone())).collect(),
-      ForwardedEntity::new(rest, self.dep.clone()),
-    )
+    (items.into_iter().map(|item| self.forward(item)).collect(), self.forward(rest))
   }
 
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
@@ -83,5 +88,9 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
 impl<'a> ForwardedEntity<'a> {
   pub(crate) fn new(val: Entity<'a>, dep: EntityDep<'a>) -> Entity<'a> {
     Rc::new(Self { val, dep })
+  }
+
+  pub(crate) fn forward(&self, val: Entity<'a>) -> Entity<'a> {
+    ForwardedEntity::new(val, self.dep.clone())
   }
 }

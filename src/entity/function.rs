@@ -39,6 +39,14 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     todo!("built-ins")
   }
 
+  fn enumerate_properties(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    self.consume_as_unknown(analyzer);
+    UnknownEntity::new_unknown_to_entries_result(vec![])
+  }
+
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,

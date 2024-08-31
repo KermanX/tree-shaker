@@ -26,11 +26,19 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
 
   fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
     let (has_effect, value) = self.value.get_property(analyzer, key);
-    (has_effect, EntryEntity::new(value, self.key.clone()))
+    (has_effect, self.forward(value))
   }
 
   fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
     self.value.set_property(analyzer, key, value)
+  }
+
+  fn enumerate_properties(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    let (has_effect, properties) = self.value.enumerate_properties(analyzer);
+    (has_effect, properties.into_iter().map(|(key, value)| (key, self.forward(value))).collect())
   }
 
   fn call(
@@ -40,27 +48,24 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
     let (has_effect, ret_val) = self.value.call(analyzer, this, args);
-    (has_effect, EntryEntity::new(ret_val, self.key.clone()))
+    (has_effect, self.forward(ret_val))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
-    EntryEntity::new(self.value.get_typeof(), self.key.clone())
+    self.forward(self.value.get_typeof())
   }
 
   fn get_to_string(&self) -> Entity<'a> {
-    EntryEntity::new(self.value.get_to_string(), self.key.clone())
+    self.forward(self.value.get_to_string())
   }
 
   fn get_to_property_key(&self) -> Entity<'a> {
-    EntryEntity::new(self.value.get_to_property_key(), self.key.clone())
+    self.forward(self.value.get_to_property_key())
   }
 
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
     let (vals, ret_val) = self.value.get_to_array(length);
-    (
-      vals.iter().map(|val| EntryEntity::new(val.clone(), self.key.clone())).collect(),
-      EntryEntity::new(ret_val, self.key.clone()),
-    )
+    (vals.iter().map(|val| self.forward(val.clone())).collect(), self.forward(ret_val))
   }
 
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
@@ -83,5 +88,9 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
 impl<'a> EntryEntity<'a> {
   pub fn new(value: Entity<'a>, key: Entity<'a>) -> Entity<'a> {
     Rc::new(EntryEntity { key, value })
+  }
+
+  fn forward(&self, value: Entity<'a>) -> Entity<'a> {
+    EntryEntity::new(value, self.key.clone())
   }
 }

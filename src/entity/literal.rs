@@ -1,6 +1,7 @@
 use super::{
   entity::{Entity, EntityTrait},
   typeof_result::TypeofResult,
+  unknown::UnknownEntity,
 };
 use crate::{analyzer::Analyzer, utils::F64WithEq};
 use oxc::{
@@ -49,6 +50,14 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     false
   }
 
+  fn enumerate_properties(
+    &self,
+    _analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    // No effect
+    (false, vec![])
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string(self.test_typeof().to_string().unwrap())
   }
@@ -80,7 +89,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    unreachable!()
+    UnknownEntity::new_unknown_to_array_result(length, vec![])
   }
 
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {

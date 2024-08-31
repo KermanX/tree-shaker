@@ -18,7 +18,7 @@ pub(crate) struct LiteralCollector<'a> {
 impl<'a> LiteralCollector<'a> {
   pub(crate) fn collect(&mut self, entity: Entity<'a>) -> Entity<'a> {
     if self.invalid {
-      self.get_entity_on_invalid(entity)
+      entity
     } else if let Some(literal) = entity.get_literal() {
       if let Some(collected) = &self.literal {
         if collected != &literal {

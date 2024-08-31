@@ -30,12 +30,22 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
   fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
     let (has_effect, value) = self.val.get_property(analyzer, key);
-    (has_effect, CollectedEntity::new(value, self.collected.clone()))
+    (has_effect, self.forward(value))
   }
 
   fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
     // self.collected are all literals, setting their properties has no effect
     self.val.set_property(analyzer, key, value)
+  }
+
+  fn enumerate_properties(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    self.collected.borrow().iter().for_each(|entity| {
+      entity.enumerate_properties(analyzer);
+    });
+    self.val.enumerate_properties(analyzer)
   }
 
   fn call(
@@ -52,22 +62,20 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
   fn get_typeof(&self) -> Entity<'a> {
     // TODO: Verify this
-    CollectedEntity::new(self.val.get_typeof(), self.collected.clone())
+    self.forward(self.val.get_typeof())
   }
 
   fn get_to_string(&self) -> Entity<'a> {
-    CollectedEntity::new(self.val.get_to_string(), self.collected.clone())
+    self.forward(self.val.get_to_string())
   }
 
   fn get_to_property_key(&self) -> Entity<'a> {
-    CollectedEntity::new(self.val.get_to_property_key(), self.collected.clone())
+    self.forward(self.val.get_to_property_key())
   }
 
   fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    for entity in self.collected.borrow().iter() {
-      entity.get_to_array(length);
-    }
-    self.val.get_to_array(length)
+    let (elements, rest) = self.val.get_to_array(length);
+    (elements.into_iter().map(|entity| self.forward(entity)).collect(), self.forward(rest))
   }
 
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
@@ -90,5 +98,9 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 impl<'a> CollectedEntity<'a> {
   pub(crate) fn new(val: Entity<'a>, collected: Rc<RefCell<Vec<Entity<'a>>>>) -> Entity<'a> {
     Rc::new(Self { val, collected })
+  }
+
+  fn forward(&self, val: Entity<'a>) -> Entity<'a> {
+    CollectedEntity::new(val, self.collected.clone())
   }
 }

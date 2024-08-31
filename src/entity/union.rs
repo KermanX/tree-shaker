@@ -2,6 +2,7 @@ use super::{
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
+  unknown::UnknownEntity,
   utils::collect_effect_and_value,
 };
 use crate::analyzer::Analyzer;
@@ -38,6 +39,14 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
       has_effect |= entity.set_property(analyzer, key, value.clone());
     }
     has_effect
+  }
+
+  fn enumerate_properties(
+    &self,
+    _analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    // FIXME:
+    UnknownEntity::new_unknown_to_entries_result(self.0.clone())
   }
 
   fn call(

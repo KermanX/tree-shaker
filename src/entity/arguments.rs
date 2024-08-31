@@ -35,6 +35,13 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
+  fn enumerate_properties(
+    &self,
+    _analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    unreachable!()
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     unreachable!()
   }

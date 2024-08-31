@@ -56,6 +56,13 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     true
   }
 
+  fn enumerate_properties(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    UnknownEntity::new_unknown_to_entries_result(self.deps.borrow().clone())
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     if let Some(str) = self.test_typeof().to_string() {
       LiteralEntity::new_string(str)
@@ -134,5 +141,17 @@ impl<'a> UnknownEntity<'a> {
       result.push(UnknownEntity::new_unknown_with_deps(deps.clone()));
     }
     (result, UnknownEntity::new_unknown_with_deps(deps))
+  }
+
+  pub fn new_unknown_to_entries_result(
+    deps: Vec<Entity<'a>>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>) {
+    (
+      true,
+      vec![(
+        UnknownEntity::new_unknown_with_deps(deps.clone()),
+        UnknownEntity::new_unknown_with_deps(deps),
+      )],
+    )
   }
 }

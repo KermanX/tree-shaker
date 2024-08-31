@@ -9,6 +9,10 @@ pub(crate) trait EntityTrait<'a>: Debug {
 
   fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>);
   fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool;
+  fn enumerate_properties(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+  ) -> (bool, Vec<(Entity<'a>, Entity<'a>)>);
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
