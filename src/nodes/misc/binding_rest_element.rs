@@ -1,5 +1,5 @@
 use crate::ast::AstType2;
-use crate::entity::entity::Entity;
+use crate::entity::entity::{Entity, EntityTrait};
 use crate::entity::object::ObjectEntity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::{BindingRestElement, PropertyKind};
@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
     }
 
     for key in enumerated_keys {
-      // object.delete_property(self, &key);
+      object.delete_property(self, &key);
     }
 
     self.exec_binding_pattern(&node.argument, (false, init), exporting);

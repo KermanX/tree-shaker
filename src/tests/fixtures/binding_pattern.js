@@ -1,4 +1,4 @@
-export function main(unknown) {
+export function simple(unknown) {
   let { a } = { a: 1 };
   effect(a);
 
@@ -13,4 +13,12 @@ export function main(unknown) {
 
   // Destructing unknown has effect
   let { g: { h, i: { j } } } = unknown;
+}
+
+export function with_rest(unknown) {
+  let { a, ...rest } = { a: 1, b: unknown, c: 2 };
+  effect(rest.a, rest.b);
+
+  let { b, ...rest2 } = unknown;
+  let { c, ...rest3 } = rest2;
 }

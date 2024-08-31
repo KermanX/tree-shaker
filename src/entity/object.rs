@@ -205,6 +205,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+    self.consume_self(analyzer);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let definite = key_literals.len() == 1;

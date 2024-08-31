@@ -3,10 +3,20 @@ source: src/tests/mod.rs
 expression: tree_shake(&input)
 input_file: src/tests/fixtures/binding_pattern.js
 ---
-export function main(__unused_D24E) {
+export function simple(__unused_55E7) {
 	effect(1);
 	effect(2);
 	effect(3);
 	effect(4);
-	let { g: { h: __unused_5243, i: { j: __unused_3C25 } } } = unknown;
+	let { g: { h: __unused_83AC, i: { j: __unused_C4E6 } } } = unknown;
+}
+export function with_rest(unknown) {
+	let { a: __unused_AA1B,...rest } = {
+		a: 1,
+		b: unknown,
+		c: 2
+	};
+	effect(1, rest.b);
+	let { b: __unused_19B7,...__unused_DEBA } = unknown;
+	let { c: __unused_51E4,...__unused_BE17 } = rest2;
 }
