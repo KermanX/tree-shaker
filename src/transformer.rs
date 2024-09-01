@@ -18,10 +18,10 @@ use std::{
 };
 
 pub(crate) struct Transformer<'a> {
-  allocator: &'a Allocator,
-  pub(crate) ast_builder: AstBuilder<'a>,
-  pub(crate) data: ExtraData<'a>,
-  pub(crate) referred_nodes: ReferredNodes<'a>,
+  pub allocator: &'a Allocator,
+  pub ast_builder: AstBuilder<'a>,
+  pub data: ExtraData<'a>,
+  pub referred_nodes: ReferredNodes<'a>,
 }
 
 impl<'a> Transformer<'a> {

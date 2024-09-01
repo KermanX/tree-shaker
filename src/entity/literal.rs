@@ -252,4 +252,30 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::Undefined => ast_builder.expression_identifier_reference(span, "undefined"),
     }
   }
+
+  pub(crate) fn to_string(&self) -> &'a str {
+    match self {
+      LiteralEntity::String(value) => *value,
+      LiteralEntity::Number(_, raw) => *raw,
+      LiteralEntity::BigInt(value) => *value,
+      LiteralEntity::Boolean(value) => {
+        if *value {
+          "true"
+        } else {
+          "false"
+        }
+      }
+      LiteralEntity::Symbol(value) => todo!(),
+      LiteralEntity::Infinity(positive) => {
+        if *positive {
+          "Infinity"
+        } else {
+          "-Infinity"
+        }
+      }
+      LiteralEntity::NaN => "NaN",
+      LiteralEntity::Null => "null",
+      LiteralEntity::Undefined => "undefined",
+    }
+  }
 }

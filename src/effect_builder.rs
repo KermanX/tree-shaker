@@ -52,11 +52,11 @@ macro_rules! build_effect_from_arr {
       let mut exprs = $builder.vec();
       $(for x in $x { x.map(|e| exprs.push(e)); })*
       if exprs.is_empty() {
-        Some($val)
+        $val
       }
       else {
         exprs.push($val);
-        Some($builder.expression_sequence($span, exprs))
+        $builder.expression_sequence($span, exprs)
       }
     }
   };

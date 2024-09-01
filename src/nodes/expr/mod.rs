@@ -10,16 +10,18 @@ mod member_expression;
 mod object_expression;
 mod parenthesized_expression;
 mod sequence_expression;
+mod template_literal;
 mod unary_expression;
 
 use crate::ast::AstType2;
 use crate::build_effect;
 use crate::entity::collector::LiteralCollector;
 use crate::entity::entity::Entity;
+use crate::entity::literal::LiteralEntity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::Expression;
 use oxc::ast::match_member_expression;
-use oxc::span::GetSpan;
+use oxc::span::{GetSpan, Span};
 
 const AST_TYPE: AstType2 = AstType2::Expression;
 
@@ -40,6 +42,7 @@ impl<'a> Analyzer<'a> {
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
       Expression::NullLiteral(node) => self.exec_null_literal(node),
       Expression::RegExpLiteral(node) => self.exec_regexp_literal(node),
+      Expression::TemplateLiteral(node) => self.exec_template_literal(node),
       Expression::Identifier(node) => self.exec_identifier_reference_read(node),
       Expression::FunctionExpression(node) => self.exec_function(node, false),
       Expression::ArrowFunctionExpression(node) => self.exec_arrow_function_expression(node),
@@ -89,6 +92,7 @@ impl<'a> Transformer<'a> {
           None
         }
       }
+      Expression::TemplateLiteral(node) => self.transform_template_literal(node.unbox(), need_val),
       Expression::Identifier(node) => self
         .transform_identifier_reference_read(node.unbox(), need_val)
         .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
@@ -130,5 +134,11 @@ impl<'a> Transformer<'a> {
     } else {
       inner
     }
+  }
+
+  // This is not good
+  pub(crate) fn get_expression_collected_literal(&self, span: Span) -> Option<LiteralEntity<'a>> {
+    let data = self.get_data_by_span::<Data>(AST_TYPE, span);
+    data.collector.collected()
   }
 }
