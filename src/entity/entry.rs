@@ -58,6 +58,9 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
     let (has_effect, ret_val) = self.value.call(analyzer, this, args);
+    if has_effect {
+      self.consume_self(analyzer);
+    }
     (has_effect, self.forward(ret_val))
   }
 

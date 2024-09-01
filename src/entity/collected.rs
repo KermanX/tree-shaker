@@ -63,10 +63,11 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    for entity in self.collected.borrow().iter() {
-      entity.call(analyzer, this, args);
+    let (has_effect, ret_cal) = self.val.call(analyzer, this, args);
+    if has_effect {
+      self.consume_self(analyzer);
     }
-    self.val.call(analyzer, this, args)
+    (has_effect, self.forward(ret_cal))
   }
 
   fn get_typeof(&self) -> Entity<'a> {

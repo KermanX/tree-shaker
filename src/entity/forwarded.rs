@@ -58,7 +58,11 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    self.val.call(analyzer, this, args)
+    let (has_effect, ret_val) = self.val.call(analyzer, this, args);
+    if has_effect {
+      self.consume_self(analyzer);
+    }
+    (has_effect, self.forward(ret_val))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
