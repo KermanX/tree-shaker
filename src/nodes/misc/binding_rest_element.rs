@@ -22,7 +22,7 @@ impl<'a> Analyzer<'a> {
   ) {
     let (has_effect, properties) = init.enumerate_properties(self);
 
-    let object = ObjectEntity::default();
+    let object = self.new_empty_object();
     for (definite, key, value) in properties {
       object.init_property(PropertyKind::Init, key, value, definite);
     }

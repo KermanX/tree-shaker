@@ -77,6 +77,10 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.pop().unwrap()
   }
 
+  pub(crate) fn variable_scope_path(&self) -> Vec<ScopeId> {
+    self.scope_context.variable_scopes.iter().map(|x| x.id).collect()
+  }
+
   pub(crate) fn push_cf_scope(&mut self, exited: Option<bool>, is_loop: bool) -> ScopeId {
     let label = mem::take(&mut self.pending_labels);
     let cf_scope = CfScope::new(label, exited, is_loop);

@@ -1,7 +1,6 @@
 use crate::ast::AstType2;
 use crate::build_effect;
 use crate::entity::entity::Entity;
-use crate::entity::object::ObjectEntity;
 use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::{
   Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, SpreadElement,
@@ -18,7 +17,7 @@ struct Data {
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
-    let mut object = ObjectEntity::default();
+    let object = self.new_empty_object();
 
     for property in &node.properties {
       match property {

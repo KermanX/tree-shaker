@@ -124,7 +124,7 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn new_entity_dep(&self, node: EntityDepNode<'a>) -> EntityDep<'a> {
     EntityDep {
       node,
-      scope_path: self.scope_context.variable_scopes.iter().map(|x| x.id).collect(),
+      scope_path: self.variable_scope_path(),
     }
   }
 

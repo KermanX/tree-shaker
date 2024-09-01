@@ -8,12 +8,13 @@ use super::{
   utils::collect_effect_and_value,
 };
 use crate::analyzer::Analyzer;
-use oxc::ast::ast::PropertyKind;
+use oxc::{ast::ast::PropertyKind, semantic::ScopeId};
 use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub(crate) struct ObjectEntity<'a> {
+  scope_path: Vec<ScopeId>,
   string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
   unknown_keyed: RefCell<ObjectProperty<'a>>,
   // TODO: symbol_keyed
@@ -339,7 +340,7 @@ impl<'a> ObjectEntity<'a> {
     }
   }
 
-  pub(crate) fn init_spread(&mut self, analyzer: &mut Analyzer<'a>, argument: Entity<'a>) -> bool {
+  pub(crate) fn init_spread(&self, analyzer: &mut Analyzer<'a>, argument: Entity<'a>) -> bool {
     let (has_effect, properties) = argument.enumerate_properties(analyzer);
     for (definite, key, value) in properties {
       self.init_property(PropertyKind::Init, key.clone(), value, definite);
@@ -384,5 +385,16 @@ impl<'a> ObjectEntity<'a> {
     has_effect |=
       apply_unknown_to_vec(analyzer, &mut self.rest.borrow(), &UnknownEntity::new_unknown());
     has_effect
+  }
+}
+
+impl<'a> Analyzer<'a> {
+  pub(crate) fn new_empty_object(&self) -> ObjectEntity<'a> {
+    ObjectEntity {
+      scope_path: self.variable_scope_path(),
+      string_keyed: RefCell::new(FxHashMap::default()),
+      unknown_keyed: RefCell::new(ObjectProperty::default()),
+      rest: RefCell::new(ObjectProperty::default()),
+    }
   }
 }
