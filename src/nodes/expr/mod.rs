@@ -10,6 +10,7 @@ mod member_expression;
 mod object_expression;
 mod parenthesized_expression;
 mod sequence_expression;
+mod tagged_template_expression;
 mod template_literal;
 mod unary_expression;
 
@@ -51,6 +52,7 @@ impl<'a> Analyzer<'a> {
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
       Expression::ConditionalExpression(node) => self.exec_conditional_expression(node),
       Expression::CallExpression(node) => self.exec_call_expression(node),
+      Expression::TaggedTemplateExpression(node) => self.exec_tagged_template_expression(node),
       Expression::ObjectExpression(node) => self.exec_object_expression(node),
       Expression::ParenthesizedExpression(node) => self.exec_parenthesized_expression(node),
       Expression::SequenceExpression(node) => self.exec_sequence_expression(node),
@@ -113,6 +115,9 @@ impl<'a> Transformer<'a> {
         self.transform_conditional_expression(node.unbox(), need_val)
       }
       Expression::CallExpression(node) => self.transform_call_expression(node.unbox(), need_val),
+      Expression::TaggedTemplateExpression(node) => {
+        self.transform_tagged_template_expression(node.unbox(), need_val)
+      }
       Expression::ObjectExpression(node) => {
         self.transform_object_expression(node.unbox(), need_val)
       }
