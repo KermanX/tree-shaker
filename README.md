@@ -1,8 +1,8 @@
 # Tree Shaker Prototype
 
-\[WIP\] This is a JavaScript tree shaker based on [Oxc](https://oxc.rs).
+\[WIP\] This is a JavaScript tree-shaker based on [Oxc](https://oxc.rs).
 
-> If this project goes well, I personally hope it can become part of the Oxc or Rolldown project.
+> If this project goes well, I personally hope it can become part of the Oxc or the Rolldown project.
 
 ## Goal
 
@@ -35,6 +35,7 @@ May not be very fast, but should generates the least code possible.
 
 - Implement all AST nodes
 - Implement built-in objects and properties
+- Type narrowing
 - Test against fixtures from other tree shakers like Rollup
 - Test against test262 (is this possible?)
 
