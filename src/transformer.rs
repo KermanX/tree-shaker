@@ -10,7 +10,7 @@ use oxc::{
     ast::{BindingPattern, Expression, NumberBase, Program, TSTypeAnnotation, UnaryOperator},
     AstBuilder,
   },
-  span::{GetSpan, Span},
+  span::{GetSpan, Span, SPAN},
 };
 use std::{
   hash::{DefaultHasher, Hasher},
@@ -52,6 +52,16 @@ impl<'a> Transformer<'a> {
 
   pub(crate) fn build_unused_expression(&self, span: Span) -> Expression<'a> {
     self.ast_builder.expression_numeric_literal(span, 0.0f64, "0", NumberBase::Decimal)
+  }
+
+  pub(crate) fn build_unused_iterable(&self, span: Span, length: usize) -> Expression<'a> {
+    let mut elements = self.ast_builder.vec();
+    for _ in 0..length {
+      elements.push(
+        self.ast_builder.array_expression_element_expression(self.build_unused_expression(SPAN)),
+      );
+    }
+    self.ast_builder.expression_array(span, elements, None)
   }
 
   pub(crate) fn build_undefined(&self, span: Span) -> Expression<'a> {

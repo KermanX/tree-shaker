@@ -14,4 +14,4 @@ export const fn3 = (__unused_6FFE) => {
 };
 export const fn4 = (__unused_0C10) => 4;
 const __unused_BE85 = (__unused_1670) => effect;
-f5(true);
+f5();

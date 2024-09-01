@@ -1,6 +1,8 @@
 use crate::{
   ast::Arguments,
-  entity::{arguments::ArgumentsEntity, entity::Entity},
+  entity::{
+    arguments::ArgumentsEntity, dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity,
+  },
   transformer::Transformer,
   Analyzer,
 };
@@ -13,10 +15,12 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> Entity<'a> {
     let mut arguments = vec![];
     for argument in node {
-      arguments.push(match argument {
+      let (spread, val) = match argument {
         Argument::SpreadElement(node) => (true, self.exec_expression(&node.argument)),
         node => (false, self.exec_expression(node.to_expression())),
-      })
+      };
+      let dep = self.new_entity_dep(EntityDepNode::Argument(argument));
+      arguments.push((spread, ForwardedEntity::new(val, dep)));
     }
     ArgumentsEntity::new(arguments)
   }
@@ -25,23 +29,33 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub(crate) fn transform_arguments_need_call(&mut self, node: Arguments<'a>) -> Arguments<'a> {
     let mut arguments = self.ast_builder.vec();
-    for argument in node {
-      arguments.push(self.transform_argument_need_call(argument));
+    let mut preserve_args_num = false;
+    for argument in node.into_iter().rev() {
+      if let Some(argument) = self.transform_argument_need_call(argument, preserve_args_num) {
+        arguments.insert(0, argument);
+        preserve_args_num = true;
+      }
     }
     arguments
   }
 
-  fn transform_argument_need_call(&mut self, node: Argument<'a>) -> Argument<'a> {
+  fn transform_argument_need_call(
+    &mut self,
+    node: Argument<'a>,
+    preserve_args_num: bool,
+  ) -> Option<Argument<'a>> {
+    let is_referred = self.is_referred(EntityDepNode::Argument(&node));
     let span = node.span();
     match node {
       Argument::SpreadElement(node) => {
+        // Currently, a spread element de-optimize the arguments.
         let expr = self.transform_expression(node.unbox().argument, true).unwrap();
-        self.ast_builder.argument_spread_element(span, expr)
+        Some(self.ast_builder.argument_spread_element(span, expr))
       }
-      _ => {
-        let expr = self.transform_expression(node.try_into().unwrap(), true).unwrap();
-        self.ast_builder.argument_expression(expr)
-      }
+      _ => self
+        .transform_expression(node.try_into().unwrap(), is_referred)
+        .or_else(|| preserve_args_num.then(|| self.build_unused_expression(span)))
+        .map(|expr| self.ast_builder.argument_expression(expr)),
     }
   }
 
