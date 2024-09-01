@@ -1,8 +1,14 @@
 use crate::{
-  entity::{entity::Entity, literal::LiteralEntity},
+  entity::{
+    entity::Entity,
+    literal::LiteralEntity,
+    unknown::{UnknownEntity, UnknownEntityKind},
+  },
   Analyzer,
 };
-use oxc::ast::ast::{BigIntLiteral, BooleanLiteral, NullLiteral, NumericLiteral, StringLiteral};
+use oxc::ast::ast::{
+  BigIntLiteral, BooleanLiteral, NullLiteral, NumericLiteral, RegExpLiteral, StringLiteral,
+};
 use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
@@ -24,5 +30,9 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn exec_null_literal(&mut self, _node: &'a NullLiteral) -> Entity<'a> {
     Rc::new(LiteralEntity::Null)
+  }
+
+  pub(crate) fn exec_regexp_literal(&mut self, _node: &'a RegExpLiteral<'a>) -> Entity<'a> {
+    UnknownEntity::new(UnknownEntityKind::Object)
   }
 }

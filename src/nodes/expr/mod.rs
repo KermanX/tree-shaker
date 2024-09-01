@@ -39,6 +39,7 @@ impl<'a> Analyzer<'a> {
       Expression::BigIntLiteral(node) => self.exc_big_int_literal(node),
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
       Expression::NullLiteral(node) => self.exec_null_literal(node),
+      Expression::RegExpLiteral(node) => self.exec_regexp_literal(node),
       Expression::Identifier(node) => self.exec_identifier_reference_read(node),
       Expression::FunctionExpression(node) => self.exec_function(node, false),
       Expression::ArrowFunctionExpression(node) => self.exec_arrow_function_expression(node),
@@ -80,7 +81,8 @@ impl<'a> Transformer<'a> {
       | Expression::NumericLiteral(_)
       | Expression::BigIntLiteral(_)
       | Expression::BooleanLiteral(_)
-      | Expression::NullLiteral(_) => {
+      | Expression::NullLiteral(_)
+      | Expression::RegExpLiteral(_) => {
         if need_val {
           Some(node)
         } else {
