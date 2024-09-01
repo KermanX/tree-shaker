@@ -1,5 +1,6 @@
 use crate::{
   ast::AstType2,
+  builtins::Builtins,
   data::{ExtraData, ReferredNodes},
   entity::{
     dep::{EntityDep, EntityDepNode},
@@ -29,6 +30,7 @@ pub(crate) struct Analyzer<'a> {
   pub decls_deps: FxHashMap<SymbolId, EntityDep<'a>>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
+  pub builtins: Builtins<'a>,
   pub entity_op: EntityOpHost<'a>,
 }
 
@@ -43,6 +45,7 @@ impl<'a> Analyzer<'a> {
       decls_deps: Default::default(),
       scope_context: ScopeContext::new(),
       pending_labels: Vec::new(),
+      builtins: Builtins::new(),
       entity_op: EntityOpHost::new(allocator),
     }
   }

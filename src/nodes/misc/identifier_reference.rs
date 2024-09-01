@@ -1,6 +1,5 @@
 use crate::ast::AstType2;
 use crate::entity::entity::Entity;
-use crate::entity::literal::LiteralEntity;
 use crate::entity::unknown::UnknownEntity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::IdentifierReference;
@@ -17,9 +16,9 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
-    if node.name == "undefined" {
+    if let Some(global) = self.builtins.get_global(&node.name).cloned() {
       self.set_data(AST_TYPE, node, Data { resolvable: true });
-      return LiteralEntity::new_undefined();
+      return global;
     }
 
     let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
@@ -49,7 +48,7 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
     value: Entity<'a>,
   ) {
-    if node.name == "undefined" {
+    if self.builtins.is_global(&node.name) {
       // TODO: Throw warning
     }
 
