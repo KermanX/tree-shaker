@@ -9,7 +9,8 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::ast::ast::{
-  AssignmentTarget, ComputedMemberExpression, Expression, MemberExpression, StaticMemberExpression,
+  AssignmentTarget, ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
+  StaticMemberExpression,
 };
 
 const AST_TYPE: AstType2 = AstType2::MemberExpression;
@@ -77,7 +78,9 @@ impl<'a> Analyzer<'a> {
       MemberExpression::StaticMemberExpression(node) => {
         LiteralEntity::new_string(node.property.name.as_str())
       }
-      MemberExpression::PrivateFieldExpression(node) => todo!(),
+      MemberExpression::PrivateFieldExpression(node) => {
+        LiteralEntity::new_string(node.field.name.as_str())
+      }
     }
   }
 }
@@ -124,7 +127,24 @@ impl<'a> Transformer<'a> {
           object
         }
       }
-      MemberExpression::PrivateFieldExpression(node) => todo!(),
+      MemberExpression::PrivateFieldExpression(node) => {
+        let PrivateFieldExpression { span, object, field, .. } = node.unbox();
+
+        let object = self.transform_expression(object, need_read);
+
+        if need_read {
+          Some(self.ast_builder.expression_member(
+            self.ast_builder.member_expression_private_field_expression(
+              span,
+              object.unwrap(),
+              field,
+              data.need_optional,
+            ),
+          ))
+        } else {
+          object
+        }
+      }
     }
   }
 
