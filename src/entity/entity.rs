@@ -1,4 +1,4 @@
-use super::{literal::LiteralEntity, typeof_result::TypeofResult, unknown::UnknownEntity};
+use super::{literal::LiteralEntity, typeof_result::TypeofResult};
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};

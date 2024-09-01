@@ -84,6 +84,14 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.iter().map(|x| x.id).collect()
   }
 
+  pub(crate) fn get_variable_scope_by_id(&self, id: ScopeId) -> &VariableScope<'a> {
+    self.scope_context.variable_scopes.iter().find(|x| x.id == id).unwrap()
+  }
+
+  pub(crate) fn get_variable_scope_by_id_mut(&mut self, id: ScopeId) -> &mut VariableScope<'a> {
+    self.scope_context.variable_scopes.iter_mut().find(|x| x.id == id).unwrap()
+  }
+
   pub(crate) fn push_cf_scope(&mut self, exited: Option<bool>, is_loop: bool) -> ScopeId {
     let label = mem::take(&mut self.pending_labels);
     let cf_scope = CfScope::new(label, exited, is_loop);
@@ -115,6 +123,7 @@ impl<'a> Analyzer<'a> {
         if should_exit {
           cf_scope.exited = Some(true);
         } else {
+          cf_scope.exited = None;
           // Stop exiting outer scopes if one inner scope is indeterminate.
           should_exit = !cf_scope.is_indeterminate();
         }
@@ -135,5 +144,17 @@ impl<'a> Analyzer<'a> {
       self.cf_scope_mut().exited = Some(true);
       false
     }
+  }
+
+  pub(crate) fn is_relative_indeterminate(&self, target: ScopeId) -> bool {
+    for cf_scope in self.scope_context.cf_scopes.iter().rev() {
+      if cf_scope.is_indeterminate() {
+        return true;
+      }
+      if cf_scope.id == target {
+        return false;
+      }
+    }
+    unreachable!();
   }
 }

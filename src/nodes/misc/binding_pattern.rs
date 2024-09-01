@@ -1,9 +1,6 @@
 use crate::{
   ast::AstType2,
-  entity::{
-    dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity,
-    union::UnionEntity,
-  },
+  entity::{entity::Entity, literal::LiteralEntity, union::UnionEntity},
   transformer::Transformer,
   Analyzer,
 };

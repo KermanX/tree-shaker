@@ -1,6 +1,5 @@
 use crate::ast::AstType2;
 use crate::entity::entity::{Entity, EntityTrait};
-use crate::entity::object::ObjectEntity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::{BindingRestElement, PropertyKind};
 use oxc::span::GetSpan;

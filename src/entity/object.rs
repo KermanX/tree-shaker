@@ -111,7 +111,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
   fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
     let this = self.get_this();
-    let indeterminate = analyzer.cf_scope().is_indeterminate();
+    let indeterminate = self.is_assignment_indeterminate(analyzer);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let mut has_effect = false;
@@ -385,6 +385,20 @@ impl<'a> ObjectEntity<'a> {
     has_effect |=
       apply_unknown_to_vec(analyzer, &mut self.rest.borrow(), &UnknownEntity::new_unknown());
     has_effect
+  }
+
+  fn is_assignment_indeterminate(&self, analyzer: &Analyzer<'a>) -> bool {
+    let mut var_scope_id = analyzer.scope_context.variable_scopes.first().unwrap().id;
+    for (i, scope) in analyzer.scope_context.variable_scopes.iter().enumerate() {
+      let scope_id = scope.id;
+      if self.scope_path.get(i).is_some_and(|id| *id == scope_id) {
+        var_scope_id = scope_id;
+      } else {
+        break;
+      }
+    }
+    let target = analyzer.get_variable_scope_by_id(var_scope_id).cf_scope_id;
+    analyzer.is_relative_indeterminate(target)
   }
 }
 
