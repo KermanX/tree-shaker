@@ -235,6 +235,18 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
   }
 
+  fn call(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    this: &Entity<'a>,
+    args: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
+    self.consume_as_unknown(analyzer);
+    this.consume_as_unknown(analyzer);
+    args.consume_as_unknown(analyzer);
+    (true, UnknownEntity::new_unknown())
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string("object")
   }

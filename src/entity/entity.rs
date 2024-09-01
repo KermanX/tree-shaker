@@ -19,11 +19,7 @@ pub(crate) trait EntityTrait<'a>: Debug {
     analyzer: &mut Analyzer<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    this.consume_as_unknown(analyzer);
-    args.consume_as_unknown(analyzer);
-    (true, UnknownEntity::new_unknown())
-  }
+  ) -> (bool, Entity<'a>);
 
   fn get_typeof(&self) -> Entity<'a>;
   fn get_to_string(&self) -> Entity<'a>;

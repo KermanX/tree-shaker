@@ -69,6 +69,18 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     true
   }
 
+  fn call(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    this: &Entity<'a>,
+    args: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
+    self.consume_as_unknown(analyzer);
+    this.consume_as_unknown(analyzer);
+    args.consume_as_unknown(analyzer);
+    (true, UnknownEntity::new_unknown())
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     if let Some(str) = self.test_typeof().to_string() {
       LiteralEntity::new_string(str)

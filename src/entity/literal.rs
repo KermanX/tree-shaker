@@ -63,6 +63,16 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     false
   }
 
+  fn call(
+    &self,
+    _analyzer: &mut Analyzer<'a>,
+    _this: &Entity<'a>,
+    _args: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
+    // TODO: throw warning
+    (false, UnknownEntity::new_unknown())
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string(self.test_typeof().to_string().unwrap())
   }
