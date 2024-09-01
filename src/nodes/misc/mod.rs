@@ -1,6 +1,7 @@
 mod arguments;
 mod assignment_target;
 mod assignment_target_pattern;
+mod binding_identifier;
 mod binding_pattern;
 mod binding_rest_element;
 mod formal_parameters;

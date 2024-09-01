@@ -45,9 +45,7 @@ impl<'a> Analyzer<'a> {
     }
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
-        let symbol = node.symbol_id.get().unwrap();
-        let dep = self.new_entity_dep(EntityDepNode::BindingIdentifier(node));
-        self.declare_symbol(symbol, dep.clone(), ForwardedEntity::new(init, dep), exporting);
+        self.exec_binding_identifier(node, init, exporting);
       }
       BindingPatternKind::ObjectPattern(node) => {
         let mut enumerated_keys = vec![];
@@ -109,10 +107,9 @@ impl<'a> Transformer<'a> {
 
     let transformed = match kind {
       BindingPatternKind::BindingIdentifier(node) => {
-        let referred = self.is_referred(EntityDepNode::BindingIdentifier(&node));
-        referred.then(|| {
+        self.transform_binding_identifier(node.unbox()).map(|identifier| {
           self.ast_builder.binding_pattern(
-            self.ast_builder.binding_pattern_kind_from_binding_identifier(node),
+            self.ast_builder.binding_pattern_kind_from_binding_identifier(identifier),
             None::<TSTypeAnnotation>,
             false,
           )

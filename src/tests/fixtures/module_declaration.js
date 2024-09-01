@@ -1,3 +1,14 @@
+import { foo, unused } from 'source' with { type: 'json' };
+import 'side-effect-only';
+import unused2 from 'default-export-unused';
+import de from 'default-export';
+
+export function f0() {
+  unused + unused2;
+  foo(() => 1);
+  return de + "1";
+}
+
 export function f1(a) {
   effect(a);
   return 1;

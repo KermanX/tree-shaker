@@ -52,11 +52,9 @@ impl<'a> Transformer<'a> {
       match_declaration!(Statement) => self
         .transform_declaration(node.try_into().unwrap())
         .map(|decl| self.ast_builder.statement_declaration(decl)),
-      match_module_declaration!(Statement) => {
-        Some(self.ast_builder.statement_module_declaration(
-          self.transform_module_declaration(node.try_into().unwrap()),
-        ))
-      }
+      match_module_declaration!(Statement) => self
+        .transform_module_declaration(node.try_into().unwrap())
+        .map(|decl| self.ast_builder.statement_module_declaration(decl)),
       Statement::ExpressionStatement(node) => {
         let ExpressionStatement { expression, .. } = node.unbox();
         self
