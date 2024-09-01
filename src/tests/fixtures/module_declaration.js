@@ -24,3 +24,6 @@ export const f2 = (a) => {
 export const t = 123;
 
 export default t + "," + f2;
+
+let u = 1;
+export { u } from 're-exported-named';

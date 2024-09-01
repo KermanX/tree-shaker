@@ -16,6 +16,10 @@ impl<'a> Analyzer<'a> {
         }
       }
       ModuleDeclaration::ExportNamedDeclaration(node) => {
+        if node.source.is_some() {
+          // Re-exports. Nothing to do.
+          return;
+        }
         node.declaration.as_ref().map(|declaration| self.exec_declaration(declaration, true));
         for specifier in &node.specifiers {
           match &specifier.local {
@@ -114,6 +118,12 @@ impl<'a> Transformer<'a> {
         }
       }
       ModuleDeclaration::ExportNamedDeclaration(node) => {
+        if node.source.is_some() {
+          // Re-exports. Nothing to do.
+          return Some(
+            self.ast_builder.module_declaration_from_export_named_declaration(node.unbox()),
+          );
+        }
         let ExportNamedDeclaration {
           span,
           declaration,
