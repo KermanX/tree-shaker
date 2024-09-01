@@ -3,6 +3,8 @@ import 'side-effect-only';
 import unused2 from 'default-export-unused';
 import de from 'default-export';
 
+export * as t from 'export-all';
+
 export function f0() {
   unused + unused2;
   foo(() => 1);

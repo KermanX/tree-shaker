@@ -38,7 +38,10 @@ impl<'a> Analyzer<'a> {
         // FIXME: delay this
         value.consume_as_unknown(self);
       }
-      _ => todo!(),
+      ModuleDeclaration::ExportAllDeclaration(_node) => {
+        // Nothing to do
+      }
+      _ => unreachable!(),
     }
   }
 }
@@ -149,7 +152,10 @@ impl<'a> Transformer<'a> {
           exported,
         ))
       }
-      _ => todo!(),
+      ModuleDeclaration::ExportAllDeclaration(node) => {
+        Some(self.ast_builder.module_declaration_from_export_all_declaration(node.unbox()))
+      }
+      _ => unreachable!(),
     }
   }
 }
