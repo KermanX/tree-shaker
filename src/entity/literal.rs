@@ -6,7 +6,7 @@ use super::{
 use crate::{analyzer::Analyzer, utils::F64WithEq};
 use oxc::{
   ast::{
-    ast::{BigintBase, Expression, NumberBase},
+    ast::{BigintBase, Expression, NumberBase, UnaryOperator},
     AstBuilder,
   },
   span::Span,
@@ -24,6 +24,7 @@ pub(crate) enum LiteralEntity<'a> {
   BigInt(&'a str),
   Boolean(bool),
   Symbol(usize),
+  Infinity(bool),
   NaN,
   Null,
   Undefined,
@@ -90,6 +91,13 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
         }
       }
       LiteralEntity::Symbol(value) => todo!(),
+      LiteralEntity::Infinity(positive) => {
+        if *positive {
+          "Infinity"
+        } else {
+          "-Infinity"
+        }
+      }
       LiteralEntity::NaN => "NaN",
       LiteralEntity::Null => "null",
       LiteralEntity::Undefined => "undefined",
@@ -120,6 +128,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::BigInt(_) => TypeofResult::BigInt,
       LiteralEntity::Boolean(_) => TypeofResult::Boolean,
       LiteralEntity::Symbol(_) => TypeofResult::Symbol,
+      LiteralEntity::Infinity(_) => TypeofResult::Number,
       LiteralEntity::NaN => TypeofResult::Number,
       LiteralEntity::Null => TypeofResult::Object,
       LiteralEntity::Undefined => TypeofResult::Undefined,
@@ -133,6 +142,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::BigInt(value) => !value.is_empty(),
       LiteralEntity::Boolean(value) => *value,
       LiteralEntity::Symbol(_) => true,
+      LiteralEntity::Infinity(_) => true,
       LiteralEntity::NaN | LiteralEntity::Null | LiteralEntity::Undefined => false,
     })
   }
@@ -165,14 +175,18 @@ impl<'a> Hash for LiteralEntity<'a> {
         state.write_u8(4);
         value.hash(state);
       }
-      LiteralEntity::NaN => {
+      LiteralEntity::Infinity(positive) => {
         state.write_u8(5);
+        positive.hash(state);
       }
-      LiteralEntity::Null => {
+      LiteralEntity::NaN => {
         state.write_u8(6);
       }
-      LiteralEntity::Undefined => {
+      LiteralEntity::Null => {
         state.write_u8(7);
+      }
+      LiteralEntity::Undefined => {
+        state.write_u8(8);
       }
     }
   }
@@ -195,6 +209,18 @@ impl<'a> LiteralEntity<'a> {
     Rc::new(LiteralEntity::Boolean(value))
   }
 
+  pub(crate) fn new_infinity(positive: bool) -> Entity<'a> {
+    Rc::new(LiteralEntity::Infinity(positive))
+  }
+
+  pub(crate) fn new_nan() -> Entity<'a> {
+    Rc::new(LiteralEntity::NaN)
+  }
+
+  pub(crate) fn new_null() -> Entity<'a> {
+    Rc::new(LiteralEntity::Null)
+  }
+
   pub(crate) fn new_undefined() -> Entity<'a> {
     Rc::new(LiteralEntity::Undefined)
   }
@@ -210,22 +236,20 @@ impl<'a> LiteralEntity<'a> {
       }
       LiteralEntity::Boolean(value) => ast_builder.expression_boolean_literal(span, *value),
       LiteralEntity::Symbol(value) => todo!(),
+      LiteralEntity::Infinity(positive) => {
+        if *positive {
+          ast_builder.expression_identifier_reference(span, "Infinity")
+        } else {
+          ast_builder.expression_unary(
+            span,
+            UnaryOperator::UnaryNegation,
+            ast_builder.expression_identifier_reference(span, "Infinity"),
+          )
+        }
+      }
       LiteralEntity::NaN => ast_builder.expression_identifier_reference(span, "NaN"),
       LiteralEntity::Null => ast_builder.expression_null_literal(span),
       LiteralEntity::Undefined => ast_builder.expression_identifier_reference(span, "undefined"),
-    }
-  }
-
-  pub(crate) fn to_string(&self) -> String {
-    match self {
-      LiteralEntity::String(value) => value.to_string(),
-      LiteralEntity::Number(_value, raw) => raw.to_string(),
-      LiteralEntity::BigInt(value) => value.to_string(),
-      LiteralEntity::Boolean(value) => value.to_string(),
-      LiteralEntity::Symbol(value) => value.to_string(),
-      LiteralEntity::NaN => "NaN".to_string(),
-      LiteralEntity::Null => "null".to_string(),
-      LiteralEntity::Undefined => "undefined".to_string(),
     }
   }
 }
