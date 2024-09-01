@@ -34,6 +34,11 @@ May not be very fast, but should generates the least code possible.
 ## Todo
 
 - Implement all AST nodes
+  - Assignment pattern / Update expression
+  - Array
+  - Class
+  - Tons of operators
+  - Tons of other nodes
 - Implement built-in objects and properties
 - Type narrowing
 - Test against fixtures from other tree shakers like Rollup
