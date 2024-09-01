@@ -19,7 +19,7 @@ impl<'a> Analyzer<'a> {
   pub(crate) fn exec_property_key(&mut self, node: &'a PropertyKey<'a>) -> Entity<'a> {
     let entity = match node {
       PropertyKey::StaticIdentifier(node) => Rc::new(LiteralEntity::String(node.name.as_str())),
-      PropertyKey::PrivateIdentifier(node) => todo!(),
+      PropertyKey::PrivateIdentifier(node) => Rc::new(LiteralEntity::String(node.name.as_str())),
       node => {
         let node = node.to_expression();
         self.exec_expression(node)
@@ -46,12 +46,12 @@ impl<'a> Transformer<'a> {
       _ => {
         let data = self.get_data::<Data>(AST_TYPE, &node);
         if let Some(LiteralEntity::String(s)) = data.collector.collected() {
-          if need_val {
+          need_val.then(|| {
             let span = node.span();
             let expr = self.transform_expression(TryFrom::try_from(node).unwrap(), false);
             if let Some(expr) = expr {
-              // TODO: This is not the minimal representation
-              Some((
+              // TODO: This is not the minimal representation, to fix this we need two expression nodes.
+              (
                 true,
                 self.ast_builder.property_key_expression(build_effect!(
                   self.ast_builder,
@@ -59,13 +59,12 @@ impl<'a> Transformer<'a> {
                   Some(expr);
                   self.ast_builder.expression_string_literal(SPAN, s)
                 )),
-              ))
+              )
             } else {
-              Some((false, self.ast_builder.property_key_identifier_name(span, s)))
+              // FIXME: Only valid identifier names are allowed
+              (false, self.ast_builder.property_key_identifier_name(span, s))
             }
-          } else {
-            None
-          }
+          })
         } else {
           let expr = self.transform_expression(node.try_into().unwrap(), need_val);
           expr.map(|e| (true, self.ast_builder.property_key_expression(e)))
