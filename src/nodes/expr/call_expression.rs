@@ -64,22 +64,18 @@ impl<'a> Transformer<'a> {
     if need_call {
       // Need call
       let callee = self.transform_expression(callee, true).unwrap();
-      let mut transformed_arguments = self.ast_builder.vec();
-      for arg in arguments {
-        transformed_arguments.push(self.transform_argument_need_val(arg));
-      }
+      let arguments = self.transform_arguments_need_call(arguments);
       Some(self.ast_builder.expression_call(
         span,
         callee,
         None::<TSTypeParameterInstantiation>,
-        transformed_arguments,
+        arguments,
         data.need_optional,
       ))
     } else {
       // Only need effects in callee and args
       let callee = self.transform_expression(callee, false);
-      let arguments =
-        arguments.into_iter().map(|arg| self.transform_argument_no_val(arg)).collect::<Vec<_>>();
+      let arguments = self.transform_arguments_no_call(arguments);
       build_effect_from_arr!(self.ast_builder, span, vec![callee], arguments)
     }
   }
