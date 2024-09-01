@@ -23,15 +23,12 @@ impl<'a> Analyzer<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    self.push_variable_scope();
     self.push_function_scope(this);
 
     self.exec_formal_parameters(&node.params, args);
     self.exec_function_body(node.body.as_ref().unwrap());
 
-    let has_effect = self.pop_variable_scope().has_effect;
-    let ret_val = self.pop_function_scope().ret_val();
-    (has_effect, ret_val)
+    self.pop_function_scope()
   }
 }
 

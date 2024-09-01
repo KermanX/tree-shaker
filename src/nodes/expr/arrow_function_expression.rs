@@ -21,7 +21,6 @@ impl<'a> Analyzer<'a> {
     node: &'a ArrowFunctionExpression<'a>,
     args: Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    self.push_variable_scope();
     self.push_function_scope(self.function_scope().this.clone());
 
     self.exec_formal_parameters(&node.params, args);
@@ -31,9 +30,7 @@ impl<'a> Analyzer<'a> {
       self.exec_function_body(&node.body);
     }
 
-    let has_effect = self.pop_variable_scope().has_effect;
-    let ret_val = self.pop_function_scope().ret_val();
-    (has_effect, ret_val)
+    self.pop_function_scope()
   }
 }
 

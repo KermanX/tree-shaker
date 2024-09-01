@@ -13,8 +13,8 @@ struct Data {
 
 impl<'a> Analyzer<'a> {
   pub(crate) fn exec_block_statement(&mut self, node: &'a BlockStatement) {
-    self.push_variable_scope();
-    self.push_cf_scope(Some(false), false);
+    let cf_scope_id = self.push_cf_scope(Some(false), false);
+    self.push_variable_scope(cf_scope_id);
 
     let mut span: Option<Span> = None;
     for statement in &node.body {
@@ -32,8 +32,8 @@ impl<'a> Analyzer<'a> {
       };
     }
 
-    self.pop_cf_scope();
     self.pop_variable_scope();
+    self.pop_cf_scope();
   }
 }
 

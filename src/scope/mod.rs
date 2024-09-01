@@ -28,7 +28,7 @@ impl<'a> ScopeContext<'a> {
         // TODO: global this
         UnknownEntity::new_unknown(),
       )],
-      variable_scopes: vec![VariableScope::new()],
+      variable_scopes: vec![VariableScope::new(cf_scope_0.id)],
       cf_scopes: vec![cf_scope_0],
     }
   }
@@ -61,16 +61,19 @@ impl<'a> Analyzer<'a> {
 
   pub(crate) fn push_function_scope(&mut self, this: Entity<'a>) {
     let cf_scope_id = self.push_cf_scope(Some(false), false);
+    self.push_variable_scope(cf_scope_id);
     self.scope_context.function_scopes.push(FunctionScope::new(cf_scope_id, this));
   }
 
-  pub(crate) fn pop_function_scope(&mut self) -> FunctionScope<'a> {
+  pub(crate) fn pop_function_scope(&mut self) -> (bool, Entity<'a>) {
+    let ret_val = self.scope_context.function_scopes.pop().unwrap().ret_val();
+    let has_effect = self.pop_variable_scope().has_effect;
     self.pop_cf_scope();
-    self.scope_context.function_scopes.pop().unwrap()
+    (has_effect, ret_val)
   }
 
-  pub(crate) fn push_variable_scope(&mut self) {
-    self.scope_context.variable_scopes.push(VariableScope::new());
+  pub(crate) fn push_variable_scope(&mut self, cf_scope_id: ScopeId) {
+    self.scope_context.variable_scopes.push(VariableScope::new(cf_scope_id));
   }
 
   pub(crate) fn pop_variable_scope(&mut self) -> VariableScope<'a> {

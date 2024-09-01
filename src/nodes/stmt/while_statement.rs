@@ -24,15 +24,15 @@ impl<'a> Analyzer<'a> {
       None => (true, true),
     };
 
-    self.push_variable_scope();
-    self.push_cf_scope(if indeterminate { None } else { Some(false) }, true);
+    let cf_scope_id = self.push_cf_scope(if indeterminate { None } else { Some(false) }, true);
+    self.push_variable_scope(cf_scope_id);
 
     if need_loop {
       self.exec_statement(&node.body);
     }
 
-    self.pop_cf_scope();
     self.pop_variable_scope();
+    self.pop_cf_scope();
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.need_loop |= need_loop;
