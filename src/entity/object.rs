@@ -14,15 +14,15 @@ use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub(crate) struct ObjectEntity<'a> {
-  scope_path: Vec<ScopeId>,
-  string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
-  unknown_keyed: RefCell<ObjectProperty<'a>>,
+  pub scope_path: Vec<ScopeId>,
+  pub string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
+  pub unknown_keyed: RefCell<ObjectProperty<'a>>,
   // TODO: symbol_keyed
-  rest: RefCell<ObjectProperty<'a>>,
+  pub rest: RefCell<ObjectProperty<'a>>,
 }
 
 #[derive(Debug, Clone)]
-enum ObjectPropertyValue<'a> {
+pub(crate) enum ObjectPropertyValue<'a> {
   Field(Entity<'a>),
   /// (Getter, Setter)
   Property(Option<Entity<'a>>, Option<Entity<'a>>),
@@ -41,7 +41,7 @@ impl<'a> ObjectPropertyValue<'a> {
 }
 
 #[derive(Debug, Clone, Default)]
-struct ObjectProperty<'a> {
+pub(crate) struct ObjectProperty<'a> {
   pub definite: bool,
   pub values: Vec<ObjectPropertyValue<'a>>,
 }

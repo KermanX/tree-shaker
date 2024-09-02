@@ -9,6 +9,7 @@ mod import_expression;
 mod literals;
 mod logical_expression;
 mod member_expression;
+mod meta_property;
 mod object_expression;
 mod parenthesized_expression;
 mod sequence_expression;
@@ -62,6 +63,7 @@ impl<'a> Analyzer<'a> {
       Expression::AssignmentExpression(node) => self.exec_assignment_expression(node),
       Expression::ChainExpression(node) => self.exec_chain_expression(node),
       Expression::ImportExpression(node) => self.exec_import_expression(node),
+      Expression::MetaProperty(node) => self.exec_meta_property(node),
       _ => todo!("Expr at span {:?}", node.span()),
     };
 
@@ -139,6 +141,7 @@ impl<'a> Transformer<'a> {
       Expression::ImportExpression(node) => {
         self.transform_import_expression(node.unbox(), need_val)
       }
+      Expression::MetaProperty(node) => self.transform_meta_property(node.unbox(), need_val),
       _ => todo!(),
     };
 
