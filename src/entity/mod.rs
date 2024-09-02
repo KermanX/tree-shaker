@@ -1,4 +1,5 @@
 pub mod arguments;
+pub mod builtin_fn;
 pub mod collected;
 pub mod collector;
 pub mod dep;
