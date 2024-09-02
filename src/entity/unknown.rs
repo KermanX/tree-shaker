@@ -81,6 +81,15 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     (true, UnknownEntity::new_unknown())
   }
 
+  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    if self.maybe_object() {
+      self.consume_as_unknown(analyzer);
+      (true, UnknownEntity::new_unknown())
+    } else {
+      (false, Rc::new(self.clone()))
+    }
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     if let Some(str) = self.test_typeof().to_string() {
       LiteralEntity::new_string(str)
@@ -175,6 +184,16 @@ impl<'a> UnknownEntity<'a> {
         UnknownEntity::new_unknown_with_deps(deps.clone()),
         UnknownEntity::new_unknown_with_deps(deps),
       )],
+    )
+  }
+
+  pub fn maybe_object(&self) -> bool {
+    matches!(
+      self.kind,
+      UnknownEntityKind::Object
+        | UnknownEntityKind::Function
+        | UnknownEntityKind::Array
+        | UnknownEntityKind::Unknown
     )
   }
 }

@@ -64,6 +64,14 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     (has_effect, self.forward(ret_val))
   }
 
+  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    let (has_effect, ret_val) = self.value.r#await(analyzer);
+    if has_effect {
+      self.consume_self(analyzer);
+    }
+    (has_effect, self.forward(ret_val))
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     self.forward(self.value.get_typeof())
   }

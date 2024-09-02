@@ -7,7 +7,7 @@ use super::{
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
-use std::rc::Rc;
+use std::{rc::Rc, result};
 
 #[derive(Debug)]
 pub(crate) struct UnionEntity<'a>(pub Vec<Entity<'a>>);
@@ -63,11 +63,19 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    let mut values = Vec::new();
+    let mut results = Vec::new();
     for entity in &self.0 {
-      values.push(entity.call(analyzer, this, args));
+      results.push(entity.call(analyzer, this, args));
     }
-    collect_effect_and_value(values)
+    collect_effect_and_value(results)
+  }
+
+  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    let mut results = Vec::new();
+    for entity in &self.0 {
+      results.push(entity.r#await(analyzer));
+    }
+    collect_effect_and_value(results)
   }
 
   fn get_typeof(&self) -> Entity<'a> {

@@ -248,6 +248,11 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     (true, UnknownEntity::new_unknown())
   }
 
+  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    self.consume_as_unknown(analyzer);
+    (true, UnknownEntity::new_unknown())
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string("object")
   }

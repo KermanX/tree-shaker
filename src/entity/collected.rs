@@ -70,6 +70,14 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     (has_effect, self.forward(ret_cal))
   }
 
+  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    let (has_effect, ret_val) = self.val.r#await(analyzer);
+    if has_effect {
+      self.consume_self(analyzer);
+    }
+    (has_effect, self.forward(ret_val))
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     // TODO: Verify this
     self.forward(self.val.get_typeof())

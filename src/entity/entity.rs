@@ -20,6 +20,7 @@ pub(crate) trait EntityTrait<'a>: Debug {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>);
+  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>);
 
   fn get_typeof(&self) -> Entity<'a>;
   fn get_to_string(&self) -> Entity<'a>;

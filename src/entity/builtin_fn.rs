@@ -65,6 +65,10 @@ impl<'a> EntityTrait<'a> for BuiltinFnEntity<'a> {
     (has_effect, ret_val)
   }
 
+  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    (false, Rc::new(self.clone()))
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string("function")
   }

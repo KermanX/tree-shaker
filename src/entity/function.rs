@@ -11,7 +11,7 @@ use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub(crate) struct FunctionEntity<'a> {
-  pub(crate) source: EntityDep<'a>,
+  pub source: EntityDep<'a>,
 }
 
 impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
@@ -70,6 +70,12 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       self.consume_self(analyzer);
     }
     (has_effect, ForwardedEntity::new(ret_val, self.source.clone()))
+  }
+
+  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    // TODO: If the function is never modified, we can just return the source.
+    self.consume_as_unknown(analyzer);
+    (true, UnknownEntity::new_unknown())
   }
 
   fn get_typeof(&self) -> Entity<'a> {

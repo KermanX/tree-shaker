@@ -11,6 +11,7 @@ pub mod label;
 pub mod literal;
 pub mod object;
 pub mod operations;
+pub mod promise;
 pub mod typeof_result;
 pub mod union;
 pub mod unknown;
