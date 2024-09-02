@@ -1,5 +1,6 @@
 mod arrow_function_expression;
 mod assignment_expression;
+mod await_expression;
 mod binary_expression;
 mod call_expression;
 mod chain_expression;
@@ -54,6 +55,7 @@ impl<'a> Analyzer<'a> {
       Expression::ConditionalExpression(node) => self.exec_conditional_expression(node),
       Expression::CallExpression(node) => self.exec_call_expression(node),
       Expression::TaggedTemplateExpression(node) => self.exec_tagged_template_expression(node),
+      Expression::AwaitExpression(node) => self.exec_await_expression(node),
       Expression::ObjectExpression(node) => self.exec_object_expression(node),
       Expression::ParenthesizedExpression(node) => self.exec_parenthesized_expression(node),
       Expression::SequenceExpression(node) => self.exec_sequence_expression(node),
@@ -120,6 +122,7 @@ impl<'a> Transformer<'a> {
       Expression::TaggedTemplateExpression(node) => {
         self.transform_tagged_template_expression(node.unbox(), need_val)
       }
+      Expression::AwaitExpression(node) => self.transform_await_expression(node.unbox(), need_val),
       Expression::ObjectExpression(node) => {
         self.transform_object_expression(node.unbox(), need_val)
       }

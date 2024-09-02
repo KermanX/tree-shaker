@@ -27,6 +27,7 @@ impl<'a> ScopeContext<'a> {
         cf_scope_0.id,
         // TODO: global this
         UnknownEntity::new_unknown(),
+        true,
       )],
       variable_scopes: vec![VariableScope::new(cf_scope_0.id)],
       cf_scopes: vec![cf_scope_0],
@@ -59,10 +60,10 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf_scopes.last_mut().unwrap()
   }
 
-  pub(crate) fn push_function_scope(&mut self, this: Entity<'a>) {
+  pub(crate) fn push_function_scope(&mut self, this: Entity<'a>, is_async: bool) {
     let cf_scope_id = self.push_cf_scope(Some(false), false);
     self.push_variable_scope(cf_scope_id);
-    self.scope_context.function_scopes.push(FunctionScope::new(cf_scope_id, this));
+    self.scope_context.function_scopes.push(FunctionScope::new(cf_scope_id, this, is_async));
   }
 
   pub(crate) fn pop_function_scope(&mut self) -> (bool, Entity<'a>) {
