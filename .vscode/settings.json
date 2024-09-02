@@ -1,4 +1,6 @@
-{
+{  
+  "rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] },
+
   "[rust]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
@@ -73,5 +75,8 @@
     "json",
     "jsonc",
     "yaml"
-  ]
+  ],
+  "files.exclude": {
+    "/test/test262": true
+  }
 }
