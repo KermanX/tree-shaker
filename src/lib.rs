@@ -29,7 +29,7 @@ pub struct TreeShakeReturn {
 
 pub fn tree_shake(source_text: &str, do_minify: bool) -> TreeShakeReturn {
   let allocator = Allocator::default();
-  let source_type = SourceType::default();
+  let source_type = SourceType::default().with_module(true).with_always_strict(true);
   let parser = Parser::new(&allocator, source_text, source_type);
   let ast1 = allocator.alloc(parser.parse().program);
   let sematic_builder = SemanticBuilder::new(source_text, source_type);

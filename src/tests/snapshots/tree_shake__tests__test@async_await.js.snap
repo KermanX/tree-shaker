@@ -6,7 +6,7 @@ input_file: src/tests/fixtures/async_await.js
 export const l1 = 1;
 export const l2 = "1a";
 export const l3 = await unknown;
-export const l4 = await unknown + "a";
+export const l4 = unknown + "a";
 async function pure() {
 	return 1;
 }

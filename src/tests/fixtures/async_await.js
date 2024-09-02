@@ -2,7 +2,7 @@ export const l1 = await 1;
 export const l2 = await 1 + "a";
 
 export const l3 = await unknown;
-export const l4 = await unknown + "a";
+export const l4 = await (unknown + "a");
 
 async function pure() {
   return 1;
