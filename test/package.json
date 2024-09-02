@@ -1,0 +1,6 @@
+{
+	"devDependencies": {
+		"test262-harness": "^10.0.0"
+	},
+	"packageManager": "pnpm@9.7.1"
+}
