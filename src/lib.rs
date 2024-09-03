@@ -14,6 +14,7 @@ mod utils;
 use analyzer::Analyzer;
 use oxc::{
   allocator::Allocator,
+  ast::AstBuilder,
   codegen::{CodeGenerator, CodegenReturn},
   minifier::{Minifier, MinifierOptions, MinifierReturn},
   parser::Parser,
@@ -21,18 +22,39 @@ use oxc::{
   span::SourceType,
 };
 use transformer::Transformer;
+use utils::{transform_eval_mode_decode, transform_eval_mode_encode};
+
+pub struct TreeShakeOptions<'a> {
+  pub allocator: &'a Allocator,
+  pub source_type: SourceType,
+  pub source_text: String,
+  pub minify: Option<MinifierOptions>,
+  pub eval_mode: bool,
+}
 
 pub struct TreeShakeReturn {
   pub minifier_return: Option<MinifierReturn>,
   pub codegen_return: CodegenReturn,
 }
 
-pub fn tree_shake(source_text: &str, do_minify: bool) -> TreeShakeReturn {
-  let allocator = Allocator::default();
-  let source_type = SourceType::default().with_module(true).with_always_strict(true);
-  let parser = Parser::new(&allocator, source_text, source_type);
+pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
+  let TreeShakeOptions { allocator, source_type, source_text, minify, eval_mode } = options;
+
+  let ast_builder = AstBuilder::new(allocator);
+
+  let parser = Parser::new(&allocator, source_text.as_str(), source_type);
   let ast1 = allocator.alloc(parser.parse().program);
-  let sematic_builder = SemanticBuilder::new(source_text, source_type);
+
+  // TODO: Reuse the AST
+  let parser2 = Parser::new(&allocator, source_text.as_str(), source_type);
+  let mut ast2 = parser2.parse().program;
+
+  if eval_mode {
+    transform_eval_mode_encode(&ast_builder, ast1);
+    transform_eval_mode_encode(&ast_builder, &mut ast2);
+  }
+
+  let sematic_builder = SemanticBuilder::new(source_text.as_str(), source_type);
   let sematic = sematic_builder.build(ast1).semantic;
 
   // Step 1: Analyze the program
@@ -41,16 +63,17 @@ pub fn tree_shake(source_text: &str, do_minify: bool) -> TreeShakeReturn {
 
   // Step 3: Remove dead code (transform)
   let mut transformer = Transformer::new(analyzer);
-  // TODO: Reuse the AST
-  let parser2 = Parser::new(&allocator, source_text, source_type);
-  let ast2 = parser2.parse().program;
   let mut program = transformer.transform_program(ast2);
 
   // Step 4: Minify
-  let minifier_return = do_minify.then(|| {
-    let minifier = Minifier::new(MinifierOptions::default());
+  let minifier_return = minify.map(|options| {
+    let minifier = Minifier::new(options);
     minifier.build(&allocator, &mut program)
   });
+
+  if eval_mode {
+    transform_eval_mode_decode(&ast_builder, &mut program);
+  }
 
   // Step 5: Generate output
   let codegen = CodeGenerator::new();
