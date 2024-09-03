@@ -9,7 +9,7 @@ use super::{
 use crate::analyzer::Analyzer;
 
 #[derive(Debug, Clone)]
-pub(crate) struct PromiseEntity<'a> {
+pub struct PromiseEntity<'a> {
   pub has_effect: bool,
   pub value: Entity<'a>,
 }
@@ -92,7 +92,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
 }
 
 impl<'a> PromiseEntity<'a> {
-  pub(crate) fn new(has_effect: bool, value: Entity<'a>) -> Entity<'a> {
+  pub fn new(has_effect: bool, value: Entity<'a>) -> Entity<'a> {
     Rc::new(Self { has_effect, value })
   }
 }

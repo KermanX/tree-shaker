@@ -10,7 +10,7 @@ use rustc_hash::FxHashSet;
 use std::rc::Rc;
 
 #[derive(Debug)]
-pub(crate) struct UnionEntity<'a>(pub Vec<Entity<'a>>);
+pub struct UnionEntity<'a>(pub Vec<Entity<'a>>);
 
 impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
@@ -160,7 +160,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 }
 
 impl<'a> UnionEntity<'a> {
-  pub(crate) fn new(entities: Vec<Entity<'a>>) -> Entity<'a> {
+  pub fn new(entities: Vec<Entity<'a>>) -> Entity<'a> {
     debug_assert!(!entities.is_empty());
     if entities.len() == 1 {
       entities.first().unwrap().clone()

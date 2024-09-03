@@ -17,7 +17,7 @@ struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_function_body(&mut self, node: &'a FunctionBody<'a>) {
+  pub fn exec_function_body(&mut self, node: &'a FunctionBody<'a>) {
     let mut span: Option<Span> = None;
     for statement in &node.statements {
       if self.cf_scope().must_exited() {
@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub(crate) fn exec_function_expression_body(&mut self, node: &'a FunctionBody<'a>) {
+  pub fn exec_function_expression_body(&mut self, node: &'a FunctionBody<'a>) {
     debug_assert!(node.statements.len() == 1);
     if let Some(Statement::ExpressionStatement(expr)) = node.statements.first() {
       let dep = self.new_entity_dep(EntityDepNode::FunctionBodyAsExpression(node));
@@ -49,7 +49,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_function_body(&mut self, node: FunctionBody<'a>) -> FunctionBody<'a> {
+  pub fn transform_function_body(&mut self, node: FunctionBody<'a>) -> FunctionBody<'a> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let FunctionBody { span, directives, statements, .. } = node;
@@ -71,10 +71,7 @@ impl<'a> Transformer<'a> {
     self.ast_builder.function_body(span, directives, transformed_statements)
   }
 
-  pub(crate) fn transform_function_expression_body(
-    &mut self,
-    node: FunctionBody<'a>,
-  ) -> FunctionBody<'a> {
+  pub fn transform_function_expression_body(&mut self, node: FunctionBody<'a>) -> FunctionBody<'a> {
     let need_val = self.is_referred(EntityDepNode::FunctionBodyAsExpression(&node));
 
     let FunctionBody { span, directives, statements, .. } = node;

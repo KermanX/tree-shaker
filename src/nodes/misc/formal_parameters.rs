@@ -9,11 +9,7 @@ const AST_TYPE: AstType2 = AstType2::FormalParameters;
 pub struct Data {}
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_formal_parameters(
-    &mut self,
-    node: &'a FormalParameters<'a>,
-    args: Entity<'a>,
-  ) {
+  pub fn exec_formal_parameters(&mut self, node: &'a FormalParameters<'a>, args: Entity<'a>) {
     let resolved = args.get_to_array(node.items.len());
 
     for (param, arg) in node.items.iter().zip(resolved.0) {
@@ -27,7 +23,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_formal_parameters(
+  pub fn transform_formal_parameters(
     &mut self,
     node: FormalParameters<'a>,
   ) -> FormalParameters<'a> {

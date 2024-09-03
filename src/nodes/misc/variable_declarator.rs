@@ -4,7 +4,7 @@ use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
 use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_variable_declarator(&mut self, node: &'a VariableDeclarator, exporting: bool) {
+  pub fn exec_variable_declarator(&mut self, node: &'a VariableDeclarator, exporting: bool) {
     let init = match &node.init {
       Some(init) => self.exec_expression(init),
       None => Rc::new(LiteralEntity::Undefined),
@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_variable_declarator(
+  pub fn transform_variable_declarator(
     &mut self,
     node: VariableDeclarator<'a>,
   ) -> Option<VariableDeclarator<'a>> {

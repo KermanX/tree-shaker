@@ -7,7 +7,7 @@ use crate::analyzer::Analyzer;
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) enum UnknownEntityKind {
+pub enum UnknownEntityKind {
   // TODO: NumericString, NoneEmptyString, ...
   String,
   Number,
@@ -21,7 +21,7 @@ pub(crate) enum UnknownEntityKind {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct UnknownEntity<'a> {
+pub struct UnknownEntity<'a> {
   pub kind: UnknownEntityKind,
   pub deps: RefCell<Vec<Entity<'a>>>,
 }

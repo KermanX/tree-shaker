@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
   /// const { a } = { get a() { effect() }};
   /// ```
   /// here `a` has an effect
-  pub(crate) fn exec_binding_pattern(
+  pub fn exec_binding_pattern(
     &mut self,
     node: &'a BindingPattern<'a>,
     effect_and_init: (bool, Entity<'a>),
@@ -92,7 +92,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_binding_pattern(
+  pub fn transform_binding_pattern(
     &mut self,
     node: BindingPattern<'a>,
   ) -> Option<BindingPattern<'a>> {

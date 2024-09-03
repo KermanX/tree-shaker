@@ -2,7 +2,7 @@ use bitflags::bitflags;
 
 bitflags! {
   #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-  pub(crate) struct TypeofResult: u8 {
+  pub struct TypeofResult: u8 {
     const _None = 0;
     const _Unknown = 0xFF;
 
@@ -18,7 +18,7 @@ bitflags! {
 }
 
 impl TypeofResult {
-  pub(crate) fn to_string(&self) -> Option<&'static str> {
+  pub fn to_string(&self) -> Option<&'static str> {
     Some(match *self {
       TypeofResult::String => "string",
       TypeofResult::Number => "number",

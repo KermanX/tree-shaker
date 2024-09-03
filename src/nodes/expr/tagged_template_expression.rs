@@ -15,7 +15,7 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_tagged_template_expression(
+  pub fn exec_tagged_template_expression(
     &mut self,
     node: &'a TaggedTemplateExpression<'a>,
   ) -> Entity<'a> {
@@ -37,7 +37,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_tagged_template_expression(
+  pub fn transform_tagged_template_expression(
     &mut self,
     node: TaggedTemplateExpression<'a>,
     need_val: bool,

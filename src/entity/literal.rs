@@ -18,7 +18,7 @@ use std::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub(crate) enum LiteralEntity<'a> {
+pub enum LiteralEntity<'a> {
   String(&'a str),
   Number(F64WithEq, &'a str),
   BigInt(&'a str),
@@ -197,39 +197,39 @@ impl<'a> Hash for LiteralEntity<'a> {
 }
 
 impl<'a> LiteralEntity<'a> {
-  pub(crate) fn new_string(value: &'a str) -> Entity<'a> {
+  pub fn new_string(value: &'a str) -> Entity<'a> {
     Rc::new(LiteralEntity::String(value))
   }
 
-  pub(crate) fn new_number(value: F64WithEq, raw: &'a str) -> Entity<'a> {
+  pub fn new_number(value: F64WithEq, raw: &'a str) -> Entity<'a> {
     Rc::new(LiteralEntity::Number(value, raw))
   }
 
-  pub(crate) fn new_big_int(value: &'a str) -> Entity<'a> {
+  pub fn new_big_int(value: &'a str) -> Entity<'a> {
     Rc::new(LiteralEntity::BigInt(value))
   }
 
-  pub(crate) fn new_boolean(value: bool) -> Entity<'a> {
+  pub fn new_boolean(value: bool) -> Entity<'a> {
     Rc::new(LiteralEntity::Boolean(value))
   }
 
-  pub(crate) fn new_infinity(positive: bool) -> Entity<'a> {
+  pub fn new_infinity(positive: bool) -> Entity<'a> {
     Rc::new(LiteralEntity::Infinity(positive))
   }
 
-  pub(crate) fn new_nan() -> Entity<'a> {
+  pub fn new_nan() -> Entity<'a> {
     Rc::new(LiteralEntity::NaN)
   }
 
-  pub(crate) fn new_null() -> Entity<'a> {
+  pub fn new_null() -> Entity<'a> {
     Rc::new(LiteralEntity::Null)
   }
 
-  pub(crate) fn new_undefined() -> Entity<'a> {
+  pub fn new_undefined() -> Entity<'a> {
     Rc::new(LiteralEntity::Undefined)
   }
 
-  pub(crate) fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Expression<'a> {
+  pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Expression<'a> {
     match self {
       LiteralEntity::String(value) => ast_builder.expression_string_literal(span, *value),
       LiteralEntity::Number(value, raw) => {
@@ -257,7 +257,7 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
-  pub(crate) fn to_string(&self) -> &'a str {
+  pub fn to_string(&self) -> &'a str {
     match self {
       LiteralEntity::String(value) => *value,
       LiteralEntity::Number(_, raw) => *raw,

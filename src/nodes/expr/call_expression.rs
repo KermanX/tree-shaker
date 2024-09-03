@@ -15,7 +15,7 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_call_expression(&mut self, node: &'a CallExpression) -> Entity<'a> {
+  pub fn exec_call_expression(&mut self, node: &'a CallExpression) -> Entity<'a> {
     let callee = self.exec_expression(&node.callee);
 
     let indeterminate = if node.optional {
@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_call_expression(
+  pub fn transform_call_expression(
     &mut self,
     node: CallExpression<'a>,
     need_val: bool,

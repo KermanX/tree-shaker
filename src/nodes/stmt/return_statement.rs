@@ -6,7 +6,7 @@ use crate::{
 use oxc::ast::ast::{ReturnStatement, Statement};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_return_statement(&mut self, node: &'a ReturnStatement) {
+  pub fn exec_return_statement(&mut self, node: &'a ReturnStatement) {
     let value = node
       .argument
       .as_ref()
@@ -22,10 +22,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_return_statement(
-    &mut self,
-    node: ReturnStatement<'a>,
-  ) -> Option<Statement<'a>> {
+  pub fn transform_return_statement(&mut self, node: ReturnStatement<'a>) -> Option<Statement<'a>> {
     let need_val = self.is_referred(EntityDepNode::ReturnStatement(&node));
 
     let ReturnStatement { span, argument } = node;

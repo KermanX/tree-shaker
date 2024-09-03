@@ -9,7 +9,7 @@ use oxc::ast::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_simple_assignment_target(
+  pub fn exec_simple_assignment_target(
     &mut self,
     node: &'a SimpleAssignmentTarget<'a>,
     value: Entity<'a>,
@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_simple_assignment_target(
+  pub fn transform_simple_assignment_target(
     &mut self,
     node: SimpleAssignmentTarget<'a>,
   ) -> Option<AssignmentTarget<'a>> {

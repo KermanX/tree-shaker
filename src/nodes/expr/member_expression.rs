@@ -22,10 +22,7 @@ struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_member_expression_read(
-    &mut self,
-    node: &'a MemberExpression<'a>,
-  ) -> Entity<'a> {
+  pub fn exec_member_expression_read(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {
     let object = self.exec_expression(node.object());
 
     let indeterminate = if node.optional() {
@@ -58,7 +55,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub(crate) fn exec_member_expression_write(
+  pub fn exec_member_expression_write(
     &mut self,
     node: &'a MemberExpression<'a>,
     value: Entity<'a>,
@@ -86,7 +83,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_member_expression_read(
+  pub fn transform_member_expression_read(
     &mut self,
     node: MemberExpression<'a>,
     need_val: bool,
@@ -148,7 +145,7 @@ impl<'a> Transformer<'a> {
     }
   }
 
-  pub(crate) fn transform_member_expression_write(
+  pub fn transform_member_expression_write(
     &mut self,
     node: MemberExpression<'a>,
     need_write: bool,

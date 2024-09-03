@@ -5,17 +5,14 @@ use oxc::ast::ast::{BlockStatement, Statement};
 const AST_TYPE: AstType2 = AstType2::BlockStatement;
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_block_statement(&mut self, node: &'a BlockStatement) {
+  pub fn exec_block_statement(&mut self, node: &'a BlockStatement) {
     let data = self.load_data::<StatementVecData>(AST_TYPE, node);
     self.exec_statement_vec(data, Some(false), &node.body);
   }
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_block_statement(
-    &mut self,
-    node: BlockStatement<'a>,
-  ) -> Option<Statement<'a>> {
+  pub fn transform_block_statement(&mut self, node: BlockStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<StatementVecData>(AST_TYPE, &node);
 
     let BlockStatement { span, body, .. } = node;

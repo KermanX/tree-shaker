@@ -2,10 +2,7 @@ use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer
 use oxc::ast::ast::{AssignmentExpression, Expression};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_assignment_expression(
-    &mut self,
-    node: &'a AssignmentExpression<'a>,
-  ) -> Entity<'a> {
+  pub fn exec_assignment_expression(&mut self, node: &'a AssignmentExpression<'a>) -> Entity<'a> {
     let value = self.exec_expression(&node.right);
     self.exec_assignment_target(&node.left, value.clone());
     value
@@ -13,7 +10,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_assignment_expression(
+  pub fn transform_assignment_expression(
     &mut self,
     node: AssignmentExpression<'a>,
     need_val: bool,

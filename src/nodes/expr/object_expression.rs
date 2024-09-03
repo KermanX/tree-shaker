@@ -16,7 +16,7 @@ struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
+  pub fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
     let object = self.new_empty_object();
 
     for property in &node.properties {
@@ -41,7 +41,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_object_expression(
+  pub fn transform_object_expression(
     &mut self,
     node: ObjectExpression<'a>,
     need_val: bool,

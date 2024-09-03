@@ -21,7 +21,7 @@ use oxc::{
 use rustc_hash::FxHashMap;
 use std::mem;
 
-pub(crate) struct Analyzer<'a> {
+pub struct Analyzer<'a> {
   pub allocator: &'a Allocator,
   pub sematic: Semantic<'a>,
   pub data: ExtraData<'a>,
@@ -35,7 +35,7 @@ pub(crate) struct Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn new(allocator: &'a Allocator, sematic: Semantic<'a>) -> Self {
+  pub fn new(allocator: &'a Allocator, sematic: Semantic<'a>) -> Self {
     Analyzer {
       allocator,
       sematic,
@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub(crate) fn exec_program(&mut self, ast: &'a Program<'a>) {
+  pub fn exec_program(&mut self, ast: &'a Program<'a>) {
     for statement in &ast.body {
       self.exec_statement(statement);
     }
@@ -67,26 +67,16 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn set_data_by_span(
-    &mut self,
-    ast_type: AstType2,
-    span: Span,
-    data: impl Default + 'a,
-  ) {
+  pub fn set_data_by_span(&mut self, ast_type: AstType2, span: Span, data: impl Default + 'a) {
     let map = self.data.entry(ast_type).or_insert_with(|| FxHashMap::default());
     map.insert(span, unsafe { mem::transmute(Box::new(data)) });
   }
 
-  pub(crate) fn set_data(
-    &mut self,
-    ast_type: AstType2,
-    node: &dyn GetSpan,
-    data: impl Default + 'a,
-  ) {
+  pub fn set_data(&mut self, ast_type: AstType2, node: &dyn GetSpan, data: impl Default + 'a) {
     self.set_data_by_span(ast_type, node.span(), data)
   }
 
-  pub(crate) fn load_data_by_span<D: Default + 'a>(
+  pub fn load_data_by_span<D: Default + 'a>(
     &mut self,
     ast_type: AstType2,
     span: Span,
@@ -97,7 +87,7 @@ impl<'a> Analyzer<'a> {
     unsafe { mem::transmute(boxed.as_mut()) }
   }
 
-  pub(crate) fn load_data<D: Default + 'a>(
+  pub fn load_data<D: Default + 'a>(
     &mut self,
     ast_type: AstType2,
     node: &dyn GetSpan,
@@ -123,11 +113,11 @@ impl<'a> Analyzer<'a> {
     self.symbol_decls.insert(symbol, (scope_id, dep));
   }
 
-  pub(crate) fn new_entity_dep(&self, node: EntityDepNode<'a>) -> EntityDep<'a> {
+  pub fn new_entity_dep(&self, node: EntityDepNode<'a>) -> EntityDep<'a> {
     EntityDep { node, scope_path: self.variable_scope_path() }
   }
 
-  pub(crate) fn get_symbol(&self, symbol: &SymbolId) -> &Entity<'a> {
+  pub fn get_symbol(&self, symbol: &SymbolId) -> &Entity<'a> {
     for scope in self.scope_context.variable_scopes.iter().rev() {
       if let Some(entity) = scope.get(symbol) {
         return entity;
@@ -136,7 +126,7 @@ impl<'a> Analyzer<'a> {
     panic!("Unexpected undeclared Symbol {:?}", self.sematic.symbols().get_name(*symbol));
   }
 
-  pub(crate) fn set_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
+  pub fn set_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
     let (scope_id, dep) = self.symbol_decls.get(symbol).unwrap();
     let variable_scope = self.get_variable_scope_by_id(*scope_id);
     let indeterminate = self.is_relative_indeterminate(variable_scope.cf_scope_id);
@@ -148,7 +138,7 @@ impl<'a> Analyzer<'a> {
     self.get_variable_scope_by_id_mut(*scope_id).set(*symbol, entity).unwrap();
   }
 
-  pub(crate) fn refer_dep(&mut self, dep: &EntityDep<'a>) {
+  pub fn refer_dep(&mut self, dep: &EntityDep<'a>) {
     self.referred_nodes.insert(dep.node);
 
     let mut diff = false;
@@ -160,7 +150,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub(crate) fn refer_global_dep(&mut self) {
+  pub fn refer_global_dep(&mut self) {
     for scope in self.scope_context.variable_scopes.iter_mut() {
       scope.has_effect = true;
     }

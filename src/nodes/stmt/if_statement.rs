@@ -13,7 +13,7 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_if_statement(&mut self, node: &'a IfStatement) {
+  pub fn exec_if_statement(&mut self, node: &'a IfStatement) {
     let test = self.exec_expression(&node.test);
 
     let (maybe_true, maybe_false) = match test.test_truthy() {
@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_if_statement(&mut self, node: IfStatement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_if_statement(&mut self, node: IfStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let IfStatement { span, test, consequent, alternate, .. } = node;

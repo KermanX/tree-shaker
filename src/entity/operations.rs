@@ -10,7 +10,7 @@ use super::{
 };
 use oxc::allocator::Allocator;
 
-pub(crate) struct EntityOpHost<'a> {
+pub struct EntityOpHost<'a> {
   allocator: &'a Allocator,
 }
 

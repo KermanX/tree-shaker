@@ -9,7 +9,7 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_await_expression(&mut self, node: &'a AwaitExpression<'a>) -> Entity<'a> {
+  pub fn exec_await_expression(&mut self, node: &'a AwaitExpression<'a>) -> Entity<'a> {
     let value = self.exec_expression(&node.argument);
     let (has_effect, awaited) = value.r#await(self);
 
@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_await_expression(
+  pub fn transform_await_expression(
     &mut self,
     node: AwaitExpression<'a>,
     need_val: bool,

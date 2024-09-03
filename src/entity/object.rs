@@ -13,7 +13,7 @@ use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug, Clone)]
-pub(crate) struct ObjectEntity<'a> {
+pub struct ObjectEntity<'a> {
   pub scope_path: Vec<ScopeId>,
   pub string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
   pub unknown_keyed: RefCell<ObjectProperty<'a>>,
@@ -22,7 +22,7 @@ pub(crate) struct ObjectEntity<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) enum ObjectPropertyValue<'a> {
+pub enum ObjectPropertyValue<'a> {
   Field(Entity<'a>),
   /// (Getter, Setter)
   Property(Option<Entity<'a>>, Option<Entity<'a>>),
@@ -41,7 +41,7 @@ impl<'a> ObjectPropertyValue<'a> {
 }
 
 #[derive(Debug, Clone, Default)]
-pub(crate) struct ObjectProperty<'a> {
+pub struct ObjectProperty<'a> {
   pub definite: bool,
   pub values: Vec<ObjectPropertyValue<'a>>,
 }
@@ -283,7 +283,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 }
 
 impl<'a> ObjectEntity<'a> {
-  pub(crate) fn init_property(
+  pub fn init_property(
     &self,
     kind: PropertyKind,
     key: Entity<'a>,
@@ -345,7 +345,7 @@ impl<'a> ObjectEntity<'a> {
     }
   }
 
-  pub(crate) fn init_spread(&self, analyzer: &mut Analyzer<'a>, argument: Entity<'a>) -> bool {
+  pub fn init_spread(&self, analyzer: &mut Analyzer<'a>, argument: Entity<'a>) -> bool {
     let (has_effect, properties) = argument.enumerate_properties(analyzer);
     for (definite, key, value) in properties {
       self.init_property(PropertyKind::Init, key.clone(), value, definite);
@@ -408,7 +408,7 @@ impl<'a> ObjectEntity<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn new_empty_object(&self) -> ObjectEntity<'a> {
+  pub fn new_empty_object(&self) -> ObjectEntity<'a> {
     ObjectEntity {
       scope_path: self.variable_scope_path(),
       string_keyed: RefCell::new(FxHashMap::default()),

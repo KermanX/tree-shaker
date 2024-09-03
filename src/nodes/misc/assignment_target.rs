@@ -4,11 +4,7 @@ use oxc::ast::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_assignment_target(
-    &mut self,
-    node: &'a AssignmentTarget<'a>,
-    value: Entity<'a>,
-  ) {
+  pub fn exec_assignment_target(&mut self, node: &'a AssignmentTarget<'a>, value: Entity<'a>) {
     match node {
       match_simple_assignment_target!(AssignmentTarget) => {
         self.exec_simple_assignment_target(node.to_simple_assignment_target(), value);
@@ -21,7 +17,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_assignment_target(
+  pub fn transform_assignment_target(
     &mut self,
     node: AssignmentTarget<'a>,
   ) -> Option<AssignmentTarget<'a>> {

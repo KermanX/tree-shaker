@@ -12,7 +12,7 @@ use oxc::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> Entity<'a> {
+  pub fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> Entity<'a> {
     let mut arguments = vec![];
     for argument in node {
       let (spread, val) = match argument {
@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_arguments_need_call(&mut self, node: Arguments<'a>) -> Arguments<'a> {
+  pub fn transform_arguments_need_call(&mut self, node: Arguments<'a>) -> Arguments<'a> {
     let mut arguments = self.ast_builder.vec();
     let mut preserve_args_num = false;
     for argument in node.into_iter().rev() {
@@ -59,7 +59,7 @@ impl<'a> Transformer<'a> {
     }
   }
 
-  pub(crate) fn transform_arguments_no_call(
+  pub fn transform_arguments_no_call(
     &mut self,
     node: Arguments<'a>,
   ) -> Vec<Option<Expression<'a>>> {

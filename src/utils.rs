@@ -3,12 +3,12 @@ use std::sync::LazyLock;
 
 static NUMERIC_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9]+$").unwrap());
 
-pub(crate) fn is_numeric_string(s: &str) -> bool {
+pub fn is_numeric_string(s: &str) -> bool {
   NUMERIC_REGEX.is_match(s)
 }
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) struct F64WithEq(pub f64);
+pub struct F64WithEq(pub f64);
 
 impl PartialEq<Self> for F64WithEq {
   fn eq(&self, rhs: &Self) -> bool {

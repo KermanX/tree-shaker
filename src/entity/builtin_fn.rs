@@ -7,11 +7,11 @@ use super::{
 use crate::analyzer::Analyzer;
 use std::rc::Rc;
 
-pub(crate) type BuiltinFnImplementation<'a> =
+pub type BuiltinFnImplementation<'a> =
   fn(&mut Analyzer<'a>, &Entity<'a>, &Entity<'a>) -> (bool, Entity<'a>);
 
 #[derive(Debug, Clone)]
-pub(crate) struct BuiltinFnEntity<'a> {
+pub struct BuiltinFnEntity<'a> {
   implementation: BuiltinFnImplementation<'a>,
 }
 
@@ -100,7 +100,7 @@ impl<'a> EntityTrait<'a> for BuiltinFnEntity<'a> {
 }
 
 impl<'a> BuiltinFnEntity<'a> {
-  pub(crate) fn new(implementation: BuiltinFnImplementation<'a>) -> Entity<'a> {
+  pub fn new(implementation: BuiltinFnImplementation<'a>) -> Entity<'a> {
     Rc::new(Self { implementation })
   }
 }

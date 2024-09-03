@@ -9,7 +9,7 @@ use rustc_hash::FxHashSet;
 use std::rc::Rc;
 
 #[derive(Debug)]
-pub(crate) struct ForwardedEntity<'a> {
+pub struct ForwardedEntity<'a> {
   val: Entity<'a>,
   dep: EntityDep<'a>,
 }
@@ -108,11 +108,11 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
 }
 
 impl<'a> ForwardedEntity<'a> {
-  pub(crate) fn new(val: Entity<'a>, dep: EntityDep<'a>) -> Entity<'a> {
+  pub fn new(val: Entity<'a>, dep: EntityDep<'a>) -> Entity<'a> {
     Rc::new(Self { val, dep })
   }
 
-  pub(crate) fn forward(&self, val: Entity<'a>) -> Entity<'a> {
+  pub fn forward(&self, val: Entity<'a>) -> Entity<'a> {
     ForwardedEntity::new(val, self.dep.clone())
   }
 }

@@ -1,10 +1,10 @@
 use oxc::{allocator::Vec, ast::ast::Argument};
 
-pub(crate) type Arguments<'a> = Vec<'a, Argument<'a>>;
+pub type Arguments<'a> = Vec<'a, Argument<'a>>;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) enum AstType2 {
+pub enum AstType2 {
   BooleanLiteral,
   NullLiteral,
   NumericLiteral,

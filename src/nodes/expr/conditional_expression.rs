@@ -15,10 +15,7 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_conditional_expression(
-    &mut self,
-    node: &'a ConditionalExpression<'a>,
-  ) -> Entity<'a> {
+  pub fn exec_conditional_expression(&mut self, node: &'a ConditionalExpression<'a>) -> Entity<'a> {
     let test = self.exec_expression(&node.test);
 
     let (maybe_true, maybe_false, indeterminate) = match test.test_truthy() {
@@ -56,7 +53,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_conditional_expression(
+  pub fn transform_conditional_expression(
     &mut self,
     node: ConditionalExpression<'a>,
     need_val: bool,

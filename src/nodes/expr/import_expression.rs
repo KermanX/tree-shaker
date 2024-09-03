@@ -7,7 +7,7 @@ use crate::{
 use oxc::ast::ast::{Expression, ImportExpression};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_import_expression(&mut self, node: &'a ImportExpression<'a>) -> Entity<'a> {
+  pub fn exec_import_expression(&mut self, node: &'a ImportExpression<'a>) -> Entity<'a> {
     self.exec_expression(&node.source);
 
     for argument in &node.arguments {
@@ -19,7 +19,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_import_expression(
+  pub fn transform_import_expression(
     &mut self,
     node: ImportExpression<'a>,
     need_val: bool,

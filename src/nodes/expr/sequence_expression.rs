@@ -2,10 +2,7 @@ use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer
 use oxc::ast::ast::{Expression, SequenceExpression};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_sequence_expression(
-    &mut self,
-    node: &'a SequenceExpression<'a>,
-  ) -> Entity<'a> {
+  pub fn exec_sequence_expression(&mut self, node: &'a SequenceExpression<'a>) -> Entity<'a> {
     let mut last = None;
     for expression in &node.expressions {
       last = Some(self.exec_expression(expression));
@@ -15,7 +12,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_sequence_expression(
+  pub fn transform_sequence_expression(
     &mut self,
     node: SequenceExpression<'a>,
     need_val: bool,

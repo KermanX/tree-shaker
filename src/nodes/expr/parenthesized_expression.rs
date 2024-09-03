@@ -2,7 +2,7 @@ use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer
 use oxc::ast::ast::{Expression, ParenthesizedExpression};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_parenthesized_expression(
+  pub fn exec_parenthesized_expression(
     &mut self,
     node: &'a ParenthesizedExpression<'a>,
   ) -> Entity<'a> {
@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_parenthesized_expression(
+  pub fn transform_parenthesized_expression(
     &mut self,
     node: ParenthesizedExpression<'a>,
     need_val: bool,

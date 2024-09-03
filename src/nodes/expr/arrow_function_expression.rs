@@ -8,7 +8,7 @@ use oxc::ast::ast::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_arrow_function_expression(
+  pub fn exec_arrow_function_expression(
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
   ) -> Entity<'a> {
@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
     FunctionEntity::new(dep.clone())
   }
 
-  pub(crate) fn call_arrow_function_expression(
+  pub fn call_arrow_function_expression(
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
     args: Entity<'a>,
@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_arrow_function_expression(
+  pub fn transform_arrow_function_expression(
     &mut self,
     node: ArrowFunctionExpression<'a>,
     need_val: bool,

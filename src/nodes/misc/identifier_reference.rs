@@ -12,7 +12,7 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_identifier_reference_read(
+  pub fn exec_identifier_reference_read(
     &mut self,
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
@@ -36,14 +36,14 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub(crate) fn exec_identifier_reference_export(&mut self, node: &'a IdentifierReference<'a>) {
+  pub fn exec_identifier_reference_export(&mut self, node: &'a IdentifierReference<'a>) {
     let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
     debug_assert!(reference.is_read());
     let symbol = reference.symbol_id();
     self.exports.push(symbol.unwrap());
   }
 
-  pub(crate) fn exec_identifier_reference_write(
+  pub fn exec_identifier_reference_write(
     &mut self,
     node: &'a IdentifierReference<'a>,
     value: Entity<'a>,
@@ -69,7 +69,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_identifier_reference_read(
+  pub fn transform_identifier_reference_read(
     &mut self,
     node: IdentifierReference<'a>,
     need_val: bool,
@@ -79,7 +79,7 @@ impl<'a> Transformer<'a> {
     (!data.resolvable || need_val).then(|| node)
   }
 
-  pub(crate) fn transform_identifier_reference_write(
+  pub fn transform_identifier_reference_write(
     &mut self,
     node: IdentifierReference<'a>,
     need_write: bool,

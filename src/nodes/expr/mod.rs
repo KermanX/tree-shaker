@@ -35,7 +35,7 @@ struct Data<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
+  pub fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
     let entity = match node {
       match_member_expression!(Expression) => {
         self.exec_member_expression_read(node.to_member_expression())
@@ -73,7 +73,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_expression(
+  pub fn transform_expression(
     &mut self,
     node: Expression<'a>,
     need_val: bool,
@@ -153,7 +153,7 @@ impl<'a> Transformer<'a> {
   }
 
   // This is not good
-  pub(crate) fn get_expression_collected_literal(&self, span: Span) -> Option<LiteralEntity<'a>> {
+  pub fn get_expression_collected_literal(&self, span: Span) -> Option<LiteralEntity<'a>> {
     let data = self.get_data_by_span::<Data>(AST_TYPE, span);
     data.collector.collected()
   }

@@ -6,7 +6,7 @@ use crate::{
 use oxc::ast::ast::BindingIdentifier;
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_binding_identifier(
+  pub fn exec_binding_identifier(
     &mut self,
     node: &'a BindingIdentifier<'a>,
     init: Entity<'a>,
@@ -19,7 +19,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_binding_identifier(
+  pub fn transform_binding_identifier(
     &mut self,
     node: BindingIdentifier<'a>,
   ) -> Option<BindingIdentifier<'a>> {

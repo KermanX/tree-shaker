@@ -6,7 +6,7 @@ use globals::create_globals;
 use import_meta::create_import_meta;
 use rustc_hash::FxHashMap;
 
-pub(crate) struct Builtins<'a> {
+pub struct Builtins<'a> {
   globals: FxHashMap<&'static str, Entity<'a>>,
   import_meta: Entity<'a>,
 }

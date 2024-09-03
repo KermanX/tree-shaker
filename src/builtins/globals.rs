@@ -5,7 +5,7 @@ use crate::entity::{
 };
 use rustc_hash::FxHashMap;
 
-pub(crate) fn create_globals<'a>() -> FxHashMap<&'static str, Entity<'a>> {
+pub fn create_globals<'a>() -> FxHashMap<&'static str, Entity<'a>> {
   let mut globals = FxHashMap::default();
 
   globals.insert("undefined", LiteralEntity::new_undefined());

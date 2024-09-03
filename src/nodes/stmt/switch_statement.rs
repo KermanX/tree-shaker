@@ -13,7 +13,7 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_switch_statement(&mut self, node: &'a SwitchStatement<'a>) {
+  pub fn exec_switch_statement(&mut self, node: &'a SwitchStatement<'a>) {
     let data = self.load_data::<Data>(AST_TYPE, node);
 
     // 1. discriminant
@@ -91,10 +91,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_switch_statement(
-    &mut self,
-    node: SwitchStatement<'a>,
-  ) -> Option<Statement<'a>> {
+  pub fn transform_switch_statement(&mut self, node: SwitchStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let SwitchStatement { span, discriminant, cases, .. } = node;

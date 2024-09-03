@@ -9,7 +9,7 @@ use oxc::{
 };
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) enum EntityDepNode<'a> {
+pub enum EntityDepNode<'a> {
   Function(&'a Function<'a>),
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
   BindingIdentifier(&'a BindingIdentifier<'a>),
@@ -21,7 +21,7 @@ pub(crate) enum EntityDepNode<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct EntityDep<'a> {
+pub struct EntityDep<'a> {
   pub node: EntityDepNode<'a>,
   pub scope_path: Vec<ScopeId>,
 }

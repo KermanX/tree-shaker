@@ -8,7 +8,7 @@ use crate::entity::{
   unknown::{UnknownEntity, UnknownEntityKind},
 };
 
-pub(crate) fn create_import_meta<'a>() -> Entity<'a> {
+pub fn create_import_meta<'a>() -> Entity<'a> {
   let mut string_keyed = FxHashMap::default();
 
   // import.meta.url

@@ -7,7 +7,7 @@ use oxc::{
 };
 
 #[derive(Debug, Default)]
-pub(crate) struct LiteralCollector<'a> {
+pub struct LiteralCollector<'a> {
   /// None if no literal is collected
   literal: Option<LiteralEntity<'a>>,
   /// Collected literal entities
@@ -16,7 +16,7 @@ pub(crate) struct LiteralCollector<'a> {
 }
 
 impl<'a> LiteralCollector<'a> {
-  pub(crate) fn collect(&mut self, entity: Entity<'a>) -> Entity<'a> {
+  pub fn collect(&mut self, entity: Entity<'a>) -> Entity<'a> {
     if self.invalid {
       entity
     } else if let Some(literal) = entity.get_literal() {
@@ -40,7 +40,7 @@ impl<'a> LiteralCollector<'a> {
   }
 
   #[inline]
-  pub(crate) fn get_entity_on_invalid(&self, entity: Entity<'a>) -> Entity<'a> {
+  pub fn get_entity_on_invalid(&self, entity: Entity<'a>) -> Entity<'a> {
     if self.collected.borrow().is_empty() {
       entity
     } else {
@@ -48,7 +48,7 @@ impl<'a> LiteralCollector<'a> {
     }
   }
 
-  pub(crate) fn collected(&self) -> Option<LiteralEntity<'a>> {
+  pub fn collected(&self) -> Option<LiteralEntity<'a>> {
     if self.invalid {
       None
     } else {
@@ -56,11 +56,7 @@ impl<'a> LiteralCollector<'a> {
     }
   }
 
-  pub(crate) fn build_expr(
-    &self,
-    ast_builder: &AstBuilder<'a>,
-    span: Span,
-  ) -> Option<Expression<'a>> {
+  pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Option<Expression<'a>> {
     self.literal.as_ref().map(|literal| literal.build_expr(ast_builder, span))
   }
 }

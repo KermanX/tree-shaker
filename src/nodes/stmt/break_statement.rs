@@ -9,7 +9,7 @@ struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_break_statement(&mut self, node: &'a BreakStatement<'a>) {
+  pub fn exec_break_statement(&mut self, node: &'a BreakStatement<'a>) {
     let label = node.label.as_ref().map(|label| label.name.as_str());
     if self.exit_to_label(label) {
       self.set_data(AST_TYPE, node, Data { label_used: true });
@@ -18,10 +18,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_break_statement(
-    &mut self,
-    node: BreakStatement<'a>,
-  ) -> Option<Statement<'a>> {
+  pub fn transform_break_statement(&mut self, node: BreakStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     Some(if data.label_used {

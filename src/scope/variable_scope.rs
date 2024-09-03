@@ -5,7 +5,7 @@ use rustc_hash::FxHashMap;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 #[derive(Debug)]
-pub(crate) struct VariableScope<'a> {
+pub struct VariableScope<'a> {
   pub id: ScopeId,
   pub has_effect: bool,
   pub variables: FxHashMap<SymbolId, Entity<'a>>,

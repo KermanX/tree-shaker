@@ -6,14 +6,14 @@ use crate::{
 use oxc::ast::ast::{LabeledStatement, Statement};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_labeled_statement(&mut self, node: &'a LabeledStatement<'a>) {
+  pub fn exec_labeled_statement(&mut self, node: &'a LabeledStatement<'a>) {
     self.pending_labels.push(LabelEntity::new(&node.label));
     self.exec_statement(&node.body);
   }
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_labeled_statement(
+  pub fn transform_labeled_statement(
     &mut self,
     node: LabeledStatement<'a>,
   ) -> Option<Statement<'a>> {

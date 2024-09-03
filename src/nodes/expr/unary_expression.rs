@@ -10,7 +10,7 @@ use crate::{
 use oxc::ast::ast::{Expression, UnaryExpression, UnaryOperator};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_unary_expression(&mut self, node: &'a UnaryExpression) -> Entity<'a> {
+  pub fn exec_unary_expression(&mut self, node: &'a UnaryExpression) -> Entity<'a> {
     let argument = self.exec_expression(&node.argument);
 
     match &node.operator {
@@ -38,7 +38,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_unary_expression(
+  pub fn transform_unary_expression(
     &mut self,
     node: UnaryExpression<'a>,
     need_val: bool,

@@ -20,7 +20,7 @@ use oxc::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_statement(&mut self, node: &'a Statement) {
+  pub fn exec_statement(&mut self, node: &'a Statement) {
     match node {
       match_declaration!(Statement) => {
         let node = node.to_declaration();
@@ -48,7 +48,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_statement(&mut self, node: Statement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_statement(&mut self, node: Statement<'a>) -> Option<Statement<'a>> {
     let span = node.span();
     match node {
       match_declaration!(Statement) => self

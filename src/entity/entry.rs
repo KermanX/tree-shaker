@@ -8,7 +8,7 @@ use rustc_hash::FxHashSet;
 use std::rc::Rc;
 
 #[derive(Debug)]
-pub(crate) struct EntryEntity<'a> {
+pub struct EntryEntity<'a> {
   pub key: Entity<'a>,
   pub value: Entity<'a>,
 }

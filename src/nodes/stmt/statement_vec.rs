@@ -13,7 +13,7 @@ pub struct StatementVecData {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_statement_vec(
+  pub fn exec_statement_vec(
     &mut self,
     data: &mut StatementVecData,
     exited: Option<bool>,
@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_statement_vec(
+  pub fn transform_statement_vec(
     &mut self,
     data: &StatementVecData,
     statements: Vec<'a, Statement<'a>>,

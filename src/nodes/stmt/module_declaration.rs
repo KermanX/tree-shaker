@@ -6,7 +6,7 @@ use oxc::ast::ast::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
+  pub fn exec_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
     match node {
       ModuleDeclaration::ImportDeclaration(node) => {
         if let Some(specifiers) = &node.specifiers {
@@ -51,7 +51,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_module_declaration(
+  pub fn transform_module_declaration(
     &mut self,
     node: ModuleDeclaration<'a>,
   ) -> Option<ModuleDeclaration<'a>> {

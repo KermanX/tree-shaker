@@ -17,7 +17,7 @@ use std::{
   mem,
 };
 
-pub(crate) struct Transformer<'a> {
+pub struct Transformer<'a> {
   pub allocator: &'a Allocator,
   pub ast_builder: AstBuilder<'a>,
   pub data: ExtraData<'a>,
@@ -44,7 +44,7 @@ impl<'a> Transformer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
+  pub fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
     let mut hasher = DefaultHasher::new();
     hasher.write_u32(span.start);
     hasher.write_u32(span.end);
@@ -56,11 +56,11 @@ impl<'a> Transformer<'a> {
     )
   }
 
-  pub(crate) fn build_unused_expression(&self, span: Span) -> Expression<'a> {
+  pub fn build_unused_expression(&self, span: Span) -> Expression<'a> {
     self.ast_builder.expression_numeric_literal(span, 0.0f64, "0", NumberBase::Decimal)
   }
 
-  pub(crate) fn build_unused_iterable(&self, span: Span, length: usize) -> Expression<'a> {
+  pub fn build_unused_iterable(&self, span: Span, length: usize) -> Expression<'a> {
     let mut elements = self.ast_builder.vec();
     for _ in 0..length {
       elements.push(
@@ -70,17 +70,17 @@ impl<'a> Transformer<'a> {
     self.ast_builder.expression_array(span, elements, None)
   }
 
-  pub(crate) fn build_undefined(&self, span: Span) -> Expression<'a> {
+  pub fn build_undefined(&self, span: Span) -> Expression<'a> {
     self.ast_builder.expression_identifier_reference(span, "undefined")
   }
 
-  pub(crate) fn build_negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {
+  pub fn build_negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {
     self.ast_builder.expression_unary(expression.span(), UnaryOperator::LogicalNot, expression)
   }
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn get_data_by_span<D: Default + 'a>(&self, ast_type: AstType2, span: Span) -> &'a D {
+  pub fn get_data_by_span<D: Default + 'a>(&self, ast_type: AstType2, span: Span) -> &'a D {
     let existing = self.data.get(&ast_type).and_then(|map| map.get(&span));
     match existing {
       Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },
@@ -88,13 +88,13 @@ impl<'a> Transformer<'a> {
     }
   }
 
-  pub(crate) fn get_data<D: Default + 'a>(&self, ast_type: AstType2, node: &dyn GetSpan) -> &'a D {
+  pub fn get_data<D: Default + 'a>(&self, ast_type: AstType2, node: &dyn GetSpan) -> &'a D {
     self.get_data_by_span(ast_type, node.span())
   }
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn is_referred(&self, node: EntityDepNode<'a>) -> bool {
+  pub fn is_referred(&self, node: EntityDepNode<'a>) -> bool {
     self.referred_nodes.contains(&node)
   }
 }

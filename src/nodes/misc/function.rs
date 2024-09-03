@@ -5,7 +5,7 @@ use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_function(&mut self, node: &'a Function<'a>, exporting: bool) -> Entity<'a> {
+  pub fn exec_function(&mut self, node: &'a Function<'a>, exporting: bool) -> Entity<'a> {
     let dep = self.new_entity_dep(EntityDepNode::Function(node));
     let entity = FunctionEntity::new(dep.clone());
 
@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
     entity
   }
 
-  pub(crate) fn call_function(
+  pub fn call_function(
     &mut self,
     node: &'a Function<'a>,
     this: Entity<'a>,

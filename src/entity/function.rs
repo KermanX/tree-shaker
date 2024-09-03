@@ -10,7 +10,7 @@ use crate::analyzer::Analyzer;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
-pub(crate) struct FunctionEntity<'a> {
+pub struct FunctionEntity<'a> {
   pub source: EntityDep<'a>,
 }
 
@@ -109,7 +109,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 }
 
 impl<'a> FunctionEntity<'a> {
-  pub(crate) fn new(source: EntityDep<'a>) -> Entity<'a> {
+  pub fn new(source: EntityDep<'a>) -> Entity<'a> {
     Rc::new(Self { source })
   }
 }

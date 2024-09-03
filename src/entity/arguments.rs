@@ -7,8 +7,8 @@ use crate::analyzer::Analyzer;
 use std::rc::Rc;
 
 #[derive(Debug)]
-pub(crate) struct ArgumentsEntity<'a> {
-  pub(crate) arguments: Vec<(bool, Entity<'a>)>,
+pub struct ArgumentsEntity<'a> {
+  pub arguments: Vec<(bool, Entity<'a>)>,
 }
 
 impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
@@ -98,7 +98,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 }
 
 impl<'a> ArgumentsEntity<'a> {
-  pub(crate) fn new(arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
+  pub fn new(arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
     Rc::new(Self { arguments })
   }
 }

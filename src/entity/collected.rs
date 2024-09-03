@@ -8,7 +8,7 @@ use rustc_hash::FxHashSet;
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug)]
-pub(crate) struct CollectedEntity<'a> {
+pub struct CollectedEntity<'a> {
   val: Entity<'a>,
   collected: Rc<RefCell<Vec<Entity<'a>>>>,
 }
@@ -114,7 +114,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 }
 
 impl<'a> CollectedEntity<'a> {
-  pub(crate) fn new(val: Entity<'a>, collected: Rc<RefCell<Vec<Entity<'a>>>>) -> Entity<'a> {
+  pub fn new(val: Entity<'a>, collected: Rc<RefCell<Vec<Entity<'a>>>>) -> Entity<'a> {
     Rc::new(Self { val, collected })
   }
 

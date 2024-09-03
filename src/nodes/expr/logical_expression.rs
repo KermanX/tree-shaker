@@ -18,7 +18,7 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_logical_expression(&mut self, node: &'a LogicalExpression<'a>) -> Entity<'a> {
+  pub fn exec_logical_expression(&mut self, node: &'a LogicalExpression<'a>) -> Entity<'a> {
     let left = self.exec_expression(&node.left);
 
     let exec_right = |analyzer: &mut Analyzer<'a>| analyzer.exec_expression(&node.right);
@@ -58,7 +58,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_logical_expression(
+  pub fn transform_logical_expression(
     &mut self,
     node: LogicalExpression<'a>,
     need_val: bool,

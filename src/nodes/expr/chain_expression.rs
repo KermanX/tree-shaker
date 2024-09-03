@@ -5,7 +5,7 @@ use oxc::ast::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_chain_expression(&mut self, node: &'a ChainExpression<'a>) -> Entity<'a> {
+  pub fn exec_chain_expression(&mut self, node: &'a ChainExpression<'a>) -> Entity<'a> {
     match &node.expression {
       ChainElement::CallExpression(node) => self.exec_call_expression(node),
       node => self.exec_member_expression_read(node.to_member_expression()),
@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_chain_expression(
+  pub fn transform_chain_expression(
     &mut self,
     node: ChainExpression<'a>,
     need_val: bool,

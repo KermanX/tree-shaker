@@ -3,7 +3,7 @@ use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};
 
-pub(crate) trait EntityTrait<'a>: Debug {
+pub trait EntityTrait<'a>: Debug {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>);
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>);
 
@@ -57,4 +57,4 @@ pub(crate) trait EntityTrait<'a>: Debug {
   }
 }
 
-pub(crate) type Entity<'a> = Rc<dyn EntityTrait<'a> + 'a>;
+pub type Entity<'a> = Rc<dyn EntityTrait<'a> + 'a>;

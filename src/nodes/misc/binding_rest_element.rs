@@ -12,7 +12,7 @@ struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_binding_rest_element_from_obj(
+  pub fn exec_binding_rest_element_from_obj(
     &mut self,
     node: &'a BindingRestElement<'a>,
     init: Entity<'a>,
@@ -36,7 +36,7 @@ impl<'a> Analyzer<'a> {
     data.has_effect |= has_effect;
   }
 
-  pub(crate) fn exec_binding_rest_element_from_arr(
+  pub fn exec_binding_rest_element_from_arr(
     &mut self,
     node: &'a BindingRestElement<'a>,
     init: Entity<'a>,
@@ -47,7 +47,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_binding_rest_element(
+  pub fn transform_binding_rest_element(
     &mut self,
     node: BindingRestElement<'a>,
   ) -> Option<BindingRestElement<'a>> {

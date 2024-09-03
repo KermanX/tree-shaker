@@ -3,7 +3,7 @@ use oxc::ast::ast::{BinaryExpression, BinaryOperator, Expression};
 use crate::{analyzer::Analyzer, build_effect, entity::entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_binary_expression(&mut self, node: &'a BinaryExpression<'a>) -> Entity<'a> {
+  pub fn exec_binary_expression(&mut self, node: &'a BinaryExpression<'a>) -> Entity<'a> {
     let lhs = self.exec_expression(&node.left);
     let rhs = self.exec_expression(&node.right);
 
@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_binary_expression(
+  pub fn transform_binary_expression(
     &mut self,
     node: BinaryExpression<'a>,
     need_val: bool,

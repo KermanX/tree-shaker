@@ -2,7 +2,7 @@ use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::{Declaration, VariableDeclaration};
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_declaration(&mut self, node: &'a Declaration<'a>, exporting: bool) {
+  pub fn exec_declaration(&mut self, node: &'a Declaration<'a>, exporting: bool) {
     match node {
       Declaration::VariableDeclaration(node) => {
         for declarator in &node.declarations {
@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_declaration(&mut self, node: Declaration<'a>) -> Option<Declaration<'a>> {
+  pub fn transform_declaration(&mut self, node: Declaration<'a>) -> Option<Declaration<'a>> {
     match node {
       Declaration::VariableDeclaration(node) => {
         let VariableDeclaration { span, kind, declarations, .. } = node.unbox();

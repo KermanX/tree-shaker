@@ -4,7 +4,7 @@ use crate::entity::{
 use oxc::semantic::ScopeId;
 
 #[derive(Debug)]
-pub(crate) struct FunctionScope<'a> {
+pub struct FunctionScope<'a> {
   /// `None` for indeterminate
   pub returned_value: Vec<Entity<'a>>,
   pub cf_scope_id: ScopeId,
@@ -14,7 +14,7 @@ pub(crate) struct FunctionScope<'a> {
 }
 
 impl<'a> FunctionScope<'a> {
-  pub(crate) fn new(cf_scope_id: ScopeId, this: Entity<'a>, is_async: bool) -> Self {
+  pub fn new(cf_scope_id: ScopeId, this: Entity<'a>, is_async: bool) -> Self {
     FunctionScope {
       returned_value: Vec::new(),
       cf_scope_id,
@@ -24,7 +24,7 @@ impl<'a> FunctionScope<'a> {
     }
   }
 
-  pub(crate) fn ret_val(self) -> Entity<'a> {
+  pub fn ret_val(self) -> Entity<'a> {
     let value = if self.returned_value.is_empty() {
       LiteralEntity::new_undefined()
     } else {

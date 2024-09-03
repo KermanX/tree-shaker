@@ -11,7 +11,7 @@ use oxc::{
 use std::mem;
 
 impl<'a> Analyzer<'a> {
-  pub(crate) fn exec_template_literal(&mut self, node: &'a TemplateLiteral<'a>) -> Entity<'a> {
+  pub fn exec_template_literal(&mut self, node: &'a TemplateLiteral<'a>) -> Entity<'a> {
     let mut result = LiteralEntity::new_string(node.quasi().unwrap().as_str());
     for (index, expression) in node.expressions.iter().enumerate() {
       let expression = self.exec_expression(expression);
@@ -26,7 +26,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_template_literal(
+  pub fn transform_template_literal(
     &mut self,
     node: TemplateLiteral<'a>,
     need_val: bool,
