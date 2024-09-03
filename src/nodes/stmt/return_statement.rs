@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
     let value = ForwardedEntity::new(value, dep);
 
     let function_scope = self.function_scope_mut();
-    function_scope.returned_value.push(value);
+    function_scope.returned_values.push(value);
     let cf_scope_id = function_scope.cf_scope_id;
     self.exit_to(cf_scope_id);
   }

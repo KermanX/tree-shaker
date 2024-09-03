@@ -1,6 +1,6 @@
 use super::statement_vec::StatementVecData;
 use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
-use oxc::ast::ast::{BlockStatement, Statement};
+use oxc::ast::ast::BlockStatement;
 
 const AST_TYPE: AstType2 = AstType2::BlockStatement;
 
@@ -12,7 +12,10 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_block_statement(&mut self, node: BlockStatement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_block_statement(
+    &mut self,
+    node: BlockStatement<'a>,
+  ) -> Option<BlockStatement<'a>> {
     let data = self.get_data::<StatementVecData>(AST_TYPE, &node);
 
     let BlockStatement { span, body, .. } = node;
@@ -22,7 +25,7 @@ impl<'a> Transformer<'a> {
     if statements.is_empty() {
       None
     } else {
-      Some(self.ast_builder.statement_block(span, statements))
+      Some(self.ast_builder.block_statement(span, statements))
     }
   }
 }

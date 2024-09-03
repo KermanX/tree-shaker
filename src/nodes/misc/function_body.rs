@@ -41,7 +41,7 @@ impl<'a> Analyzer<'a> {
       let dep = self.new_entity_dep(EntityDepNode::FunctionBodyAsExpression(node));
       let value = self.exec_expression(&expr.expression);
       let function_scope = self.function_scope_mut();
-      function_scope.returned_value.push(ForwardedEntity::new(value, dep));
+      function_scope.returned_values.push(ForwardedEntity::new(value, dep));
     } else {
       unreachable!();
     }

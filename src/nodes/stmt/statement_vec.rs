@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::{
   allocator::Vec,
   ast::ast::Statement,

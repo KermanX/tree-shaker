@@ -1,5 +1,6 @@
 mod cf_scope;
 mod function_scope;
+mod try_scope;
 mod variable_scope;
 
 use crate::{
@@ -10,6 +11,7 @@ use cf_scope::CfScope;
 use function_scope::FunctionScope;
 use oxc::semantic::ScopeId;
 use std::mem;
+use try_scope::TryScope;
 use variable_scope::VariableScope;
 
 #[derive(Debug, Default)]
@@ -67,7 +69,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn pop_function_scope(&mut self) -> (bool, Entity<'a>) {
-    let ret_val = self.scope_context.function_scopes.pop().unwrap().ret_val();
+    let ret_val = self.scope_context.function_scopes.pop().unwrap().ret_val(self);
     let has_effect = self.pop_variable_scope().has_effect;
     self.pop_cf_scope();
     (has_effect, ret_val)
@@ -103,6 +105,24 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_cf_scope(&mut self) -> CfScope {
     self.scope_context.cf_scopes.pop().unwrap()
+  }
+
+  pub fn try_scope(&self) -> &TryScope<'a> {
+    self.function_scope().try_scopes.last().unwrap()
+  }
+
+  pub fn try_scope_mut(&mut self) -> &mut TryScope<'a> {
+    self.function_scope_mut().try_scopes.last_mut().unwrap()
+  }
+
+  pub fn push_try_scope(&mut self) {
+    let cf_scope_id = self.push_cf_scope(Some(false), false);
+    self.function_scope_mut().try_scopes.push(TryScope::new(cf_scope_id));
+  }
+
+  pub fn pop_try_scope(&mut self) -> TryScope<'a> {
+    self.pop_cf_scope();
+    self.function_scope_mut().try_scopes.pop().unwrap()
   }
 
   pub fn exit_to(&mut self, cf_scope_id: ScopeId) {

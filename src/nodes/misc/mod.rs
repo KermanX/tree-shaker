@@ -4,6 +4,7 @@ mod assignment_target_pattern;
 mod binding_identifier;
 mod binding_pattern;
 mod binding_rest_element;
+mod catch_clause;
 mod for_statement_left;
 mod formal_parameters;
 mod function;

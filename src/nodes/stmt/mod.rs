@@ -9,6 +9,8 @@ mod module_declaration;
 mod return_statement;
 mod statement_vec;
 mod switch_statement;
+mod throw_statement;
+mod try_statement;
 mod while_statement;
 
 use crate::{transformer::Transformer, Analyzer};
@@ -43,6 +45,8 @@ impl<'a> Analyzer<'a> {
       Statement::ContinueStatement(node) => self.exec_continue_statement(node),
       Statement::ReturnStatement(node) => self.exec_return_statement(node),
       Statement::LabeledStatement(node) => self.exec_labeled_statement(node),
+      Statement::TryStatement(node) => self.exec_try_statement(node),
+      Statement::ThrowStatement(node) => self.exec_throw_statement(node),
       Statement::EmptyStatement(_) => {}
       _ => todo!("Stmt at span {:?}", node.span()),
     }
@@ -65,7 +69,9 @@ impl<'a> Transformer<'a> {
           .transform_expression(expression, false)
           .map(|expr| self.ast_builder.statement_expression(span, expr))
       }
-      Statement::BlockStatement(node) => self.transform_block_statement(node.unbox()),
+      Statement::BlockStatement(node) => self
+        .transform_block_statement(node.unbox())
+        .map(|stmt| self.ast_builder.statement_from_block(stmt)),
       Statement::IfStatement(node) => self.transform_if_statement(node.unbox()),
       Statement::WhileStatement(node) => self.transform_while_statement(node.unbox()),
       Statement::ForInStatement(node) => self.transform_for_in_statement(node.unbox()),
@@ -74,6 +80,8 @@ impl<'a> Transformer<'a> {
       Statement::ContinueStatement(node) => self.transform_continue_statement(node.unbox()),
       Statement::ReturnStatement(node) => self.transform_return_statement(node.unbox()),
       Statement::LabeledStatement(node) => self.transform_labeled_statement(node.unbox()),
+      Statement::TryStatement(node) => self.transform_try_statement(node.unbox()),
+      Statement::ThrowStatement(node) => self.transform_throw_statement(node.unbox()),
       Statement::EmptyStatement(_) => None,
       _ => todo!(),
     }
