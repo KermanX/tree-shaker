@@ -12,7 +12,7 @@ pub fn tree_shake(input: String, do_minify: bool, eval_mode: bool) -> String {
     source_type: SourceType::default().with_module(true).with_always_strict(true),
     source_text: input,
     minify: do_minify.then(|| MinifierOptions::default()),
-    eval_mode: false,
+    eval_mode,
   });
   result.codegen_return.source_text
 }
