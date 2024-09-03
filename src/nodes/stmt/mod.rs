@@ -2,6 +2,7 @@ mod block_statement;
 mod break_statement;
 mod continue_statement;
 mod declaration;
+mod for_in_statement;
 mod if_statement;
 mod labeled_statements;
 mod module_declaration;
@@ -36,6 +37,7 @@ impl<'a> Analyzer<'a> {
       Statement::BlockStatement(node) => self.exec_block_statement(node),
       Statement::IfStatement(node) => self.exec_if_statement(node),
       Statement::WhileStatement(node) => self.exec_while_statement(node),
+      Statement::ForInStatement(node) => self.exec_for_in_statement(node),
       Statement::SwitchStatement(node) => self.exec_switch_statement(node),
       Statement::BreakStatement(node) => self.exec_break_statement(node),
       Statement::ContinueStatement(node) => self.exec_continue_statement(node),
@@ -66,6 +68,7 @@ impl<'a> Transformer<'a> {
       Statement::BlockStatement(node) => self.transform_block_statement(node.unbox()),
       Statement::IfStatement(node) => self.transform_if_statement(node.unbox()),
       Statement::WhileStatement(node) => self.transform_while_statement(node.unbox()),
+      Statement::ForInStatement(node) => self.transform_for_in_statement(node.unbox()),
       Statement::SwitchStatement(node) => self.transform_switch_statement(node.unbox()),
       Statement::BreakStatement(node) => self.transform_break_statement(node.unbox()),
       Statement::ContinueStatement(node) => self.transform_continue_statement(node.unbox()),

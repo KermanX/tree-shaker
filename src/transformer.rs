@@ -7,7 +7,10 @@ use crate::{
 use oxc::{
   allocator::Allocator,
   ast::{
-    ast::{BindingPattern, Expression, NumberBase, Program, TSTypeAnnotation, UnaryOperator},
+    ast::{
+      AssignmentTarget, BindingPattern, Expression, ForStatementLeft, NumberBase, Program,
+      TSTypeAnnotation, UnaryOperator,
+    },
     AstBuilder,
   },
   span::{GetSpan, Span, SPAN},
@@ -54,6 +57,20 @@ impl<'a> Transformer<'a> {
       None::<TSTypeAnnotation>,
       false,
     )
+  }
+
+  pub fn build_unused_assignment_target(&self, span: Span) -> AssignmentTarget<'a> {
+    self.ast_builder.assignment_target_assignment_target_pattern(
+      self.ast_builder.assignment_target_pattern_object_assignment_target(
+        span,
+        self.ast_builder.vec(),
+        None,
+      ),
+    )
+  }
+
+  pub fn build_unused_for_statement_left(&self, span: Span) -> ForStatementLeft<'a> {
+    self.ast_builder.for_statement_left_assignment_target(self.build_unused_assignment_target(span))
   }
 
   pub fn build_unused_expression(&self, span: Span) -> Expression<'a> {

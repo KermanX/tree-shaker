@@ -5,8 +5,6 @@ use oxc::{
   span::{GetSpan, Span},
 };
 
-const AST_TYPE: AstType2 = AstType2::BlockStatement;
-
 #[derive(Debug, Default)]
 pub struct StatementVecData {
   last_stmt: Option<Span>,
