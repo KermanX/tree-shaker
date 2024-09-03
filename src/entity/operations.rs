@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::entity::union::UnionEntity;
 
 use super::{
@@ -15,6 +17,34 @@ pub(crate) struct EntityOpHost<'a> {
 impl<'a> EntityOpHost<'a> {
   pub fn new(allocator: &'a Allocator) -> Self {
     Self { allocator }
+  }
+
+  pub fn strict_eq(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Option<bool> {
+    if Rc::ptr_eq(lhs, rhs) {
+      return Some(true);
+    }
+
+    let lhs_t = lhs.test_typeof();
+    let rhs_t = rhs.test_typeof();
+    if lhs_t & rhs_t == TypeofResult::_None {
+      return Some(false);
+    }
+
+    let lhs_lit = lhs.get_to_literals();
+    let rhs_lit = rhs.get_to_literals();
+    if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit) {
+      if lhs_lit.len() == 1 && rhs_lit.len() == 1 {
+        let lhs_lit = lhs_lit.iter().next().unwrap();
+        let rhs_lit = rhs_lit.iter().next().unwrap();
+        return Some(lhs_lit == rhs_lit);
+      }
+
+      if lhs_lit.iter().all(|lit| !rhs_lit.contains(lit)) {
+        return Some(false);
+      }
+    }
+
+    None
   }
 
   pub fn add(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Entity<'a> {
