@@ -32,8 +32,14 @@ impl<'a> Transformer<'a> {
 
   pub fn transform_program(&mut self, ast: Program<'a>) -> Program<'a> {
     let Program { span, source_type, hashbang, directives, body, .. } = ast;
-    let body = self.transform_statements(body);
-    self.ast_builder.program(span, source_type, hashbang, directives, body)
+    let mut transformed_body = self.ast_builder.vec();
+    for stmt in body {
+      let new_statement = self.transform_statement(stmt);
+      if let Some(transformed) = new_statement {
+        transformed_body.push(transformed);
+      }
+    }
+    self.ast_builder.program(span, source_type, hashbang, directives, transformed_body)
   }
 }
 

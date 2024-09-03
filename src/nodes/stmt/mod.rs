@@ -6,6 +6,8 @@ mod if_statement;
 mod labeled_statements;
 mod module_declaration;
 mod return_statement;
+mod statement_vec;
+mod switch_statement;
 mod while_statement;
 
 use crate::{transformer::Transformer, Analyzer};
@@ -35,6 +37,7 @@ impl<'a> Analyzer<'a> {
       Statement::BlockStatement(node) => self.exec_block_statement(node),
       Statement::IfStatement(node) => self.exec_if_statement(node),
       Statement::WhileStatement(node) => self.exec_while_statement(node),
+      Statement::SwitchStatement(node) => self.exec_switch_statement(node),
       Statement::BreakStatement(node) => self.exec_break_statement(node),
       Statement::ContinueStatement(node) => self.exec_continue_statement(node),
       Statement::ReturnStatement(node) => self.exec_return_statement(node),
@@ -64,6 +67,7 @@ impl<'a> Transformer<'a> {
       Statement::BlockStatement(node) => self.transform_block_statement(node.unbox()),
       Statement::IfStatement(node) => self.transform_if_statement(node.unbox()),
       Statement::WhileStatement(node) => self.transform_while_statement(node.unbox()),
+      Statement::SwitchStatement(node) => self.transform_switch_statement(node.unbox()),
       Statement::BreakStatement(node) => self.transform_break_statement(node.unbox()),
       Statement::ContinueStatement(node) => self.transform_continue_statement(node.unbox()),
       Statement::ReturnStatement(node) => self.transform_return_statement(node.unbox()),
@@ -71,19 +75,5 @@ impl<'a> Transformer<'a> {
       Statement::EmptyStatement(_) => None,
       _ => todo!(),
     }
-  }
-
-  pub(crate) fn transform_statements(
-    &mut self,
-    nodes: Vec<'a, Statement<'a>>,
-  ) -> Vec<'a, Statement<'a>> {
-    let mut result = self.ast_builder.vec::<Statement>();
-    for node in nodes {
-      let new_statement = self.transform_statement(node);
-      if let Some(transformed) = new_statement {
-        result.push(transformed);
-      }
-    }
-    result
   }
 }
