@@ -1,6 +1,10 @@
+use crate::{
+  analyzer::Analyzer,
+  build_effect,
+  entity::{entity::Entity, utils::boolean_from_test_result},
+  transformer::Transformer,
+};
 use oxc::ast::ast::{BinaryExpression, BinaryOperator, Expression};
-
-use crate::{analyzer::Analyzer, build_effect, entity::entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_binary_expression(&mut self, node: &'a BinaryExpression<'a>) -> Entity<'a> {
@@ -10,8 +14,12 @@ impl<'a> Analyzer<'a> {
     match &node.operator {
       BinaryOperator::Equality => todo!(),
       BinaryOperator::Inequality => todo!(),
-      BinaryOperator::StrictEquality => todo!(),
-      BinaryOperator::StrictInequality => todo!(),
+      BinaryOperator::StrictEquality => {
+        boolean_from_test_result(self.entity_op.strict_eq(&lhs, &rhs))
+      }
+      BinaryOperator::StrictInequality => {
+        boolean_from_test_result(self.entity_op.strict_eq(&lhs, &rhs).map(|v| !v))
+      }
       BinaryOperator::LessThan => todo!(),
       BinaryOperator::LessEqualThan => todo!(),
       BinaryOperator::GreaterThan => todo!(),
