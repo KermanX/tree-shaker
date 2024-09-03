@@ -10,18 +10,22 @@ pub(crate) struct CfScope<'a> {
   pub label: Vec<LabelEntity<'a>>,
   pub id: ScopeId,
   pub exited: Option<bool>,
-  pub is_loop: bool,
+  pub is_loop_or_switch: bool,
 }
 
 static CF_SCOPE_ID: AtomicU32 = AtomicU32::new(0);
 
 impl<'a> CfScope<'a> {
-  pub(crate) fn new(label: Vec<LabelEntity<'a>>, exited: Option<bool>, is_loop: bool) -> Self {
+  pub(crate) fn new(
+    label: Vec<LabelEntity<'a>>,
+    exited: Option<bool>,
+    is_loop_or_switch: bool,
+  ) -> Self {
     CfScope {
       label,
       id: ScopeId::new(CF_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
       exited,
-      is_loop,
+      is_loop_or_switch,
     }
   }
 

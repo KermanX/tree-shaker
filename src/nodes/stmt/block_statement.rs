@@ -20,7 +20,7 @@ impl<'a> Transformer<'a> {
 
     let BlockStatement { span, body, .. } = node;
 
-    let mut statements = self.transform_statements_vec(data, body);
+    let statements = self.transform_statement_vec(data, body);
 
     if statements.is_empty() {
       None

@@ -93,9 +93,9 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.iter_mut().find(|x| x.id == id).unwrap()
   }
 
-  pub(crate) fn push_cf_scope(&mut self, exited: Option<bool>, is_loop: bool) -> ScopeId {
+  pub(crate) fn push_cf_scope(&mut self, exited: Option<bool>, is_loop_or_switch: bool) -> ScopeId {
     let label = mem::take(&mut self.pending_labels);
-    let cf_scope = CfScope::new(label, exited, is_loop);
+    let cf_scope = CfScope::new(label, exited, is_loop_or_switch);
     let id = cf_scope.id;
     self.scope_context.cf_scopes.push(cf_scope);
     id
@@ -129,14 +129,14 @@ impl<'a> Analyzer<'a> {
           should_exit = !cf_scope.is_indeterminate();
         }
         if let Some(label_entity) = cf_scope.matches_label(&label) {
-          return if !is_closest || !cf_scope.is_loop {
+          return if !is_closest || !cf_scope.is_loop_or_switch {
             self.referred_nodes.insert(label_entity.node);
             true
           } else {
             false
           };
         }
-        if cf_scope.is_loop {
+        if cf_scope.is_loop_or_switch {
           is_closest = false;
         }
       }

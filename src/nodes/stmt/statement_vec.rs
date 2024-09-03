@@ -43,12 +43,16 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub(crate) fn transform_statements_vec(
+  pub(crate) fn transform_statement_vec(
     &mut self,
     data: &StatementVecData,
     statements: Vec<'a, Statement<'a>>,
   ) -> Vec<'a, Statement<'a>> {
     let mut result = self.ast_builder.vec();
+
+    if data.last_stmt.is_none() {
+      return result;
+    }
 
     for statement in statements {
       let span = statement.span();

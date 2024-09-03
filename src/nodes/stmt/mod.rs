@@ -12,7 +12,6 @@ mod while_statement;
 
 use crate::{transformer::Transformer, Analyzer};
 use oxc::{
-  allocator::Vec,
   ast::{
     ast::{ExpressionStatement, Statement},
     match_declaration, match_module_declaration,
