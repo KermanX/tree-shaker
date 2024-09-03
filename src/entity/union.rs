@@ -7,7 +7,7 @@ use super::{
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
-use std::{rc::Rc, result};
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub(crate) struct UnionEntity<'a>(pub Vec<Entity<'a>>);

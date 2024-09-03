@@ -1,6 +1,5 @@
 use crate::{
   analyzer::Analyzer,
-  ast::AstType2,
   entity::{entity::Entity, unknown::UnknownEntity},
   transformer::Transformer,
 };
