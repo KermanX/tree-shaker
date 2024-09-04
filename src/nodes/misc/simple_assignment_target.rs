@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_simple_assignment_target(
-    &mut self,
+    &self,
     node: SimpleAssignmentTarget<'a>,
   ) -> Option<AssignmentTarget<'a>> {
     let need_write = self.is_referred(EntityDepNode::SimpleAssignmentTarget(&node));

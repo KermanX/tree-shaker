@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_meta_property(
-    &mut self,
+    &self,
     node: MetaProperty<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

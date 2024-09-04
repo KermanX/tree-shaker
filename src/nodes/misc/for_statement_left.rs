@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_for_statement_left(
-    &mut self,
+    &self,
     node: ForStatementLeft<'a>,
   ) -> Option<ForStatementLeft<'a>> {
     match node {

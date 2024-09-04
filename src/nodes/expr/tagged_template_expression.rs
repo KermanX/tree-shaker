@@ -38,7 +38,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_tagged_template_expression(
-    &mut self,
+    &self,
     node: TaggedTemplateExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

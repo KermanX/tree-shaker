@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_conditional_expression(
-    &mut self,
+    &self,
     node: ConditionalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_binding_identifier(
-    &mut self,
+    &self,
     node: BindingIdentifier<'a>,
   ) -> Option<BindingIdentifier<'a>> {
     let referred = self.is_referred(EntityDepNode::BindingIdentifier(&node));

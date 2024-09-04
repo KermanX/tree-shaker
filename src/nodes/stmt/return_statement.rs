@@ -22,7 +22,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_return_statement(&mut self, node: ReturnStatement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_return_statement(&self, node: ReturnStatement<'a>) -> Option<Statement<'a>> {
     let need_val = self.is_referred(EntityDepNode::ReturnStatement(&node));
 
     let ReturnStatement { span, argument } = node;

@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_for_in_statement(&mut self, node: ForInStatement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_for_in_statement(&self, node: ForInStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let ForInStatement { span, left, right, body, .. } = node;

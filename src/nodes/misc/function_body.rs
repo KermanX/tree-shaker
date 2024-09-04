@@ -49,7 +49,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_function_body(&mut self, node: FunctionBody<'a>) -> FunctionBody<'a> {
+  pub fn transform_function_body(&self, node: FunctionBody<'a>) -> FunctionBody<'a> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let FunctionBody { span, directives, statements, .. } = node;
@@ -71,7 +71,7 @@ impl<'a> Transformer<'a> {
     self.ast_builder.function_body(span, directives, transformed_statements)
   }
 
-  pub fn transform_function_expression_body(&mut self, node: FunctionBody<'a>) -> FunctionBody<'a> {
+  pub fn transform_function_expression_body(&self, node: FunctionBody<'a>) -> FunctionBody<'a> {
     let need_val = self.is_referred(EntityDepNode::FunctionBodyAsExpression(&node));
 
     let FunctionBody { span, directives, statements, .. } = node;

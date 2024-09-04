@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_module_declaration(
-    &mut self,
+    &self,
     node: ModuleDeclaration<'a>,
   ) -> Option<ModuleDeclaration<'a>> {
     match node {

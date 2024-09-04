@@ -23,10 +23,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_formal_parameters(
-    &mut self,
-    node: FormalParameters<'a>,
-  ) -> FormalParameters<'a> {
+  pub fn transform_formal_parameters(&self, node: FormalParameters<'a>) -> FormalParameters<'a> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
     let FormalParameters { span, items, rest, kind, .. } = node;
 

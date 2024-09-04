@@ -34,7 +34,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   /// Returns (computed, node)
   pub fn transform_property_key(
-    &mut self,
+    &self,
     node: PropertyKey<'a>,
     need_val: bool,
   ) -> Option<(bool, PropertyKey<'a>)> {

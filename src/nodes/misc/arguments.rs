@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_arguments_need_call(&mut self, node: Arguments<'a>) -> Arguments<'a> {
+  pub fn transform_arguments_need_call(&self, node: Arguments<'a>) -> Arguments<'a> {
     let mut arguments = self.ast_builder.vec();
     let mut preserve_args_num = false;
     for argument in node.into_iter().rev() {
@@ -40,7 +40,7 @@ impl<'a> Transformer<'a> {
   }
 
   fn transform_argument_need_call(
-    &mut self,
+    &self,
     node: Argument<'a>,
     preserve_args_num: bool,
   ) -> Option<Argument<'a>> {
@@ -59,14 +59,11 @@ impl<'a> Transformer<'a> {
     }
   }
 
-  pub fn transform_arguments_no_call(
-    &mut self,
-    node: Arguments<'a>,
-  ) -> Vec<Option<Expression<'a>>> {
+  pub fn transform_arguments_no_call(&self, node: Arguments<'a>) -> Vec<Option<Expression<'a>>> {
     node.into_iter().map(|arg| self.transform_argument_no_call(arg)).collect()
   }
 
-  fn transform_argument_no_call(&mut self, node: Argument<'a>) -> Option<Expression<'a>> {
+  fn transform_argument_no_call(&self, node: Argument<'a>) -> Option<Expression<'a>> {
     match node {
       Argument::SpreadElement(node) => self.transform_expression(node.unbox().argument, false),
       _ => self.transform_expression(node.try_into().unwrap(), false),

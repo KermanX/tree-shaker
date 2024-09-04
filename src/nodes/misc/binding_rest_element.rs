@@ -48,7 +48,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_binding_rest_element(
-    &mut self,
+    &self,
     node: BindingRestElement<'a>,
   ) -> Option<BindingRestElement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, &node);

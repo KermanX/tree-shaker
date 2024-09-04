@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_assignment_expression(
-    &mut self,
+    &self,
     node: AssignmentExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

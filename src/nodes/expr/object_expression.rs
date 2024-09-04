@@ -42,7 +42,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_object_expression(
-    &mut self,
+    &self,
     node: ObjectExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

@@ -62,7 +62,7 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
   analyzer.exec_program(ast1);
 
   // Step 3: Remove dead code (transform)
-  let mut transformer = Transformer::new(analyzer);
+  let transformer = Transformer::new(analyzer);
   let mut program = transformer.transform_program(ast2);
 
   // Step 4: Minify

@@ -84,7 +84,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_member_expression_read(
-    &mut self,
+    &self,
     node: MemberExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
@@ -146,7 +146,7 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn transform_member_expression_write(
-    &mut self,
+    &self,
     node: MemberExpression<'a>,
     need_write: bool,
   ) -> Option<AssignmentTarget<'a>> {

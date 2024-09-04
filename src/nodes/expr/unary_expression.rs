@@ -39,7 +39,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_unary_expression(
-    &mut self,
+    &self,
     node: UnaryExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

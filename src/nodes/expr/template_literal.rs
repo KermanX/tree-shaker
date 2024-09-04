@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_template_literal(
-    &mut self,
+    &self,
     node: TemplateLiteral<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

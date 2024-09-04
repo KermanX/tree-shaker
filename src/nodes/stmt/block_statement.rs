@@ -12,10 +12,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_block_statement(
-    &mut self,
-    node: BlockStatement<'a>,
-  ) -> Option<BlockStatement<'a>> {
+  pub fn transform_block_statement(&self, node: BlockStatement<'a>) -> Option<BlockStatement<'a>> {
     let data = self.get_data::<StatementVecData>(AST_TYPE, &node);
 
     let BlockStatement { span, body, .. } = node;

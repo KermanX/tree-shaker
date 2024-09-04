@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_binary_expression(
-    &mut self,
+    &self,
     node: BinaryExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

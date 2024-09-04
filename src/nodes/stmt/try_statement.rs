@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_try_statement(&mut self, node: TryStatement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_try_statement(&self, node: TryStatement<'a>) -> Option<Statement<'a>> {
     let TryStatement { span, block, handler, finalizer } = node;
 
     let block = self.transform_block_statement(block.unbox());

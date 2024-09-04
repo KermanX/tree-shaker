@@ -91,7 +91,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_switch_statement(&mut self, node: SwitchStatement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_switch_statement(&self, node: SwitchStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     let SwitchStatement { span, discriminant, cases, .. } = node;

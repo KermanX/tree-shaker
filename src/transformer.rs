@@ -33,7 +33,7 @@ impl<'a> Transformer<'a> {
     Transformer { allocator, ast_builder: AstBuilder::new(allocator), data, referred_nodes }
   }
 
-  pub fn transform_program(&mut self, ast: Program<'a>) -> Program<'a> {
+  pub fn transform_program(&self, ast: Program<'a>) -> Program<'a> {
     let Program { span, source_type, hashbang, directives, body, .. } = ast;
     let mut transformed_body = self.ast_builder.vec();
     for stmt in body {

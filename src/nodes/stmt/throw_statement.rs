@@ -22,7 +22,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_throw_statement(&mut self, node: ThrowStatement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_throw_statement(&self, node: ThrowStatement<'a>) -> Option<Statement<'a>> {
     let need_val = self.is_referred(EntityDepNode::ThrowStatement(&node));
 
     let ThrowStatement { span, argument, .. } = node;

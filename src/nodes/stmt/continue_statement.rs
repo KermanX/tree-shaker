@@ -18,10 +18,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_continue_statement(
-    &mut self,
-    node: ContinueStatement<'a>,
-  ) -> Option<Statement<'a>> {
+  pub fn transform_continue_statement(&self, node: ContinueStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, &node);
 
     Some(if data.label_used {

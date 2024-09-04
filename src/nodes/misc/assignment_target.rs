@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_assignment_target(
-    &mut self,
+    &self,
     node: AssignmentTarget<'a>,
   ) -> Option<AssignmentTarget<'a>> {
     match node {

@@ -92,10 +92,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_binding_pattern(
-    &mut self,
-    node: BindingPattern<'a>,
-  ) -> Option<BindingPattern<'a>> {
+  pub fn transform_binding_pattern(&self, node: BindingPattern<'a>) -> Option<BindingPattern<'a>> {
     let data = self.get_data::<Data>(AstType2::BindingPattern, &node);
 
     let span = node.span();

@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_statement(&mut self, node: Statement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_statement(&self, node: Statement<'a>) -> Option<Statement<'a>> {
     let span = node.span();
     match node {
       match_declaration!(Statement) => self

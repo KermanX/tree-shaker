@@ -13,10 +13,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_labeled_statement(
-    &mut self,
-    node: LabeledStatement<'a>,
-  ) -> Option<Statement<'a>> {
+  pub fn transform_labeled_statement(&self, node: LabeledStatement<'a>) -> Option<Statement<'a>> {
     let LabeledStatement { span, label, body } = node;
 
     let body = self.transform_statement(body);

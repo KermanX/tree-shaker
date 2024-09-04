@@ -42,7 +42,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_statement_vec(
-    &mut self,
+    &self,
     data: &StatementVecData,
     statements: Vec<'a, Statement<'a>>,
   ) -> Vec<'a, Statement<'a>> {

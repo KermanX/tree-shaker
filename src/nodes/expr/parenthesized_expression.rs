@@ -12,7 +12,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_parenthesized_expression(
-    &mut self,
+    &self,
     node: ParenthesizedExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {

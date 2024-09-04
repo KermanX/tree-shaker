@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_identifier_reference_read(
-    &mut self,
+    &self,
     node: IdentifierReference<'a>,
     need_val: bool,
   ) -> Option<IdentifierReference<'a>> {
@@ -80,7 +80,7 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn transform_identifier_reference_write(
-    &mut self,
+    &self,
     node: IdentifierReference<'a>,
     need_write: bool,
   ) -> Option<IdentifierReference<'a>> {

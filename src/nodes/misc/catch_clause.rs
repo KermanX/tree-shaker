@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_catch_clause(&mut self, node: CatchClause<'a>) -> CatchClause<'a> {
+  pub fn transform_catch_clause(&self, node: CatchClause<'a>) -> CatchClause<'a> {
     let CatchClause { span, param, body, .. } = node;
 
     let param = param.and_then(|param| {
