@@ -1,8 +1,10 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
 use oxc::{
   ast::ast::{Statement, WhileStatement},
   span::GetSpan,
 };
+
+const AST_TYPE: AstType2 = AstType2::WhileStatement;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -31,14 +33,14 @@ impl<'a> Analyzer<'a> {
     self.pop_variable_scope();
     self.pop_cf_scope();
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.need_loop = true;
   }
 }
 
 impl<'a> Transformer<'a> {
   pub fn transform_while_statement(&self, node: &'a WhileStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let WhileStatement { span, test, body, .. } = node;
     let body_span = body.span();

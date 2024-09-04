@@ -1,9 +1,12 @@
+use crate::ast::AstType2;
 use crate::entity::entity::Entity;
 use crate::entity::literal::LiteralEntity;
 use crate::entity::union::UnionEntity;
 use crate::entity::unknown::UnknownEntity;
 use crate::{build_effect_from_arr, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{CallExpression, Expression, TSTypeParameterInstantiation};
+
+const AST_TYPE: AstType2 = AstType2::CallExpression;
 
 #[derive(Debug, Default)]
 pub struct Data {
@@ -33,7 +36,7 @@ impl<'a> Analyzer<'a> {
     // TODO: Track `this`. Refer https://github.com/oxc-project/oxc/issues/4341
     let (has_effect, ret_val) = callee.call(self, &UnknownEntity::new_unknown(), &args);
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
     data.need_optional |= indeterminate;
 
@@ -52,7 +55,7 @@ impl<'a> Transformer<'a> {
     node: &'a CallExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let CallExpression { span, callee, arguments, .. } = node;
 

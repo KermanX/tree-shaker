@@ -1,5 +1,6 @@
 use crate::{
   analyzer::Analyzer,
+  ast::AstType2,
   entity::{
     typeof_result::TypeofResult,
     unknown::{UnknownEntity, UnknownEntityKind},
@@ -10,6 +11,8 @@ use oxc::{
   ast::ast::{ForInStatement, Statement},
   span::GetSpan,
 };
+
+const AST_TYPE: AstType2 = AstType2::ForInStatement;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -45,14 +48,14 @@ impl<'a> Analyzer<'a> {
     self.pop_variable_scope();
     self.pop_cf_scope();
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.need_loop = true;
   }
 }
 
 impl<'a> Transformer<'a> {
   pub fn transform_for_in_statement(&self, node: &'a ForInStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let ForInStatement { span, left, right, body, .. } = node;
 

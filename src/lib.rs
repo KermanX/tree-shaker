@@ -1,4 +1,5 @@
 mod analyzer;
+mod ast;
 mod builtins;
 mod data;
 mod effect_builder;
@@ -54,9 +55,6 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
   // Step 1: Analyze the program
   let mut analyzer = Analyzer::new(&allocator, sematic);
   analyzer.exec_program(ast);
-
-
-  println!("-----");
 
   // Step 3: Remove dead code (transform)
   let transformer = Transformer::new(analyzer);

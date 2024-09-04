@@ -1,9 +1,12 @@
+use crate::ast::AstType2;
 use crate::build_effect;
 use crate::entity::entity::Entity;
 use crate::entity::union::UnionEntity;
 use crate::{analyzer::Analyzer, Transformer};
 use oxc::ast::ast::{Expression, LogicalExpression, LogicalOperator};
 use std::rc::Rc;
+
+const AST_TYPE: AstType2 = AstType2::LogicalExpression;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -42,7 +45,7 @@ impl<'a> Analyzer<'a> {
       },
     };
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
 
     data.need_left_val |= need_left_val;
     data.need_right |= need_right;
@@ -57,7 +60,7 @@ impl<'a> Transformer<'a> {
     node: &'a LogicalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let LogicalExpression { span, left, operator, right, .. } = node;
 

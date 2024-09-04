@@ -1,9 +1,12 @@
+use crate::ast::AstType2;
 use crate::build_effect;
 use crate::entity::entity::Entity;
 use crate::entity::union::UnionEntity;
 use crate::{analyzer::Analyzer, Transformer};
 use oxc::ast::ast::{ConditionalExpression, Expression};
 use std::rc::Rc;
+
+const AST_TYPE: AstType2 = AstType2::ConditionalExpression;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -40,7 +43,7 @@ impl<'a> Analyzer<'a> {
       self.pop_cf_scope();
     }
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
 
     data.maybe_true |= maybe_true;
     data.maybe_false |= maybe_false;
@@ -55,7 +58,7 @@ impl<'a> Transformer<'a> {
     node: &'a ConditionalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let ConditionalExpression { span, test, consequent, alternate, .. } = node;
 

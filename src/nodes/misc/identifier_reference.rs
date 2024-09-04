@@ -1,7 +1,10 @@
+use crate::ast::AstType2;
 use crate::entity::entity::Entity;
 use crate::entity::unknown::UnknownEntity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::IdentifierReference;
+
+const AST_TYPE: AstType2 = AstType2::IdentifierReference;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -14,7 +17,7 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
     if let Some(global) = self.builtins.get_global(&node.name).cloned() {
-      self.set_data(node, Data { resolvable: true });
+      self.set_data(AST_TYPE, node, Data { resolvable: true });
       return global;
     }
 
@@ -22,7 +25,7 @@ impl<'a> Analyzer<'a> {
     assert!(reference.is_read());
     let symbol = reference.symbol_id();
 
-    self.set_data(node, Data { resolvable: symbol.is_some() });
+    self.set_data(AST_TYPE, node, Data { resolvable: symbol.is_some() });
 
     if let Some(symbol) = symbol {
       self.get_symbol(&symbol).clone()
@@ -53,7 +56,7 @@ impl<'a> Analyzer<'a> {
     debug_assert!(reference.is_write());
     let symbol = reference.symbol_id();
 
-    self.set_data(node, Data { resolvable: symbol.is_some() });
+    self.set_data(AST_TYPE, node, Data { resolvable: symbol.is_some() });
 
     if let Some(symbol) = symbol {
       self.set_symbol(&symbol, value);
@@ -71,7 +74,7 @@ impl<'a> Transformer<'a> {
     node: &'a IdentifierReference<'a>,
     need_val: bool,
   ) -> Option<IdentifierReference<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     (!data.resolvable || need_val).then(|| self.clone_node(node))
   }
@@ -81,7 +84,7 @@ impl<'a> Transformer<'a> {
     node: &'a IdentifierReference<'a>,
     need_write: bool,
   ) -> Option<IdentifierReference<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     (!data.resolvable || need_write).then(|| self.clone_node(node))
   }

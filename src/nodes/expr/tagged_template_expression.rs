@@ -1,5 +1,6 @@
 use crate::{
   analyzer::Analyzer,
+  ast::AstType2,
   build_effect_from_arr,
   entity::{entity::Entity, unknown::UnknownEntity},
   transformer::Transformer,
@@ -7,6 +8,8 @@ use crate::{
 use oxc::ast::ast::{
   Expression, TSTypeParameterInstantiation, TaggedTemplateExpression, TemplateLiteral,
 };
+
+const AST_TYPE: AstType2 = AstType2::TaggedTemplateExpression;
 
 #[derive(Debug, Default)]
 pub struct Data {
@@ -28,7 +31,7 @@ impl<'a> Analyzer<'a> {
     let (has_effect, ret_val) =
       tag.call(self, &UnknownEntity::new_unknown(), &UnknownEntity::new_unknown());
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
 
     ret_val
@@ -41,7 +44,7 @@ impl<'a> Transformer<'a> {
     node: &'a TaggedTemplateExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let TaggedTemplateExpression { span, tag, quasi, .. } = node;
 

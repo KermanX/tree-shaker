@@ -1,5 +1,6 @@
 use crate::{
   analyzer::Analyzer,
+  ast::AstType2,
   build_effect,
   entity::{
     dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity,
@@ -11,6 +12,8 @@ use oxc::ast::ast::{
   AssignmentTarget, ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
   StaticMemberExpression,
 };
+
+const AST_TYPE: AstType2 = AstType2::MemberExpression;
 
 #[derive(Debug, Default)]
 struct Data {
@@ -40,7 +43,7 @@ impl<'a> Analyzer<'a> {
     // TODO: handle optional
     let (has_effect, value) = object.get_property(self, &key);
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
     data.need_optional |= indeterminate;
 
@@ -62,7 +65,7 @@ impl<'a> Analyzer<'a> {
     let key = self.exec_key(node);
     let has_effect = object.set_property(self, &key, ForwardedEntity::new(value, dep));
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
   }
 
@@ -85,7 +88,7 @@ impl<'a> Transformer<'a> {
     node: &'a MemberExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let need_read = need_val || data.has_effect;
 
@@ -147,7 +150,7 @@ impl<'a> Transformer<'a> {
     node: &'a MemberExpression<'a>,
     need_write: bool,
   ) -> Option<AssignmentTarget<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let need_write = need_write || data.has_effect;
 

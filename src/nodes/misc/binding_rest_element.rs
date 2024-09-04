@@ -1,7 +1,10 @@
+use crate::ast::AstType2;
 use crate::entity::entity::{Entity, EntityTrait};
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::{BindingRestElement, PropertyKind};
 use oxc::span::GetSpan;
+
+const AST_TYPE: AstType2 = AstType2::BindingRestElement;
 
 #[derive(Debug, Default)]
 struct Data {
@@ -29,7 +32,7 @@ impl<'a> Analyzer<'a> {
 
     self.exec_binding_pattern(&node.argument, (has_effect, init), exporting);
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
   }
 
@@ -48,7 +51,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a BindingRestElement<'a>,
   ) -> Option<BindingRestElement<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let BindingRestElement { span, argument, .. } = node;
     let argument_span = argument.span();

@@ -1,5 +1,7 @@
-use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, entity::entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{AwaitExpression, Expression};
+
+const AST_TYPE: AstType2 = AstType2::AwaitExpression;
 
 #[derive(Debug, Default)]
 pub struct Data {
@@ -11,7 +13,7 @@ impl<'a> Analyzer<'a> {
     let value = self.exec_expression(&node.argument);
     let (has_effect, awaited) = value.r#await(self);
 
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
 
     let function_scope = self.function_scope_mut();
@@ -30,7 +32,7 @@ impl<'a> Transformer<'a> {
     node: &'a AwaitExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
     let AwaitExpression { span, argument, .. } = node;
 
     if data.has_effect {

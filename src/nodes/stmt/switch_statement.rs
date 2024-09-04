@@ -1,8 +1,10 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
 use oxc::ast::ast::{Statement, SwitchCase, SwitchStatement};
 use rustc_hash::FxHashSet;
 
 use super::statement_vec::StatementVecData;
+
+const AST_TYPE: AstType2 = AstType2::SwitchStatement;
 
 #[derive(Debug, Default)]
 pub struct Data {
@@ -12,7 +14,7 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_switch_statement(&mut self, node: &'a SwitchStatement<'a>) {
-    let data = self.load_data::<Data>(node);
+    let data = self.load_data::<Data>(AST_TYPE, node);
 
     // 1. discriminant
     let discriminant = self.exec_expression(&node.discriminant);
@@ -80,7 +82,7 @@ impl<'a> Analyzer<'a> {
         data.need_consequent.insert(index);
       }
 
-      let data = self.load_data::<StatementVecData>(case);
+      let data = self.load_data::<StatementVecData>(AstType2::SwitchCase, case);
       self.exec_statement_vec(data, entered.map(|entered| !entered), &case.consequent);
     }
 
@@ -90,7 +92,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_switch_statement(&self, node: &'a SwitchStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let SwitchStatement { span, discriminant, cases, .. } = node;
 
@@ -99,7 +101,7 @@ impl<'a> Transformer<'a> {
     let mut transformed_cases = self.ast_builder.vec();
     for (index, case) in cases.into_iter().enumerate() {
       let need_consequent = data.need_consequent.contains(&index);
-      let data = self.get_data::<StatementVecData>(case);
+      let data = self.get_data::<StatementVecData>(AstType2::SwitchCase, case);
 
       let SwitchCase { test, consequent, .. } = case;
 

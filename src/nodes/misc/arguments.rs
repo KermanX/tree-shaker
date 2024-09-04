@@ -1,4 +1,5 @@
 use crate::{
+  ast::Arguments,
   entity::{
     arguments::ArgumentsEntity, dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity,
   },
@@ -6,13 +7,12 @@ use crate::{
   Analyzer,
 };
 use oxc::{
-  allocator::Vec,
   ast::ast::{Argument, Expression},
   span::GetSpan,
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_arguments(&mut self, node: &'a Vec<'a, Argument<'a>>) -> Entity<'a> {
+  pub fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> Entity<'a> {
     let mut arguments = vec![];
     for argument in node {
       let (spread, val) = match argument {
@@ -27,10 +27,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_arguments_need_call(
-    &self,
-    node: &'a Vec<'a, Argument<'a>>,
-  ) -> Vec<'a, Argument<'a>> {
+  pub fn transform_arguments_need_call(&self, node: &'a Arguments<'a>) -> Arguments<'a> {
     let mut arguments = self.ast_builder.vec();
     let mut preserve_args_num = false;
     for argument in node.into_iter().rev() {
@@ -64,9 +61,9 @@ impl<'a> Transformer<'a> {
 
   pub fn transform_arguments_no_call(
     &self,
-    node: &'a Vec<'a, Argument<'a>>,
-  ) -> std::vec::Vec<Option<Expression<'a>>> {
-    node.iter().map(|arg| self.transform_argument_no_call(arg)).collect()
+    node: &'a Arguments<'a>,
+  ) -> Vec<Option<Expression<'a>>> {
+    node.into_iter().map(|arg| self.transform_argument_no_call(arg)).collect()
   }
 
   fn transform_argument_no_call(&self, node: &'a Argument<'a>) -> Option<Expression<'a>> {
