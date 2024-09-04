@@ -1,6 +1,6 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/switch_statement.js
 ---
 export function main() {
@@ -14,7 +14,7 @@ export function main() {
 		case 2:
 			effect3();
 			break;
-		case 3: effect4();
+		case 3:
 	}
 	switch ("1" + unknown) {
 		default: effect1();
@@ -22,6 +22,6 @@ export function main() {
 		case "a":
 			effect2();
 			break;
-		case 3: effect3();
+		case 3:
 	}
 }

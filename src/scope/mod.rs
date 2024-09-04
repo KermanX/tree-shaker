@@ -137,17 +137,17 @@ impl<'a> Analyzer<'a> {
 
   /// If the label is used, `true` is returned.
   pub fn exit_to_label(&mut self, label: Option<&'a str>) -> bool {
-    if let Some(label) = label {
-      let mut is_closest = true;
-      let mut should_exit = true;
-      for cf_scope in self.scope_context.cf_scopes.iter_mut().rev() {
-        if should_exit {
-          cf_scope.exited = Some(true);
-        } else {
-          cf_scope.exited = None;
-          // Stop exiting outer scopes if one inner scope is indeterminate.
-          should_exit = !cf_scope.is_indeterminate();
-        }
+    let mut is_closest = true;
+    let mut should_exit = true;
+    for cf_scope in self.scope_context.cf_scopes.iter_mut().rev() {
+      if should_exit {
+        cf_scope.exited = Some(true);
+      } else {
+        cf_scope.exited = None;
+        // Stop exiting outer scopes if one inner scope is indeterminate.
+        should_exit = !cf_scope.is_indeterminate();
+      }
+      if let Some(label) = label {
         if let Some(label_entity) = cf_scope.matches_label(&label) {
           return if !is_closest || !cf_scope.is_loop_or_switch {
             self.referred_nodes.insert(label_entity.node);
@@ -156,15 +156,14 @@ impl<'a> Analyzer<'a> {
             false
           };
         }
-        if cf_scope.is_loop_or_switch {
-          is_closest = false;
-        }
+      } else if cf_scope.is_loop_or_switch {
+        return false;
       }
-      unreachable!();
-    } else {
-      self.cf_scope_mut().exited = Some(true);
-      false
+      if cf_scope.is_loop_or_switch {
+        is_closest = false;
+      }
     }
+    unreachable!();
   }
 
   pub fn is_relative_indeterminate(&self, target: ScopeId) -> bool {
