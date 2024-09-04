@@ -1,5 +1,4 @@
 use crate::{
-  ast::AstType2,
   entity::{entity::Entity, literal::LiteralEntity, union::UnionEntity},
   transformer::Transformer,
   Analyzer,
@@ -37,7 +36,7 @@ impl<'a> Analyzer<'a> {
   ) {
     let (effect, init) = effect_and_init;
     if effect {
-      let data = self.load_data::<Data>(AstType2::BindingPattern, node);
+      let data = self.load_data::<Data>(node);
       data.has_effect = true;
     }
     match &node.kind {
@@ -83,8 +82,7 @@ impl<'a> Analyzer<'a> {
         };
         self.exec_binding_pattern(&node.left, (false, binding_val), exporting);
 
-        let data =
-          self.load_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
+        let data = self.load_data::<AssignmentPatternData>(node.as_ref());
         data.need_right |= !matches!(is_undefined, Some(false));
       }
     }
@@ -96,7 +94,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a BindingPattern<'a>,
   ) -> Option<BindingPattern<'a>> {
-    let data = self.get_data::<Data>(AstType2::BindingPattern, node);
+    let data = self.get_data::<Data>(node);
 
     let span = node.span();
 
@@ -176,8 +174,7 @@ impl<'a> Transformer<'a> {
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {
-        let data =
-          self.get_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
+        let data = self.get_data::<AssignmentPatternData>(node.as_ref());
 
         let AssignmentPattern { span, left, right, .. } = node.as_ref();
 

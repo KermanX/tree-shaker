@@ -17,7 +17,6 @@ mod tagged_template_expression;
 mod template_literal;
 mod unary_expression;
 
-use crate::ast::AstType2;
 use crate::build_effect;
 use crate::entity::collector::LiteralCollector;
 use crate::entity::entity::Entity;
@@ -26,9 +25,7 @@ use crate::{transformer::Transformer, Analyzer};
 use oxc::allocator::CloneIn;
 use oxc::ast::ast::Expression;
 use oxc::ast::match_member_expression;
-use oxc::span::{GetSpan, Span};
-
-const AST_TYPE: AstType2 = AstType2::Expression;
+use oxc::span::GetSpan;
 
 #[derive(Debug, Default)]
 struct Data<'a> {
@@ -68,7 +65,7 @@ impl<'a> Analyzer<'a> {
       _ => todo!("Expr at span {:?}", node.span()),
     };
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
+    let data = self.load_data::<Data>(node);
     data.collector.collect(entity)
   }
 }
@@ -79,7 +76,7 @@ impl<'a> Transformer<'a> {
     node: &'a Expression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(node);
 
     let span = node.span();
     let literal = need_val.then(|| data.collector.build_expr(&self.ast_builder, span)).flatten();
@@ -144,8 +141,11 @@ impl<'a> Transformer<'a> {
   }
 
   // This is not good
-  pub fn get_expression_collected_literal(&self, span: Span) -> Option<LiteralEntity<'a>> {
-    let data = self.get_data_by_span::<Data>(AST_TYPE, span);
+  pub fn get_expression_collected_literal(
+    &self,
+    node: &'a Expression<'a>,
+  ) -> Option<LiteralEntity<'a>> {
+    let data = self.get_data::<Data>(node);
     data.collector.collected()
   }
 }

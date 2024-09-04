@@ -1,6 +1,5 @@
 use crate::{
   analyzer::Analyzer,
-  ast::AstType2,
   entity::{dep::EntityDepNode, forwarded::ForwardedEntity},
   transformer::Transformer,
 };
@@ -8,8 +7,6 @@ use oxc::{
   ast::ast::{ExpressionStatement, FunctionBody, Statement},
   span::{GetSpan, Span},
 };
-
-const AST_TYPE: AstType2 = AstType2::FunctionBody;
 
 #[derive(Debug, Default)]
 struct Data {
@@ -27,7 +24,7 @@ impl<'a> Analyzer<'a> {
       span = Some(statement.span());
     }
     if let Some(span) = span {
-      let data = self.load_data::<Data>(AST_TYPE, node);
+      let data = self.load_data::<Data>(node);
       data.last_stmt = match data.last_stmt {
         Some(current_span) => Some(current_span.max(span)),
         None => Some(span),
@@ -50,7 +47,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_function_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(node);
 
     let FunctionBody { span, directives, statements, .. } = node;
 

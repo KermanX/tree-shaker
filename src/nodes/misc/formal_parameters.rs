@@ -1,9 +1,6 @@
-use crate::ast::AstType2;
 use crate::entity::entity::Entity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::{FormalParameter, FormalParameters};
-
-const AST_TYPE: AstType2 = AstType2::FormalParameters;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {}
@@ -27,7 +24,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a FormalParameters<'a>,
   ) -> FormalParameters<'a> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(node);
     let FormalParameters { span, items, rest, kind, .. } = node;
 
     let mut transformed_items = self.ast_builder.vec();

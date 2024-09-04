@@ -1,4 +1,3 @@
-use crate::ast::AstType2;
 use crate::build_effect;
 use crate::entity::entity::Entity;
 use crate::{analyzer::Analyzer, transformer::Transformer};
@@ -7,8 +6,6 @@ use oxc::ast::ast::{
 };
 use oxc::span::{GetSpan, SPAN};
 use std::rc::Rc;
-
-const AST_TYPE: AstType2 = AstType2::SpreadElement;
 
 #[derive(Debug, Default)]
 struct Data {
@@ -30,7 +27,7 @@ impl<'a> Analyzer<'a> {
           let argument = self.exec_expression(&node.argument);
           let has_effect = object.init_spread(self, argument);
 
-          let data = self.load_data::<Data>(AST_TYPE, node.as_ref());
+          let data = self.load_data::<Data>(node.as_ref());
           data.has_effect |= has_effect;
         }
       }
@@ -82,7 +79,7 @@ impl<'a> Transformer<'a> {
           }
         }
         ObjectPropertyKind::SpreadProperty(node) => {
-          let data = self.get_data::<Data>(AST_TYPE, node.as_ref());
+          let data = self.get_data::<Data>(node.as_ref());
           let need_spread = need_val || data.has_effect;
 
           let SpreadElement { span, argument, .. } = node.as_ref();

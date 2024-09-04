@@ -1,7 +1,5 @@
-use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::{ContinueStatement, Statement};
-
-const AST_TYPE: AstType2 = AstType2::ContinueStatement;
 
 #[derive(Debug, Default)]
 struct Data {
@@ -12,7 +10,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_continue_statement(&mut self, node: &'a ContinueStatement<'a>) {
     let label = node.label.as_ref().map(|label| label.name.as_str());
     if self.exit_to_label(label) {
-      self.set_data(AST_TYPE, node, Data { label_used: true });
+      self.set_data(node, Data { label_used: true });
     }
   }
 }
@@ -22,7 +20,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a ContinueStatement<'a>,
   ) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(node);
 
     let ContinueStatement { span, .. } = node;
 

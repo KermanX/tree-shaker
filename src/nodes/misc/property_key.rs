@@ -1,4 +1,3 @@
-use crate::ast::AstType2;
 use crate::build_effect;
 use crate::entity::collector::LiteralCollector;
 use crate::entity::entity::Entity;
@@ -7,8 +6,6 @@ use crate::{transformer::Transformer, Analyzer};
 use oxc::span::SPAN;
 use oxc::{ast::ast::PropertyKey, span::GetSpan};
 use std::rc::Rc;
-
-const AST_TYPE: AstType2 = AstType2::PropertyKey;
 
 #[derive(Debug, Default)]
 pub struct Data<'a> {
@@ -26,7 +23,7 @@ impl<'a> Analyzer<'a> {
       }
     };
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
+    let data = self.load_data::<Data>(node);
     data.collector.collect(entity)
   }
 }
@@ -44,7 +41,7 @@ impl<'a> Transformer<'a> {
         need_val.then_some((false, self.clone_node(node)))
       }
       _ => {
-        let data = self.get_data::<Data>(AST_TYPE, node);
+        let data = self.get_data::<Data>(node);
         if let Some(LiteralEntity::String(s)) = data.collector.collected() {
           need_val.then(|| {
             let span = node.span();

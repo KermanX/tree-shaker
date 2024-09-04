@@ -1,10 +1,8 @@
-use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::{
   ast::ast::{IfStatement, Statement},
   span::GetSpan,
 };
-
-const AST_TYPE: AstType2 = AstType2::IfStatement;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -42,7 +40,7 @@ impl<'a> Analyzer<'a> {
       self.pop_cf_scope();
     }
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
+    let data = self.load_data::<Data>(node);
 
     data.maybe_true |= maybe_true;
     data.maybe_false |= maybe_false;
@@ -51,7 +49,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_if_statement(&self, node: &'a IfStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(node);
 
     let IfStatement { span, test, consequent, alternate, .. } = node;
 
