@@ -52,10 +52,10 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_call_expression(
     &self,
-    node: CallExpression<'a>,
+    node: &'a CallExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let CallExpression { span, callee, arguments, .. } = node;
 
@@ -66,7 +66,7 @@ impl<'a> Transformer<'a> {
       let callee = self.transform_expression(callee, true).unwrap();
       let arguments = self.transform_arguments_need_call(arguments);
       Some(self.ast_builder.expression_call(
-        span,
+        *span,
         callee,
         None::<TSTypeParameterInstantiation>,
         arguments,
@@ -76,7 +76,7 @@ impl<'a> Transformer<'a> {
       // Only need effects in callee and args
       let callee = self.transform_expression(callee, false);
       let arguments = self.transform_arguments_no_call(arguments);
-      build_effect_from_arr!(self.ast_builder, span, vec![callee], arguments)
+      build_effect_from_arr!(self.ast_builder, *span, vec![callee], arguments)
     }
   }
 }

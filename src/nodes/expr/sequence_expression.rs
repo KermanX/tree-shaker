@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_sequence_expression(
     &self,
-    node: SequenceExpression<'a>,
+    node: &'a SequenceExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let SequenceExpression { span, expressions } = node;
@@ -33,7 +33,7 @@ impl<'a> Transformer<'a> {
     } else if transformed_expressions.len() == 1 {
       Some(transformed_expressions.pop().unwrap())
     } else {
-      Some(self.ast_builder.expression_sequence(span, transformed_expressions))
+      Some(self.ast_builder.expression_sequence(*span, transformed_expressions))
     }
   }
 }

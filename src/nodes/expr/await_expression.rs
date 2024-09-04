@@ -29,15 +29,15 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_await_expression(
     &self,
-    node: AwaitExpression<'a>,
+    node: &'a AwaitExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
     let AwaitExpression { span, argument, .. } = node;
 
     if data.has_effect {
       let argument = self.transform_expression(argument, true).unwrap();
-      Some(self.ast_builder.expression_await(span, argument))
+      Some(self.ast_builder.expression_await(*span, argument))
     } else {
       self.transform_expression(argument, need_val)
     }

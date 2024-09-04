@@ -16,15 +16,15 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_for_statement_left(
     &self,
-    node: ForStatementLeft<'a>,
+    node: &'a ForStatementLeft<'a>,
   ) -> Option<ForStatementLeft<'a>> {
     match node {
       ForStatementLeft::VariableDeclaration(node) => self
-        .transform_variable_declaration(node.unbox())
+        .transform_variable_declaration(node)
         .map(|decl| self.ast_builder.for_statement_left_from_variable_declaration(decl)),
       ForStatementLeft::UsingDeclaration(node) => todo!(),
       _ => self
-        .transform_assignment_target(node.try_into().unwrap())
+        .transform_assignment_target(node.to_assignment_target())
         .map(|target| self.ast_builder.for_statement_left_assignment_target(target)),
     }
   }

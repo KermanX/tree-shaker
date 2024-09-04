@@ -45,7 +45,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_binary_expression(
     &self,
-    node: BinaryExpression<'a>,
+    node: &'a BinaryExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let BinaryExpression { span, operator, left, right } = node;
@@ -54,9 +54,9 @@ impl<'a> Transformer<'a> {
     let right = self.transform_expression(right, need_val);
 
     if need_val {
-      Some(self.ast_builder.expression_binary(span, left.unwrap(), operator, right.unwrap()))
+      Some(self.ast_builder.expression_binary(*span, left.unwrap(), *operator, right.unwrap()))
     } else {
-      build_effect!(self.ast_builder, span, left, right)
+      build_effect!(self.ast_builder, *span, left, right)
     }
   }
 }

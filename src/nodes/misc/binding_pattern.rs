@@ -92,8 +92,11 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_binding_pattern(&self, node: BindingPattern<'a>) -> Option<BindingPattern<'a>> {
-    let data = self.get_data::<Data>(AstType2::BindingPattern, &node);
+  pub fn transform_binding_pattern(
+    &self,
+    node: &'a BindingPattern<'a>,
+  ) -> Option<BindingPattern<'a>> {
+    let data = self.get_data::<Data>(AstType2::BindingPattern, node);
 
     let span = node.span();
 
@@ -101,7 +104,7 @@ impl<'a> Transformer<'a> {
 
     let transformed = match kind {
       BindingPatternKind::BindingIdentifier(node) => {
-        self.transform_binding_identifier(node.unbox()).map(|identifier| {
+        self.transform_binding_identifier(node).map(|identifier| {
           self.ast_builder.binding_pattern(
             self.ast_builder.binding_pattern_kind_from_binding_identifier(identifier),
             None::<TSTypeAnnotation>,
@@ -110,9 +113,9 @@ impl<'a> Transformer<'a> {
         })
       }
       BindingPatternKind::ObjectPattern(node) => {
-        let ObjectPattern { span, properties, rest, .. } = node.unbox();
+        let ObjectPattern { span, properties, rest, .. } = node.as_ref();
 
-        let rest = rest.and_then(|rest| self.transform_binding_rest_element(rest.unbox()));
+        let rest = rest.as_ref().and_then(|rest| self.transform_binding_rest_element(rest));
 
         let mut transformed_properties = self.ast_builder.vec();
         for property in properties {
@@ -122,13 +125,13 @@ impl<'a> Transformer<'a> {
           if let Some(value) = value {
             let (computed, key) = self.transform_property_key(key, true).unwrap();
             transformed_properties
-              .push(self.ast_builder.binding_property(span, key, value, shorthand, computed));
+              .push(self.ast_builder.binding_property(*span, key, value, *shorthand, computed));
           } else if let Some((computed, key)) = self.transform_property_key(key, rest.is_some()) {
             transformed_properties.push(self.ast_builder.binding_property(
-              span,
+              *span,
               key,
               self.build_unused_binding_pattern(key_span),
-              shorthand,
+              *shorthand,
               computed,
             ));
           }
@@ -138,7 +141,7 @@ impl<'a> Transformer<'a> {
         } else {
           Some(self.ast_builder.binding_pattern(
             self.ast_builder.binding_pattern_kind_object_pattern(
-              span,
+              *span,
               transformed_properties,
               rest,
             ),
@@ -148,15 +151,15 @@ impl<'a> Transformer<'a> {
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
-        let ArrayPattern { span, elements, rest, .. } = node.unbox();
+        let ArrayPattern { span, elements, rest, .. } = node.as_ref();
 
         let mut transformed_elements = self.ast_builder.vec();
         for element in elements {
           transformed_elements
-            .push(element.and_then(|element| self.transform_binding_pattern(element)));
+            .push(element.as_ref().and_then(|element| self.transform_binding_pattern(element)));
         }
 
-        let rest = rest.and_then(|rest| self.transform_binding_rest_element(rest.unbox()));
+        let rest = rest.as_ref().and_then(|rest| self.transform_binding_rest_element(rest));
 
         while transformed_elements.last().is_none() {
           transformed_elements.pop();
@@ -166,7 +169,7 @@ impl<'a> Transformer<'a> {
           None
         } else {
           Some(self.ast_builder.binding_pattern(
-            self.ast_builder.binding_pattern_kind_array_pattern(span, transformed_elements, rest),
+            self.ast_builder.binding_pattern_kind_array_pattern(*span, transformed_elements, rest),
             None::<TSTypeAnnotation>,
             false,
           ))
@@ -176,7 +179,7 @@ impl<'a> Transformer<'a> {
         let data =
           self.get_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
 
-        let AssignmentPattern { span, left, right, .. } = node.unbox();
+        let AssignmentPattern { span, left, right, .. } = node.as_ref();
 
         let left_span = left.span();
         let left = self.transform_binding_pattern(left);
@@ -186,7 +189,7 @@ impl<'a> Transformer<'a> {
         if let Some(right) = right {
           Some(self.ast_builder.binding_pattern(
             self.ast_builder.binding_pattern_kind_assignment_pattern(
-              span,
+              *span,
               left.unwrap_or(self.build_unused_binding_pattern(left_span)),
               right,
             ),

@@ -12,7 +12,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_assignment_expression(
     &self,
-    node: AssignmentExpression<'a>,
+    node: &'a AssignmentExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let AssignmentExpression { span, operator, left, right } = node;
@@ -22,7 +22,7 @@ impl<'a> Transformer<'a> {
 
     match (left, right) {
       (Some(left), Some(right)) => {
-        Some(self.ast_builder.expression_assignment(span, operator, left, right))
+        Some(self.ast_builder.expression_assignment(*span, *operator, left, right))
       }
       (None, Some(right)) => Some(right),
       (None, None) => None,

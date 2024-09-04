@@ -33,19 +33,19 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_function(&self, node: Function<'a>, need_val: bool) -> Option<Function<'a>> {
+  pub fn transform_function(&self, node: &'a Function<'a>, need_val: bool) -> Option<Function<'a>> {
     if need_val || self.is_referred(EntityDepNode::Function(&node)) {
       let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
 
-      let params = self.transform_formal_parameters(params.unbox());
-      let body = self.transform_function_body(body.unwrap().unbox());
+      let params = self.transform_formal_parameters(params);
+      let body = self.transform_function_body(body.as_ref().unwrap());
 
       Some(self.ast_builder.function(
-        r#type,
-        span,
-        id,
-        generator,
-        r#async,
+        *r#type,
+        *span,
+        id.clone(),
+        *generator,
+        *r#async,
         false,
         None::<TSTypeParameterDeclaration>,
         None::<TSThisParameter>,

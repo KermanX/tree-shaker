@@ -3,10 +3,7 @@ use crate::build_effect;
 use crate::entity::entity::Entity;
 use crate::entity::union::UnionEntity;
 use crate::{analyzer::Analyzer, Transformer};
-use oxc::{
-  ast::ast::{Expression, LogicalExpression, LogicalOperator},
-  span::GetSpan,
-};
+use oxc::ast::ast::{Expression, LogicalExpression, LogicalOperator};
 use std::rc::Rc;
 
 const AST_TYPE: AstType2 = AstType2::LogicalExpression;
@@ -60,21 +57,22 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_logical_expression(
     &self,
-    node: LogicalExpression<'a>,
+    node: &'a LogicalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
-    let span = node.span();
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
-    let left = self.transform_expression(node.left, need_val && data.need_left_val);
-    let right = data.need_right.then(|| self.transform_expression(node.right, need_val)).flatten();
+    let LogicalExpression { span, left, operator, right, .. } = node;
+
+    let left = self.transform_expression(left, need_val && data.need_left_val);
+    let right = data.need_right.then(|| self.transform_expression(right, need_val)).flatten();
 
     match (left, right) {
       (Some(left), Some(right)) => {
         if need_val && data.need_left_val {
-          Some(self.ast_builder.expression_logical(span, left, node.operator, right))
+          Some(self.ast_builder.expression_logical(*span, left, *operator, right))
         } else {
-          Some(build_effect!(self.ast_builder, span, Some(left); right))
+          Some(build_effect!(self.ast_builder, *span, Some(left); right))
         }
       }
       (Some(left), None) => Some(left),

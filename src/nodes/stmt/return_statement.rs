@@ -22,15 +22,14 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_return_statement(&self, node: ReturnStatement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_return_statement(&self, node: &'a ReturnStatement<'a>) -> Option<Statement<'a>> {
     let need_val = self.is_referred(EntityDepNode::ReturnStatement(&node));
 
     let ReturnStatement { span, argument } = node;
 
-    Some(
-      self
-        .ast_builder
-        .statement_return(span, argument.and_then(|arg| self.transform_expression(arg, need_val))),
-    )
+    Some(self.ast_builder.statement_return(
+      *span,
+      argument.as_ref().and_then(|arg| self.transform_expression(arg, need_val)),
+    ))
   }
 }

@@ -91,8 +91,8 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_switch_statement(&self, node: SwitchStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+  pub fn transform_switch_statement(&self, node: &'a SwitchStatement<'a>) -> Option<Statement<'a>> {
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let SwitchStatement { span, discriminant, cases, .. } = node;
 
@@ -101,12 +101,12 @@ impl<'a> Transformer<'a> {
     let mut transformed_cases = self.ast_builder.vec();
     for (index, case) in cases.into_iter().enumerate() {
       let need_consequent = data.need_consequent.contains(&index);
-      let data = self.get_data::<StatementVecData>(AstType2::SwitchCase, &case);
+      let data = self.get_data::<StatementVecData>(AstType2::SwitchCase, case);
 
       let SwitchCase { test, consequent, .. } = case;
 
       // TODO: tree shake if test is readonly
-      let test = test.map(|test| self.transform_expression(test, true).unwrap());
+      let test = test.as_ref().map(|test| self.transform_expression(test, true).unwrap());
 
       let consequent = if need_consequent {
         self.transform_statement_vec(data, consequent)
@@ -115,10 +115,10 @@ impl<'a> Transformer<'a> {
       };
 
       if test.is_some() || !consequent.is_empty() {
-        transformed_cases.push(self.ast_builder.switch_case(span, test, consequent));
+        transformed_cases.push(self.ast_builder.switch_case(*span, test, consequent));
       }
     }
 
-    Some(self.ast_builder.statement_switch(span, discriminant, transformed_cases))
+    Some(self.ast_builder.statement_switch(*span, discriminant, transformed_cases))
   }
 }

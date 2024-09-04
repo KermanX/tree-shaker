@@ -18,14 +18,14 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_declaration(&self, node: Declaration<'a>) -> Option<Declaration<'a>> {
+  pub fn transform_declaration(&self, node: &'a Declaration<'a>) -> Option<Declaration<'a>> {
     match node {
       Declaration::VariableDeclaration(node) => self
-        .transform_variable_declaration(node.unbox())
+        .transform_variable_declaration(node)
         .map(|decl| self.ast_builder.declaration_from_variable(decl)),
-      Declaration::FunctionDeclaration(node) => self
-        .transform_function(node.unbox(), false)
-        .map(|f| self.ast_builder.declaration_from_function(f)),
+      Declaration::FunctionDeclaration(node) => {
+        self.transform_function(node, false).map(|f| self.ast_builder.declaration_from_function(f))
+      }
       _ => todo!(),
     }
   }

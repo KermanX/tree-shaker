@@ -54,8 +54,8 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_for_in_statement(&self, node: ForInStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+  pub fn transform_for_in_statement(&self, node: &'a ForInStatement<'a>) -> Option<Statement<'a>> {
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let ForInStatement { span, left, right, body, .. } = node;
 
@@ -68,13 +68,13 @@ impl<'a> Transformer<'a> {
     if !data.need_loop || (left.is_none() && body.is_none()) {
       return self
         .transform_expression(right, false)
-        .map(|expr| self.ast_builder.statement_expression(span, expr));
+        .map(|expr| self.ast_builder.statement_expression(*span, expr));
     }
 
     let right = self.transform_expression(right, true).unwrap();
 
     Some(self.ast_builder.statement_for_in(
-      span,
+      *span,
       left.unwrap_or_else(|| self.build_unused_for_statement_left(left_span)),
       right,
       body.unwrap_or_else(|| self.ast_builder.statement_empty(body_span)),

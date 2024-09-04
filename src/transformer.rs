@@ -5,7 +5,7 @@ use crate::{
   entity::dep::EntityDepNode,
 };
 use oxc::{
-  allocator::Allocator,
+  allocator::{Allocator, CloneIn},
   ast::{
     ast::{
       AssignmentTarget, BindingPattern, Expression, ForStatementLeft, NumberBase, Program,
@@ -33,7 +33,7 @@ impl<'a> Transformer<'a> {
     Transformer { allocator, ast_builder: AstBuilder::new(allocator), data, referred_nodes }
   }
 
-  pub fn transform_program(&self, ast: Program<'a>) -> Program<'a> {
+  pub fn transform_program(&self, ast: &'a Program<'a>) -> Program<'a> {
     let Program { span, source_type, hashbang, directives, body, .. } = ast;
     let mut transformed_body = self.ast_builder.vec();
     for stmt in body {
@@ -42,11 +42,21 @@ impl<'a> Transformer<'a> {
         transformed_body.push(transformed);
       }
     }
-    self.ast_builder.program(span, source_type, hashbang, directives, transformed_body)
+    self.ast_builder.program(
+      *span,
+      *source_type,
+      self.clone_node(hashbang),
+      self.clone_node(directives),
+      transformed_body,
+    )
   }
 }
 
 impl<'a> Transformer<'a> {
+  pub fn clone_node<T: CloneIn<'a>>(&self, node: &T) -> T::Cloned {
+    node.clone_in(self.allocator)
+  }
+
   pub fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
     let mut hasher = DefaultHasher::new();
     hasher.write_u32(span.start);

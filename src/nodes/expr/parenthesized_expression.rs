@@ -13,12 +13,12 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_parenthesized_expression(
     &self,
-    node: ParenthesizedExpression<'a>,
+    node: &'a ParenthesizedExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let ParenthesizedExpression { span, expression } = node;
     self
       .transform_expression(expression, need_val)
-      .map(|expression| self.ast_builder.expression_parenthesized(span, expression))
+      .map(|expression| self.ast_builder.expression_parenthesized(*span, expression))
   }
 }

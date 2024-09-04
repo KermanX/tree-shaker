@@ -35,20 +35,20 @@ impl<'a> Transformer<'a> {
   /// Returns (computed, node)
   pub fn transform_property_key(
     &self,
-    node: PropertyKey<'a>,
+    node: &'a PropertyKey<'a>,
     need_val: bool,
   ) -> Option<(bool, PropertyKey<'a>)> {
     match node {
       // Reuse the node
       PropertyKey::StaticIdentifier(_) | PropertyKey::PrivateIdentifier(_) => {
-        need_val.then_some((false, node))
+        need_val.then_some((false, self.clone_node(node)))
       }
       _ => {
-        let data = self.get_data::<Data>(AST_TYPE, &node);
+        let data = self.get_data::<Data>(AST_TYPE, node);
         if let Some(LiteralEntity::String(s)) = data.collector.collected() {
           need_val.then(|| {
             let span = node.span();
-            let expr = self.transform_expression(TryFrom::try_from(node).unwrap(), false);
+            let expr = self.transform_expression(node.to_expression(), false);
             if let Some(expr) = expr {
               // TODO: This is not the minimal representation, to fix this we need two expression nodes.
               (
@@ -66,7 +66,7 @@ impl<'a> Transformer<'a> {
             }
           })
         } else {
-          let expr = self.transform_expression(node.try_into().unwrap(), need_val);
+          let expr = self.transform_expression(node.to_expression(), need_val);
           expr.map(|e| (true, self.ast_builder.property_key_expression(e)))
         }
       }

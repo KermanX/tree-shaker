@@ -37,23 +37,23 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_arrow_function_expression(
     &self,
-    node: ArrowFunctionExpression<'a>,
+    node: &'a ArrowFunctionExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
     if need_val || self.is_referred(EntityDepNode::ArrowFunctionExpression(&node)) {
       let ArrowFunctionExpression { span, expression, r#async, params, body, .. } = node;
 
-      let params = self.transform_formal_parameters(params.unbox());
-      let body = if expression {
-        self.transform_function_expression_body(body.unbox())
+      let params = self.transform_formal_parameters(params);
+      let body = if *expression {
+        self.transform_function_expression_body(body)
       } else {
-        self.transform_function_body(body.unbox())
+        self.transform_function_body(body)
       };
 
       Some(self.ast_builder.expression_arrow_function(
-        span,
-        expression,
-        r#async,
+        *span,
+        *expression,
+        *r#async,
         None::<TSTypeParameterDeclaration>,
         params,
         None::<TSTypeAnnotation>,

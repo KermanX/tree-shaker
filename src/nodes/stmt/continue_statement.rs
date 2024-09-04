@@ -18,14 +18,18 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_continue_statement(&self, node: ContinueStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+  pub fn transform_continue_statement(
+    &self,
+    node: &'a ContinueStatement<'a>,
+  ) -> Option<Statement<'a>> {
+    let data = self.get_data::<Data>(AST_TYPE, node);
+
+    let ContinueStatement { span, .. } = node;
 
     Some(if data.label_used {
-      self.ast_builder.statement_from_continue(node)
+      self.ast_builder.statement_from_continue(self.clone_node(node))
     } else {
-      let ContinueStatement { span, .. } = node;
-      self.ast_builder.statement_continue(span, None)
+      self.ast_builder.statement_continue(*span, None)
     })
   }
 }

@@ -23,6 +23,7 @@ use crate::entity::collector::LiteralCollector;
 use crate::entity::entity::Entity;
 use crate::entity::literal::LiteralEntity;
 use crate::{transformer::Transformer, Analyzer};
+use oxc::allocator::CloneIn;
 use oxc::ast::ast::Expression;
 use oxc::ast::match_member_expression;
 use oxc::span::{GetSpan, Span};
@@ -75,10 +76,10 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_expression(
     &self,
-    node: Expression<'a>,
+    node: &'a Expression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let span = node.span();
     let literal = need_val.then(|| data.collector.build_expr(&self.ast_builder, span)).flatten();
@@ -86,7 +87,7 @@ impl<'a> Transformer<'a> {
 
     let inner = match node {
       match_member_expression!(Expression) => {
-        self.transform_member_expression_read(node.try_into().unwrap(), need_val)
+        self.transform_member_expression_read(node.to_member_expression(), need_val)
       }
       Expression::StringLiteral(_)
       | Expression::NumericLiteral(_)
@@ -95,53 +96,43 @@ impl<'a> Transformer<'a> {
       | Expression::NullLiteral(_)
       | Expression::RegExpLiteral(_) => {
         if need_val {
-          Some(node)
+          Some(node.clone_in(&self.allocator))
         } else {
           None
         }
       }
-      Expression::TemplateLiteral(node) => self.transform_template_literal(node.unbox(), need_val),
+      Expression::TemplateLiteral(node) => self.transform_template_literal(node, need_val),
       Expression::Identifier(node) => self
-        .transform_identifier_reference_read(node.unbox(), need_val)
+        .transform_identifier_reference_read(node, need_val)
         .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
       Expression::FunctionExpression(node) => self
-        .transform_function(node.unbox(), need_val)
+        .transform_function(node, need_val)
         .map(|f| self.ast_builder.expression_from_function(f)),
       Expression::ArrowFunctionExpression(node) => {
-        self.transform_arrow_function_expression(node.unbox(), need_val)
+        self.transform_arrow_function_expression(node, need_val)
       }
-      Expression::UnaryExpression(node) => self.transform_unary_expression(node.unbox(), need_val),
-      Expression::BinaryExpression(node) => {
-        self.transform_binary_expression(node.unbox(), need_val)
-      }
-      Expression::LogicalExpression(node) => {
-        self.transform_logical_expression(node.unbox(), need_val)
-      }
+      Expression::UnaryExpression(node) => self.transform_unary_expression(node, need_val),
+      Expression::BinaryExpression(node) => self.transform_binary_expression(node, need_val),
+      Expression::LogicalExpression(node) => self.transform_logical_expression(node, need_val),
       Expression::ConditionalExpression(node) => {
-        self.transform_conditional_expression(node.unbox(), need_val)
+        self.transform_conditional_expression(node, need_val)
       }
-      Expression::CallExpression(node) => self.transform_call_expression(node.unbox(), need_val),
+      Expression::CallExpression(node) => self.transform_call_expression(node, need_val),
       Expression::TaggedTemplateExpression(node) => {
-        self.transform_tagged_template_expression(node.unbox(), need_val)
+        self.transform_tagged_template_expression(node, need_val)
       }
-      Expression::AwaitExpression(node) => self.transform_await_expression(node.unbox(), need_val),
-      Expression::ObjectExpression(node) => {
-        self.transform_object_expression(node.unbox(), need_val)
-      }
+      Expression::AwaitExpression(node) => self.transform_await_expression(node, need_val),
+      Expression::ObjectExpression(node) => self.transform_object_expression(node, need_val),
       Expression::ParenthesizedExpression(node) => {
-        self.transform_parenthesized_expression(node.unbox(), need_val)
+        self.transform_parenthesized_expression(node, need_val)
       }
-      Expression::SequenceExpression(node) => {
-        self.transform_sequence_expression(node.unbox(), need_val)
-      }
+      Expression::SequenceExpression(node) => self.transform_sequence_expression(node, need_val),
       Expression::AssignmentExpression(node) => {
-        self.transform_assignment_expression(node.unbox(), need_val)
+        self.transform_assignment_expression(node, need_val)
       }
-      Expression::ChainExpression(node) => self.transform_chain_expression(node.unbox(), need_val),
-      Expression::ImportExpression(node) => {
-        self.transform_import_expression(node.unbox(), need_val)
-      }
-      Expression::MetaProperty(node) => self.transform_meta_property(node.unbox(), need_val),
+      Expression::ChainExpression(node) => self.transform_chain_expression(node, need_val),
+      Expression::ImportExpression(node) => self.transform_import_expression(node, need_val),
+      Expression::MetaProperty(node) => self.transform_meta_property(node, need_val),
       _ => todo!(),
     };
 

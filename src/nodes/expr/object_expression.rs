@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_object_expression(
     &self,
-    node: ObjectExpression<'a>,
+    node: &'a ObjectExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let ObjectExpression { span, properties, .. } = node;
@@ -53,7 +53,7 @@ impl<'a> Transformer<'a> {
     for property in properties {
       transformed_properties.push(match property {
         ObjectPropertyKind::ObjectProperty(node) => {
-          let ObjectProperty { span, key, kind, value, method, .. } = node.unbox();
+          let ObjectProperty { span, key, kind, value, method, .. } = node.as_ref();
 
           let value_span = value.span();
 
@@ -62,17 +62,17 @@ impl<'a> Transformer<'a> {
           if let Some(value) = value {
             let (computed, key) = self.transform_property_key(key, true).unwrap();
             self.ast_builder.object_property_kind_object_property(
-              span, kind, key, value, None, method, false, computed,
+              *span, *kind, key, value, None, *method, false, computed,
             )
           } else {
             if let Some((computed, key)) = self.transform_property_key(key, false) {
               self.ast_builder.object_property_kind_object_property(
-                span,
-                kind,
+                *span,
+                *kind,
                 key,
                 self.build_unused_expression(value_span),
                 None,
-                method,
+                *method,
                 false,
                 computed,
               )
@@ -85,17 +85,17 @@ impl<'a> Transformer<'a> {
           let data = self.get_data::<Data>(AST_TYPE, node.as_ref());
           let need_spread = need_val || data.has_effect;
 
-          let SpreadElement { span, argument, .. } = node.unbox();
+          let SpreadElement { span, argument, .. } = node.as_ref();
 
           let argument = self.transform_expression(argument, need_spread);
 
           if let Some(argument) = argument {
             self.ast_builder.object_property_kind_spread_element(
-              span,
+              *span,
               if need_spread {
                 argument
               } else {
-                build_effect!(&self.ast_builder, span, Some(argument); self.build_unused_expression(SPAN))
+                build_effect!(&self.ast_builder, *span, Some(argument); self.build_unused_expression(SPAN))
               },
             )
           } else {
@@ -108,7 +108,7 @@ impl<'a> Transformer<'a> {
     if !need_val && transformed_properties.is_empty() {
       None
     } else {
-      Some(self.ast_builder.expression_object(span, transformed_properties, None))
+      Some(self.ast_builder.expression_object(*span, transformed_properties, None))
     }
   }
 }

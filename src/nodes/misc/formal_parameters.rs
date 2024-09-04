@@ -23,8 +23,11 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_formal_parameters(&self, node: FormalParameters<'a>) -> FormalParameters<'a> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+  pub fn transform_formal_parameters(
+    &self,
+    node: &'a FormalParameters<'a>,
+  ) -> FormalParameters<'a> {
+    let data = self.get_data::<Data>(AST_TYPE, node);
     let FormalParameters { span, items, rest, kind, .. } = node;
 
     let mut transformed_items = self.ast_builder.vec();
@@ -33,9 +36,9 @@ impl<'a> Transformer<'a> {
       let FormalParameter { span, decorators, pattern, .. } = param;
       let pattern = self.transform_binding_pattern(pattern);
       transformed_items.push(self.ast_builder.formal_parameter(
-        span,
-        decorators,
-        pattern.unwrap_or_else(|| self.build_unused_binding_pattern(span)),
+        *span,
+        self.clone_node(decorators),
+        pattern.unwrap_or_else(|| self.build_unused_binding_pattern(*span)),
         None,
         false,
         false,
@@ -43,10 +46,10 @@ impl<'a> Transformer<'a> {
     }
 
     let transformed_rest = match rest {
-      Some(rest) => self.transform_binding_rest_element(rest.unbox()),
+      Some(rest) => self.transform_binding_rest_element(rest),
       None => None,
     };
 
-    self.ast_builder.formal_parameters(span, kind, transformed_items, transformed_rest)
+    self.ast_builder.formal_parameters(*span, *kind, transformed_items, transformed_rest)
   }
 }

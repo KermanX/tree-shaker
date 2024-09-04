@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_import_expression(
     &self,
-    node: ImportExpression<'a>,
+    node: &'a ImportExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let ImportExpression { span, source, arguments, .. } = node;
@@ -35,13 +35,13 @@ impl<'a> Transformer<'a> {
       for argument in arguments {
         transformed_arguments.push(self.transform_expression(argument, true).unwrap());
       }
-      Some(self.ast_builder.expression_import(span, source.unwrap(), transformed_arguments))
+      Some(self.ast_builder.expression_import(*span, source.unwrap(), transformed_arguments))
     } else {
       let mut effects = vec![source];
       for argument in arguments {
         effects.push(self.transform_expression(argument, false));
       }
-      build_effect_from_arr!(&self.ast_builder, span, effects)
+      build_effect_from_arr!(&self.ast_builder, *span, effects)
     }
   }
 }

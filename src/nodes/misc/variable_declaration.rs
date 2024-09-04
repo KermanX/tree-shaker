@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_variable_declaration(
     &self,
-    node: VariableDeclaration<'a>,
+    node: &'a VariableDeclaration<'a>,
   ) -> Option<VariableDeclaration<'a>> {
     let VariableDeclaration { span, kind, declarations, .. } = node;
     let mut transformed_decls = self.ast_builder.vec();
@@ -30,7 +30,7 @@ impl<'a> Transformer<'a> {
     if transformed_decls.is_empty() {
       None
     } else {
-      Some(self.ast_builder.variable_declaration(span, kind, transformed_decls, false))
+      Some(self.ast_builder.variable_declaration(*span, *kind, transformed_decls, false))
     }
   }
 }

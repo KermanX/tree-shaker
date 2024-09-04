@@ -43,27 +43,22 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
   let ast_builder = AstBuilder::new(allocator);
 
   let parser = Parser::new(&allocator, source_text.as_str(), source_type);
-  let ast1 = allocator.alloc(parser.parse().program);
-
-  // TODO: Reuse the AST
-  let parser2 = Parser::new(&allocator, source_text.as_str(), source_type);
-  let mut ast2 = parser2.parse().program;
+  let ast = allocator.alloc(parser.parse().program);
 
   if eval_mode {
-    transform_eval_mode_encode(&ast_builder, ast1);
-    transform_eval_mode_encode(&ast_builder, &mut ast2);
+    transform_eval_mode_encode(&ast_builder, ast);
   }
 
   let sematic_builder = SemanticBuilder::new(source_text.as_str(), source_type);
-  let sematic = sematic_builder.build(ast1).semantic;
+  let sematic = sematic_builder.build(ast).semantic;
 
   // Step 1: Analyze the program
   let mut analyzer = Analyzer::new(&allocator, sematic);
-  analyzer.exec_program(ast1);
+  analyzer.exec_program(ast);
 
   // Step 3: Remove dead code (transform)
   let transformer = Transformer::new(analyzer);
-  let mut program = transformer.transform_program(ast2);
+  let mut program = transformer.transform_program(ast);
 
   // Step 4: Minify
   let minifier_return = minify.map(|options| {

@@ -40,12 +40,13 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_unary_expression(
     &self,
-    node: UnaryExpression<'a>,
+    node: &'a UnaryExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let UnaryExpression { span, operator, argument } = node;
 
-    let argument = self.transform_expression(argument, need_val && operator != UnaryOperator::Void);
+    let argument =
+      self.transform_expression(argument, need_val && *operator != UnaryOperator::Void);
 
     match operator {
       UnaryOperator::UnaryNegation
@@ -55,14 +56,14 @@ impl<'a> Transformer<'a> {
       | UnaryOperator::BitwiseNot
       | UnaryOperator::Typeof => {
         if need_val {
-          Some(self.ast_builder.expression_unary(span, operator, argument.unwrap()))
+          Some(self.ast_builder.expression_unary(*span, *operator, argument.unwrap()))
         } else {
           argument
         }
       }
       UnaryOperator::Void => match (need_val, argument) {
-        (true, Some(argument)) => Some(self.ast_builder.expression_unary(span, operator, argument)),
-        (true, None) => Some(self.build_undefined(span)),
+        (true, Some(argument)) => Some(self.ast_builder.expression_unary(*span, *operator, argument)),
+        (true, None) => Some(self.build_undefined(*span)),
         (false, argument) => argument,
       },
       UnaryOperator::Delete => {

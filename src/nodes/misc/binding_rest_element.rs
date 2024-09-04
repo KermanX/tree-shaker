@@ -49,9 +49,9 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_binding_rest_element(
     &self,
-    node: BindingRestElement<'a>,
+    node: &'a BindingRestElement<'a>,
   ) -> Option<BindingRestElement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let BindingRestElement { span, argument, .. } = node;
     let argument_span = argument.span();
@@ -59,12 +59,12 @@ impl<'a> Transformer<'a> {
     let argument = self.transform_binding_pattern(argument);
 
     if let Some(argument) = argument {
-      Some(self.ast_builder.binding_rest_element(span, argument))
+      Some(self.ast_builder.binding_rest_element(*span, argument))
     } else if data.has_effect {
       Some(
         self
           .ast_builder
-          .binding_rest_element(span, self.build_unused_binding_pattern(argument_span)),
+          .binding_rest_element(*span, self.build_unused_binding_pattern(argument_span)),
       )
     } else {
       None

@@ -13,13 +13,16 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_labeled_statement(&self, node: LabeledStatement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_labeled_statement(
+    &self,
+    node: &'a LabeledStatement<'a>,
+  ) -> Option<Statement<'a>> {
     let LabeledStatement { span, label, body } = node;
 
     let body = self.transform_statement(body);
 
     if self.is_referred(EntityDepNode::LabelIdentifier(&label)) {
-      Some(self.ast_builder.statement_labeled(span, label, body.unwrap()))
+      Some(self.ast_builder.statement_labeled(*span, label.clone(), body.unwrap()))
     } else {
       body
     }

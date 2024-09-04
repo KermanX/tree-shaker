@@ -21,21 +21,21 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_catch_clause(&self, node: CatchClause<'a>) -> CatchClause<'a> {
+  pub fn transform_catch_clause(&self, node: &'a CatchClause<'a>) -> CatchClause<'a> {
     let CatchClause { span, param, body, .. } = node;
 
-    let param = param.and_then(|param| {
+    let param = param.as_ref().and_then(|param| {
       let CatchParameter { span, pattern, .. } = param;
       self
         .transform_binding_pattern(pattern)
-        .map(|pattern| self.ast_builder.catch_parameter(span, pattern))
+        .map(|pattern| self.ast_builder.catch_parameter(*span, pattern))
     });
 
     let body_span = body.span();
-    let body = self.transform_block_statement(body.unbox());
+    let body = self.transform_block_statement(body);
 
     self.ast_builder.catch_clause(
-      span,
+      *span,
       param,
       body.unwrap_or(self.ast_builder.block_statement(body_span, self.ast_builder.vec())),
     )

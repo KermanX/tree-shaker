@@ -39,8 +39,8 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_while_statement(&self, node: WhileStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+  pub fn transform_while_statement(&self, node: &'a WhileStatement<'a>) -> Option<Statement<'a>> {
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let WhileStatement { span, test, body, .. } = node;
     let body_span = body.span();
@@ -50,7 +50,7 @@ impl<'a> Transformer<'a> {
 
     match (test, body) {
       (Some(test), body) => Some(self.ast_builder.statement_while(
-        span,
+        *span,
         test,
         body.unwrap_or_else(|| self.ast_builder.statement_empty(body_span)),
       )),

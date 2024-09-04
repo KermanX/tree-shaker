@@ -55,10 +55,10 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_conditional_expression(
     &self,
-    node: ConditionalExpression<'a>,
+    node: &'a ConditionalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let ConditionalExpression { span, test, consequent, alternate, .. } = node;
 
@@ -72,10 +72,10 @@ impl<'a> Transformer<'a> {
 
     match (test, consequent, alternate) {
       (Some(test), Some(consequent), Some(alternate)) => {
-        Some(self.ast_builder.expression_conditional(span, test, consequent, alternate))
+        Some(self.ast_builder.expression_conditional(*span, test, consequent, alternate))
       }
       (test, Some(branch), None) | (test, None, Some(branch)) => {
-        Some(build_effect!(self.ast_builder, span, test; branch))
+        Some(build_effect!(self.ast_builder, *span, test; branch))
       }
       (Some(test), None, None) => Some(test),
       (None, None, None) => None,

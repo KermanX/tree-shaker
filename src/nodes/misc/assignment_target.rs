@@ -19,14 +19,14 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_assignment_target(
     &self,
-    node: AssignmentTarget<'a>,
+    node: &'a AssignmentTarget<'a>,
   ) -> Option<AssignmentTarget<'a>> {
     match node {
       match_simple_assignment_target!(AssignmentTarget) => {
-        self.transform_simple_assignment_target(node.try_into().unwrap())
+        self.transform_simple_assignment_target(node.to_simple_assignment_target())
       }
       match_assignment_target_pattern!(AssignmentTarget) => {
-        self.transform_assignment_target_pattern(node.try_into().unwrap())
+        self.transform_assignment_target_pattern(node.to_assignment_target_pattern())
       }
     }
   }

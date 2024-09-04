@@ -53,41 +53,41 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_module_declaration(
     &self,
-    node: ModuleDeclaration<'a>,
+    node: &'a ModuleDeclaration<'a>,
   ) -> Option<ModuleDeclaration<'a>> {
     match node {
       ModuleDeclaration::ImportDeclaration(node) => {
         let ImportDeclaration { span, specifiers, source, with_clause, import_kind, .. } =
-          node.unbox();
+          node.as_ref();
         if let Some(specifiers) = specifiers {
           let mut transformed_specifiers = self.ast_builder.vec();
           for specifier in specifiers {
             let specifier = match specifier {
               ImportDeclarationSpecifier::ImportSpecifier(node) => {
-                let ImportSpecifier { span, local, imported, import_kind, .. } = node.unbox();
+                let ImportSpecifier { span, local, imported, import_kind, .. } = node.as_ref();
                 self.transform_binding_identifier(local).map(|local| {
                   self.ast_builder.import_declaration_specifier_import_specifier(
-                    span,
-                    imported,
+                    *span,
+                    imported.clone(),
                     local,
-                    import_kind,
+                    *import_kind,
                   )
                 })
               }
               ImportDeclarationSpecifier::ImportDefaultSpecifier(node) => {
-                let ImportDefaultSpecifier { span, local, .. } = node.unbox();
+                let ImportDefaultSpecifier { span, local, .. } = node.as_ref();
                 self.transform_binding_identifier(local).map(|local| {
                   self
                     .ast_builder
-                    .import_declaration_specifier_import_default_specifier(span, local)
+                    .import_declaration_specifier_import_default_specifier(*span, local)
                 })
               }
               ImportDeclarationSpecifier::ImportNamespaceSpecifier(node) => {
-                let ImportNamespaceSpecifier { span, local, .. } = node.unbox();
+                let ImportNamespaceSpecifier { span, local, .. } = node.as_ref();
                 self.transform_binding_identifier(local).map(|local| {
                   self
                     .ast_builder
-                    .import_declaration_specifier_import_namespace_specifier(span, local)
+                    .import_declaration_specifier_import_namespace_specifier(*span, local)
                 })
               }
             };
@@ -100,20 +100,20 @@ impl<'a> Transformer<'a> {
             None
           } else {
             Some(self.ast_builder.module_declaration_import_declaration(
-              span,
+              *span,
               Some(transformed_specifiers),
-              source,
-              with_clause,
-              import_kind,
+              source.clone(),
+              self.clone_node(with_clause),
+              *import_kind,
             ))
           }
         } else {
           Some(self.ast_builder.module_declaration_import_declaration(
-            span,
+            *span,
             None,
-            source,
-            with_clause,
-            import_kind,
+            source.clone(),
+            self.clone_node(with_clause),
+            *import_kind,
           ))
         }
       }
@@ -121,7 +121,9 @@ impl<'a> Transformer<'a> {
         if node.source.is_some() {
           // Re-exports. Nothing to do.
           return Some(
-            self.ast_builder.module_declaration_from_export_named_declaration(node.unbox()),
+            self
+              .ast_builder
+              .module_declaration_from_export_named_declaration(self.clone_node(node)),
           );
         }
         let ExportNamedDeclaration {
@@ -132,38 +134,38 @@ impl<'a> Transformer<'a> {
           export_kind,
           with_clause,
           ..
-        } = node.unbox();
-        let declaration = declaration.and_then(|d| self.transform_declaration(d));
+        } = node.as_ref();
+        let declaration = declaration.as_ref().and_then(|d| self.transform_declaration(d));
         Some(self.ast_builder.module_declaration_export_named_declaration(
-          span,
+          *span,
           declaration,
-          specifiers,
-          source,
-          export_kind,
-          with_clause,
+          self.clone_node(specifiers),
+          self.clone_node(source),
+          *export_kind,
+          self.clone_node(with_clause),
         ))
       }
       ModuleDeclaration::ExportDefaultDeclaration(node) => {
-        let ExportDefaultDeclaration { span, declaration, exported, .. } = node.unbox();
+        let ExportDefaultDeclaration { span, declaration, exported, .. } = node.as_ref();
         let declaration = match declaration {
           ExportDefaultDeclarationKind::FunctionDeclaration(node) => {
-            let function = self.transform_function(node.unbox(), true).unwrap();
+            let function = self.transform_function(node, true).unwrap();
             self.ast_builder.export_default_declaration_kind_from_function(function)
           }
           ExportDefaultDeclarationKind::ClassDeclaration(node) => todo!(),
           node => {
-            let expression = self.transform_expression(node.try_into().unwrap(), true).unwrap();
+            let expression = self.transform_expression(node.to_expression(), true).unwrap();
             self.ast_builder.export_default_declaration_kind_expression(expression)
           }
         };
         Some(self.ast_builder.module_declaration_export_default_declaration(
-          span,
+          *span,
           declaration,
-          exported,
+          exported.clone(),
         ))
       }
       ModuleDeclaration::ExportAllDeclaration(node) => {
-        Some(self.ast_builder.module_declaration_from_export_all_declaration(node.unbox()))
+        Some(self.ast_builder.module_declaration_from_export_all_declaration(self.clone_node(node)))
       }
       _ => unreachable!(),
     }

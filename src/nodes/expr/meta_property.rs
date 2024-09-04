@@ -21,9 +21,12 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_meta_property(
     &self,
-    node: MetaProperty<'a>,
+    node: &'a MetaProperty<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    need_val.then(|| self.ast_builder.expression_from_meta_property(node))
+    let MetaProperty { span, meta, property } = node;
+
+    need_val
+      .then(|| self.ast_builder.expression_meta_property(*span, meta.clone(), property.clone()))
   }
 }

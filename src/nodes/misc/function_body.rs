@@ -49,8 +49,8 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_function_body(&self, node: FunctionBody<'a>) -> FunctionBody<'a> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+  pub fn transform_function_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let FunctionBody { span, directives, statements, .. } = node;
 
@@ -68,25 +68,25 @@ impl<'a> Transformer<'a> {
       }
     }
 
-    self.ast_builder.function_body(span, directives, transformed_statements)
+    self.ast_builder.function_body(*span, self.clone_node(directives), transformed_statements)
   }
 
-  pub fn transform_function_expression_body(&self, node: FunctionBody<'a>) -> FunctionBody<'a> {
+  pub fn transform_function_expression_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {
     let need_val = self.is_referred(EntityDepNode::FunctionBodyAsExpression(&node));
 
     let FunctionBody { span, directives, statements, .. } = node;
 
     if let Some(Statement::ExpressionStatement(expr)) = statements.into_iter().next() {
-      let ExpressionStatement { expression, .. } = expr.unbox();
+      let ExpressionStatement { expression, .. } = expr.as_ref();
 
       let expr = self.transform_expression(expression, need_val);
 
       self.ast_builder.function_body(
-        span,
-        directives,
+        *span,
+        self.clone_node(directives),
         expr.map_or_else(
           || self.ast_builder.vec(),
-          |expr| self.ast_builder.vec1(self.ast_builder.statement_expression(span, expr)),
+          |expr| self.ast_builder.vec1(self.ast_builder.statement_expression(*span, expr)),
         ),
       )
     } else {

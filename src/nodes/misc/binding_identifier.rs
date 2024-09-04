@@ -21,9 +21,9 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_binding_identifier(
     &self,
-    node: BindingIdentifier<'a>,
+    node: &'a BindingIdentifier<'a>,
   ) -> Option<BindingIdentifier<'a>> {
     let referred = self.is_referred(EntityDepNode::BindingIdentifier(&node));
-    referred.then_some(node)
+    referred.then(|| self.clone_node(node))
   }
 }

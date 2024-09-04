@@ -50,13 +50,13 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_if_statement(&self, node: IfStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+  pub fn transform_if_statement(&self, node: &'a IfStatement<'a>) -> Option<Statement<'a>> {
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let IfStatement { span, test, consequent, alternate, .. } = node;
 
     let consequent = self.transform_statement(consequent);
-    let alternate = alternate.and_then(|alt| self.transform_statement(alt));
+    let alternate = alternate.as_ref().and_then(|alt| self.transform_statement(alt));
 
     let need_test_val =
       data.maybe_true && data.maybe_false && (consequent.is_some() || alternate.is_some());
@@ -69,10 +69,10 @@ impl<'a> Transformer<'a> {
         // Both cases are possible
         return match (consequent, alternate) {
           (Some(consequent), alternate) => {
-            Some(self.ast_builder.statement_if(span, test.unwrap(), consequent, alternate))
+            Some(self.ast_builder.statement_if(*span, test.unwrap(), consequent, alternate))
           }
           (None, Some(alternate)) => Some(self.ast_builder.statement_if(
-            span,
+            *span,
             self.build_negate_expression(test.unwrap()),
             alternate,
             None,
@@ -96,7 +96,7 @@ impl<'a> Transformer<'a> {
     if statements.is_empty() {
       None
     } else {
-      Some(self.ast_builder.statement_block(span, statements))
+      Some(self.ast_builder.statement_block(*span, statements))
     }
   }
 }

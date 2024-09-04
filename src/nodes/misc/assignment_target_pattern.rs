@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_assignment_target_pattern(
     &self,
-    node: AssignmentTargetPattern<'a>,
+    node: &'a AssignmentTargetPattern<'a>,
   ) -> Option<AssignmentTarget<'a>> {
     todo!()
   }

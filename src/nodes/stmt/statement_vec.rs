@@ -44,7 +44,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_statement_vec(
     &self,
     data: &StatementVecData,
-    statements: Vec<'a, Statement<'a>>,
+    statements: &'a Vec<'a, Statement<'a>>,
   ) -> Vec<'a, Statement<'a>> {
     let mut result = self.ast_builder.vec();
 

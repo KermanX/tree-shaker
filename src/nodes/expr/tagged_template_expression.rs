@@ -5,7 +5,9 @@ use crate::{
   entity::{entity::Entity, unknown::UnknownEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::{Expression, TSTypeParameterInstantiation, TaggedTemplateExpression};
+use oxc::ast::ast::{
+  Expression, TSTypeParameterInstantiation, TaggedTemplateExpression, TemplateLiteral,
+};
 
 const AST_TYPE: AstType2 = AstType2::TaggedTemplateExpression;
 
@@ -39,10 +41,10 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_tagged_template_expression(
     &self,
-    node: TaggedTemplateExpression<'a>,
+    node: &'a TaggedTemplateExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
     let TaggedTemplateExpression { span, tag, quasi, .. } = node;
 
@@ -52,18 +54,29 @@ impl<'a> Transformer<'a> {
       let tag = self.transform_expression(tag, true).unwrap();
 
       Some(self.ast_builder.expression_tagged_template(
-        span,
+        *span,
         tag,
-        quasi,
+        self.transform_quasi(quasi),
         None::<TSTypeParameterInstantiation>,
       ))
     } else {
       build_effect_from_arr!(
         &self.ast_builder,
-        span,
+        *span,
         vec![self.transform_expression(tag, false)],
-        quasi.expressions.into_iter().map(|x| self.transform_expression(x, false))
+        quasi.expressions.iter().map(|x| self.transform_expression(x, false))
       )
     }
+  }
+
+  fn transform_quasi(&self, node: &'a TemplateLiteral<'a>) -> TemplateLiteral<'a> {
+    let TemplateLiteral { span, quasis, expressions } = node;
+
+    let mut transformed_expressions = self.ast_builder.vec();
+    for expression in expressions {
+      transformed_expressions.push(self.transform_expression(expression, true).unwrap());
+    }
+
+    self.ast_builder.template_literal(*span, self.clone_node(quasis), transformed_expressions)
   }
 }

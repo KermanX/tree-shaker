@@ -71,21 +71,21 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_identifier_reference_read(
     &self,
-    node: IdentifierReference<'a>,
+    node: &'a IdentifierReference<'a>,
     need_val: bool,
   ) -> Option<IdentifierReference<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
-    (!data.resolvable || need_val).then(|| node)
+    (!data.resolvable || need_val).then(|| self.clone_node(node))
   }
 
   pub fn transform_identifier_reference_write(
     &self,
-    node: IdentifierReference<'a>,
+    node: &'a IdentifierReference<'a>,
     need_write: bool,
   ) -> Option<IdentifierReference<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, &node);
+    let data = self.get_data::<Data>(AST_TYPE, node);
 
-    (!data.resolvable || need_write).then(|| node)
+    (!data.resolvable || need_write).then(|| self.clone_node(node))
   }
 }

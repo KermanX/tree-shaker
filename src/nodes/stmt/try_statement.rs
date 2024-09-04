@@ -20,22 +20,25 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_try_statement(&self, node: TryStatement<'a>) -> Option<Statement<'a>> {
+  pub fn transform_try_statement(&self, node: &'a TryStatement<'a>) -> Option<Statement<'a>> {
     let TryStatement { span, block, handler, finalizer } = node;
 
-    let block = self.transform_block_statement(block.unbox());
+    let block = self.transform_block_statement(block);
 
-    let handler =
-      block.as_ref().and(handler).map(|handler| self.transform_catch_clause(handler.unbox()));
+    let handler = if block.is_some() {
+      handler.as_ref().map(|handler| self.transform_catch_clause(handler))
+    } else {
+      None
+    };
 
     let finalizer =
-      finalizer.and_then(|finalizer| self.transform_block_statement(finalizer.unbox()));
+      finalizer.as_ref().and_then(|finalizer| self.transform_block_statement(finalizer));
 
     match (block, finalizer) {
       (None, None) => None,
       (None, Some(finalizer)) => Some(self.ast_builder.statement_from_block(finalizer)),
       (Some(block), finalizer) => {
-        Some(self.ast_builder.statement_try(span, block, handler, finalizer))
+        Some(self.ast_builder.statement_try(*span, block, handler, finalizer))
       }
     }
   }

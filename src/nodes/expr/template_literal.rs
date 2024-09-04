@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_template_literal(
     &self,
-    node: TemplateLiteral<'a>,
+    node: &'a TemplateLiteral<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let TemplateLiteral { span, expressions, quasis, .. } = node;
@@ -75,9 +75,9 @@ impl<'a> Transformer<'a> {
       if transformed_exprs.is_empty() {
         Some(build_effect_from_arr!(
           &self.ast_builder,
-          span,
+          *span,
           pending_effects;
-          self.ast_builder.expression_string_literal(span, transformed_quasis.first().unwrap().clone())
+          self.ast_builder.expression_string_literal(*span, transformed_quasis.first().unwrap().clone())
         ))
       } else {
         assert!(pending_effects.is_empty());
@@ -86,7 +86,7 @@ impl<'a> Transformer<'a> {
         for (index, quasi) in transformed_quasis.into_iter().enumerate() {
           let str = self.allocator.alloc(quasi);
           quasis.push(self.ast_builder.template_element(
-            span,
+            *span,
             index == quasis_len - 1,
             TemplateElementValue {
               // FIXME: escape
@@ -95,12 +95,12 @@ impl<'a> Transformer<'a> {
             },
           ));
         }
-        Some(self.ast_builder.expression_template_literal(span, quasis, transformed_exprs))
+        Some(self.ast_builder.expression_template_literal(*span, quasis, transformed_exprs))
       }
     } else {
       build_effect_from_arr!(
         &self.ast_builder,
-        span,
+        *span,
         expressions.into_iter().map(|x| self.transform_expression(x, false))
       )
     }

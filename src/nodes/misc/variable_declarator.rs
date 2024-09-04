@@ -23,20 +23,20 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_variable_declarator(
     &self,
-    node: VariableDeclarator<'a>,
+    node: &'a VariableDeclarator<'a>,
   ) -> Option<VariableDeclarator<'a>> {
     let VariableDeclarator { span, kind, id, init, .. } = node;
 
     let id_span = id.span();
     let id = self.transform_binding_pattern(id);
 
-    let init = init.and_then(|init| self.transform_expression(init, id.is_some()));
+    let init = init.as_ref().and_then(|init| self.transform_expression(init, id.is_some()));
 
     match (id, init) {
       (None, None) => None,
       (id, init) => Some(self.ast_builder.variable_declarator(
-        span,
-        kind,
+        *span,
+        *kind,
         id.unwrap_or_else(|| self.build_unused_binding_pattern(id_span)),
         init,
         false,

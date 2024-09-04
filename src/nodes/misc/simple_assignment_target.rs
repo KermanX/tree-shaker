@@ -30,15 +30,15 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_simple_assignment_target(
     &self,
-    node: SimpleAssignmentTarget<'a>,
+    node: &'a SimpleAssignmentTarget<'a>,
   ) -> Option<AssignmentTarget<'a>> {
     let need_write = self.is_referred(EntityDepNode::SimpleAssignmentTarget(&node));
     match node {
       match_member_expression!(SimpleAssignmentTarget) => {
-        self.transform_member_expression_write(node.try_into().unwrap(), need_write)
+        self.transform_member_expression_write(node.to_member_expression(), need_write)
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
-        let inner = self.transform_identifier_reference_write(node.unbox(), need_write);
+        let inner = self.transform_identifier_reference_write(node, need_write);
         inner.map(|inner| {
           self.ast_builder.assignment_target_simple(
             self.ast_builder.simple_assignment_target_from_identifier_reference(inner),
