@@ -34,9 +34,10 @@ module.exports = function(test) {
   try {
     console.log('\n\n----------------');
     console.log(test.file);
-    const index = test.contents.match(/\/\*---\r?\n(esid: |es5id: |description: >)/m).index;
+    const index = test.contents.match(/\/\*---\r?\n(es\d?id: |description: >)/m).index;
     if (index < 0) {
       console.error('FATAL ERROR: Could not find the special comment');
+      // @ts-ignore
       process.exit(1);
     }
     let prelude = test.contents.slice(0, index);
