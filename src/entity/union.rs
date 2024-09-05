@@ -7,7 +7,6 @@ use super::{
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
-use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct UnionEntity<'a>(pub Vec<Entity<'a>>);
@@ -70,7 +69,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     collect_effect_and_value(results)
   }
 
-  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     let mut results = Vec::new();
     for entity in &self.0 {
       results.push(entity.r#await(analyzer));
@@ -84,28 +83,28 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.0 {
       result.push(entity.get_typeof());
     }
-    Rc::new(UnionEntity(result))
+    UnionEntity::new(result)
   }
 
-  fn get_to_string(&self) -> Entity<'a> {
+  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
     let mut result = Vec::new();
     // TODO: dedupe
     for entity in &self.0 {
       result.push(entity.get_to_string());
     }
-    Rc::new(UnionEntity(result))
+    UnionEntity::new(result)
   }
 
-  fn get_to_property_key(&self) -> Entity<'a> {
+  fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     let mut result = Vec::new();
     // TODO: dedupe
     for entity in &self.0 {
       result.push(entity.get_to_property_key());
     }
-    Rc::new(UnionEntity(result))
+    UnionEntity::new(result)
   }
 
-  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
     // FIXME: May have the same result
     let mut elements = Vec::new();
     for _ in 0..length {
@@ -169,7 +168,7 @@ impl<'a> UnionEntity<'a> {
       if has_unknown {
         UnknownEntity::new_unknown()
       } else {
-        Rc::new(UnionEntity(entities))
+        Entity::new(UnionEntity(entities))
       }
     }
   }

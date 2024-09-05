@@ -4,7 +4,6 @@ use crate::entity::entity::Entity;
 use crate::entity::union::UnionEntity;
 use crate::{analyzer::Analyzer, Transformer};
 use oxc::ast::ast::{Expression, LogicalExpression, LogicalOperator};
-use std::rc::Rc;
 
 const AST_TYPE: AstType2 = AstType2::LogicalExpression;
 
@@ -24,7 +23,7 @@ impl<'a> Analyzer<'a> {
       analyzer.push_cf_scope(None, false);
       let right = analyzer.exec_expression(&node.right);
       analyzer.pop_cf_scope();
-      (Rc::new(UnionEntity(vec![left.clone(), right])) as Entity<'a>, true, true)
+      (UnionEntity::new(vec![left.clone(), right]), true, true)
     };
 
     let (value, need_left_val, need_right) = match &node.operator {

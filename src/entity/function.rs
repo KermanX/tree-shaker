@@ -7,7 +7,6 @@ use super::{
   unknown::{UnknownEntity, UnknownEntityKind},
 };
 use crate::analyzer::Analyzer;
-use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct FunctionEntity<'a> {
@@ -76,7 +75,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     (has_effect, ForwardedEntity::new(ret_val, self.source.clone()))
   }
 
-  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     // TODO: If the function is never modified, we can just return the source.
     self.consume_as_unknown(analyzer);
     (true, UnknownEntity::new_unknown())
@@ -86,17 +85,17 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     LiteralEntity::new_string("function")
   }
 
-  fn get_to_string(&self) -> Entity<'a> {
+  fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a> {
     // FIXME: No Rc::new + clone
-    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![Rc::new(self.clone())])
+    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
   }
 
-  fn get_to_property_key(&self) -> Entity<'a> {
-    self.get_to_string()
+  fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
+    self.get_to_string(rc)
   }
 
-  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    UnknownEntity::new_unknown_to_array_result(length, vec![Rc::new(self.clone())])
+  fn get_to_array(&self, rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+    UnknownEntity::new_unknown_to_array_result(length, vec![rc.clone()])
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -114,6 +113,6 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
 impl<'a> FunctionEntity<'a> {
   pub fn new(source: EntityDep<'a>) -> Entity<'a> {
-    Rc::new(Self { source })
+    Entity::new(Self { source })
   }
 }

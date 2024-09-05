@@ -4,7 +4,6 @@ use super::{
   unknown::UnknownEntity,
 };
 use crate::analyzer::Analyzer;
-use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct ArgumentsEntity<'a> {
@@ -55,7 +54,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
-  fn r#await(&self, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, _rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     unreachable!()
   }
 
@@ -63,15 +62,15 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
-  fn get_to_string(&self) -> Entity<'a> {
+  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_property_key(&self) -> Entity<'a> {
+  fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
     let mut result = Vec::new();
     for i in 0..length.min(self.arguments.len()) {
       let (is_spread, entity) = &self.arguments[i];
@@ -99,6 +98,6 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
 impl<'a> ArgumentsEntity<'a> {
   pub fn new(arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
-    Rc::new(Self { arguments })
+    Entity::new(Self { arguments })
   }
 }

@@ -10,7 +10,7 @@ use super::{
 use crate::analyzer::Analyzer;
 use oxc::{ast::ast::PropertyKind, semantic::ScopeId};
 use rustc_hash::FxHashMap;
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
 
 #[derive(Debug, Clone)]
 pub struct ObjectEntity<'a> {
@@ -248,7 +248,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     (true, UnknownEntity::new_unknown())
   }
 
-  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     self.consume_as_unknown(analyzer);
     (true, UnknownEntity::new_unknown())
   }
@@ -257,15 +257,15 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     LiteralEntity::new_string("object")
   }
 
-  fn get_to_string(&self) -> Entity<'a> {
-    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![Rc::new(self.clone())])
+  fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a> {
+    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
   }
 
-  fn get_to_property_key(&self) -> Entity<'a> {
-    self.get_to_string()
+  fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
+    self.get_to_string(rc)
   }
 
-  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+  fn get_to_array(&self, rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
     todo!()
   }
 

@@ -12,10 +12,7 @@ use oxc::{
   span::Span,
 };
 use rustc_hash::FxHashSet;
-use std::{
-  hash::{Hash, Hasher},
-  rc::Rc,
-};
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum LiteralEntity<'a> {
@@ -59,7 +56,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     (false, vec![])
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+  fn delete_property(&self, _analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> bool {
     // No effect
     false
   }
@@ -74,15 +71,15 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     (false, UnknownEntity::new_unknown())
   }
 
-  fn r#await(&self, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
-    (false, Rc::new(self.clone()))
+  fn r#await(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    (false, rc.clone())
   }
 
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string(self.test_typeof().to_string().unwrap())
   }
 
-  fn get_to_string(&self) -> Entity<'a> {
+  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
     LiteralEntity::new_string(match self {
       LiteralEntity::String(value) => *value,
       LiteralEntity::Number(_, raw) => *raw,
@@ -108,14 +105,14 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     })
   }
 
-  fn get_to_property_key(&self) -> Entity<'a> {
+  fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     match self {
-      LiteralEntity::Symbol(_) => Rc::new(self.clone()),
-      _ => self.get_to_string(),
+      LiteralEntity::Symbol(_) => Entity::new(*self),
+      _ => self.get_to_string(rc),
     }
   }
 
-  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
     UnknownEntity::new_unknown_to_array_result(length, vec![])
   }
 
@@ -198,35 +195,35 @@ impl<'a> Hash for LiteralEntity<'a> {
 
 impl<'a> LiteralEntity<'a> {
   pub fn new_string(value: &'a str) -> Entity<'a> {
-    Rc::new(LiteralEntity::String(value))
+    Entity::new(LiteralEntity::String(value))
   }
 
   pub fn new_number(value: F64WithEq, raw: &'a str) -> Entity<'a> {
-    Rc::new(LiteralEntity::Number(value, raw))
+    Entity::new(LiteralEntity::Number(value, raw))
   }
 
   pub fn new_big_int(value: &'a str) -> Entity<'a> {
-    Rc::new(LiteralEntity::BigInt(value))
+    Entity::new(LiteralEntity::BigInt(value))
   }
 
   pub fn new_boolean(value: bool) -> Entity<'a> {
-    Rc::new(LiteralEntity::Boolean(value))
+    Entity::new(LiteralEntity::Boolean(value))
   }
 
   pub fn new_infinity(positive: bool) -> Entity<'a> {
-    Rc::new(LiteralEntity::Infinity(positive))
+    Entity::new(LiteralEntity::Infinity(positive))
   }
 
   pub fn new_nan() -> Entity<'a> {
-    Rc::new(LiteralEntity::NaN)
+    Entity::new(LiteralEntity::NaN)
   }
 
   pub fn new_null() -> Entity<'a> {
-    Rc::new(LiteralEntity::Null)
+    Entity::new(LiteralEntity::Null)
   }
 
   pub fn new_undefined() -> Entity<'a> {
-    Rc::new(LiteralEntity::Undefined)
+    Entity::new(LiteralEntity::Undefined)
   }
 
   pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Expression<'a> {

@@ -1,12 +1,12 @@
-use std::rc::Rc;
-use crate::entity::union::UnionEntity;
 use super::{
   entity::Entity,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
+use crate::entity::union::UnionEntity;
 use oxc::allocator::Allocator;
+use std::rc::Rc;
 
 pub struct EntityOpHost<'a> {
   allocator: &'a Allocator,
@@ -18,7 +18,7 @@ impl<'a> EntityOpHost<'a> {
   }
 
   pub fn strict_eq(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Option<bool> {
-    if Rc::ptr_eq(lhs, rhs) {
+    if Rc::ptr_eq(&lhs.0, &rhs.0) {
       return Some(true);
     }
 

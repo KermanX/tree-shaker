@@ -5,7 +5,6 @@ use super::{
   unknown::{UnknownEntity, UnknownEntityKind},
 };
 use crate::analyzer::Analyzer;
-use std::rc::Rc;
 
 pub type BuiltinFnImplementation<'a> =
   fn(&mut Analyzer<'a>, &Entity<'a>, &Entity<'a>) -> (bool, Entity<'a>);
@@ -65,25 +64,25 @@ impl<'a> EntityTrait<'a> for BuiltinFnEntity<'a> {
     (has_effect, ret_val)
   }
 
-  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
-    (false, Rc::new(self.clone()))
+  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    (false, rc.clone())
   }
 
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string("function")
   }
 
-  fn get_to_string(&self) -> Entity<'a> {
+  fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a> {
     // FIXME: No Rc::new + clone
-    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![Rc::new(self.clone())])
+    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
   }
 
-  fn get_to_property_key(&self) -> Entity<'a> {
-    self.get_to_string()
+  fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
+    self.get_to_string(rc)
   }
 
-  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    UnknownEntity::new_unknown_to_array_result(length, vec![Rc::new(self.clone())])
+  fn get_to_array(&self, rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+    UnknownEntity::new_unknown_to_array_result(length, vec![rc.clone()])
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -101,6 +100,6 @@ impl<'a> EntityTrait<'a> for BuiltinFnEntity<'a> {
 
 impl<'a> BuiltinFnEntity<'a> {
   pub fn new(implementation: BuiltinFnImplementation<'a>) -> Entity<'a> {
-    Rc::new(Self { implementation })
+    Entity::new(Self { implementation })
   }
 }

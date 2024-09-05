@@ -9,27 +9,26 @@ use crate::{
 use oxc::ast::ast::{
   BigIntLiteral, BooleanLiteral, NullLiteral, NumericLiteral, RegExpLiteral, StringLiteral,
 };
-use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_string_literal(&mut self, node: &'a StringLiteral) -> Entity<'a> {
-    Rc::new(LiteralEntity::String(node.value.as_str()))
+    LiteralEntity::new_string(node.value.as_str())
   }
 
   pub fn exc_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity<'a> {
-    Rc::new(LiteralEntity::Number(node.value.into(), node.raw))
+    LiteralEntity::new_number(node.value.into(), node.raw)
   }
 
   pub fn exc_big_int_literal(&mut self, node: &'a BigIntLiteral) -> Entity<'a> {
-    Rc::new(LiteralEntity::BigInt(node.raw.as_str()))
+    LiteralEntity::new_big_int(node.raw.as_str())
   }
 
   pub fn exec_boolean_literal(&mut self, node: &'a BooleanLiteral) -> Entity<'a> {
-    Rc::new(LiteralEntity::Boolean(node.value))
+    LiteralEntity::new_boolean(node.value)
   }
 
   pub fn exec_null_literal(&mut self, _node: &'a NullLiteral) -> Entity<'a> {
-    Rc::new(LiteralEntity::Null)
+    LiteralEntity::new_null()
   }
 
   pub fn exec_regexp_literal(&mut self, _node: &'a RegExpLiteral<'a>) -> Entity<'a> {

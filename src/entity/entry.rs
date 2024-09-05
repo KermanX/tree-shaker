@@ -5,7 +5,6 @@ use super::{
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
-use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct EntryEntity<'a> {
@@ -64,7 +63,7 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     (has_effect, self.forward(ret_val))
   }
 
-  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     let (has_effect, ret_val) = self.value.r#await(analyzer);
     if has_effect {
       self.consume_self(analyzer);
@@ -76,15 +75,15 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     self.forward(self.value.get_typeof())
   }
 
-  fn get_to_string(&self) -> Entity<'a> {
+  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
     self.forward(self.value.get_to_string())
   }
 
-  fn get_to_property_key(&self) -> Entity<'a> {
+  fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     self.forward(self.value.get_to_property_key())
   }
 
-  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
     let (vals, ret_val) = self.value.get_to_array(length);
     (vals.iter().map(|val| self.forward(val.clone())).collect(), self.forward(ret_val))
   }
@@ -108,7 +107,7 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
 
 impl<'a> EntryEntity<'a> {
   pub fn new(value: Entity<'a>, key: Entity<'a>) -> Entity<'a> {
-    Rc::new(EntryEntity { key, value })
+    Entity::new(EntryEntity { key, value })
   }
 
   fn forward(&self, value: Entity<'a>) -> Entity<'a> {

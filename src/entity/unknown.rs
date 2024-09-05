@@ -4,7 +4,7 @@ use super::{
   typeof_result::TypeofResult,
 };
 use crate::analyzer::Analyzer;
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
 
 #[derive(Debug, Clone, Copy)]
 pub enum UnknownEntityKind {
@@ -81,12 +81,12 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     (true, UnknownEntity::new_unknown())
   }
 
-  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     if self.maybe_object() {
       self.consume_as_unknown(analyzer);
       (true, UnknownEntity::new_unknown())
     } else {
-      (false, Rc::new(self.clone()))
+      (false, rc.clone())
     }
   }
 
@@ -98,15 +98,15 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
   }
 
-  fn get_to_string(&self) -> Entity<'a> {
+  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::String, self.deps.borrow().clone())
   }
 
-  fn get_to_property_key(&self) -> Entity<'a> {
+  fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::Unknown, self.deps.borrow().clone())
   }
 
-  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
     UnknownEntity::new_unknown_to_array_result(length, self.deps.borrow().clone())
   }
 
@@ -148,7 +148,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
 impl<'a> UnknownEntity<'a> {
   pub fn new_with_deps(kind: UnknownEntityKind, deps: Vec<Entity<'a>>) -> Entity<'a> {
-    Rc::new(Self { kind, deps: RefCell::new(deps) })
+    Entity::new(Self { kind, deps: RefCell::new(deps) })
   }
 
   pub fn new(kind: UnknownEntityKind) -> Entity<'a> {

@@ -6,7 +6,6 @@ use oxc::ast::ast::{
   Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, SpreadElement,
 };
 use oxc::span::{GetSpan, SPAN};
-use std::rc::Rc;
 
 const AST_TYPE: AstType2 = AstType2::SpreadElement;
 
@@ -36,7 +35,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    Rc::new(object)
+    Entity::new(object)
   }
 }
 

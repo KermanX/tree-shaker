@@ -6,7 +6,6 @@ use crate::entity::literal::LiteralEntity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::span::SPAN;
 use oxc::{ast::ast::PropertyKey, span::GetSpan};
-use std::rc::Rc;
 
 const AST_TYPE: AstType2 = AstType2::PropertyKey;
 
@@ -18,8 +17,8 @@ pub struct Data<'a> {
 impl<'a> Analyzer<'a> {
   pub fn exec_property_key(&mut self, node: &'a PropertyKey<'a>) -> Entity<'a> {
     let entity = match node {
-      PropertyKey::StaticIdentifier(node) => Rc::new(LiteralEntity::String(node.name.as_str())),
-      PropertyKey::PrivateIdentifier(node) => Rc::new(LiteralEntity::String(node.name.as_str())),
+      PropertyKey::StaticIdentifier(node) => LiteralEntity::new_string(node.name.as_str()),
+      PropertyKey::PrivateIdentifier(node) => LiteralEntity::new_string(node.name.as_str()),
       node => {
         let node = node.to_expression();
         self.exec_expression(node)

@@ -70,7 +70,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     (has_effect, self.forward(ret_cal))
   }
 
-  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     let (has_effect, ret_val) = self.val.r#await(analyzer);
     if has_effect {
       self.consume_self(analyzer);
@@ -83,15 +83,15 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.forward(self.val.get_typeof())
   }
 
-  fn get_to_string(&self) -> Entity<'a> {
+  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
     self.forward(self.val.get_to_string())
   }
 
-  fn get_to_property_key(&self) -> Entity<'a> {
+  fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     self.forward(self.val.get_to_property_key())
   }
 
-  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
     let (elements, rest) = self.val.get_to_array(length);
     (elements.into_iter().map(|entity| self.forward(entity)).collect(), self.forward(rest))
   }
@@ -115,7 +115,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
 impl<'a> CollectedEntity<'a> {
   pub fn new(val: Entity<'a>, collected: Rc<RefCell<Vec<Entity<'a>>>>) -> Entity<'a> {
-    Rc::new(Self { val, collected })
+    Entity::new(Self { val, collected })
   }
 
   fn forward(&self, val: Entity<'a>) -> Entity<'a> {

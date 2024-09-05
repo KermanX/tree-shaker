@@ -26,12 +26,12 @@ impl<'a> LiteralCollector<'a> {
           self.get_entity_on_invalid(entity)
         } else {
           self.collected.borrow_mut().push(entity);
-          Rc::new(literal)
+          Entity::new(literal)
         }
       } else {
         self.literal = Some(literal);
         self.collected.borrow_mut().push(entity);
-        Rc::new(literal)
+        Entity::new(literal)
       }
     } else {
       self.invalid = true;

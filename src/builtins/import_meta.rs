@@ -1,5 +1,5 @@
 use rustc_hash::FxHashMap;
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
 
 use crate::entity::{
   builtin_fn::BuiltinFnEntity,
@@ -25,7 +25,7 @@ pub fn create_import_meta<'a>() -> Entity<'a> {
     },
   );
 
-  Rc::new(ObjectEntity {
+  Entity::new(ObjectEntity {
     scope_path: vec![],
     string_keyed: RefCell::new(string_keyed),
     unknown_keyed: RefCell::new(ObjectProperty::default()),

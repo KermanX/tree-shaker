@@ -2,7 +2,6 @@ use crate::entity::entity::Entity;
 use crate::entity::literal::LiteralEntity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
-use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_variable_declarator(
@@ -13,7 +12,7 @@ impl<'a> Analyzer<'a> {
   ) {
     let init = init.unwrap_or_else(|| match &node.init {
       Some(init) => self.exec_expression(init),
-      None => Rc::new(LiteralEntity::Undefined),
+      None => LiteralEntity::new_undefined(),
     });
 
     self.exec_binding_pattern(&node.id, (false, init), exporting);

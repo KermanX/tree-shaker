@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use super::{
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
@@ -57,8 +55,8 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     (true, UnknownEntity::new_unknown())
   }
 
-  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
-    let (inner_effect, awaited) = self.value.clone().r#await(analyzer);
+  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    let (inner_effect, awaited) = self.value.r#await(analyzer);
     (self.has_effect || inner_effect, awaited)
   }
 
@@ -66,15 +64,15 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     LiteralEntity::new_string("object")
   }
 
-  fn get_to_string(&self) -> Entity<'a> {
+  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![self.value.clone()])
   }
 
-  fn get_to_property_key(&self) -> Entity<'a> {
+  fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![self.value.clone()])
   }
 
-  fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
     UnknownEntity::new_unknown_to_array_result(length, vec![self.value.clone()])
   }
 
@@ -93,6 +91,6 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
 
 impl<'a> PromiseEntity<'a> {
   pub fn new(has_effect: bool, value: Entity<'a>) -> Entity<'a> {
-    Rc::new(Self { has_effect, value })
+    Entity::new(Self { has_effect, value })
   }
 }

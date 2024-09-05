@@ -4,7 +4,6 @@ use crate::entity::entity::Entity;
 use crate::entity::union::UnionEntity;
 use crate::{analyzer::Analyzer, Transformer};
 use oxc::ast::ast::{ConditionalExpression, Expression};
-use std::rc::Rc;
 
 const AST_TYPE: AstType2 = AstType2::ConditionalExpression;
 
@@ -34,7 +33,7 @@ impl<'a> Analyzer<'a> {
       (true, true) => {
         let consequent = self.exec_expression(&node.consequent);
         let alternate = self.exec_expression(&node.alternate);
-        Rc::new(UnionEntity(vec![consequent, alternate]))
+        UnionEntity::new(vec![consequent, alternate])
       }
       _ => unreachable!(),
     };
