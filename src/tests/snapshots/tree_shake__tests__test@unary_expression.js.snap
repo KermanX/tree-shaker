@@ -1,6 +1,6 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/unary_expression.js
 ---
 export const result = {
@@ -16,3 +16,15 @@ export const result = {
 	s12: (unknown, "string"),
 	s13: typeof (unknown ? "a" : 1)
 };
+export function deletion() {
+	const obj1 = {
+		a: 1,
+		b: 2,
+		c: 3,
+		d: 4
+	};
+	delete obj1.a;
+	delete obj1["b"];
+	if (unknown) delete obj1.c;
+	effect(void 0, void 0, obj1.c, 4);
+}
