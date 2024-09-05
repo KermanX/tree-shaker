@@ -7,7 +7,6 @@ mod chain_expression;
 mod conditional_expression;
 mod import_expression;
 mod literals;
-mod this_expression;
 mod logical_expression;
 mod member_expression;
 mod meta_property;
@@ -15,8 +14,10 @@ mod new_expression;
 mod object_expression;
 mod parenthesized_expression;
 mod sequence_expression;
+mod super_expression;
 mod tagged_template_expression;
 mod template_literal;
+mod this_expression;
 mod unary_expression;
 
 use crate::ast::AstType2;
@@ -70,6 +71,7 @@ impl<'a> Analyzer<'a> {
       Expression::NewExpression(node) => self.exec_new_expression(node),
       Expression::ClassExpression(node) => self.exec_class(node, false),
       Expression::ThisExpression(node) => self.exec_this_expression(node),
+      Expression::Super(node) => self.exec_super(node),
       _ => todo!("Expr at span {:?}", node.span()),
     };
 
@@ -143,6 +145,7 @@ impl<'a> Transformer<'a> {
         .transform_class(node, need_val)
         .map(|class| self.ast_builder.expression_from_class(class)),
       Expression::ThisExpression(node) => self.transform_this_expression(node, need_val),
+      Expression::Super(node) => self.transform_super(node, need_val),
       _ => todo!(),
     };
 
