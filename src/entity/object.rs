@@ -85,16 +85,24 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if let Some(key_literals) = key.get_to_literals() {
       let mut values = self.unknown_keyed.borrow().get_value(analyzer, &this);
       let mut rest_added = false;
+      let mut undefined_added = false;
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
             let string_keyed = self.string_keyed.borrow();
-            if let Some(property) = string_keyed.get(key) {
+            let add_undefined = if let Some(property) = string_keyed.get(key) {
               values.extend(property.get_value(analyzer, &this));
+              !property.definite
             } else if !rest_added {
               rest_added = true;
               let rest = self.rest.borrow();
               values.extend(rest.get_value(analyzer, &this));
+              true
+            } else {
+              false
+            };
+            if add_undefined && !undefined_added {
+              undefined_added = true;
               values.push((false, LiteralEntity::new_undefined()));
             }
           }
@@ -207,6 +215,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
     self.consume_self(analyzer);
+    let indeterminate = self.is_assignment_indeterminate(analyzer);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let definite = key_literals.len() == 1;
@@ -215,7 +224,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         match key_literal {
           LiteralEntity::String(key) => {
             let mut string_keyed = self.string_keyed.borrow_mut();
-            if definite {
+            if definite && !indeterminate {
               deleted |= string_keyed.remove(key).is_some();
             } else if let Some(property) = string_keyed.get_mut(key) {
               property.definite = false;
