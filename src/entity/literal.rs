@@ -74,7 +74,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     (false, UnknownEntity::new_unknown())
   }
 
-  fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     (false, Rc::new(self.clone()))
   }
 

@@ -1,7 +1,5 @@
 use std::rc::Rc;
-
 use crate::entity::union::UnionEntity;
-
 use super::{
   entity::Entity,
   literal::LiteralEntity,
@@ -100,10 +98,6 @@ impl<'a> EntityOpHost<'a> {
 
     debug_assert!(values.len() > 0);
 
-    if values.len() == 1 {
-      values.pop().unwrap()
-    } else {
-      UnionEntity::new(values)
-    }
+    UnionEntity::new(values)
   }
 }
