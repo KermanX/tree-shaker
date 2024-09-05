@@ -21,16 +21,17 @@ impl<'a> Transformer<'a> {
   pub fn transform_new_expression(
     &self,
     node: &'a NewExpression<'a>,
-    need_val: bool,
+    _need_val: bool,
   ) -> Option<Expression<'a>> {
     let NewExpression { span, callee, arguments, .. } = node;
 
     let callee = self.transform_expression(callee, true);
+    let arguments = self.transform_arguments_need_call(arguments);
 
     Some(self.ast_builder.expression_new(
       *span,
       callee.unwrap(),
-      self.clone_node(arguments),
+      arguments,
       None::<TSTypeParameterInstantiation>,
     ))
   }
