@@ -1,5 +1,4 @@
-use super::statement_vec::StatementVecData;
-use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, data::StatementVecData, transformer::Transformer};
 use oxc::ast::ast::BlockStatement;
 
 const AST_TYPE: AstType2 = AstType2::BlockStatement;

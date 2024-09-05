@@ -10,7 +10,9 @@ impl<'a> Analyzer<'a> {
       Declaration::FunctionDeclaration(node) => {
         self.exec_function(node, exporting);
       }
-      Declaration::ClassDeclaration(node) => todo!(),
+      Declaration::ClassDeclaration(node) => {
+        self.exec_class(node, exporting);
+      }
       Declaration::UsingDeclaration(node) => todo!(),
       _ => unreachable!(),
     }
@@ -26,7 +28,11 @@ impl<'a> Transformer<'a> {
       Declaration::FunctionDeclaration(node) => {
         self.transform_function(node, false).map(|f| self.ast_builder.declaration_from_function(f))
       }
-      _ => todo!(),
+      Declaration::ClassDeclaration(node) => {
+        self.transform_class(node, false).map(|c| self.ast_builder.declaration_from_class(c))
+      }
+      Declaration::UsingDeclaration(node) => todo!(),
+      _ => unreachable!(),
     }
   }
 }

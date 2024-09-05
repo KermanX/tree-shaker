@@ -67,6 +67,7 @@ impl<'a> Analyzer<'a> {
       Expression::ImportExpression(node) => self.exec_import_expression(node),
       Expression::MetaProperty(node) => self.exec_meta_property(node),
       Expression::NewExpression(node) => self.exec_new_expression(node),
+      Expression::ClassExpression(node) => self.exec_class(node, false),
       _ => todo!("Expr at span {:?}", node.span()),
     };
 
@@ -136,6 +137,9 @@ impl<'a> Transformer<'a> {
       Expression::ImportExpression(node) => self.transform_import_expression(node, need_val),
       Expression::MetaProperty(node) => self.transform_meta_property(node, need_val),
       Expression::NewExpression(node) => self.transform_new_expression(node, need_val),
+      Expression::ClassExpression(node) => self
+        .transform_class(node, need_val)
+        .map(|class| self.ast_builder.expression_from_class(class)),
       _ => todo!(),
     };
 

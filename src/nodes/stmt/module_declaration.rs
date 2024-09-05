@@ -36,7 +36,10 @@ impl<'a> Analyzer<'a> {
             // Pass `exporting` as `false` because it is actually used as an expression
             self.exec_function(node, false)
           }
-          ExportDefaultDeclarationKind::ClassDeclaration(node) => todo!(),
+          ExportDefaultDeclarationKind::ClassDeclaration(node) => {
+            // Pass `exporting` as `false` because it is actually used as an expression
+            self.exec_class(node, false)
+          }
           node => self.exec_expression(node.to_expression()),
         };
         // FIXME: delay this
@@ -152,7 +155,10 @@ impl<'a> Transformer<'a> {
             let function = self.transform_function(node, true).unwrap();
             self.ast_builder.export_default_declaration_kind_from_function(function)
           }
-          ExportDefaultDeclarationKind::ClassDeclaration(node) => todo!(),
+          ExportDefaultDeclarationKind::ClassDeclaration(node) => {
+            let class = self.transform_class(node, true).unwrap();
+            self.ast_builder.export_default_declaration_kind_from_class(class)
+          }
           node => {
             let expression = self.transform_expression(node.to_expression(), true).unwrap();
             self.ast_builder.export_default_declaration_kind_expression(expression)

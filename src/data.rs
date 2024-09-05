@@ -9,3 +9,8 @@ pub struct DataPlaceholder<'a> {
 pub type ExtraData<'a> = FxHashMap<AstType2, FxHashMap<Span, Box<DataPlaceholder<'a>>>>;
 
 pub type ReferredNodes<'a> = FxHashSet<EntityDepNode<'a>>;
+
+#[derive(Debug, Default)]
+pub struct StatementVecData {
+  pub last_stmt: Option<Span>,
+}

@@ -1,14 +1,9 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::{analyzer::Analyzer, data::StatementVecData, transformer::Transformer};
 use oxc::{
   allocator::Vec,
   ast::ast::Statement,
   span::{GetSpan, Span},
 };
-
-#[derive(Debug, Default)]
-pub struct StatementVecData {
-  last_stmt: Option<Span>,
-}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_statement_vec(
