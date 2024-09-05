@@ -15,10 +15,12 @@ impl<'a> Analyzer<'a> {
       BinaryOperator::Equality => todo!(),
       BinaryOperator::Inequality => todo!(),
       BinaryOperator::StrictEquality => {
-        boolean_from_test_result(self.entity_op.strict_eq(&lhs, &rhs))
+        boolean_from_test_result(self.entity_op.strict_eq(&lhs, &rhs), || vec![lhs, rhs])
       }
       BinaryOperator::StrictInequality => {
-        boolean_from_test_result(self.entity_op.strict_eq(&lhs, &rhs).map(|v| !v))
+        boolean_from_test_result(self.entity_op.strict_eq(&lhs, &rhs).map(|v| !v), || {
+          vec![lhs, rhs]
+        })
       }
       BinaryOperator::LessThan => todo!(),
       BinaryOperator::LessEqualThan => todo!(),
