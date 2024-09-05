@@ -1,14 +1,16 @@
-use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
-use oxc::ast::ast::{Statement, SwitchCase, SwitchStatement};
-use rustc_hash::FxHashSet;
-
 use super::statement_vec::StatementVecData;
+use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
+use oxc::{
+  ast::ast::{Expression, Statement, SwitchCase, SwitchStatement},
+  span::Span,
+};
+use rustc_hash::FxHashSet;
 
 const AST_TYPE: AstType2 = AstType2::SwitchStatement;
 
 #[derive(Debug, Default)]
 pub struct Data {
-  // need_test: FxHashSet<usize>,
+  need_test: FxHashSet<usize>,
   need_consequent: FxHashSet<usize>,
 }
 
@@ -30,6 +32,10 @@ impl<'a> Analyzer<'a> {
 
         let test_result = self.entity_op.strict_eq(&discriminant, &test_val);
         test_results.push(test_result);
+
+        if test_result != Some(false) {
+          data.need_test.insert(index);
+        }
 
         match test_result {
           Some(true) => {
@@ -94,19 +100,32 @@ impl<'a> Transformer<'a> {
   pub fn transform_switch_statement(&self, node: &'a SwitchStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, node);
 
+    println!("{:#?}", data);
+
     let SwitchStatement { span, discriminant, cases, .. } = node;
 
     let discriminant = self.transform_expression(discriminant, true).unwrap();
 
-    let mut transformed_cases = self.ast_builder.vec();
+    let mut transformed_cases: Vec<(
+      Span,
+      Option<Expression<'a>>,
+      oxc::allocator::Vec<'a, Statement<'a>>,
+    )> = vec![];
     for (index, case) in cases.into_iter().enumerate() {
+      let need_test = data.need_test.contains(&index);
       let need_consequent = data.need_consequent.contains(&index);
+
       let data = self.get_data::<StatementVecData>(AstType2::SwitchCase, case);
 
       let SwitchCase { test, consequent, .. } = case;
 
-      // TODO: tree shake if test is readonly
-      let test = test.as_ref().map(|test| self.transform_expression(test, true).unwrap());
+      let test = test.as_ref().map(|test| {
+        if need_test || self.transform_expression(test, false).is_some() {
+          self.transform_expression(test, true)
+        } else {
+          None
+        }
+      });
 
       let consequent = if need_consequent {
         self.transform_statement_vec(data, consequent)
@@ -114,11 +133,34 @@ impl<'a> Transformer<'a> {
         self.ast_builder.vec()
       };
 
-      if test.is_some() || !consequent.is_empty() {
-        transformed_cases.push(self.ast_builder.switch_case(*span, test, consequent));
+      match test {
+        Some(None) => {
+          if consequent.len() > 0 {
+            if let Some(last) = transformed_cases.last_mut() {
+              last.2.extend(consequent);
+            } else {
+              // In case the first case is default + no consequent
+              transformed_cases.push((*span, None, consequent));
+            }
+          }
+        }
+        Some(Some(test)) => {
+          transformed_cases.push((*span, Some(test), consequent));
+        }
+        None => {
+          if consequent.len() > 0 {
+            transformed_cases.push((*span, None, consequent));
+          }
+        }
       }
     }
 
-    Some(self.ast_builder.statement_switch(*span, discriminant, transformed_cases))
+    Some(self.ast_builder.statement_switch(*span, discriminant, {
+      let mut cases = self.ast_builder.vec();
+      for (span, test, consequent) in transformed_cases {
+        cases.push(self.ast_builder.switch_case(span, test, consequent));
+      }
+      cases
+    }))
   }
 }

@@ -248,7 +248,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     (true, UnknownEntity::new_unknown())
   }
 
-  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     self.consume_as_unknown(analyzer);
     (true, UnknownEntity::new_unknown())
   }

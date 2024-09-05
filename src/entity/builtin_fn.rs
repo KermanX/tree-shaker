@@ -64,7 +64,7 @@ impl<'a> EntityTrait<'a> for BuiltinFnEntity<'a> {
     (has_effect, ret_val)
   }
 
-  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     (false, rc.clone())
   }
 
