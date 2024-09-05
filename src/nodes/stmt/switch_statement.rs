@@ -100,11 +100,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_switch_statement(&self, node: &'a SwitchStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, node);
 
-    println!("{:#?}", data);
-
     let SwitchStatement { span, discriminant, cases, .. } = node;
-
-    let discriminant = self.transform_expression(discriminant, true).unwrap();
 
     let mut transformed_cases: Vec<(
       Span,
@@ -155,12 +151,20 @@ impl<'a> Transformer<'a> {
       }
     }
 
-    Some(self.ast_builder.statement_switch(*span, discriminant, {
-      let mut cases = self.ast_builder.vec();
-      for (span, test, consequent) in transformed_cases {
-        cases.push(self.ast_builder.switch_case(span, test, consequent));
-      }
-      cases
-    }))
+    if transformed_cases.is_empty() {
+      self
+        .transform_expression(discriminant, false)
+        .map(|expr| self.ast_builder.statement_expression(*span, expr))
+    } else {
+      let discriminant = self.transform_expression(discriminant, true).unwrap();
+
+      Some(self.ast_builder.statement_switch(*span, discriminant, {
+        let mut cases = self.ast_builder.vec();
+        for (span, test, consequent) in transformed_cases {
+          cases.push(self.ast_builder.switch_case(span, test, consequent));
+        }
+        cases
+      }))
+    }
   }
 }

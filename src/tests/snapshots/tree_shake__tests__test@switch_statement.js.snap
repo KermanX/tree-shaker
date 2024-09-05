@@ -22,4 +22,5 @@ export function main() {
 			effect2();
 			break;
 	}
+	unknown;
 }

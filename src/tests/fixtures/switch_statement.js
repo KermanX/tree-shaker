@@ -31,4 +31,9 @@ export function main() {
     case 3:
       effect3();
   }
+
+  switch ("1" + unknown) {
+    case 1:
+      1;2;3;
+  }
 }
