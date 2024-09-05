@@ -1,5 +1,5 @@
 use insta::{assert_snapshot, glob};
-use oxc::{allocator::Allocator, minifier::MinifierOptions, span::SourceType};
+use oxc::{allocator::Allocator, codegen::CodegenOptions, minifier::MinifierOptions, span::SourceType};
 use std::fs;
 
 use crate::TreeShakeOptions;
@@ -10,7 +10,9 @@ fn tree_shake(input: String) -> String {
     allocator: &Allocator::default(),
     source_type: SourceType::default().with_module(true).with_always_strict(true),
     source_text: input,
+    tree_shake: true,
     minify: do_minify.then(|| MinifierOptions::default()),
+    code_gen: CodegenOptions::default(),
     eval_mode: false,
   });
   result.codegen_return.source_text

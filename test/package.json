@@ -1,10 +1,12 @@
 {
 	"devDependencies": {
 		"@kermanx/tree-shaker": "link:..\\napi",
+		"diff": "^6.0.0",
+		"picocolors": "^1.1.0",
 		"test262-harness": "^10.0.0"
 	},
 	"packageManager": "pnpm@9.7.1",
-  "scripts": {
-    "test": "test262-harness --preprocessor ./preprocessor.js ./test262/test/harness/**/*.js"
-  }
+	"scripts": {
+		"test": "test262-harness --preprocessor ./preprocessor.js ./test262/test/language/**/*.js"
+	}
 }
