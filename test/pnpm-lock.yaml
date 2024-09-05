@@ -11,6 +11,12 @@ importers:
       '@kermanx/tree-shaker':
         specifier: link:..\napi
         version: link:../napi
+      diff:
+        specifier: ^6.0.0
+        version: 6.0.0
+      picocolors:
+        specifier: ^1.1.0
+        version: 1.1.0
       test262-harness:
         specifier: ^10.0.0
         version: 10.0.0
@@ -120,6 +126,10 @@ packages:
   decamelize@1.2.0:
     resolution: {integrity: sha512-z2S+W9X73hAUUki+N+9Za2lBlun89zigOyGrsax+KUQ6wKW4ZoWpEYBkGhQjwAjjDCkWxhY0VKEhk8wzY7F5cA==}
     engines: {node: '>=0.10.0'}
+
+  diff@6.0.0:
+    resolution: {integrity: sha512-NbGtgPSw7il+jeajji1H6iKjCk3r/ANQKw3FFUhGV50+MH5MKIMeUmi53piTr7jlkWcq9eS858qbkRzkehwe+w==}
+    engines: {node: '>=0.3.1'}
 
   emoji-regex@7.0.3:
     resolution: {integrity: sha512-CwBLREIQ7LvYFB0WyRvwhq5N5qPhc6PMjD6bYggFlI5YyDgl+0vxq5VHbMOFqLg7hfWzmu8T5Z1QofhmTIhItA==}
@@ -258,6 +268,9 @@ packages:
   path-exists@3.0.0:
     resolution: {integrity: sha512-bpC7GYwiDYQ4wYLe+FA8lhRjhQCMcQGuSgGGqDkg/QerRWw9CmGRT0iSOVRSZJ29NMLZgIzqaljJ63oaL4NIJQ==}
     engines: {node: '>=4'}
+
+  picocolors@1.1.0:
+    resolution: {integrity: sha512-TQ92mBOW0l3LeMeyLV6mzy/kWr8lkd/hp3mTg7wYK7zJhuBStmGMBG0BdeDZS/dZx1IukaX6Bk11zcln25o1Aw==}
 
   private@0.1.8:
     resolution: {integrity: sha512-VvivMrbvd2nKkiG38qjULzlc+4Vx4wm/whI9pQD35YrARNnhxeiRktSOhSukRLFNlzg6Br/cJPet5J/u19r/mg==}
@@ -489,6 +502,8 @@ snapshots:
 
   decamelize@1.2.0: {}
 
+  diff@6.0.0: {}
+
   emoji-regex@7.0.3: {}
 
   engine.io-client@3.5.4:
@@ -644,6 +659,8 @@ snapshots:
   parseuri@0.0.6: {}
 
   path-exists@3.0.0: {}
+
+  picocolors@1.1.0: {}
 
   private@0.1.8: {}
 
