@@ -13,6 +13,7 @@ mod meta_property;
 mod new_expression;
 mod object_expression;
 mod parenthesized_expression;
+mod private_in_expression;
 mod sequence_expression;
 mod super_expression;
 mod tagged_template_expression;
@@ -76,8 +77,8 @@ impl<'a> Analyzer<'a> {
       Expression::ClassExpression(node) => self.exec_class(node, false),
       Expression::ThisExpression(node) => self.exec_this_expression(node),
       Expression::Super(node) => self.exec_super(node),
+      Expression::PrivateInExpression(node) => self.exec_private_in_expression(node),
       Expression::ArrayExpression(node) => todo!(),
-      Expression::PrivateInExpression(node) => todo!(),
 
       Expression::JSXElement(_)
       | Expression::JSXFragment(_)
@@ -161,8 +162,8 @@ impl<'a> Transformer<'a> {
         .map(|class| self.ast_builder.expression_from_class(class)),
       Expression::ThisExpression(node) => self.transform_this_expression(node, need_val),
       Expression::Super(node) => self.transform_super(node, need_val),
+      Expression::PrivateInExpression(node) => self.transform_private_in_expression(node, need_val),
       Expression::ArrayExpression(node) => todo!(),
-      Expression::PrivateInExpression(node) => todo!(),
 
       Expression::JSXElement(_)
       | Expression::JSXFragment(_)
