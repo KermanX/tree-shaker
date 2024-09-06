@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    self.push_function_scope(this, node.r#async);
+    self.push_function_scope(this, node.r#async, node.generator);
 
     self.exec_formal_parameters(&node.params, args);
     self.exec_function_body(node.body.as_ref().unwrap());

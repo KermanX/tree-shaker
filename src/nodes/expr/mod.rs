@@ -20,6 +20,7 @@ mod template_literal;
 mod this_expression;
 mod unary_expression;
 mod update_expression;
+mod yield_expression;
 
 use crate::ast::AstType2;
 use crate::build_effect;
@@ -63,6 +64,7 @@ impl<'a> Analyzer<'a> {
       Expression::CallExpression(node) => self.exec_call_expression(node),
       Expression::TaggedTemplateExpression(node) => self.exec_tagged_template_expression(node),
       Expression::AwaitExpression(node) => self.exec_await_expression(node),
+      Expression::YieldExpression(node) => self.exec_yield_expression(node),
       Expression::ObjectExpression(node) => self.exec_object_expression(node),
       Expression::ParenthesizedExpression(node) => self.exec_parenthesized_expression(node),
       Expression::SequenceExpression(node) => self.exec_sequence_expression(node),
@@ -75,7 +77,6 @@ impl<'a> Analyzer<'a> {
       Expression::ThisExpression(node) => self.exec_this_expression(node),
       Expression::Super(node) => self.exec_super(node),
       Expression::ArrayExpression(node) => todo!(),
-      Expression::YieldExpression(node) => todo!(),
       Expression::PrivateInExpression(node) => todo!(),
 
       Expression::JSXElement(_)
@@ -142,6 +143,7 @@ impl<'a> Transformer<'a> {
         self.transform_tagged_template_expression(node, need_val)
       }
       Expression::AwaitExpression(node) => self.transform_await_expression(node, need_val),
+      Expression::YieldExpression(node) => self.transform_yield_expression(node, need_val),
       Expression::ObjectExpression(node) => self.transform_object_expression(node, need_val),
       Expression::ParenthesizedExpression(node) => {
         self.transform_parenthesized_expression(node, need_val)
@@ -160,7 +162,6 @@ impl<'a> Transformer<'a> {
       Expression::ThisExpression(node) => self.transform_this_expression(node, need_val),
       Expression::Super(node) => self.transform_super(node, need_val),
       Expression::ArrayExpression(node) => todo!(),
-      Expression::YieldExpression(node) => todo!(),
       Expression::PrivateInExpression(node) => todo!(),
 
       Expression::JSXElement(_)

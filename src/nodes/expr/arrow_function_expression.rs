@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
     node: &'a ArrowFunctionExpression<'a>,
     args: Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    self.push_function_scope(self.function_scope().this.clone(), node.r#async);
+    self.push_function_scope(self.function_scope().this.clone(), node.r#async, false);
 
     self.exec_formal_parameters(&node.params, args);
     if node.expression {
