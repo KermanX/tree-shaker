@@ -123,14 +123,13 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let mut has_effect = false;
-      let definite = key_literals.len() == 1;
       let indeterminate = indeterminate || self.unknown_keyed.borrow().values.len() > 0;
+      let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_set = false;
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
             if let Some(property) = self.string_keyed.borrow_mut().get_mut(key) {
-              let indeterminate = indeterminate || !property.definite || property.values.len() > 1;
               if definite {
                 property.values = property
                   .values
@@ -148,7 +147,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                     .0;
                 }
               }
-              if indeterminate || property.values.is_empty() {
+              if indeterminate || !property.definite || property.values.is_empty() {
                 property.values.push(ObjectPropertyValue::Field(value.clone()));
               }
             } else {
