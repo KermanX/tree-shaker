@@ -5,7 +5,7 @@ use super::{
   unknown::{UnknownEntity, UnknownEntityKind},
 };
 use crate::entity::union::UnionEntity;
-use oxc::allocator::Allocator;
+use oxc::{allocator::Allocator, ast::ast::UpdateOperator};
 use std::rc::Rc;
 
 pub struct EntityOpHost<'a> {
@@ -97,6 +97,39 @@ impl<'a> EntityOpHost<'a> {
     }
 
     debug_assert!(values.len() > 0);
+
+    UnionEntity::new(values)
+  }
+
+  pub fn update(&self, input: &Entity<'a>, operator: &UpdateOperator) -> Entity<'a> {
+    let apply_update = |v: f64| {
+      let val = match operator {
+        UpdateOperator::Increment => v + 1.0,
+        UpdateOperator::Decrement => v - 1.0,
+      };
+      LiteralEntity::new_number(val.into(), self.allocator.alloc(val.to_string()))
+    };
+
+    match input.get_literal() {
+      Some(LiteralEntity::Number(num, _)) => {
+        return apply_update(num.0);
+      }
+      Some(LiteralEntity::String(s)) => {
+        let num = s.parse::<f64>();
+        return if let Ok(num) = num { apply_update(num) } else { LiteralEntity::new_nan() };
+      }
+      _ => {}
+    };
+
+    let input_t = input.test_typeof();
+
+    let mut values = vec![];
+    if input_t.contains(TypeofResult::BigInt) {
+      values.push(UnknownEntity::new_with_deps(UnknownEntityKind::BigInt, vec![input.clone()]));
+    }
+    if input_t.contains(TypeofResult::Number) {
+      values.push(UnknownEntity::new_with_deps(UnknownEntityKind::Number, vec![input.clone()]));
+    }
 
     UnionEntity::new(values)
   }

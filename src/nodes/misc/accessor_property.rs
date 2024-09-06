@@ -15,10 +15,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_accessor_property(
-    &self,
-    node: &'a AccessorProperty<'a>,
-  ) -> ClassElement<'a> {
+  pub fn transform_accessor_property(&self, node: &'a AccessorProperty<'a>) -> ClassElement<'a> {
     let AccessorProperty { r#type, span, decorators, key, value, r#static, .. } = node;
 
     let (computed, key) = self.transform_property_key(key, true).unwrap();

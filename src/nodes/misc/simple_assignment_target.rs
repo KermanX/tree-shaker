@@ -4,23 +4,39 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::ast::{
-  ast::{AssignmentTarget, SimpleAssignmentTarget},
+  ast::{Expression, SimpleAssignmentTarget},
   match_member_expression,
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_simple_assignment_target(
+  pub fn exec_simple_assignment_target_read(
+    &mut self,
+    node: &'a SimpleAssignmentTarget<'a>,
+  ) -> Entity<'a> {
+    match node {
+      match_member_expression!(SimpleAssignmentTarget) => {
+        self.exec_member_expression_read(node.to_member_expression())
+      }
+      SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
+        self.exec_identifier_reference_read(node)
+      }
+      _ => unreachable!(),
+    }
+  }
+
+  pub fn exec_simple_assignment_target_write(
     &mut self,
     node: &'a SimpleAssignmentTarget<'a>,
     value: Entity<'a>,
   ) {
     let dep = self.new_entity_dep(EntityDepNode::SimpleAssignmentTarget(node));
+    let value = ForwardedEntity::new(value, dep);
     match node {
       match_member_expression!(SimpleAssignmentTarget) => {
-        self.exec_member_expression_write(node.to_member_expression(), value, dep)
+        self.exec_member_expression_write(node.to_member_expression(), value)
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
-        self.exec_identifier_reference_write(node, ForwardedEntity::new(value, dep))
+        self.exec_identifier_reference_write(node, value)
       }
       _ => unreachable!(),
     }
@@ -28,22 +44,36 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_simple_assignment_target(
+  pub fn transform_simple_assignment_target_read(
     &self,
     node: &'a SimpleAssignmentTarget<'a>,
-  ) -> Option<AssignmentTarget<'a>> {
-    let need_write = self.is_referred(EntityDepNode::SimpleAssignmentTarget(&node));
+    need_val: bool,
+  ) -> Option<Expression<'a>> {
     match node {
       match_member_expression!(SimpleAssignmentTarget) => {
-        self.transform_member_expression_write(node.to_member_expression(), need_write)
+        self.transform_member_expression_read(node.to_member_expression(), need_val)
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
+        let inner = self.transform_identifier_reference_read(node, need_val);
+        inner.map(|inner| self.ast_builder.expression_from_identifier_reference(inner))
+      }
+      _ => unreachable!(),
+    }
+  }
+
+  pub fn transform_simple_assignment_target_write(
+    &self,
+    node: &'a SimpleAssignmentTarget<'a>,
+  ) -> Option<SimpleAssignmentTarget<'a>> {
+    let need_write = self.is_referred(EntityDepNode::SimpleAssignmentTarget(node));
+    match node {
+      match_member_expression!(SimpleAssignmentTarget) => self
+        .transform_member_expression_write(node.to_member_expression(), need_write)
+        .map(|node| self.ast_builder.simple_assignment_target_member_expression(node)),
+      SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
         let inner = self.transform_identifier_reference_write(node, need_write);
-        inner.map(|inner| {
-          self.ast_builder.assignment_target_simple(
-            self.ast_builder.simple_assignment_target_from_identifier_reference(inner),
-          )
-        })
+        inner
+          .map(|inner| self.ast_builder.simple_assignment_target_from_identifier_reference(inner))
       }
       _ => unreachable!(),
     }

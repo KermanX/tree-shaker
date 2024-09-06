@@ -31,7 +31,7 @@ impl<'a> Analyzer<'a> {
         Expression::PrivateFieldExpression(_node) => {
           // TODO: throw warning: SyntaxError: private fields can't be deleted
           true
-        },
+        }
         Expression::ComputedMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
           let property = self.exec_expression(&node.expression);

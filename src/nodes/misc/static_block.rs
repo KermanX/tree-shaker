@@ -1,4 +1,7 @@
-use crate::{analyzer::Analyzer, ast::AstType2, data::StatementVecData, entity::unknown::UnknownEntity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstType2, data::StatementVecData, entity::unknown::UnknownEntity,
+  transformer::Transformer,
+};
 use oxc::ast::ast::{ClassElement, StaticBlock};
 
 const AST_TYPE: AstType2 = AstType2::StaticBlock;

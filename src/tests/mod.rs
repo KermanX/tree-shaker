@@ -1,5 +1,7 @@
 use insta::{assert_snapshot, glob};
-use oxc::{allocator::Allocator, codegen::CodegenOptions, minifier::MinifierOptions, span::SourceType};
+use oxc::{
+  allocator::Allocator, codegen::CodegenOptions, minifier::MinifierOptions, span::SourceType,
+};
 use std::fs;
 
 use crate::TreeShakeOptions;

@@ -19,6 +19,7 @@ mod tagged_template_expression;
 mod template_literal;
 mod this_expression;
 mod unary_expression;
+mod update_expression;
 
 use crate::ast::AstType2;
 use crate::build_effect;
@@ -55,6 +56,7 @@ impl<'a> Analyzer<'a> {
       Expression::FunctionExpression(node) => self.exec_function(node, false),
       Expression::ArrowFunctionExpression(node) => self.exec_arrow_function_expression(node),
       Expression::UnaryExpression(node) => self.exec_unary_expression(node),
+      Expression::UpdateExpression(node) => self.exec_update_expression(node),
       Expression::BinaryExpression(node) => self.exec_binary_expression(node),
       Expression::LogicalExpression(node) => self.exec_logical_expression(node),
       Expression::ConditionalExpression(node) => self.exec_conditional_expression(node),
@@ -119,6 +121,7 @@ impl<'a> Transformer<'a> {
         self.transform_arrow_function_expression(node, need_val)
       }
       Expression::UnaryExpression(node) => self.transform_unary_expression(node, need_val),
+      Expression::UpdateExpression(node) => self.transform_update_expression(node, need_val),
       Expression::BinaryExpression(node) => self.transform_binary_expression(node, need_val),
       Expression::LogicalExpression(node) => self.transform_logical_expression(node, need_val),
       Expression::ConditionalExpression(node) => {

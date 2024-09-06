@@ -7,7 +7,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_assignment_target(&mut self, node: &'a AssignmentTarget<'a>, value: Entity<'a>) {
     match node {
       match_simple_assignment_target!(AssignmentTarget) => {
-        self.exec_simple_assignment_target(node.to_simple_assignment_target(), value);
+        self.exec_simple_assignment_target_write(node.to_simple_assignment_target(), value);
       }
       match_assignment_target_pattern!(AssignmentTarget) => {
         self.exec_assignment_target_pattern(node.to_assignment_target_pattern(), value);
@@ -22,9 +22,9 @@ impl<'a> Transformer<'a> {
     node: &'a AssignmentTarget<'a>,
   ) -> Option<AssignmentTarget<'a>> {
     match node {
-      match_simple_assignment_target!(AssignmentTarget) => {
-        self.transform_simple_assignment_target(node.to_simple_assignment_target())
-      }
+      match_simple_assignment_target!(AssignmentTarget) => self
+        .transform_simple_assignment_target_write(node.to_simple_assignment_target())
+        .map(|node| self.ast_builder.assignment_target_simple(node)),
       match_assignment_target_pattern!(AssignmentTarget) => {
         self.transform_assignment_target_pattern(node.to_assignment_target_pattern())
       }

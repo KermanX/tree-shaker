@@ -1,0 +1,25 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(input)
+input_file: src/tests/fixtures/update_expression.js
+---
+export function f1() {
+	let a = 1;
+	effect(2, 2, 4);
+	a++;
+	effect(5);
+	if (unknown) a++;
+	effect(a);
+}
+export function f2() {
+	let b = { value: 1 };
+	effect(2, 2, 4);
+	b.value++;
+	effect(5);
+	if (unknown) b.value++;
+	effect(b.value);
+}
+export function f3() {
+	c[unknown];
+	effect();
+}

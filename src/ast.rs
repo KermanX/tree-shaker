@@ -182,4 +182,8 @@ pub enum AstType2 {
   Statement,
   Arguments,
   CaseConsequent,
+  MemberExpressionRead,
+  MemberExpressionWrite,
+  IdentifierReferenceRead,
+  IdentifierReferenceWrite,
 }

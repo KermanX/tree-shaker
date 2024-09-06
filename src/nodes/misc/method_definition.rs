@@ -12,10 +12,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_method_definition(
-    &self,
-    node: &'a MethodDefinition<'a>,
-  ) -> ClassElement<'a> {
+  pub fn transform_method_definition(&self, node: &'a MethodDefinition<'a>) -> ClassElement<'a> {
     let MethodDefinition {
       r#type,
       span,
