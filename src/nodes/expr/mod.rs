@@ -74,7 +74,17 @@ impl<'a> Analyzer<'a> {
       Expression::ClassExpression(node) => self.exec_class(node, false),
       Expression::ThisExpression(node) => self.exec_this_expression(node),
       Expression::Super(node) => self.exec_super(node),
-      _ => todo!("Expr at span {:?}", node.span()),
+      Expression::ArrayExpression(node) => todo!(),
+      Expression::YieldExpression(node) => todo!(),
+      Expression::PrivateInExpression(node) => todo!(),
+
+      Expression::JSXElement(_)
+      | Expression::JSXFragment(_)
+      | Expression::TSAsExpression(_)
+      | Expression::TSInstantiationExpression(_)
+      | Expression::TSTypeAssertion(_)
+      | Expression::TSNonNullExpression(_)
+      | Expression::TSSatisfiesExpression(_) => unreachable!(),
     };
 
     let data = self.load_data::<Data>(AST_TYPE, node);
@@ -149,7 +159,17 @@ impl<'a> Transformer<'a> {
         .map(|class| self.ast_builder.expression_from_class(class)),
       Expression::ThisExpression(node) => self.transform_this_expression(node, need_val),
       Expression::Super(node) => self.transform_super(node, need_val),
-      _ => todo!(),
+      Expression::ArrayExpression(node) => todo!(),
+      Expression::YieldExpression(node) => todo!(),
+      Expression::PrivateInExpression(node) => todo!(),
+
+      Expression::JSXElement(_)
+      | Expression::JSXFragment(_)
+      | Expression::TSAsExpression(_)
+      | Expression::TSInstantiationExpression(_)
+      | Expression::TSTypeAssertion(_)
+      | Expression::TSNonNullExpression(_)
+      | Expression::TSSatisfiesExpression(_) => unreachable!(),
     };
 
     if let Some(literal) = literal {

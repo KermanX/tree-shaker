@@ -48,7 +48,11 @@ impl<'a> Analyzer<'a> {
       Statement::TryStatement(node) => self.exec_try_statement(node),
       Statement::ThrowStatement(node) => self.exec_throw_statement(node),
       Statement::EmptyStatement(_) => {}
-      _ => todo!("Stmt at span {:?}", node.span()),
+      Statement::DoWhileStatement(node) => todo!(),
+      Statement::ForOfStatement(node) => todo!(),
+      Statement::ForStatement(node) => todo!(),
+      Statement::DebuggerStatement(node) => todo!(),
+      Statement::WithStatement(node) => todo!(),
     }
   }
 }
@@ -83,7 +87,11 @@ impl<'a> Transformer<'a> {
       Statement::TryStatement(node) => self.transform_try_statement(node),
       Statement::ThrowStatement(node) => self.transform_throw_statement(node),
       Statement::EmptyStatement(_) => None,
-      _ => todo!(),
+      Statement::DoWhileStatement(node) => todo!(),
+      Statement::ForOfStatement(node) => todo!(),
+      Statement::ForStatement(node) => todo!(),
+      Statement::DebuggerStatement(node) => todo!(),
+      Statement::WithStatement(node) => todo!(),
     }
   }
 }
