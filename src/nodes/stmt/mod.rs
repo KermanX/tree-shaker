@@ -51,8 +51,8 @@ impl<'a> Analyzer<'a> {
       Statement::DoWhileStatement(node) => todo!(),
       Statement::ForOfStatement(node) => todo!(),
       Statement::ForStatement(node) => todo!(),
-      Statement::DebuggerStatement(node) => todo!(),
-      Statement::WithStatement(node) => todo!(),
+      Statement::DebuggerStatement(node) => {}
+      Statement::WithStatement(node) => unreachable!(),
     }
   }
 }
@@ -90,8 +90,8 @@ impl<'a> Transformer<'a> {
       Statement::DoWhileStatement(node) => todo!(),
       Statement::ForOfStatement(node) => todo!(),
       Statement::ForStatement(node) => todo!(),
-      Statement::DebuggerStatement(node) => todo!(),
-      Statement::WithStatement(node) => todo!(),
+      Statement::DebuggerStatement(node) => Some(self.ast_builder.statement_debugger(node.span())),
+      Statement::WithStatement(node) => unreachable!(),
     }
   }
 }
