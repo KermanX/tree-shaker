@@ -77,6 +77,19 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     collect_effect_and_value(results)
   }
 
+  fn iterate(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+    let mut has_effect = false;
+    let mut results = vec![];
+    for entity in &self.0 {
+      let (effect, result) = entity.iterate(analyzer);
+      has_effect |= effect;
+      if let Some(result) = result {
+        results.push(result);
+      }
+    }
+    (has_effect, if results.is_empty() { None } else { Some(UnionEntity::new(results)) })
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     let mut result = Vec::new();
     // TODO: collect literals

@@ -21,6 +21,7 @@ pub trait EntityTrait<'a>: Debug {
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>);
   fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>);
+  fn iterate(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>);
 
   fn get_typeof(&self) -> Entity<'a>;
   fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a>;
@@ -108,6 +109,10 @@ impl<'a> Entity<'a> {
 
   pub fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     self.0.r#await(self, analyzer)
+  }
+
+  pub fn iterate(&self, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+    self.0.iterate(self, analyzer)
   }
 
   pub fn get_typeof(&self) -> Entity<'a> {

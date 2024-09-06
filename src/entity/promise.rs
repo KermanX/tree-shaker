@@ -60,6 +60,11 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     (self.has_effect || inner_effect, awaited)
   }
 
+  fn iterate(&self, _rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+    // TODO: throw warning
+    (true, Some(UnknownEntity::new_unknown()))
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string("object")
   }

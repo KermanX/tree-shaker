@@ -66,7 +66,12 @@ impl<'a> Analyzer<'a> {
   pub fn push_function_scope(&mut self, this: Entity<'a>, is_async: bool, is_generator: bool) {
     let cf_scope_id = self.push_cf_scope(Some(false), false);
     self.push_variable_scope(cf_scope_id);
-    self.scope_context.function_scopes.push(FunctionScope::new(cf_scope_id, this, is_async, is_generator));
+    self.scope_context.function_scopes.push(FunctionScope::new(
+      cf_scope_id,
+      this,
+      is_async,
+      is_generator,
+    ));
   }
 
   pub fn pop_function_scope(&mut self) -> (bool, Entity<'a>) {

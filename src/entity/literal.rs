@@ -75,6 +75,11 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     (false, rc.clone())
   }
 
+  fn iterate(&self, _rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+    // TODO: throw warning
+    (true, Some(UnknownEntity::new_unknown()))
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string(self.test_typeof().to_string().unwrap())
   }

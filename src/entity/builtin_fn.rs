@@ -68,6 +68,12 @@ impl<'a> EntityTrait<'a> for BuiltinFnEntity<'a> {
     (false, rc.clone())
   }
 
+  fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+    self.consume_as_unknown(analyzer);
+    // TODO: throw warning
+    (true, Some(UnknownEntity::new_unknown()))
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string("function")
   }

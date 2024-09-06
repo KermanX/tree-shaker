@@ -81,6 +81,12 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     (true, UnknownEntity::new_unknown())
   }
 
+  fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+    // TODO: If the function is never modified, should warn.
+    self.consume_as_unknown(analyzer);
+    (true, Some(UnknownEntity::new_unknown()))
+  }
+
   fn get_typeof(&self) -> Entity<'a> {
     LiteralEntity::new_string("function")
   }

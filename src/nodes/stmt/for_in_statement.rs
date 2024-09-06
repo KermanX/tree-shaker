@@ -42,7 +42,7 @@ impl<'a> Analyzer<'a> {
     let cf_scope_id = self.push_cf_scope(None, true);
     self.push_variable_scope(cf_scope_id);
 
-    self.exec_for_statement_left(&node.left, UnknownEntity::new(UnknownEntityKind::Number));
+    self.exec_for_statement_left(&node.left, UnknownEntity::new(UnknownEntityKind::String));
     self.exec_statement(&node.body);
 
     self.pop_variable_scope();
