@@ -127,6 +127,10 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     Some(result)
   }
 
+  fn get_literal(&self) -> Option<LiteralEntity<'a>> {
+    Some(*self)
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     match self {
       LiteralEntity::String(_) => TypeofResult::String,
@@ -285,27 +289,30 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
-  pub fn to_number(&self) -> Option<F64WithEq> {
+  // `None` for unresolvable, `Some(None)` for NaN, `Some(Some(value))` for number
+  pub fn to_number(&self) -> Option<Option<F64WithEq>> {
     match self {
-      LiteralEntity::Number(value, _) => Some(*value),
+      LiteralEntity::Number(value, _) => Some(Some(*value)),
       LiteralEntity::BigInt(_value) => {
         // TODO: warn: TypeError: Cannot convert a BigInt value to a number
         None
       }
-      LiteralEntity::Boolean(value) => Some(if *value { 1.0 } else { 0.0 }.into()),
+      LiteralEntity::Boolean(value) => Some(Some(if *value { 1.0 } else { 0.0 }.into())),
       LiteralEntity::String(value) => {
         let value = value.parse::<f64>();
         if let Ok(value) = value {
-          Some(value.into())
+          Some(Some(value.into()))
         } else {
-          None
+          Some(None)
         }
       }
-      LiteralEntity::Null => Some(0.0.into()),
-      LiteralEntity::Symbol(_)
-      | LiteralEntity::Infinity(_)
-      | LiteralEntity::NaN
-      | LiteralEntity::Undefined => None,
+      LiteralEntity::Null => Some(Some(0.0.into())),
+      LiteralEntity::Symbol(_) => {
+        // TODO: warn: TypeError: Cannot convert a Symbol value to a number
+        None
+      }
+      LiteralEntity::NaN | LiteralEntity::Undefined => Some(None),
+      LiteralEntity::Infinity(_) => None,
     }
   }
 }

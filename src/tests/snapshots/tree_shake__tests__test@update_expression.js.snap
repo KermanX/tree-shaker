@@ -20,6 +20,7 @@ export function f2() {
 	effect(b.value);
 }
 export function f3() {
+	c.value++;
 	c[unknown];
 	effect();
 }

@@ -56,13 +56,19 @@ impl<'a> EntityOpHost<'a> {
     let may_convert_to_num =
       TypeofResult::Number | TypeofResult::Boolean | TypeofResult::Undefined | TypeofResult::Object;
 
-    if lhs_t.intersects(may_convert_to_num) && rhs_t.contains(may_convert_to_num) {
+    if lhs_t.intersects(may_convert_to_num) && rhs_t.intersects(may_convert_to_num) {
       // Possibly number
       match (lhs_lit.and_then(|v| v.to_number()), rhs_lit.and_then(|v| v.to_number())) {
-        (Some(l), Some(r)) => {
-          let val = l.0 + r.0;
-          values.push(LiteralEntity::new_number(val.into(), self.allocator.alloc(val.to_string())));
-        }
+        (Some(l), Some(r)) => match (l, r) {
+          (Some(l), Some(r)) => {
+            let val = l.0 + r.0;
+            values
+              .push(LiteralEntity::new_number(val.into(), self.allocator.alloc(val.to_string())));
+          }
+          _ => {
+            values.push(LiteralEntity::new_nan());
+          }
+        },
         _ => {
           values.push(UnknownEntity::new_with_deps(
             UnknownEntityKind::Number,
@@ -78,8 +84,8 @@ impl<'a> EntityOpHost<'a> {
         vec![lhs.clone(), rhs.clone()],
       ));
     }
-    if !lhs_t.difference(TypeofResult::Number | TypeofResult::BigInt).is_empty()
-      || !rhs_t.difference(TypeofResult::Number | TypeofResult::BigInt).is_empty()
+    if !lhs_t.difference(may_convert_to_num | TypeofResult::BigInt).is_empty()
+      || !rhs_t.difference(may_convert_to_num | TypeofResult::BigInt).is_empty()
     {
       let lhs_str = lhs.get_to_string();
       let rhs_str = rhs.get_to_string();
@@ -99,8 +105,6 @@ impl<'a> EntityOpHost<'a> {
       }
     }
 
-    debug_assert!(values.len() > 0);
-
     UnionEntity::new(values)
   }
 
@@ -114,7 +118,10 @@ impl<'a> EntityOpHost<'a> {
     };
 
     if let Some(num) = input.get_literal().and_then(|lit| lit.to_number()) {
-      return apply_update(num.0);
+      return match num {
+        Some(num) => apply_update(num.0),
+        None => LiteralEntity::new_nan(),
+      };
     }
 
     let input_t = input.test_typeof();

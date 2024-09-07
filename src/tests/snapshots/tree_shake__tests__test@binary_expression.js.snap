@@ -13,8 +13,8 @@ export const strict_equality = (__unused_E053, __unused_DF89) => ({
 export const add = {
 	s1: 2,
 	s2: "1a",
-	s3: "1true",
-	s4: "1null",
+	s3: 2,
+	s4: 1,
 	s5: "a1",
 	s6: "aa",
 	s7: "atrue",
