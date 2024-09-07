@@ -9,7 +9,10 @@ use oxc::{
   span::SPAN,
 };
 use regex::Regex;
-use std::sync::LazyLock;
+use std::{
+  hash::{Hash, Hasher},
+  sync::LazyLock,
+};
 
 static NUMERIC_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9]+$").unwrap());
 
@@ -23,6 +26,12 @@ pub struct F64WithEq(pub f64);
 impl PartialEq<Self> for F64WithEq {
   fn eq(&self, rhs: &Self) -> bool {
     self.0.to_le_bytes() == rhs.0.to_le_bytes()
+  }
+}
+
+impl Hash for F64WithEq {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    self.0.to_le_bytes().hash(state)
   }
 }
 

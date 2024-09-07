@@ -5,7 +5,7 @@ use super::{
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
-  utils::collect_effect_and_value,
+  utils::{collect_effect_and_value, is_assignment_indeterminate},
 };
 use crate::analyzer::Analyzer;
 use oxc::{ast::ast::PropertyKind, semantic::ScopeId};
@@ -121,7 +121,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
   fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
     let this = self.get_this();
-    let indeterminate = self.is_assignment_indeterminate(analyzer);
+    let indeterminate = is_assignment_indeterminate(&self.scope_path, analyzer);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let mut has_effect = false;
@@ -216,7 +216,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
     self.consume_self(analyzer);
-    let indeterminate = self.is_assignment_indeterminate(analyzer);
+    let indeterminate = is_assignment_indeterminate(&self.scope_path, analyzer);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let definite = key_literals.len() == 1;
@@ -405,20 +405,6 @@ impl<'a> ObjectEntity<'a> {
     has_effect |=
       apply_unknown_to_vec(analyzer, &mut self.rest.borrow(), &UnknownEntity::new_unknown());
     has_effect
-  }
-
-  fn is_assignment_indeterminate(&self, analyzer: &Analyzer<'a>) -> bool {
-    let mut var_scope_id = analyzer.scope_context.variable_scopes.first().unwrap().id;
-    for (i, scope) in analyzer.scope_context.variable_scopes.iter().enumerate() {
-      let scope_id = scope.id;
-      if self.scope_path.get(i).is_some_and(|id| *id == scope_id) {
-        var_scope_id = scope_id;
-      } else {
-        break;
-      }
-    }
-    let target = analyzer.get_variable_scope_by_id(var_scope_id).cf_scope_id;
-    analyzer.is_relative_indeterminate(target)
   }
 }
 

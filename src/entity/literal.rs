@@ -284,4 +284,28 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::Undefined => "undefined",
     }
   }
+
+  pub fn to_number(&self) -> Option<F64WithEq> {
+    match self {
+      LiteralEntity::Number(value, _) => Some(*value),
+      LiteralEntity::BigInt(_value) => {
+        // TODO: warn: TypeError: Cannot convert a BigInt value to a number
+        None
+      }
+      LiteralEntity::Boolean(value) => Some(if *value { 1.0 } else { 0.0 }.into()),
+      LiteralEntity::String(value) => {
+        let value = value.parse::<f64>();
+        if let Ok(value) = value {
+          Some(value.into())
+        } else {
+          None
+        }
+      }
+      LiteralEntity::Null => Some(0.0.into()),
+      LiteralEntity::Symbol(_)
+      | LiteralEntity::Infinity(_)
+      | LiteralEntity::NaN
+      | LiteralEntity::Undefined => None,
+    }
+  }
 }
