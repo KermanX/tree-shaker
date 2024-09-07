@@ -9,10 +9,10 @@ export function main() {
     effect
   }
   
-  // while(false) {
-  //   let a = 0;
-  //   a++;
-  // }
+  while(false) {
+    let a = 0;
+    a++;
+  }
   
   while((effect, false)) {
     effect
@@ -51,6 +51,4 @@ export function main() {
     return;
     effect2;
   }
-
-  effect3;
 }
