@@ -48,8 +48,12 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                 }
                 result.push(LiteralEntity::new_undefined());
               }
+            } else {
+              if key == "length" {
+                todo!();
+              }
+              todo!("builtins");
             }
-            todo!("builtins");
           }
           LiteralEntity::Symbol(key) => todo!(),
           _ => unreachable!(),
@@ -89,11 +93,12 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                   *self.rest.borrow_mut() = Some(value.clone());
                 }
               }
+            } else {
+              if key == "length" {
+                todo!();
+              }
+              todo!("builtins");
             }
-            if key == "length" {
-              todo!();
-            }
-            todo!("builtins");
           }
           LiteralEntity::Symbol(key) => todo!(),
           _ => unreachable!(),
