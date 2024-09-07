@@ -5,6 +5,7 @@ mod declaration;
 mod do_while_statement;
 mod for_in_statement;
 mod for_of_statement;
+mod for_statement;
 mod if_statement;
 mod labeled_statements;
 mod module_declaration;
@@ -42,6 +43,7 @@ impl<'a> Analyzer<'a> {
       Statement::IfStatement(node) => self.exec_if_statement(node),
       Statement::WhileStatement(node) => self.exec_while_statement(node),
       Statement::DoWhileStatement(node) => self.exec_do_while_statement(node),
+      Statement::ForStatement(node) => self.exec_for_statement(node),
       Statement::ForInStatement(node) => self.exec_for_in_statement(node),
       Statement::ForOfStatement(node) => self.exec_for_of_statement(node),
       Statement::SwitchStatement(node) => self.exec_switch_statement(node),
@@ -52,9 +54,8 @@ impl<'a> Analyzer<'a> {
       Statement::TryStatement(node) => self.exec_try_statement(node),
       Statement::ThrowStatement(node) => self.exec_throw_statement(node),
       Statement::EmptyStatement(_) => {}
-      Statement::ForStatement(node) => todo!(),
-      Statement::DebuggerStatement(node) => {}
-      Statement::WithStatement(node) => unreachable!(),
+      Statement::DebuggerStatement(_node) => {}
+      Statement::WithStatement(_node) => unreachable!(),
     }
   }
 }
@@ -81,6 +82,7 @@ impl<'a> Transformer<'a> {
       Statement::IfStatement(node) => self.transform_if_statement(node),
       Statement::WhileStatement(node) => self.transform_while_statement(node),
       Statement::DoWhileStatement(node) => self.transform_do_while_statement(node),
+      Statement::ForStatement(node) => self.transform_for_statement(node),
       Statement::ForInStatement(node) => self.transform_for_in_statement(node),
       Statement::ForOfStatement(node) => self.transform_for_of_statement(node),
       Statement::SwitchStatement(node) => self.transform_switch_statement(node),
@@ -91,9 +93,8 @@ impl<'a> Transformer<'a> {
       Statement::TryStatement(node) => self.transform_try_statement(node),
       Statement::ThrowStatement(node) => self.transform_throw_statement(node),
       Statement::EmptyStatement(_) => None,
-      Statement::ForStatement(node) => todo!(),
       Statement::DebuggerStatement(node) => Some(self.ast_builder.statement_debugger(node.span())),
-      Statement::WithStatement(node) => unreachable!(),
+      Statement::WithStatement(_node) => unreachable!(),
     }
   }
 }
