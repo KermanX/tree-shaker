@@ -17,6 +17,7 @@ mod method_definition;
 mod property_definition;
 mod property_key;
 mod simple_assignment_target;
+mod spread_element;
 mod static_block;
 mod variable_declaration;
 mod variable_declarator;

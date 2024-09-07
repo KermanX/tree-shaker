@@ -12,13 +12,13 @@ use oxc::semantic::ScopeId;
 use std::cell::RefCell;
 
 #[derive(Debug)]
-pub struct ObjectEntity<'a> {
+pub struct ArrayEntity<'a> {
   pub scope_path: Vec<ScopeId>,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Option<Entity<'a>>>,
 }
 
-impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
+impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
@@ -192,5 +192,25 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
   fn test_is_array(&self) -> Option<bool> {
     Some(false)
+  }
+}
+
+impl<'a> ArrayEntity<'a> {
+  pub fn push_element(&self, element: Entity<'a>) {
+    self.elements.borrow_mut().push(element);
+  }
+
+  pub fn init_rest(&self, rest: Entity<'a>) {
+    *self.rest.borrow_mut() = Some(rest);
+  }
+}
+
+impl<'a> Analyzer<'a> {
+  pub fn new_empty_array(&self) -> ArrayEntity<'a> {
+    ArrayEntity {
+      scope_path: self.variable_scope_path(),
+      elements: RefCell::new(Vec::new()),
+      rest: RefCell::new(None),
+    }
   }
 }
