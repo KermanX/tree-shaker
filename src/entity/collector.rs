@@ -57,6 +57,10 @@ impl<'a> LiteralCollector<'a> {
   }
 
   pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Option<Expression<'a>> {
-    self.literal.as_ref().map(|literal| literal.build_expr(ast_builder, span))
+    if self.invalid {
+      None
+    } else {
+      self.literal.as_ref().map(|literal| literal.build_expr(ast_builder, span))
+    }
   }
 }
