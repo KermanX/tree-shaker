@@ -1,6 +1,6 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/while_statement.js
 ---
 export function main() {
@@ -28,5 +28,13 @@ export function main() {
 	while (1) {
 		effect1;
 		return;
+	}
+	outer: while (a) {
+		effect1;
+		while (b) {
+			effect2;
+			break outer;
+		}
+		effect3;
 	}
 }

@@ -23,6 +23,7 @@ impl<'a> Analyzer<'a> {
     if test.test_truthy() == Some(false) {
       return;
     }
+    test.consume_self(self);
 
     data.need_loop = true;
 
@@ -30,7 +31,7 @@ impl<'a> Analyzer<'a> {
     self.push_variable_scope(cf_scope_id);
 
     self.exec_statement(&node.body);
-    self.exec_expression(&node.test);
+    self.exec_expression(&node.test).consume_self(self);
 
     self.pop_variable_scope();
     self.pop_cf_scope();

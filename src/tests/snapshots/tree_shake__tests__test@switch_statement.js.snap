@@ -21,6 +21,7 @@ export function main() {
 		case "a":
 			effect2();
 			break;
+			effect3();
 	}
 	unknown;
 }

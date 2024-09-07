@@ -10,7 +10,8 @@ export function main() {
 		}
 		effect(2);
 	}
-	do 
-		;
-	while (3);
+	let a = 1;
+	do {
+		a++;
+	} while (a + 1);
 }

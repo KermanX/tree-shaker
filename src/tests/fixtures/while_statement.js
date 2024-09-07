@@ -51,4 +51,13 @@ export function main() {
     return;
     effect2;
   }
+
+  outer: while(a) {
+    effect1;
+    while(b) {
+      effect2;
+      break outer;
+    }
+    effect3;
+  }
 }
