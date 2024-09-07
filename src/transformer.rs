@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  data::{DataPlaceholder, ExtraData, ReferredNodes},
+  data::{get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes},
   entity::dep::EntityDepNode,
 };
 use oxc::{
@@ -107,16 +107,13 @@ impl<'a> Transformer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn get_data_by_span<D: Default + 'a>(&self, ast_type: AstType2, span: Span) -> &'a D {
-    let existing = self.data.get(&ast_type).and_then(|map| map.get(&span));
+  pub fn get_data<D: Default + 'a>(&self, ast_type: AstType2, node: &impl GetSpan) -> &'a D {
+    let key = (ast_type, get_node_ptr(node));
+    let existing = self.data.get(&key);
     match existing {
       Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },
       None => self.allocator.alloc(D::default()),
     }
-  }
-
-  pub fn get_data<D: Default + 'a>(&self, ast_type: AstType2, node: &dyn GetSpan) -> &'a D {
-    self.get_data_by_span(ast_type, node.span())
   }
 }
 

@@ -33,7 +33,7 @@ use crate::{transformer::Transformer, Analyzer};
 use oxc::allocator::CloneIn;
 use oxc::ast::ast::Expression;
 use oxc::ast::match_member_expression;
-use oxc::span::{GetSpan, Span};
+use oxc::span::GetSpan;
 
 const AST_TYPE: AstType2 = AstType2::Expression;
 
@@ -183,8 +183,11 @@ impl<'a> Transformer<'a> {
   }
 
   // This is not good
-  pub fn get_expression_collected_literal(&self, span: Span) -> Option<LiteralEntity<'a>> {
-    let data = self.get_data_by_span::<Data>(AST_TYPE, span);
+  pub fn get_expression_collected_literal(
+    &self,
+    node: &Expression<'a>,
+  ) -> Option<LiteralEntity<'a>> {
+    let data = self.get_data::<Data>(AST_TYPE, node);
     data.collector.collected()
   }
 }

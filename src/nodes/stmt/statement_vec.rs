@@ -1,9 +1,5 @@
 use crate::{analyzer::Analyzer, data::StatementVecData, transformer::Transformer};
-use oxc::{
-  allocator::Vec,
-  ast::ast::Statement,
-  span::{GetSpan, Span},
-};
+use oxc::{allocator::Vec, ast::ast::Statement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_statement_vec(
@@ -15,18 +11,18 @@ impl<'a> Analyzer<'a> {
     let cf_scope_id = self.push_cf_scope(exited, false);
     self.push_variable_scope(cf_scope_id);
 
-    let mut span: Option<Span> = None;
-    for statement in statements {
+    let mut last_stmt = None;
+    for (index, statement) in statements.iter().enumerate() {
       if self.cf_scope().must_exited() {
         break;
       }
       self.exec_statement(statement);
-      span = Some(statement.span());
+      last_stmt = Some(index);
     }
-    if let Some(span) = span {
+    if let Some(last_stmt) = last_stmt {
       data.last_stmt = match data.last_stmt {
-        Some(current_span) => Some(current_span.max(span)),
-        None => Some(span),
+        Some(old_last_stmt) => Some(old_last_stmt.max(last_stmt)),
+        None => Some(last_stmt),
       };
     }
 
@@ -47,14 +43,12 @@ impl<'a> Transformer<'a> {
       return result;
     }
 
-    for statement in statements {
-      let span = statement.span();
-
+    for (index, statement) in statements.iter().enumerate() {
       if let Some(statement) = self.transform_statement(statement) {
         result.push(statement);
       }
 
-      if data.last_stmt == Some(span) {
+      if data.last_stmt == Some(index) {
         break;
       }
     }

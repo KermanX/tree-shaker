@@ -1,7 +1,7 @@
 use crate::{
   ast::AstType2,
   builtins::Builtins,
-  data::{ExtraData, ReferredNodes},
+  data::{get_node_ptr, ExtraData, ReferredNodes},
   entity::{
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
@@ -16,7 +16,7 @@ use oxc::{
   allocator::Allocator,
   ast::ast::Program,
   semantic::{ScopeId, Semantic, SymbolId},
-  span::{GetSpan, Span},
+  span::GetSpan,
 };
 use rustc_hash::FxHashMap;
 use std::mem;
@@ -67,32 +67,20 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn set_data_by_span(&mut self, ast_type: AstType2, span: Span, data: impl Default + 'a) {
-    let map = self.data.entry(ast_type).or_insert_with(|| FxHashMap::default());
-    map.insert(span, unsafe { mem::transmute(Box::new(data)) });
-  }
-
-  pub fn set_data(&mut self, ast_type: AstType2, node: &dyn GetSpan, data: impl Default + 'a) {
-    self.set_data_by_span(ast_type, node.span(), data)
-  }
-
-  pub fn load_data_by_span<D: Default + 'a>(
-    &mut self,
-    ast_type: AstType2,
-    span: Span,
-  ) -> &'a mut D {
-    let map = self.data.entry(ast_type).or_insert_with(|| FxHashMap::default());
-    let boxed =
-      map.entry(span).or_insert_with(|| unsafe { mem::transmute(Box::new(D::default())) });
-    unsafe { mem::transmute(boxed.as_mut()) }
+  pub fn set_data<T>(&mut self, ast_type: AstType2, node: &'a T, data: impl Default + 'a) {
+    let key = (ast_type, get_node_ptr(node));
+    self.data.insert(key, unsafe { mem::transmute(Box::new(data)) });
   }
 
   pub fn load_data<D: Default + 'a>(
     &mut self,
     ast_type: AstType2,
-    node: &dyn GetSpan,
+    node: &'a impl GetSpan,
   ) -> &'a mut D {
-    self.load_data_by_span(ast_type, node.span())
+    let key = (ast_type, get_node_ptr(node));
+    let boxed =
+      self.data.entry(key).or_insert_with(|| unsafe { mem::transmute(Box::new(D::default())) });
+    unsafe { mem::transmute(boxed.as_mut()) }
   }
 }
 
