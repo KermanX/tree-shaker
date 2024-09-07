@@ -53,10 +53,13 @@ impl<'a> EntityOpHost<'a> {
 
     let mut values = vec![];
 
-    if lhs_t.contains(TypeofResult::Number) && rhs_t.contains(TypeofResult::Number) {
+    let may_convert_to_num =
+      TypeofResult::Number | TypeofResult::Boolean | TypeofResult::Undefined | TypeofResult::Object;
+
+    if lhs_t.intersects(may_convert_to_num) && rhs_t.contains(may_convert_to_num) {
       // Possibly number
-      match (lhs_lit, rhs_lit) {
-        (Some(LiteralEntity::Number(l, _)), Some(LiteralEntity::Number(r, _))) => {
+      match (lhs_lit.and_then(|v| v.to_number()), rhs_lit.and_then(|v| v.to_number())) {
+        (Some(l), Some(r)) => {
           let val = l.0 + r.0;
           values.push(LiteralEntity::new_number(val.into(), self.allocator.alloc(val.to_string())));
         }
@@ -110,16 +113,9 @@ impl<'a> EntityOpHost<'a> {
       LiteralEntity::new_number(val.into(), self.allocator.alloc(val.to_string()))
     };
 
-    match input.get_literal() {
-      Some(LiteralEntity::Number(num, _)) => {
-        return apply_update(num.0);
-      }
-      Some(LiteralEntity::String(s)) => {
-        let num = s.parse::<f64>();
-        return if let Ok(num) = num { apply_update(num) } else { LiteralEntity::new_nan() };
-      }
-      _ => {}
-    };
+    if let Some(num) = input.get_literal().and_then(|lit| lit.to_number()) {
+      return apply_update(num.0);
+    }
 
     let input_t = input.test_typeof();
 
