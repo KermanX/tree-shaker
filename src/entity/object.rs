@@ -113,6 +113,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       let (has_effect, value) = collect_effect_and_value(values);
       (has_effect, EntryEntity::new(value, key.clone()))
     } else {
+      // TODO: like set_property, call getters and collect all possible values
+      self.consume_as_unknown(analyzer);
       (true, EntryEntity::new(UnknownEntity::new_unknown(), key.clone()))
     }
   }
