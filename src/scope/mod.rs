@@ -147,11 +147,12 @@ impl<'a> Analyzer<'a> {
     let mut should_exit = true;
     for cf_scope in self.scope_context.cf_scopes.iter_mut().rev() {
       if should_exit {
+        // Stop exiting outer scopes if one inner scope is indeterminate.
+        should_exit = !cf_scope.is_indeterminate();
+
         cf_scope.exited = Some(true);
       } else {
         cf_scope.exited = None;
-        // Stop exiting outer scopes if one inner scope is indeterminate.
-        should_exit = !cf_scope.is_indeterminate();
       }
       if let Some(label) = label {
         if let Some(label_entity) = cf_scope.matches_label(&label) {
