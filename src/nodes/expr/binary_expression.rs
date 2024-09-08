@@ -1,7 +1,13 @@
+use std::vec;
+
 use crate::{
   analyzer::Analyzer,
   build_effect,
-  entity::{entity::Entity, utils::boolean_from_test_result},
+  entity::{
+    entity::Entity,
+    unknown::{UnknownEntity, UnknownEntityKind},
+    utils::boolean_from_test_result,
+  },
   transformer::Transformer,
 };
 use oxc::ast::ast::{BinaryExpression, BinaryOperator, Expression};
@@ -11,35 +17,36 @@ impl<'a> Analyzer<'a> {
     let lhs = self.exec_expression(&node.left);
     let rhs = self.exec_expression(&node.right);
 
+    let to_result =
+      |result: Option<bool>| boolean_from_test_result(result, || vec![lhs.clone(), rhs.clone()]);
+
     match &node.operator {
-      BinaryOperator::Equality => todo!(),
-      BinaryOperator::Inequality => todo!(),
-      BinaryOperator::StrictEquality => {
-        boolean_from_test_result(self.entity_op.strict_eq(&lhs, &rhs), || vec![lhs, rhs])
-      }
-      BinaryOperator::StrictInequality => {
-        boolean_from_test_result(self.entity_op.strict_eq(&lhs, &rhs).map(|v| !v), || {
-          vec![lhs, rhs]
-        })
-      }
-      BinaryOperator::LessThan => todo!(),
-      BinaryOperator::LessEqualThan => todo!(),
-      BinaryOperator::GreaterThan => todo!(),
-      BinaryOperator::GreaterEqualThan => todo!(),
-      BinaryOperator::ShiftLeft => todo!(),
-      BinaryOperator::ShiftRight => todo!(),
-      BinaryOperator::ShiftRightZeroFill => todo!(),
+      BinaryOperator::Equality => to_result(self.entity_op.eq(&lhs, &rhs)),
+      BinaryOperator::Inequality => to_result(self.entity_op.neq(&lhs, &rhs)),
+      BinaryOperator::StrictEquality => to_result(self.entity_op.strict_eq(&lhs, &rhs)),
+      BinaryOperator::StrictInequality => to_result(self.entity_op.strict_neq(&lhs, &rhs)),
+      BinaryOperator::LessThan => to_result(self.entity_op.lt(&lhs, &rhs, false)),
+      BinaryOperator::LessEqualThan => to_result(self.entity_op.lt(&lhs, &rhs, true)),
+      BinaryOperator::GreaterThan => to_result(self.entity_op.gt(&lhs, &rhs, false)),
+      BinaryOperator::GreaterEqualThan => to_result(self.entity_op.gt(&lhs, &rhs, true)),
       BinaryOperator::Addition => self.entity_op.add(&lhs, &rhs),
-      BinaryOperator::Subtraction => todo!(),
-      BinaryOperator::Multiplication => todo!(),
-      BinaryOperator::Division => todo!(),
-      BinaryOperator::Remainder => todo!(),
-      BinaryOperator::BitwiseOR => todo!(),
-      BinaryOperator::BitwiseXOR => todo!(),
-      BinaryOperator::BitwiseAnd => todo!(),
-      BinaryOperator::In => todo!(),
-      BinaryOperator::Instanceof => todo!(),
-      BinaryOperator::Exponential => todo!(),
+      BinaryOperator::Subtraction
+      | BinaryOperator::ShiftLeft
+      | BinaryOperator::ShiftRight
+      | BinaryOperator::ShiftRightZeroFill
+      | BinaryOperator::Multiplication
+      | BinaryOperator::Division
+      | BinaryOperator::Remainder
+      | BinaryOperator::BitwiseOR
+      | BinaryOperator::BitwiseXOR
+      | BinaryOperator::BitwiseAnd
+      | BinaryOperator::Exponential => {
+        // Can be number or bigint
+        UnknownEntity::new_unknown_with_deps(vec![lhs, rhs])
+      }
+      BinaryOperator::In | BinaryOperator::Instanceof => {
+        UnknownEntity::new_with_deps(UnknownEntityKind::Boolean, vec![lhs, rhs])
+      }
     }
   }
 }

@@ -17,6 +17,22 @@ impl<'a> EntityOpHost<'a> {
     Self { allocator }
   }
 
+  pub fn eq(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Option<bool> {
+    if self.strict_eq(lhs, rhs) == Some(true) {
+      return Some(true);
+    }
+
+    if lhs.test_nullish() == Some(true) && rhs.test_nullish() == Some(true) {
+      return Some(true);
+    }
+
+    None
+  }
+
+  pub fn neq(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Option<bool> {
+    self.eq(lhs, rhs).map(|v| !v)
+  }
+
   pub fn strict_eq(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Option<bool> {
     if Rc::ptr_eq(&lhs.0, &rhs.0) {
       return Some(true);
@@ -43,6 +59,33 @@ impl<'a> EntityOpHost<'a> {
     }
 
     None
+  }
+
+  pub fn strict_neq(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Option<bool> {
+    self.strict_eq(lhs, rhs).map(|v| !v)
+  }
+
+  pub fn lt(&self, lhs: &Entity<'a>, rhs: &Entity<'a>, eq: bool) -> Option<bool> {
+    let lhs_lit = lhs.get_literal().and_then(|v| v.to_number());
+    let rhs_lit = rhs.get_literal().and_then(|v| v.to_number());
+
+    match (lhs_lit, rhs_lit) {
+      (Some(lhs_lit), Some(rhs_lit)) => match (lhs_lit, rhs_lit) {
+        (Some(lhs_lit), Some(rhs_lit)) => {
+          Some(if eq { lhs_lit.0 <= rhs_lit.0 } else { lhs_lit.0 < rhs_lit.0 })
+        }
+        _ => Some(false),
+      },
+      _ => None,
+    }
+  }
+
+  pub fn gt(&self, lhs: &Entity<'a>, rhs: &Entity<'a>, eq: bool) -> Option<bool> {
+    self.lt(rhs, lhs, eq)
+  }
+
+  pub fn shift_left(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Entity<'a> {
+    UnknownEntity::new_with_deps(UnknownEntityKind::Number, vec![lhs.clone(), rhs.clone()])
   }
 
   pub fn add(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Entity<'a> {
