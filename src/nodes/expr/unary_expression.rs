@@ -47,19 +47,34 @@ impl<'a> Analyzer<'a> {
 
     match &node.operator {
       UnaryOperator::UnaryNegation => {
-        todo!()
+        if let Some(num) = argument.get_literal().and_then(|lit| lit.to_number()) {
+          if let Some(num) = num {
+            let num = -num.0;
+            LiteralEntity::new_number(num.into(), self.allocator.alloc(num.to_string()))
+          } else {
+            LiteralEntity::new_nan()
+          }
+        } else {
+          UnknownEntity::new_with_deps(UnknownEntityKind::Number, vec![argument])
+        }
       }
       UnaryOperator::UnaryPlus => {
-        todo!()
+        if let Some(num) = argument.get_literal().and_then(|lit| lit.to_number()) {
+          if let Some(num) = num {
+            LiteralEntity::new_number(num, self.allocator.alloc(num.0.to_string()))
+          } else {
+            LiteralEntity::new_nan()
+          }
+        } else {
+          UnknownEntity::new_with_deps(UnknownEntityKind::Number, vec![argument])
+        }
       }
       UnaryOperator::LogicalNot => match argument.test_truthy() {
         Some(true) => LiteralEntity::new_boolean(false),
         Some(false) => LiteralEntity::new_boolean(true),
         None => UnknownEntity::new_with_deps(UnknownEntityKind::Boolean, vec![argument]),
       },
-      UnaryOperator::BitwiseNot => {
-        todo!()
-      }
+      UnaryOperator::BitwiseNot => UnknownEntity::new_unknown_with_deps(vec![argument]),
       UnaryOperator::Typeof => argument.get_typeof(),
       UnaryOperator::Void => LiteralEntity::new_undefined(),
       UnaryOperator::Delete => unreachable!(),
