@@ -11,6 +11,8 @@ pub struct CfScope<'a> {
   pub id: ScopeId,
   pub exited: Option<bool>,
   pub is_loop_or_switch: bool,
+  // Exits that have been stopped by this scope's indeterminate state.
+  pub stopped_exit: Option<usize>,
 }
 
 static CF_SCOPE_ID: AtomicU32 = AtomicU32::new(0);
@@ -22,6 +24,7 @@ impl<'a> CfScope<'a> {
       id: ScopeId::new(CF_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
       exited,
       is_loop_or_switch,
+      stopped_exit: None,
     }
   }
 

@@ -1,7 +1,7 @@
 use super::dep::EntityDepNode;
 use oxc::ast::ast::LabelIdentifier;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct LabelEntity<'a> {
   pub name: &'a str,
   pub node: EntityDepNode<'a>,

@@ -12,7 +12,7 @@ use oxc::semantic::ScopeId;
 pub struct FunctionScope<'a> {
   /// `None` for indeterminate
   pub returned_values: Vec<Entity<'a>>,
-  pub cf_scope_id: ScopeId,
+  pub cf_scope_index: usize,
   pub this: Entity<'a>,
   pub is_async: bool,
   pub has_await_effect: bool,
@@ -21,14 +21,14 @@ pub struct FunctionScope<'a> {
 }
 
 impl<'a> FunctionScope<'a> {
-  pub fn new(cf_scope_id: ScopeId, this: Entity<'a>, is_async: bool, is_generator: bool) -> Self {
+  pub fn new(cf_scope_index: usize, this: Entity<'a>, is_async: bool, is_generator: bool) -> Self {
     FunctionScope {
       returned_values: Vec::new(),
-      cf_scope_id,
+      cf_scope_index,
       this,
       is_async,
       has_await_effect: false,
-      try_scopes: vec![TryScope::new(cf_scope_id)],
+      try_scopes: vec![TryScope::new(cf_scope_index)],
       is_generator,
     }
   }

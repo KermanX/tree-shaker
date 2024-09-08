@@ -117,7 +117,7 @@ impl<'a> Analyzer<'a> {
   pub fn set_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
     let (scope_id, dep) = self.symbol_decls.get(symbol).unwrap();
     let variable_scope = self.get_variable_scope_by_id(*scope_id);
-    let indeterminate = self.is_relative_indeterminate(variable_scope.cf_scope_id);
+    let indeterminate = self.is_relative_indeterminate(variable_scope.cf_scope_index);
     let old_val = variable_scope.get(symbol).unwrap();
     let entity = ForwardedEntity::new(
       if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },

@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
 
     let function_scope = self.function_scope_mut();
     function_scope.returned_values.push(value);
-    let cf_scope_id = function_scope.cf_scope_id;
+    let cf_scope_id = function_scope.cf_scope_index;
     self.exit_to(cf_scope_id);
   }
 }
