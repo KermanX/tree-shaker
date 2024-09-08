@@ -21,7 +21,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     self.consume_self(analyzer);
 
-    analyzer.push_cf_scope(None, false);
+    analyzer.push_normal_cf_scope(None);
     let (_, ret_val) =
       self.call(analyzer, &UnknownEntity::new_unknown(), &UnknownEntity::new_unknown());
     analyzer.pop_cf_scope();

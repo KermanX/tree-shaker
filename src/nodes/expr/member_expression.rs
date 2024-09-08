@@ -34,7 +34,7 @@ impl<'a> Analyzer<'a> {
     };
 
     if indeterminate {
-      self.push_cf_scope(None, false);
+      self.push_normal_cf_scope(None);
     }
 
     let key = self.exec_key(node);

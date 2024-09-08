@@ -39,6 +39,6 @@ pub fn is_assignment_indeterminate<'a>(scope_path: &Vec<ScopeId>, analyzer: &Ana
       break;
     }
   }
-  let target = analyzer.get_variable_scope_by_id(var_scope_id).cf_scope_index;
+  let target = analyzer.get_variable_scope_by_id(var_scope_id).cf_scope_id;
   analyzer.is_relative_indeterminate(target)
 }

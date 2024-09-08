@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<Data>(AST_TYPE, node);
 
     // Execute the first round.
-    let cf_scope_id = self.push_cf_scope(Some(false), true);
+    let cf_scope_id = self.push_loop_or_switch_cf_scope(Some(false));
     self.push_variable_scope(cf_scope_id);
 
     self.exec_statement(&node.body);
@@ -40,7 +40,7 @@ impl<'a> Analyzer<'a> {
 
     data.need_loop = true;
 
-    let cf_scope_id = self.push_cf_scope(None, true);
+    let cf_scope_id = self.push_loop_or_switch_cf_scope(None);
     self.push_variable_scope(cf_scope_id);
 
     self.exec_statement(&node.body);

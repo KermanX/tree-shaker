@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_for_statement(&mut self, node: &'a ForStatement<'a>) {
     let data = self.load_data::<Data>(AST_TYPE, node);
 
-    let cf_scope_id = self.push_cf_scope(Some(false), true);
+    let cf_scope_id = self.push_loop_or_switch_cf_scope(Some(false));
     self.push_variable_scope(cf_scope_id);
 
     if let Some(init) = &node.init {
@@ -42,7 +42,7 @@ impl<'a> Analyzer<'a> {
 
     data.need_loop = true;
 
-    self.push_cf_scope(None, false);
+    self.push_normal_cf_scope(None);
 
     self.exec_statement(&node.body);
     if let Some(update) = &node.update {

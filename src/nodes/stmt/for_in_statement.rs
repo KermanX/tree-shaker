@@ -39,7 +39,7 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    let cf_scope_id = self.push_cf_scope(None, true);
+    let cf_scope_id = self.push_loop_or_switch_cf_scope(None);
     self.push_variable_scope(cf_scope_id);
 
     self.exec_for_statement_left(&node.left, UnknownEntity::new(UnknownEntityKind::String));

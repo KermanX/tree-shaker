@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{IfStatement, Statement},
   span::GetSpan,
@@ -26,20 +26,51 @@ impl<'a> Analyzer<'a> {
 
     if indeterminate {
       test.consume_self(self);
-      self.push_cf_scope(None, false);
     }
 
+    let labels = self.take_labels();
+
+    for cf_scope in self.scope_context.cf_scopes.iter().enumerate() {
+      println!("[{}] {:?}", cf_scope.0, cf_scope.1);
+    }
+
+    let branch_exited = if indeterminate { None } else { Some(false) };
+    let mut should_exit = true;
+    let mut exit_target = 0;
+
     if maybe_true {
+      self.push_cf_scope(CfScopeKind::If, branch_exited);
+      self.push_cf_scope_with_labels(CfScopeKind::Normal, labels.clone(), Some(false));
       self.exec_statement(&node.consequent);
+      self.pop_cf_scope();
+      if let Some(stopped_exit) = self.pop_cf_scope().stopped_exit {
+        exit_target = exit_target.max(stopped_exit);
+      } else {
+        should_exit = false;
+      }
     }
     if maybe_false {
       if let Some(alternate) = &node.alternate {
+        self.push_cf_scope(CfScopeKind::If, branch_exited);
+        self.push_cf_scope_with_labels(CfScopeKind::Normal, labels, Some(false));
         self.exec_statement(alternate);
+        self.pop_cf_scope();
+        if let Some(stopped_exit) = self.pop_cf_scope().stopped_exit {
+          exit_target = exit_target.max(stopped_exit);
+        } else {
+          should_exit = false;
+        }
+      } else {
+        should_exit = false;
       }
     }
 
-    if indeterminate {
-      self.pop_cf_scope();
+    if should_exit {
+      for cf_scope in self.scope_context.cf_scopes.iter().enumerate() {
+        println!("[{}] {:?}", cf_scope.0, cf_scope.1);
+      }
+      println!("exit to {}", exit_target);
+      self.exit_to(exit_target);
     }
 
     let data = self.load_data::<Data>(AST_TYPE, node);

@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
     };
 
     if indeterminate {
-      self.push_cf_scope(None, false);
+      self.push_normal_cf_scope(None);
     }
 
     let args = self.exec_arguments(&node.arguments);
