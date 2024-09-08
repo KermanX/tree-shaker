@@ -65,7 +65,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_function_scope(&mut self, this: Entity<'a>, is_async: bool, is_generator: bool) {
-    let (cf_scope_index, cf_scope_id) = self.push_cf_scope(CfScopeKind::Try, Some(false));
+    let (cf_scope_index, cf_scope_id) = self.push_cf_scope(CfScopeKind::Normal, Some(false));
     self.push_variable_scope(cf_scope_id);
     self.scope_context.function_scopes.push(FunctionScope::new(
       cf_scope_index,
@@ -145,7 +145,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_try_scope(&mut self) {
-    let cf_scope_index = self.push_cf_scope(CfScopeKind::Try, Some(false)).0;
+    let cf_scope_index = self.push_cf_scope(CfScopeKind::Normal, None).0;
     self.function_scope_mut().try_scopes.push(TryScope::new(cf_scope_index));
   }
 

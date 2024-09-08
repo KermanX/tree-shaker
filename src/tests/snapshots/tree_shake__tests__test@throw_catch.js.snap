@@ -23,3 +23,12 @@ export function f3(__unused_C18D) {
 		effect2();
 	}
 }
+export function f4(a) {
+	while (a) {
+		try {
+			effect1();
+			break;
+		} catch {}
+		effect3();
+	}
+}

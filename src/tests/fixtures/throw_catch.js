@@ -27,3 +27,14 @@ export function f3(a) {
   }
 }
 
+export function f4(a) {
+  while (a) {
+    try {
+      effect1();
+      break;
+      effect2();
+    }
+    catch {}
+    effect3();
+  }
+}

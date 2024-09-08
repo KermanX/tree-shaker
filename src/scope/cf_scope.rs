@@ -7,7 +7,6 @@ pub enum CfScopeKind {
   Normal,
   LoopOrSwitch,
   If,
-  Try,
 }
 
 #[derive(Debug)]
