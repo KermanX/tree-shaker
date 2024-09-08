@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(id) = &node.id {
       let symbol = id.symbol_id.get().unwrap();
-      self.declare_symbol(symbol, dep, entity.clone(), exporting);
+      self.declare_symbol(symbol, dep, entity.clone(), exporting, false);
     }
 
     entity

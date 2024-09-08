@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
     }
 
     if let Some(id) = &node.id {
-      self.exec_binding_identifier(id, UnknownEntity::new_unknown(), exporting);
+      self.exec_binding_identifier(id, UnknownEntity::new_unknown(), exporting, false);
     }
 
     super_class.map(|entity| entity.consume_as_unknown(self));

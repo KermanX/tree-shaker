@@ -16,8 +16,9 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a BindingRestElement<'a>,
     init: Entity<'a>,
-    exporting: bool,
     enumerated_keys: Vec<Entity<'a>>,
+    exporting: bool,
+    is_var: bool,
   ) {
     let (has_effect, properties) = init.enumerate_properties(self);
 
@@ -30,7 +31,7 @@ impl<'a> Analyzer<'a> {
       object.delete_property(self, &key);
     }
 
-    self.exec_binding_pattern(&node.argument, (has_effect, init), exporting);
+    self.exec_binding_pattern(&node.argument, (has_effect, init), exporting, is_var);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
@@ -41,6 +42,7 @@ impl<'a> Analyzer<'a> {
     node: &'a BindingRestElement<'a>,
     init: Entity<'a>,
     exporting: bool,
+    is_var: bool,
   ) {
     todo!()
   }

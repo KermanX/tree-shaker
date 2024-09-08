@@ -91,11 +91,17 @@ impl<'a> Analyzer<'a> {
     dep: EntityDep<'a>,
     entity: Entity<'a>,
     exporting: bool,
+    is_var: bool,
   ) {
     if exporting {
       self.exports.push(symbol);
     }
-    let variable_scope = self.variable_scope_mut();
+    let variable_scope = if is_var {
+      let index = self.function_scope().variable_scope_index;
+      self.scope_context.variable_scopes.get_mut(index).unwrap()
+    } else {
+      self.variable_scope_mut()
+    };
     variable_scope.declare(symbol, entity);
     let scope_id = variable_scope.id;
     self.symbol_decls.insert(symbol, (scope_id, dep));

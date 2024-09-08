@@ -11,7 +11,12 @@ impl<'a> Analyzer<'a> {
       ModuleDeclaration::ImportDeclaration(node) => {
         if let Some(specifiers) = &node.specifiers {
           for specifier in specifiers {
-            self.exec_binding_identifier(specifier.local(), UnknownEntity::new_unknown(), false)
+            self.exec_binding_identifier(
+              specifier.local(),
+              UnknownEntity::new_unknown(),
+              false,
+              false,
+            )
           }
         }
       }

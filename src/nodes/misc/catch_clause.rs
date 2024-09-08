@@ -10,7 +10,7 @@ impl<'a> Analyzer<'a> {
     self.push_variable_scope(cf_scope_id);
 
     if let Some(param) = &node.param {
-      self.exec_binding_pattern(&param.pattern, (false, value), false);
+      self.exec_binding_pattern(&param.pattern, (false, value), false, false);
     }
 
     self.exec_block_statement(&node.body);

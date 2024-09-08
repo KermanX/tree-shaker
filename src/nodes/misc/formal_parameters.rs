@@ -13,11 +13,11 @@ impl<'a> Analyzer<'a> {
     let resolved = args.get_to_array(node.items.len());
 
     for (param, arg) in node.items.iter().zip(resolved.0) {
-      self.exec_binding_pattern(&param.pattern, (false, arg), false);
+      self.exec_binding_pattern(&param.pattern, (false, arg), false, false);
     }
 
     if let Some(rest) = &node.rest {
-      self.exec_binding_rest_element_from_arr(rest, resolved.1, false);
+      self.exec_binding_rest_element_from_arr(rest, resolved.1, false, false);
     }
   }
 }

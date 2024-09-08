@@ -7,15 +7,16 @@ impl<'a> Analyzer<'a> {
   pub fn exec_variable_declarator(
     &mut self,
     node: &'a VariableDeclarator,
-    exporting: bool,
     init: Option<Entity<'a>>,
+    exporting: bool,
+    is_var: bool,
   ) {
     let init = init.unwrap_or_else(|| match &node.init {
       Some(init) => self.exec_expression(init),
       None => LiteralEntity::new_undefined(),
     });
 
-    self.exec_binding_pattern(&node.id, (false, init), exporting);
+    self.exec_binding_pattern(&node.id, (false, init), exporting, is_var);
   }
 }
 

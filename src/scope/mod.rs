@@ -28,6 +28,7 @@ impl<'a> ScopeContext<'a> {
     ScopeContext {
       function_scopes: vec![FunctionScope::new(
         0,
+        0,
         // TODO: global this
         UnknownEntity::new_unknown(),
         true,
@@ -66,9 +67,10 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_function_scope(&mut self, this: Entity<'a>, is_async: bool, is_generator: bool) {
     let (cf_scope_index, cf_scope_id) = self.push_cf_scope(CfScopeKind::Normal, Some(false));
-    self.push_variable_scope(cf_scope_id);
+    let variable_scope_index = self.push_variable_scope(cf_scope_id);
     self.scope_context.function_scopes.push(FunctionScope::new(
       cf_scope_index,
+      variable_scope_index,
       this,
       is_async,
       is_generator,
@@ -82,8 +84,10 @@ impl<'a> Analyzer<'a> {
     (has_effect, ret_val)
   }
 
-  pub fn push_variable_scope(&mut self, cf_scope_id: ScopeId) {
+  pub fn push_variable_scope(&mut self, cf_scope_id: ScopeId) -> usize {
+    let index = self.scope_context.variable_scopes.len();
     self.scope_context.variable_scopes.push(VariableScope::new(cf_scope_id));
+    index
   }
 
   pub fn pop_variable_scope(&mut self) -> VariableScope<'a> {

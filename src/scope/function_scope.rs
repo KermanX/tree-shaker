@@ -6,14 +6,14 @@ use crate::{
     unknown::UnknownEntity,
   },
 };
-use oxc::semantic::ScopeId;
 
 #[derive(Debug)]
 pub struct FunctionScope<'a> {
+  pub cf_scope_index: usize,
+  pub variable_scope_index: usize,
+  pub this: Entity<'a>,
   /// `None` for indeterminate
   pub returned_values: Vec<Entity<'a>>,
-  pub cf_scope_index: usize,
-  pub this: Entity<'a>,
   pub is_async: bool,
   pub has_await_effect: bool,
   pub try_scopes: Vec<TryScope<'a>>,
@@ -21,11 +21,18 @@ pub struct FunctionScope<'a> {
 }
 
 impl<'a> FunctionScope<'a> {
-  pub fn new(cf_scope_index: usize, this: Entity<'a>, is_async: bool, is_generator: bool) -> Self {
+  pub fn new(
+    cf_scope_index: usize,
+    variable_scope_index: usize,
+    this: Entity<'a>,
+    is_async: bool,
+    is_generator: bool,
+  ) -> Self {
     FunctionScope {
-      returned_values: Vec::new(),
       cf_scope_index,
+      variable_scope_index,
       this,
+      returned_values: Vec::new(),
       is_async,
       has_await_effect: false,
       try_scopes: vec![TryScope::new(cf_scope_index)],
