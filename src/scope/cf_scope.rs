@@ -19,6 +19,7 @@ pub struct CfScope<'a> {
   pub id: ScopeId,
   pub exited: Option<bool>,
   // Exits that have been stopped by this scope's indeterminate state.
+  // Only available when `kind` is `If`.`
   pub stopped_exit: Option<usize>,
 }
 
@@ -49,5 +50,9 @@ impl<'a> CfScope<'a> {
 
   pub fn is_loop_or_switch(&self) -> bool {
     matches!(self.kind, CfScopeKind::LoopOrSwitch)
+  }
+
+  pub fn is_if(&self) -> bool {
+    matches!(self.kind, CfScopeKind::If)
   }
 }

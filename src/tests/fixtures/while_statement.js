@@ -1,5 +1,3 @@
-// @minify
-
 export function main() {
   while(false) {
     0
@@ -59,5 +57,37 @@ export function main() {
       break outer;
     }
     effect3;
+  }
+
+  while(sth()) {
+    if (a) {
+      break;
+    }
+    else {
+      if (b) {
+        break;
+      }
+      else {
+        continue;
+      }
+      effect1;
+    }
+    effect2;
+  }
+  
+  while(sth()) {
+    i: if (a) {
+      break i;
+    }
+    else {
+      if (b) {
+        break;
+      }
+      else {
+        continue;
+      }
+      effect1;
+    }
+    effect2;
   }
 }

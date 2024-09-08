@@ -1,3 +1,5 @@
+use std::usize;
+
 use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{IfStatement, Statement},
@@ -30,13 +32,10 @@ impl<'a> Analyzer<'a> {
 
     let labels = self.take_labels();
 
-    for cf_scope in self.scope_context.cf_scopes.iter().enumerate() {
-      println!("[{}] {:?}", cf_scope.0, cf_scope.1);
-    }
-
     let branch_exited = if indeterminate { None } else { Some(false) };
     let mut should_exit = true;
-    let mut exit_target = 0;
+    let mut exit_target_inner = 0;
+    let mut exit_target_outer = usize::MAX;
 
     if maybe_true {
       self.push_cf_scope(CfScopeKind::If, branch_exited);
@@ -44,7 +43,8 @@ impl<'a> Analyzer<'a> {
       self.exec_statement(&node.consequent);
       self.pop_cf_scope();
       if let Some(stopped_exit) = self.pop_cf_scope().stopped_exit {
-        exit_target = exit_target.max(stopped_exit);
+        exit_target_inner = exit_target_inner.max(stopped_exit);
+        exit_target_outer = exit_target_outer.min(stopped_exit);
       } else {
         should_exit = false;
       }
@@ -56,7 +56,8 @@ impl<'a> Analyzer<'a> {
         self.exec_statement(alternate);
         self.pop_cf_scope();
         if let Some(stopped_exit) = self.pop_cf_scope().stopped_exit {
-          exit_target = exit_target.max(stopped_exit);
+          exit_target_inner = exit_target_inner.max(stopped_exit);
+          exit_target_outer = exit_target_outer.min(stopped_exit);
         } else {
           should_exit = false;
         }
@@ -66,11 +67,11 @@ impl<'a> Analyzer<'a> {
     }
 
     if should_exit {
-      for cf_scope in self.scope_context.cf_scopes.iter().enumerate() {
-        println!("[{}] {:?}", cf_scope.0, cf_scope.1);
+      self.exit_to(exit_target_inner);
+      for cf_scope in self.scope_context.cf_scopes[exit_target_outer..exit_target_inner].iter_mut()
+      {
+        cf_scope.exited = None;
       }
-      println!("exit to {}", exit_target);
-      self.exit_to(exit_target);
     }
 
     let data = self.load_data::<Data>(AST_TYPE, node);

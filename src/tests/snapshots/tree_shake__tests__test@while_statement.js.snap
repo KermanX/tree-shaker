@@ -37,4 +37,27 @@ export function main() {
 		}
 		effect3;
 	}
+	while (sth()) {
+		if (a) {
+			break;
+		} else {
+			if (b) {
+				break;
+			} else {
+				continue;
+			}
+		}
+	}
+	while (sth()) {
+		i: if (a) {
+			break i;
+		} else {
+			if (b) {
+				break;
+			} else {
+				continue;
+			}
+		}
+		effect2;
+	}
 }

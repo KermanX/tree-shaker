@@ -155,72 +155,57 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exit_to(&mut self, target_index: usize) {
-    let mut exit_stopped = None;
-    let mut exit_target = None;
+    let mut force_exit = true;
     for (idx, cf_scope) in self.scope_context.cf_scopes.iter_mut().enumerate().rev() {
-      if exit_stopped.is_none() {
-        // Stop exiting outer scopes if one inner scope is indeterminate.
-        if cf_scope.is_indeterminate() {
-          exit_stopped = Some(idx);
-        }
-
+      if force_exit {
+        let is_indeterminate = cf_scope.is_indeterminate();
         cf_scope.exited = Some(true);
+
+        // Stop exiting outer scopes if one inner scope is indeterminate.
+        if is_indeterminate {
+          force_exit = false;
+          if cf_scope.is_if() {
+            // For the `if` statement, do not mark the outer scopes as indeterminate here.
+            // Instead, let the `if` statement handle it.
+            debug_assert!(cf_scope.stopped_exit.is_none());
+            cf_scope.stopped_exit = Some(target_index);
+            break;
+          }
+        }
       } else {
         cf_scope.exited = None;
       }
       if idx == target_index {
-        exit_target = Some(idx);
         break;
       }
     }
-    self.mark_stopped_exit(exit_stopped, exit_target);
   }
 
   /// If the label is used, `true` is returned.
   pub fn exit_to_label(&mut self, label: Option<&'a str>) -> bool {
-    let mut is_closest = true;
-    let mut exit_stopped = None;
+    let mut is_closest_loop_or_switch = true;
+    let mut target_index = None;
     let mut label_used = false;
-    let mut exit_target = None;
-    for (idx, cf_scope) in self.scope_context.cf_scopes.iter_mut().enumerate().rev() {
-      if exit_stopped.is_none() {
-        // Stop exiting outer scopes if one inner scope is indeterminate.
-        if cf_scope.is_indeterminate() {
-          exit_stopped = Some(idx);
-        }
-
-        cf_scope.exited = Some(true);
-      } else {
-        cf_scope.exited = None;
-      }
+    for (idx, cf_scope) in self.scope_context.cf_scopes.iter().enumerate().rev() {
       if let Some(label) = label {
-        if let Some(label_entity) = cf_scope.matches_label(&label) {
-          if !is_closest || !cf_scope.is_loop_or_switch() {
+        if let Some(label_entity) = cf_scope.matches_label(label) {
+          if !is_closest_loop_or_switch || !cf_scope.is_loop_or_switch() {
             self.referred_nodes.insert(label_entity.node);
             label_used = true;
           }
-          exit_target = Some(idx);
+          target_index = Some(idx);
           break;
         }
+        if cf_scope.is_loop_or_switch() {
+          is_closest_loop_or_switch = false;
+        }
       } else if cf_scope.is_loop_or_switch() {
-        exit_target = Some(idx);
+        target_index = Some(idx);
         break;
       }
-      if cf_scope.is_loop_or_switch() {
-        is_closest = false;
-      }
     }
-    self.mark_stopped_exit(exit_stopped, exit_target);
+    self.exit_to(target_index.unwrap());
     label_used
-  }
-
-  fn mark_stopped_exit(&mut self, stopped_by: Option<usize>, exit_target: Option<usize>) {
-    if let Some(stopped_by) = stopped_by {
-      let stopped_by = &mut self.scope_context.cf_scopes[stopped_by];
-      debug_assert!(stopped_by.stopped_exit.is_none());
-      debug_assert_eq!(stopped_by.exited, Some(true));
-      stopped_by.stopped_exit = Some(exit_target.unwrap());
-    }
   }
 
   pub fn is_relative_indeterminate(&self, target: ScopeId) -> bool {
