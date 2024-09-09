@@ -1,6 +1,6 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/assignment_expression.js
 ---
 export function f1() {
@@ -25,4 +25,8 @@ export function f6(a, b) {
 	global.p = 1;
 	effect;
 	return a;
+}
+export function f7(__unused_D344) {
+	({x: {}, a: {}, b: {},...__unused__} = a);
+	effect("a");
 }

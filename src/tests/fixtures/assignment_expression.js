@@ -32,3 +32,12 @@ export function f6(a, b) {
   (1).p = effect;
   return a;
 }
+
+export function f7(a) {
+  let x, y, z, w;
+  ({ x, a: y = 1, b: { c: z = 2 }, ...w } = a);
+  
+  let obj = { };
+  ({ a: obj.a, b: obj.b } = { a: 'a', b: a });
+  effect(obj.a);
+}
