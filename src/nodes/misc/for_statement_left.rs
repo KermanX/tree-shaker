@@ -24,7 +24,8 @@ impl<'a> Transformer<'a> {
         .map(|decl| self.ast_builder.for_statement_left_from_variable_declaration(decl)),
       ForStatementLeft::UsingDeclaration(_node) => unreachable!(),
       _ => self
-        .transform_assignment_target(node.to_assignment_target())
+        .transform_assignment_target(node.to_assignment_target(), false)
+        .1
         .map(|target| self.ast_builder.for_statement_left_assignment_target(target)),
     }
   }

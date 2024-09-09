@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
     (effect, value): (bool, Entity<'a>),
   ) {
     if effect {
-      let data = self.load_data::<Data>(AstType2::BindingPattern, node);
+      let data = self.load_data::<Data>(AST_TYPE, node);
       data.has_effect = true;
     }
     match node {
@@ -33,10 +33,12 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
+  // (is_empty, node)
   pub fn transform_assignment_target(
     &self,
     node: &'a AssignmentTarget<'a>,
-  ) -> Option<AssignmentTarget<'a>> {
+    in_rest: bool,
+  ) -> (bool, Option<AssignmentTarget<'a>>) {
     let data = self.get_data::<Data>(AST_TYPE, node);
 
     let transformed = match node {
@@ -48,10 +50,16 @@ impl<'a> Transformer<'a> {
         .map(|node| self.ast_builder.assignment_target_assignment_target_pattern(node)),
     };
 
-    if data.has_effect {
-      Some(transformed.unwrap_or_else(|| self.build_unused_assignment_target(node.span())))
+    if data.has_effect && transformed.is_none() {
+      let span = node.span();
+      let unused = if in_rest {
+        self.build_unused_assignment_target_in_rest(span)
+      } else {
+        self.build_unused_assignment_target(span)
+      };
+      (true, Some(unused))
     } else {
-      transformed
+      (transformed.is_none(), transformed)
     }
   }
 }

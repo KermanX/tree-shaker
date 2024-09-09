@@ -27,6 +27,6 @@ export function f6(a, b) {
 	return a;
 }
 export function f7(__unused_D344) {
-	({x: {}, a: {}, b: {},...__unused__} = a);
+	({x: {}, a: {}, b: {c: {}},...__unused__} = a);
 	effect("a");
 }

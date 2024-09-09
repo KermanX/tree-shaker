@@ -1,5 +1,5 @@
 use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
-use oxc::{ast::ast::AssignmentTargetRest, span::GetSpan};
+use oxc::ast::ast::AssignmentTargetRest;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_assignment_target_rest(
@@ -18,11 +18,8 @@ impl<'a> Transformer<'a> {
   ) -> Option<AssignmentTargetRest<'a>> {
     let AssignmentTargetRest { span, target } = node;
 
-    let target_span = target.span();
-    let target = self
-      .transform_assignment_target(target)
-      .unwrap_or_else(|| self.build_unused_assignment_target_for_rest(target_span));
+    let target = self.transform_assignment_target(target, true);
 
-    Some(self.ast_builder.assignment_target_rest(*span, target))
+    target.1.map(|target| self.ast_builder.assignment_target_rest(*span, target))
   }
 }

@@ -89,7 +89,7 @@ impl<'a> Transformer<'a> {
     )
   }
 
-  pub fn build_unused_assignment_target_for_rest(&self, span: Span) -> AssignmentTarget<'a> {
+  pub fn build_unused_assignment_target_in_rest(&self, span: Span) -> AssignmentTarget<'a> {
     self.ast_builder.assignment_target_simple(self.build_unused_simple_assignment_target(span))
   }
 

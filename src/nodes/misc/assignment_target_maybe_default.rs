@@ -43,9 +43,9 @@ impl<'a> Transformer<'a> {
         let AssignmentTargetWithDefault { span, binding, init, .. } = node.as_ref();
 
         let binding_span = binding.span();
-        let binding = self.transform_assignment_target(binding);
+        let (binding_is_empty, binding) = self.transform_assignment_target(binding, false);
         let init =
-          data.need_init.then(|| self.transform_expression(init, binding.is_some())).flatten();
+          data.need_init.then(|| self.transform_expression(init, !binding_is_empty)).flatten();
 
         if let Some(init) = init {
           Some(self.ast_builder.assignment_target_maybe_default_assignment_target_with_default(
@@ -59,7 +59,8 @@ impl<'a> Transformer<'a> {
         }
       }
       _ => self
-        .transform_assignment_target(node.to_assignment_target())
+        .transform_assignment_target(node.to_assignment_target(), false)
+        .1
         .map(|inner| self.ast_builder.assignment_target_maybe_default_assignment_target(inner)),
     }
   }

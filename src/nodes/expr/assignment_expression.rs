@@ -17,8 +17,8 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let AssignmentExpression { span, operator, left, right } = node;
 
-    let left = self.transform_assignment_target(left);
-    let right = self.transform_expression(right, need_val || left.is_some());
+    let (left_is_empty, left) = self.transform_assignment_target(left, false);
+    let right = self.transform_expression(right, need_val || !left_is_empty);
 
     match (left, right) {
       (Some(left), Some(right)) => {
