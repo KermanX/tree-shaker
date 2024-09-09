@@ -80,9 +80,6 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn build_unused_assignment_target(&self, span: Span) -> AssignmentTarget<'a> {
-    // self
-    //   .ast_builder
-    //   .assignment_target_simple(self.build_unused_simple_assignment_target(span))
     self.ast_builder.assignment_target_assignment_target_pattern(
       self.ast_builder.assignment_target_pattern_object_assignment_target(
         span,
@@ -90,6 +87,10 @@ impl<'a> Transformer<'a> {
         None,
       ),
     )
+  }
+
+  pub fn build_unused_assignment_target_for_rest(&self, span: Span) -> AssignmentTarget<'a> {
+    self.ast_builder.assignment_target_simple(self.build_unused_simple_assignment_target(span))
   }
 
   pub fn build_unused_for_statement_left(&self, span: Span) -> ForStatementLeft<'a> {
