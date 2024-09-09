@@ -26,7 +26,7 @@ export function f6(a, b) {
 	effect;
 	return a;
 }
-export function f7(__unused_D344) {
+export function f7(a) {
 	({x: {}, a: {}, b: {c: {}},...__unused__} = a);
 	effect("a");
 }

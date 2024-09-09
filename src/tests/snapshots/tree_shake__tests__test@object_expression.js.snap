@@ -6,9 +6,18 @@ input_file: src/tests/fixtures/object_expression.js
 export function main() {
 	effect(1, 3);
 	let __unused_4CB3 = { unused: effect() };
-	let __unused_0648 = { get b() {
-		effect();
-	} };
+	let obj3 = {
+		a: 1,
+		get a() {
+			return;
+		},
+		get b() {
+			effect();
+		},
+		set a(__unused_199B) {
+			effect, value;
+		}
+	};
 	effect(2);
 	obj3.b;
 	effect(undefined, 3);
