@@ -131,7 +131,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
-            if let Some(property) = self.string_keyed.borrow_mut().get_mut(key) {
+            let mut string_keyed = self.string_keyed.borrow_mut();
+            if let Some(property) = string_keyed.get_mut(key) {
               if definite {
                 property.values = property
                   .values
@@ -167,7 +168,6 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                 }
               }
 
-              let mut string_keyed = self.string_keyed.borrow_mut();
               let property = ObjectProperty {
                 definite,
                 values: vec![ObjectPropertyValue::Field(value.clone())],
