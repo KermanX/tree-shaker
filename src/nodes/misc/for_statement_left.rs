@@ -8,7 +8,7 @@ impl<'a> Analyzer<'a> {
         self.exec_variable_declaration(node, false, Some(init))
       }
       ForStatementLeft::UsingDeclaration(node) => todo!(),
-      _ => self.exec_assignment_target(node.to_assignment_target(), init),
+      _ => self.exec_assignment_target(node.to_assignment_target(), (false, init)),
     }
   }
 }

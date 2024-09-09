@@ -2,7 +2,10 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{entity::Entity, literal::LiteralEntity, union::UnionEntity},
+  entity::{
+    dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity,
+    union::UnionEntity,
+  },
   transformer::Transformer,
 };
 use oxc::ast::ast::{
@@ -58,6 +61,9 @@ impl<'a> Analyzer<'a> {
     node: &'a MemberExpression<'a>,
     value: Entity<'a>,
   ) {
+    let dep = self.new_entity_dep(EntityDepNode::MemberExpression(node));
+    let value = ForwardedEntity::new(value, dep);
+
     let object = self.exec_expression(node.object());
     let key = self.exec_key(node);
     let has_effect = object.set_property(self, &key, value);
@@ -145,11 +151,11 @@ impl<'a> Transformer<'a> {
   pub fn transform_member_expression_write(
     &self,
     node: &'a MemberExpression<'a>,
-    need_write: bool,
   ) -> Option<MemberExpression<'a>> {
     let data = self.get_data::<Data>(AST_TYPE_WRITE, node);
 
-    let need_write = need_write || data.has_effect;
+    let referred = self.is_referred(EntityDepNode::MemberExpression(node));
+    let need_write = referred || data.has_effect;
 
     // TODO: side effect
     need_write.then(|| self.clone_node(node))

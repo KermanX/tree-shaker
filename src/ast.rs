@@ -186,4 +186,7 @@ pub enum AstType2 {
   MemberExpressionWrite,
   IdentifierReferenceRead,
   IdentifierReferenceWrite,
+  SimpleAssignmentTargetRead,
+  SimpleAssignmentTargetWrite,
+  AssignmentTargetPropertyIdentifier,
 }

@@ -1,5 +1,7 @@
 use crate::ast::AstType2;
+use crate::entity::dep::EntityDepNode;
 use crate::entity::entity::Entity;
+use crate::entity::forwarded::ForwardedEntity;
 use crate::entity::unknown::UnknownEntity;
 use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::IdentifierReference;
@@ -48,6 +50,9 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
     value: Entity<'a>,
   ) {
+    let dep = self.new_entity_dep(EntityDepNode::IdentifierReference(node));
+    let value = ForwardedEntity::new(value, dep);
+
     if self.builtins.is_global(&node.name) {
       // TODO: Throw warning
     }
@@ -82,10 +87,10 @@ impl<'a> Transformer<'a> {
   pub fn transform_identifier_reference_write(
     &self,
     node: &'a IdentifierReference<'a>,
-    need_write: bool,
   ) -> Option<IdentifierReference<'a>> {
     let data = self.get_data::<Data>(AST_TYPE_WRITE, node);
 
-    (!data.resolvable || need_write).then(|| self.clone_node(node))
+    let referred = self.is_referred(EntityDepNode::IdentifierReference(node));
+    (!data.resolvable || referred).then(|| self.clone_node(node))
   }
 }

@@ -32,11 +32,10 @@ impl<'a> Analyzer<'a> {
   pub fn exec_binding_pattern(
     &mut self,
     node: &'a BindingPattern<'a>,
-    effect_and_init: (bool, Entity<'a>),
+    (effect, init): (bool, Entity<'a>),
     exporting: bool,
     kind: VariableDeclarationKind,
   ) {
-    let (effect, init) = effect_and_init;
     if effect {
       let data = self.load_data::<Data>(AstType2::BindingPattern, node);
       data.has_effect = true;
@@ -71,22 +70,13 @@ impl<'a> Analyzer<'a> {
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {
-        let is_undefined = init.test_is_undefined();
-        let binding_val = match is_undefined {
-          Some(true) => self.exec_expression(&node.right),
-          Some(false) => init,
-          None => {
-            self.push_normal_cf_scope(None);
-            let value = UnionEntity::new(vec![self.exec_expression(&node.right), init]);
-            self.pop_cf_scope();
-            value
-          }
-        };
-        self.exec_binding_pattern(&node.left, (false, binding_val), exporting, kind);
+        let (need_right, binding_val) = self.exec_with_default(&node.right, init);
 
         let data =
           self.load_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
-        data.need_right |= !matches!(is_undefined, Some(false));
+        data.need_right |= need_right;
+
+        self.exec_binding_pattern(&node.left, (false, binding_val), exporting, kind);
       }
     }
   }

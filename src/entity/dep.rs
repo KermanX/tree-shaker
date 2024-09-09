@@ -1,8 +1,8 @@
 use core::hash::{Hash, Hasher};
 use oxc::{
   ast::ast::{
-    Argument, ArrowFunctionExpression, BindingIdentifier, Function, FunctionBody, LabelIdentifier,
-    ReturnStatement, SimpleAssignmentTarget, ThrowStatement,
+    Argument, ArrowFunctionExpression, BindingIdentifier, Function, FunctionBody,
+    IdentifierReference, LabelIdentifier, MemberExpression, ReturnStatement, ThrowStatement,
   },
   semantic::ScopeId,
   span::GetSpan,
@@ -15,7 +15,8 @@ pub enum EntityDepNode<'a> {
   BindingIdentifier(&'a BindingIdentifier<'a>),
   ReturnStatement(&'a ReturnStatement<'a>),
   LabelIdentifier(&'a LabelIdentifier<'a>),
-  SimpleAssignmentTarget(&'a SimpleAssignmentTarget<'a>),
+  MemberExpression(&'a MemberExpression<'a>),
+  IdentifierReference(&'a IdentifierReference<'a>),
   FunctionBodyAsExpression(&'a FunctionBody<'a>),
   Argument(&'a Argument<'a>),
   ThrowStatement(&'a ThrowStatement<'a>),
@@ -43,7 +44,10 @@ impl<'a> PartialEq for EntityDepNode<'a> {
       (EntityDepNode::LabelIdentifier(a), EntityDepNode::LabelIdentifier(b)) => {
         a.span() == b.span()
       }
-      (EntityDepNode::SimpleAssignmentTarget(a), EntityDepNode::SimpleAssignmentTarget(b)) => {
+      (EntityDepNode::MemberExpression(a), EntityDepNode::MemberExpression(b)) => {
+        a.span() == b.span()
+      }
+      (EntityDepNode::IdentifierReference(a), EntityDepNode::IdentifierReference(b)) => {
         a.span() == b.span()
       }
       (EntityDepNode::FunctionBodyAsExpression(a), EntityDepNode::FunctionBodyAsExpression(b)) => {
@@ -66,7 +70,8 @@ impl<'a> Hash for EntityDepNode<'a> {
       EntityDepNode::BindingIdentifier(a) => a.span(),
       EntityDepNode::ReturnStatement(a) => a.span(),
       EntityDepNode::LabelIdentifier(a) => a.span(),
-      EntityDepNode::SimpleAssignmentTarget(a) => a.span(),
+      EntityDepNode::MemberExpression(a) => a.span(),
+      EntityDepNode::IdentifierReference(a) => a.span(),
       EntityDepNode::FunctionBodyAsExpression(a) => a.span(),
       EntityDepNode::Argument(a) => a.span(),
       EntityDepNode::ThrowStatement(a) => a.span(),

@@ -29,8 +29,6 @@ impl<'a> Analyzer<'a> {
     node: &'a SimpleAssignmentTarget<'a>,
     value: Entity<'a>,
   ) {
-    let dep = self.new_entity_dep(EntityDepNode::SimpleAssignmentTarget(node));
-    let value = ForwardedEntity::new(value, dep);
     match node {
       match_member_expression!(SimpleAssignmentTarget) => {
         self.exec_member_expression_write(node.to_member_expression(), value)
@@ -65,13 +63,12 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a SimpleAssignmentTarget<'a>,
   ) -> Option<SimpleAssignmentTarget<'a>> {
-    let need_write = self.is_referred(EntityDepNode::SimpleAssignmentTarget(node));
     match node {
       match_member_expression!(SimpleAssignmentTarget) => self
-        .transform_member_expression_write(node.to_member_expression(), need_write)
+        .transform_member_expression_write(node.to_member_expression())
         .map(|node| self.ast_builder.simple_assignment_target_member_expression(node)),
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
-        let inner = self.transform_identifier_reference_write(node, need_write);
+        let inner = self.transform_identifier_reference_write(node);
         inner
           .map(|inner| self.ast_builder.simple_assignment_target_from_identifier_reference(inner))
       }

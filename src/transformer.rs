@@ -8,8 +8,8 @@ use oxc::{
   allocator::{Allocator, CloneIn},
   ast::{
     ast::{
-      AssignmentTarget, BindingPattern, Expression, ForStatementLeft, NumberBase, Program,
-      TSTypeAnnotation, UnaryOperator,
+      AssignmentTarget, BindingPattern, Expression, ForStatementLeft, IdentifierReference,
+      NumberBase, Program, SimpleAssignmentTarget, TSTypeAnnotation, UnaryOperator,
     },
     AstBuilder,
   },
@@ -69,7 +69,20 @@ impl<'a> Transformer<'a> {
     )
   }
 
+  pub fn build_unused_identifier_reference_write(&self, span: Span) -> IdentifierReference<'a> {
+    self.ast_builder.identifier_reference(span, "__unused__")
+  }
+
+  pub fn build_unused_simple_assignment_target(&self, span: Span) -> SimpleAssignmentTarget<'a> {
+    self.ast_builder.simple_assignment_target_from_identifier_reference(
+      self.build_unused_identifier_reference_write(span),
+    )
+  }
+
   pub fn build_unused_assignment_target(&self, span: Span) -> AssignmentTarget<'a> {
+    // self
+    //   .ast_builder
+    //   .assignment_target_simple(self.build_unused_simple_assignment_target(span))
     self.ast_builder.assignment_target_assignment_target_pattern(
       self.ast_builder.assignment_target_pattern_object_assignment_target(
         span,

@@ -4,7 +4,7 @@ use oxc::ast::ast::{AssignmentExpression, Expression};
 impl<'a> Analyzer<'a> {
   pub fn exec_assignment_expression(&mut self, node: &'a AssignmentExpression<'a>) -> Entity<'a> {
     let value = self.exec_expression(&node.right);
-    self.exec_assignment_target(&node.left, value.clone());
+    self.exec_assignment_target(&node.left, (false, value.clone()));
     value
   }
 }
