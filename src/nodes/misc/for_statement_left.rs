@@ -7,7 +7,7 @@ impl<'a> Analyzer<'a> {
       ForStatementLeft::VariableDeclaration(node) => {
         self.exec_variable_declaration(node, false, Some(init))
       }
-      ForStatementLeft::UsingDeclaration(node) => todo!(),
+      ForStatementLeft::UsingDeclaration(_node) => unreachable!(),
       _ => self.exec_assignment_target(node.to_assignment_target(), (false, init)),
     }
   }
@@ -22,7 +22,7 @@ impl<'a> Transformer<'a> {
       ForStatementLeft::VariableDeclaration(node) => self
         .transform_variable_declaration(node)
         .map(|decl| self.ast_builder.for_statement_left_from_variable_declaration(decl)),
-      ForStatementLeft::UsingDeclaration(node) => todo!(),
+      ForStatementLeft::UsingDeclaration(_node) => unreachable!(),
       _ => self
         .transform_assignment_target(node.to_assignment_target())
         .map(|target| self.ast_builder.for_statement_left_assignment_target(target)),

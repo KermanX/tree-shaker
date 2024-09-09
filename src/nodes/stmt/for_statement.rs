@@ -23,8 +23,8 @@ impl<'a> Analyzer<'a> {
         ForStatementInit::VariableDeclaration(node) => {
           self.exec_variable_declaration(node, false, None);
         }
-        ForStatementInit::UsingDeclaration(node) => {
-          todo!();
+        ForStatementInit::UsingDeclaration(_node) => {
+          unreachable!();
         }
         node => {
           self.exec_expression(node.to_expression());
@@ -72,8 +72,8 @@ impl<'a> Transformer<'a> {
           ForStatementInit::VariableDeclaration(node) => self
             .transform_variable_declaration(node)
             .map(|inner| self.ast_builder.for_statement_init_from_variable_declaration(inner)),
-          ForStatementInit::UsingDeclaration(node) => {
-            todo!();
+          ForStatementInit::UsingDeclaration(_node) => {
+            unreachable!();
           }
           node => self
             .transform_expression(node.to_expression(), false)
@@ -101,8 +101,8 @@ impl<'a> Transformer<'a> {
                 .statement_declaration(self.ast_builder.declaration_from_variable(inner))
             })
           }
-          ForStatementInit::UsingDeclaration(node) => {
-            todo!();
+          ForStatementInit::UsingDeclaration(_node) => {
+            unreachable!();
           }
           node => self
             .transform_expression(node.to_expression(), false)
