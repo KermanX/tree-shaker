@@ -8,9 +8,8 @@ impl<'a> Analyzer<'a> {
     exporting: bool,
     init: Option<Entity<'a>>,
   ) {
-    let is_var = node.kind.is_var();
     for declarator in &node.declarations {
-      self.exec_variable_declarator(declarator, init.clone(), exporting, is_var);
+      self.exec_variable_declarator(declarator, init.clone(), exporting, node.kind);
     }
   }
 }

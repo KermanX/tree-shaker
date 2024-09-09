@@ -7,7 +7,7 @@ use crate::{
 use oxc::{
   ast::ast::{
     ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,
-    ObjectPattern, TSTypeAnnotation,
+    ObjectPattern, TSTypeAnnotation, VariableDeclarationKind,
   },
   span::GetSpan,
 };
@@ -34,7 +34,7 @@ impl<'a> Analyzer<'a> {
     node: &'a BindingPattern<'a>,
     effect_and_init: (bool, Entity<'a>),
     exporting: bool,
-    is_var: bool,
+    kind: VariableDeclarationKind,
   ) {
     let (effect, init) = effect_and_init;
     if effect {
@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
     }
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
-        self.exec_binding_identifier(node, init, exporting, is_var);
+        self.exec_binding_identifier(node, init, exporting, kind);
       }
       BindingPatternKind::ObjectPattern(node) => {
         let mut enumerated_keys = vec![];
@@ -51,10 +51,10 @@ impl<'a> Analyzer<'a> {
           let key = self.exec_property_key(&property.key);
           enumerated_keys.push(key.clone());
           let effect_and_init = init.get_property(self, &key);
-          self.exec_binding_pattern(&property.value, effect_and_init, exporting, is_var);
+          self.exec_binding_pattern(&property.value, effect_and_init, exporting, kind);
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element_from_obj(rest, init, enumerated_keys, exporting, is_var);
+          self.exec_binding_rest_element_from_obj(rest, init, enumerated_keys, exporting, kind);
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
@@ -63,11 +63,11 @@ impl<'a> Analyzer<'a> {
             let key = LiteralEntity::new_string(self.allocator.alloc(index.to_string()).as_str());
             let effect_and_init = init.get_property(self, &key);
             // FIXME: get_property !== iterate
-            self.exec_binding_pattern(element, effect_and_init, exporting, is_var);
+            self.exec_binding_pattern(element, effect_and_init, exporting, kind);
           }
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element_from_arr(rest, init, exporting, is_var);
+          self.exec_binding_rest_element_from_arr(rest, init, exporting, kind);
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {
@@ -82,7 +82,7 @@ impl<'a> Analyzer<'a> {
             value
           }
         };
-        self.exec_binding_pattern(&node.left, (false, binding_val), exporting, is_var);
+        self.exec_binding_pattern(&node.left, (false, binding_val), exporting, kind);
 
         let data =
           self.load_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());

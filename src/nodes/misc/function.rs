@@ -2,7 +2,7 @@ use crate::entity::dep::EntityDepNode;
 use crate::entity::entity::Entity;
 use crate::entity::function::FunctionEntity;
 use crate::{transformer::Transformer, Analyzer};
-use oxc::ast::ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration};
+use oxc::ast::ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration, VariableDeclarationKind};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function(&mut self, node: &'a Function<'a>, exporting: bool) -> Entity<'a> {
@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(id) = &node.id {
       let symbol = id.symbol_id.get().unwrap();
-      self.declare_symbol(symbol, dep, entity.clone(), exporting, false);
+      self.declare_symbol(symbol, dep, entity.clone(), exporting, VariableDeclarationKind::Let);
     }
 
     entity

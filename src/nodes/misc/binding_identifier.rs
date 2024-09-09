@@ -3,7 +3,7 @@ use crate::{
   entity::{dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::BindingIdentifier;
+use oxc::ast::ast::{BindingIdentifier, VariableDeclarationKind};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_binding_identifier(
@@ -11,11 +11,11 @@ impl<'a> Analyzer<'a> {
     node: &'a BindingIdentifier<'a>,
     init: Entity<'a>,
     exporting: bool,
-    is_var: bool,
+    kind: VariableDeclarationKind,
   ) {
     let symbol = node.symbol_id.get().unwrap();
     let dep = self.new_entity_dep(EntityDepNode::BindingIdentifier(node));
-    self.declare_symbol(symbol, dep.clone(), ForwardedEntity::new(init, dep), exporting, is_var);
+    self.declare_symbol(symbol, dep.clone(), ForwardedEntity::new(init, dep), exporting, kind);
   }
 }
 

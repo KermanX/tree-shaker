@@ -1,7 +1,7 @@
 use crate::ast::AstType2;
 use crate::entity::entity::Entity;
 use crate::{transformer::Transformer, Analyzer};
-use oxc::ast::ast::{FormalParameter, FormalParameters};
+use oxc::ast::ast::{FormalParameter, FormalParameters, VariableDeclarationKind};
 
 const AST_TYPE: AstType2 = AstType2::FormalParameters;
 
@@ -13,11 +13,16 @@ impl<'a> Analyzer<'a> {
     let resolved = args.get_to_array(node.items.len());
 
     for (param, arg) in node.items.iter().zip(resolved.0) {
-      self.exec_binding_pattern(&param.pattern, (false, arg), false, false);
+      self.exec_binding_pattern(&param.pattern, (false, arg), false, VariableDeclarationKind::Let);
     }
 
     if let Some(rest) = &node.rest {
-      self.exec_binding_rest_element_from_arr(rest, resolved.1, false, false);
+      self.exec_binding_rest_element_from_arr(
+        rest,
+        resolved.1,
+        false,
+        VariableDeclarationKind::Let,
+      );
     }
   }
 }

@@ -3,7 +3,10 @@ use crate::{
   entity::{entity::Entity, unknown::UnknownEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::{Class, ClassBody, TSTypeParameterDeclaration, TSTypeParameterInstantiation};
+use oxc::ast::ast::{
+  Class, ClassBody, TSTypeParameterDeclaration, TSTypeParameterInstantiation,
+  VariableDeclarationKind,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_class(&mut self, node: &'a Class<'a>, exporting: bool) -> Entity<'a> {
@@ -14,7 +17,12 @@ impl<'a> Analyzer<'a> {
     }
 
     if let Some(id) = &node.id {
-      self.exec_binding_identifier(id, UnknownEntity::new_unknown(), exporting, false);
+      self.exec_binding_identifier(
+        id,
+        UnknownEntity::new_unknown(),
+        exporting,
+        VariableDeclarationKind::Let,
+      );
     }
 
     super_class.map(|entity| entity.consume_as_unknown(self));

@@ -1,7 +1,7 @@
 use crate::ast::AstType2;
 use crate::entity::entity::{Entity, EntityTrait};
 use crate::{transformer::Transformer, Analyzer};
-use oxc::ast::ast::{BindingRestElement, PropertyKind};
+use oxc::ast::ast::{BindingRestElement, PropertyKind, VariableDeclarationKind};
 use oxc::span::GetSpan;
 
 const AST_TYPE: AstType2 = AstType2::BindingRestElement;
@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
     init: Entity<'a>,
     enumerated_keys: Vec<Entity<'a>>,
     exporting: bool,
-    is_var: bool,
+    kind: VariableDeclarationKind,
   ) {
     let (has_effect, properties) = init.enumerate_properties(self);
 
@@ -31,7 +31,7 @@ impl<'a> Analyzer<'a> {
       object.delete_property(self, &key);
     }
 
-    self.exec_binding_pattern(&node.argument, (has_effect, init), exporting, is_var);
+    self.exec_binding_pattern(&node.argument, (has_effect, init), exporting, kind);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
@@ -42,7 +42,7 @@ impl<'a> Analyzer<'a> {
     node: &'a BindingRestElement<'a>,
     init: Entity<'a>,
     exporting: bool,
-    is_var: bool,
+    kind: VariableDeclarationKind,
   ) {
     todo!()
   }

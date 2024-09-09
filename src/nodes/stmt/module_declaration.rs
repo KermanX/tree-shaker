@@ -2,7 +2,7 @@ use crate::{entity::unknown::UnknownEntity, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{
   ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
   ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,
-  ImportSpecifier, ModuleDeclaration, ModuleExportName,
+  ImportSpecifier, ModuleDeclaration, ModuleExportName, VariableDeclarationKind,
 };
 
 impl<'a> Analyzer<'a> {
@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
               specifier.local(),
               UnknownEntity::new_unknown(),
               false,
-              false,
+              VariableDeclarationKind::Let,
             )
           }
         }
