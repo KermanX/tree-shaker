@@ -1,6 +1,6 @@
 use crate::{
   ast::AstType2,
-  entity::{entity::Entity, literal::LiteralEntity, union::UnionEntity},
+  entity::{entity::Entity, literal::LiteralEntity},
   transformer::Transformer,
   Analyzer,
 };
@@ -45,15 +45,16 @@ impl<'a> Analyzer<'a> {
         self.exec_binding_identifier(node, init, exporting, kind);
       }
       BindingPatternKind::ObjectPattern(node) => {
-        let mut enumerated_keys = vec![];
+        let mut enumerated = vec![];
         for property in &node.properties {
           let key = self.exec_property_key(&property.key);
-          enumerated_keys.push(key.clone());
+          enumerated.push(key.clone());
           let effect_and_init = init.get_property(self, &key);
           self.exec_binding_pattern(&property.value, effect_and_init, exporting, kind);
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element_from_obj(rest, init, enumerated_keys, exporting, kind);
+          let effect_and_init = self.exec_object_rest(init, enumerated);
+          self.exec_binding_rest_element(rest, effect_and_init, exporting, kind);
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
@@ -66,7 +67,8 @@ impl<'a> Analyzer<'a> {
           }
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element_from_arr(rest, init, exporting, kind);
+          let effect_and_init = self.exec_array_rest(init, node.elements.len());
+          self.exec_binding_rest_element(rest, effect_and_init, exporting, kind);
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {

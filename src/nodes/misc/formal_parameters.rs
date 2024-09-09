@@ -17,9 +17,9 @@ impl<'a> Analyzer<'a> {
     }
 
     if let Some(rest) = &node.rest {
-      self.exec_binding_rest_element_from_arr(
+      self.exec_binding_rest_element(
         rest,
-        resolved.1,
+        (false, resolved.1),
         false,
         VariableDeclarationKind::Let,
       );

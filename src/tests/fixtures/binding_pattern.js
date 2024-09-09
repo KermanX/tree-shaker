@@ -17,7 +17,7 @@ export function simple(unknown) {
 
 export function with_rest(unknown) {
   let { a, ...rest } = { a: 1, b: unknown, c: 2 };
-  effect(rest.a, rest.b);
+  effect(rest.a, rest.b, rest.c);
 
   let { b, ...rest2 } = unknown;
   let { c, ...rest3 } = rest2;

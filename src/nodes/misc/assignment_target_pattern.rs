@@ -22,18 +22,18 @@ impl<'a> Analyzer<'a> {
           }
         }
         if let Some(rest) = &node.rest {
-          // FIXME:
-          self.exec_assignment_target_rest(rest, value);
+          let effect_and_value = self.exec_array_rest(value, node.elements.len());
+          self.exec_assignment_target_rest(rest, effect_and_value);
         }
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
-        let mut enumerated_keys = vec![];
+        let mut enumerated = vec![];
         for property in &node.properties {
-          enumerated_keys.push(self.exec_assignment_target_property(property, value.clone()));
+          enumerated.push(self.exec_assignment_target_property(property, value.clone()));
         }
         if let Some(rest) = &node.rest {
-          // FIXME:
-          self.exec_assignment_target_rest(rest, value);
+          let effect_and_value = self.exec_object_rest(value, enumerated);
+          self.exec_assignment_target_rest(rest, effect_and_value);
         }
       }
     }

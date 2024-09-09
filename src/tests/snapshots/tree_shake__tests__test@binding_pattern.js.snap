@@ -1,6 +1,6 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/binding_pattern.js
 ---
 export function simple(__unused_55E7) {
@@ -16,9 +16,8 @@ export function with_rest(unknown) {
 		b: unknown,
 		c: 2
 	};
-	effect(1, rest.b);
-	let { b: __unused_19B7,...__unused_DEBA } = unknown;
-	let { c: __unused_51E4,...__unused_BE17 } = rest2;
+	effect(undefined, rest.b, 2);
+	let { b: __unused_4486,...__unused_2075 } = unknown;
 	let { d } = {
 		d: unknown,
 		e: unknown

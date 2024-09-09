@@ -1,8 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
 use oxc::ast::{
   ast::{Expression, SimpleAssignmentTarget},
   match_member_expression,
