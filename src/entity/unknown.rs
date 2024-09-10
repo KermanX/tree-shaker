@@ -179,7 +179,7 @@ impl<'a> UnknownEntity<'a> {
     for _ in 0..length {
       result.push(UnknownEntity::new_unknown_with_deps(deps.clone()));
     }
-    (result, UnknownEntity::new_unknown_with_deps(deps))
+    (result, UnknownEntity::new_with_deps(UnknownEntityKind::Array, deps))
   }
 
   pub fn new_unknown_to_entries_result(
