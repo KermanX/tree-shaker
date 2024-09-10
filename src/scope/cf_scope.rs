@@ -1,6 +1,4 @@
 use crate::entity::label::LabelEntity;
-use oxc::semantic::ScopeId;
-use std::sync::atomic::{AtomicU32, Ordering};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CfScopeKind {
@@ -15,24 +13,15 @@ pub enum CfScopeKind {
 pub struct CfScope<'a> {
   pub kind: CfScopeKind,
   pub label: Vec<LabelEntity<'a>>,
-  pub id: ScopeId,
   pub exited: Option<bool>,
   // Exits that have been stopped by this scope's indeterminate state.
   // Only available when `kind` is `If`.`
   pub stopped_exit: Option<usize>,
 }
 
-static CF_SCOPE_ID: AtomicU32 = AtomicU32::new(0);
-
 impl<'a> CfScope<'a> {
   pub fn new(kind: CfScopeKind, label: Vec<LabelEntity<'a>>, exited: Option<bool>) -> Self {
-    CfScope {
-      kind,
-      label,
-      id: ScopeId::new(CF_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
-      exited,
-      stopped_exit: None,
-    }
+    CfScope { kind, label, exited, stopped_exit: None }
   }
 
   pub fn must_exited(&self) -> bool {

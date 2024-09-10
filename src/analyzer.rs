@@ -125,7 +125,7 @@ impl<'a> Analyzer<'a> {
       // TODO: throw warning
     }
     let variable_scope = &self.scope_context.variable_scopes[*scope_index];
-    let indeterminate = self.is_relative_indeterminate(variable_scope.cf_scope_id);
+    let indeterminate = self.is_relatively_indeterminate(variable_scope.cf_scope_index);
     let old_val = variable_scope.get(symbol).unwrap();
     let entity = ForwardedEntity::new(
       if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },

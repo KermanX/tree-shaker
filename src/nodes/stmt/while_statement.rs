@@ -27,8 +27,8 @@ impl<'a> Analyzer<'a> {
 
     data.need_loop = true;
 
-    let cf_scope_id = self.push_loop_or_switch_cf_scope(None);
-    self.push_variable_scope(cf_scope_id);
+    self.push_loop_or_switch_cf_scope(None);
+    self.push_variable_scope();
 
     self.exec_statement(&node.body);
     self.exec_expression(&node.test).consume_self(self);

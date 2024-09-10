@@ -9,18 +9,18 @@ pub struct VariableScope<'a> {
   pub id: ScopeId,
   pub has_effect: bool,
   pub variables: FxHashMap<SymbolId, Entity<'a>>,
-  pub cf_scope_id: ScopeId,
+  pub cf_scope_index: usize,
 }
 
-static FUNCTION_SCOPE_ID: AtomicU32 = AtomicU32::new(0);
+static VARIABLE_SCOPE_ID: AtomicU32 = AtomicU32::new(0);
 
 impl<'a> VariableScope<'a> {
-  pub fn new(cf_scope_id: ScopeId) -> Self {
+  pub fn new(cf_scope_index: usize) -> Self {
     Self {
-      id: ScopeId::new(FUNCTION_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
+      id: ScopeId::new(VARIABLE_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
       has_effect: false,
       variables: FxHashMap::default(),
-      cf_scope_id,
+      cf_scope_index,
     }
   }
 

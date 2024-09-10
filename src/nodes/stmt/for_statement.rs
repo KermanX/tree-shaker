@@ -15,8 +15,8 @@ impl<'a> Analyzer<'a> {
   pub fn exec_for_statement(&mut self, node: &'a ForStatement<'a>) {
     let data = self.load_data::<Data>(AST_TYPE, node);
 
-    let cf_scope_id = self.push_loop_or_switch_cf_scope(Some(false));
-    self.push_variable_scope(cf_scope_id);
+    self.push_loop_or_switch_cf_scope(Some(false));
+    self.push_variable_scope();
 
     if let Some(init) = &node.init {
       match init {

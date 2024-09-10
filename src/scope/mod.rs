@@ -24,7 +24,6 @@ pub struct ScopeContext<'a> {
 
 impl<'a> ScopeContext<'a> {
   pub fn new() -> Self {
-    let cf_scope_0 = CfScope::new(CfScopeKind::Normal, vec![], Some(false));
     ScopeContext {
       function_scopes: vec![FunctionScope::new(
         0,
@@ -34,8 +33,8 @@ impl<'a> ScopeContext<'a> {
         true,
         false,
       )],
-      variable_scopes: vec![VariableScope::new(cf_scope_0.id)],
-      cf_scopes: vec![cf_scope_0],
+      variable_scopes: vec![VariableScope::new(0)],
+      cf_scopes: vec![CfScope::new(CfScopeKind::Normal, vec![], Some(false))],
     }
   }
 }
@@ -66,8 +65,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_function_scope(&mut self, this: Entity<'a>, is_async: bool, is_generator: bool) {
-    let (cf_scope_index, cf_scope_id) = self.push_cf_scope(CfScopeKind::Normal, Some(false));
-    let variable_scope_index = self.push_variable_scope(cf_scope_id);
+    let cf_scope_index = self.push_cf_scope(CfScopeKind::Normal, Some(false));
+    let variable_scope_index = self.push_variable_scope();
     self.scope_context.function_scopes.push(FunctionScope::new(
       cf_scope_index,
       variable_scope_index,
@@ -84,9 +83,10 @@ impl<'a> Analyzer<'a> {
     (has_effect, ret_val)
   }
 
-  pub fn push_variable_scope(&mut self, cf_scope_id: ScopeId) -> usize {
+  pub fn push_variable_scope(&mut self) -> usize {
     let index = self.scope_context.variable_scopes.len();
-    self.scope_context.variable_scopes.push(VariableScope::new(cf_scope_id));
+    let cf_scope_index = self.scope_context.cf_scopes.len() - 1;
+    self.scope_context.variable_scopes.push(VariableScope::new(cf_scope_index));
     index
   }
 
@@ -107,25 +107,24 @@ impl<'a> Analyzer<'a> {
     kind: CfScopeKind,
     labels: Vec<LabelEntity<'a>>,
     exited: Option<bool>,
-  ) -> (usize, ScopeId) {
+  ) -> usize {
     let index = self.scope_context.cf_scopes.len();
     let cf_scope = CfScope::new(kind, labels, exited);
-    let id = cf_scope.id;
     self.scope_context.cf_scopes.push(cf_scope);
-    (index, id)
+    index
   }
 
-  pub fn push_cf_scope(&mut self, kind: CfScopeKind, exited: Option<bool>) -> (usize, ScopeId) {
+  pub fn push_cf_scope(&mut self, kind: CfScopeKind, exited: Option<bool>) -> usize {
     let labels = self.take_labels();
     self.push_cf_scope_with_labels(kind, labels, exited)
   }
 
-  pub fn push_normal_cf_scope(&mut self, exited: Option<bool>) -> ScopeId {
-    self.push_cf_scope(CfScopeKind::Normal, exited).1
+  pub fn push_normal_cf_scope(&mut self, exited: Option<bool>) {
+    self.push_cf_scope(CfScopeKind::Normal, exited);
   }
 
-  pub fn push_loop_or_switch_cf_scope(&mut self, exited: Option<bool>) -> ScopeId {
-    self.push_cf_scope(CfScopeKind::LoopOrSwitch, exited).1
+  pub fn push_loop_or_switch_cf_scope(&mut self, exited: Option<bool>) {
+    self.push_cf_scope(CfScopeKind::LoopOrSwitch, exited);
   }
 
   pub fn pop_cf_scope(&mut self) -> CfScope {
@@ -141,7 +140,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_try_scope(&mut self) {
-    let cf_scope_index = self.push_cf_scope(CfScopeKind::Normal, None).0;
+    let cf_scope_index = self.push_cf_scope(CfScopeKind::Normal, None);
     self.function_scope_mut().try_scopes.push(TryScope::new(cf_scope_index));
   }
 
@@ -204,15 +203,7 @@ impl<'a> Analyzer<'a> {
     label_used
   }
 
-  pub fn is_relative_indeterminate(&self, target: ScopeId) -> bool {
-    for cf_scope in self.scope_context.cf_scopes.iter().rev() {
-      if cf_scope.is_indeterminate() {
-        return true;
-      }
-      if cf_scope.id == target {
-        return false;
-      }
-    }
-    unreachable!();
+  pub fn is_relatively_indeterminate(&self, target: usize) -> bool {
+    return self.scope_context.cf_scopes[target..].iter().any(CfScope::is_indeterminate);
   }
 }

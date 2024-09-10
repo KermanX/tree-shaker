@@ -30,8 +30,8 @@ impl<'a> Analyzer<'a> {
     data.need_loop |= value.is_some();
 
     if let Some(value) = value {
-      let cf_scope_id = self.push_loop_or_switch_cf_scope(None);
-      self.push_variable_scope(cf_scope_id);
+      self.push_loop_or_switch_cf_scope(None);
+      self.push_variable_scope();
 
       self.exec_for_statement_left(&node.left, value);
       self.exec_statement(&node.body);
