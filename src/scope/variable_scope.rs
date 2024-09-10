@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 pub struct VariableScope<'a> {
   pub id: ScopeId,
   pub has_effect: bool,
+  /// (is_consumed_exhaustively, entity)
   pub variables: FxHashMap<SymbolId, (bool, Entity<'a>)>,
   pub cf_scope_index: usize,
 }

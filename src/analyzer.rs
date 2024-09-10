@@ -127,9 +127,8 @@ impl<'a> Analyzer<'a> {
     }
     let variable_scope = &self.scope_context.variable_scopes[scope_index];
     let cf_scope_index = variable_scope.cf_scope_index;
-    let indeterminate = self.is_relatively_indeterminate(cf_scope_index);
-    let (old_val_is_consumed, old_val) = variable_scope.get(symbol).unwrap().clone();
-    if old_val_is_consumed {
+    let (is_consumed_exhaustively, old_val) = variable_scope.get(symbol).unwrap().clone();
+    if is_consumed_exhaustively {
       new_val.consume_as_unknown(self);
     } else {
       let entity_to_set = if self.mark_exhaustive_write(&old_val, symbol.clone(), cf_scope_index) {
@@ -137,6 +136,7 @@ impl<'a> Analyzer<'a> {
         new_val.consume_as_unknown(self);
         (true, UnknownEntity::new_unknown())
       } else {
+        let indeterminate = self.is_relatively_indeterminate(cf_scope_index);
         (
           false,
           ForwardedEntity::new(
