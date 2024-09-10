@@ -1,9 +1,4 @@
-use crate::{
-  ast::AstType2,
-  entity::{entity::Entity, literal::LiteralEntity},
-  transformer::Transformer,
-  Analyzer,
-};
+use crate::{ast::AstType2, entity::entity::Entity, transformer::Transformer, Analyzer};
 use oxc::{
   ast::ast::{
     ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,

@@ -144,7 +144,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     (true, UnknownEntity::new_unknown())
   }
 
-  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     // FIXME: additional `then` method?
     (false, rc.clone())
   }

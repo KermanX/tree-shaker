@@ -1,8 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{entity::Entity, literal::LiteralEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{ArrayAssignmentTarget, AssignmentTargetPattern, ObjectAssignmentTarget};
 
 impl<'a> Analyzer<'a> {
