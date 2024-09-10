@@ -9,6 +9,7 @@ use crate::{
     label::LabelEntity,
     operations::EntityOpHost,
     union::UnionEntity,
+    unknown::UnknownEntity,
   },
   scope::ScopeContext,
 };
@@ -110,28 +111,42 @@ impl<'a> Analyzer<'a> {
     EntityDep { node, scope_path: self.variable_scope_path() }
   }
 
-  pub fn get_symbol(&self, symbol: &SymbolId) -> &Entity<'a> {
-    for scope in self.scope_context.variable_scopes.iter().rev() {
-      if let Some(entity) = scope.get(symbol) {
-        return entity;
-      }
-    }
-    panic!("Unexpected undeclared Symbol {:?}", self.sematic.symbols().get_name(*symbol));
+  pub fn get_symbol(&mut self, symbol: &SymbolId) -> Entity<'a> {
+    let (_, scope_index, _) = self.symbol_decls.get(symbol).unwrap();
+    let variable_scope = &self.scope_context.variable_scopes[*scope_index];
+    let cf_scope_index = variable_scope.cf_scope_index;
+    let val = self.scope_context.variable_scopes[*scope_index].get(symbol).unwrap().clone().1;
+    self.mark_exhaustive_read(&val, *symbol, cf_scope_index);
+    val
   }
 
   pub fn set_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
-    let (kind, scope_index, dep) = self.symbol_decls.get(symbol).unwrap();
+    let (kind, scope_index, dep) = self.symbol_decls.get(symbol).unwrap().clone();
     if kind.is_const() {
       // TODO: throw warning
     }
-    let variable_scope = &self.scope_context.variable_scopes[*scope_index];
-    let indeterminate = self.is_relatively_indeterminate(variable_scope.cf_scope_index);
-    let old_val = variable_scope.get(symbol).unwrap();
-    let entity = ForwardedEntity::new(
-      if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },
-      dep.clone(),
-    );
-    self.scope_context.variable_scopes[*scope_index].set(*symbol, entity).unwrap();
+    let variable_scope = &self.scope_context.variable_scopes[scope_index];
+    let cf_scope_index = variable_scope.cf_scope_index;
+    let indeterminate = self.is_relatively_indeterminate(cf_scope_index);
+    let (old_val_is_consumed, old_val) = variable_scope.get(symbol).unwrap().clone();
+    if old_val_is_consumed {
+      new_val.consume_as_unknown(self);
+    } else {
+      let entity_to_set = if self.mark_exhaustive_write(&old_val, symbol.clone(), cf_scope_index) {
+        old_val.consume_as_unknown(self);
+        new_val.consume_as_unknown(self);
+        (true, UnknownEntity::new_unknown())
+      } else {
+        (
+          false,
+          ForwardedEntity::new(
+            if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },
+            dep,
+          ),
+        )
+      };
+      self.scope_context.variable_scopes[scope_index].set(*symbol, entity_to_set).unwrap();
+    }
   }
 
   pub fn refer_dep(&mut self, dep: &EntityDep<'a>) {

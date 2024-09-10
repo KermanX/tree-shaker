@@ -21,12 +21,14 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     self.consume_self(analyzer);
 
-    analyzer.push_normal_cf_scope(None);
-    let (_, ret_val) =
-      self.call(analyzer, &UnknownEntity::new_unknown(), &UnknownEntity::new_unknown());
-    analyzer.pop_cf_scope();
+    analyzer.exec_exhaustively(|analyzer| {
+      analyzer.push_normal_cf_scope(None);
+      let (_, ret_val) =
+        self.call(analyzer, &UnknownEntity::new_unknown(), &UnknownEntity::new_unknown());
+      analyzer.pop_cf_scope();
 
-    ret_val.consume_as_unknown(analyzer);
+      ret_val.consume_as_unknown(analyzer);
+    });
   }
 
   fn get_property(&self, analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> (bool, Entity<'a>) {

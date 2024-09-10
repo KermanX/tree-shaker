@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 pub struct VariableScope<'a> {
   pub id: ScopeId,
   pub has_effect: bool,
-  pub variables: FxHashMap<SymbolId, Entity<'a>>,
+  pub variables: FxHashMap<SymbolId, (bool, Entity<'a>)>,
   pub cf_scope_index: usize,
 }
 
@@ -24,15 +24,19 @@ impl<'a> VariableScope<'a> {
     }
   }
 
-  pub fn set(&mut self, symbol: SymbolId, entity: Entity<'a>) -> Option<Entity<'a>> {
+  pub fn set(
+    &mut self,
+    symbol: SymbolId,
+    entity: (bool, Entity<'a>),
+  ) -> Option<(bool, Entity<'a>)> {
     self.variables.insert(symbol, entity)
   }
 
   pub fn declare(&mut self, symbol: SymbolId, entity: Entity<'a>) {
-    assert!(self.set(symbol, entity).is_none());
+    assert!(self.set(symbol, (false, entity)).is_none());
   }
 
-  pub fn get(&self, symbol: &SymbolId) -> Option<&Entity<'a>> {
+  pub fn get(&self, symbol: &SymbolId) -> Option<&(bool, Entity<'a>)> {
     self.variables.get(symbol)
   }
 

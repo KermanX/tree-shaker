@@ -150,7 +150,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   }
 
   fn test_is_completely_unknown(&self) -> bool {
-    matches!(self.kind, UnknownEntityKind::Unknown)
+    matches!(self.kind, UnknownEntityKind::Unknown) && self.deps.borrow().is_empty()
   }
 }
 

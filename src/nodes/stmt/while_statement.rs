@@ -13,8 +13,6 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_while_statement(&mut self, node: &'a WhileStatement<'a>) {
-    let data = self.load_data::<Data>(AST_TYPE, node);
-
     // This may be indeterminate. However, we can't know it until we execute the test.
     // And there should be no same level break/continue statement in test.
     // `a: while(() => { break a }) { }` is illegal.
@@ -25,16 +23,17 @@ impl<'a> Analyzer<'a> {
     }
     test.consume_self(self);
 
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.need_loop = true;
 
-    self.push_loop_or_switch_cf_scope(None);
-    self.push_variable_scope();
+    self.exec_exhaustively(|analyzer| {
+      analyzer.push_breakable_cf_scope(None);
 
-    self.exec_statement(&node.body);
-    self.exec_expression(&node.test).consume_self(self);
+      analyzer.exec_statement(&node.body);
+      analyzer.exec_expression(&node.test).consume_self(analyzer);
 
-    self.pop_variable_scope();
-    self.pop_cf_scope();
+      analyzer.pop_cf_scope();
+    });
   }
 }
 

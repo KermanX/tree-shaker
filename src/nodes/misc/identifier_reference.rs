@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
     self.set_data(AST_TYPE_READ, node, Data { resolvable: symbol.is_some() });
 
     if let Some(symbol) = symbol {
-      self.get_symbol(&symbol).clone()
+      self.get_symbol(&symbol)
     } else {
       // TODO: Handle globals
       self.refer_global_dep();

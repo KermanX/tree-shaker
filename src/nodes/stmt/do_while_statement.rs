@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<Data>(AST_TYPE, node);
 
     // Execute the first round.
-    self.push_loop_or_switch_cf_scope(Some(false));
+    self.push_breakable_cf_scope(Some(false));
     self.push_variable_scope();
 
     self.exec_statement(&node.body);
@@ -40,14 +40,14 @@ impl<'a> Analyzer<'a> {
 
     data.need_loop = true;
 
-    self.push_loop_or_switch_cf_scope(None);
-    self.push_variable_scope();
+    self.exec_exhaustively(|analyzer| {
+      analyzer.push_breakable_cf_scope(None);
 
-    self.exec_statement(&node.body);
-    self.exec_expression(&node.test).consume_self(self);
+      analyzer.exec_statement(&node.body);
+      analyzer.exec_expression(&node.test).consume_self(analyzer);
 
-    self.pop_variable_scope();
-    self.pop_cf_scope();
+      analyzer.pop_cf_scope();
+    });
   }
 }
 

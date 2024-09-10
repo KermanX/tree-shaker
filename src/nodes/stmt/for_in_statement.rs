@@ -39,17 +39,20 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    self.push_loop_or_switch_cf_scope(None);
+    let data = self.load_data::<Data>(AST_TYPE, node);
+    data.need_loop = true;
+
     self.push_variable_scope();
 
     self.exec_for_statement_left(&node.left, UnknownEntity::new(UnknownEntityKind::String));
-    self.exec_statement(&node.body);
+
+    self.exec_exhaustively(|analyzer| {
+      analyzer.push_breakable_cf_scope(None);
+      analyzer.exec_statement(&node.body);
+      analyzer.pop_cf_scope();
+    });
 
     self.pop_variable_scope();
-    self.pop_cf_scope();
-
-    let data = self.load_data::<Data>(AST_TYPE, node);
-    data.need_loop = true;
   }
 }
 

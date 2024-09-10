@@ -66,7 +66,7 @@ impl<'a> Analyzer<'a> {
     }
 
     // 3. consequent
-    self.push_loop_or_switch_cf_scope(Some(false));
+    self.push_breakable_cf_scope(Some(false));
     let mut entered = Some(false);
     for (index, case) in node.cases.iter().enumerate() {
       if self.cf_scope().must_exited() {

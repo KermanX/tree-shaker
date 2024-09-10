@@ -1,6 +1,5 @@
 use super::{
   entity::{Entity, EntityTrait},
-  symbol::new_symbol_id,
   typeof_result::TypeofResult,
   unknown::UnknownEntity,
 };

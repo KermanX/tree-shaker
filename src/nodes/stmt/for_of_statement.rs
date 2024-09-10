@@ -30,14 +30,17 @@ impl<'a> Analyzer<'a> {
     data.need_loop |= value.is_some();
 
     if let Some(value) = value {
-      self.push_loop_or_switch_cf_scope(None);
       self.push_variable_scope();
 
       self.exec_for_statement_left(&node.left, value);
-      self.exec_statement(&node.body);
+
+      self.exec_exhaustively(|analyzer| {
+        analyzer.push_breakable_cf_scope(None);
+        analyzer.exec_statement(&node.body);
+        analyzer.pop_cf_scope();
+      });
 
       self.pop_variable_scope();
-      self.pop_cf_scope();
     }
   }
 }

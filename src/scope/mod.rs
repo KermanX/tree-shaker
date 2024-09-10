@@ -1,4 +1,5 @@
 mod cf_scope;
+mod exhaustive;
 mod function_scope;
 mod try_scope;
 mod variable_scope;
@@ -123,8 +124,8 @@ impl<'a> Analyzer<'a> {
     self.push_cf_scope(CfScopeKind::Normal, exited);
   }
 
-  pub fn push_loop_or_switch_cf_scope(&mut self, exited: Option<bool>) {
-    self.push_cf_scope(CfScopeKind::LoopOrSwitch, exited);
+  pub fn push_breakable_cf_scope(&mut self, exited: Option<bool>) {
+    self.push_cf_scope(CfScopeKind::Breakable, exited);
   }
 
   pub fn pop_cf_scope(&mut self) -> CfScope {
@@ -177,24 +178,25 @@ impl<'a> Analyzer<'a> {
   }
 
   /// If the label is used, `true` is returned.
+  /// FIXME: `continue`
   pub fn exit_to_label(&mut self, label: Option<&'a str>) -> bool {
-    let mut is_closest_loop_or_switch = true;
+    let mut is_closest_breakable = true;
     let mut target_index = None;
     let mut label_used = false;
     for (idx, cf_scope) in self.scope_context.cf_scopes.iter().enumerate().rev() {
       if let Some(label) = label {
         if let Some(label_entity) = cf_scope.matches_label(label) {
-          if !is_closest_loop_or_switch || !cf_scope.is_loop_or_switch() {
+          if !is_closest_breakable || !cf_scope.is_breakable() {
             self.referred_nodes.insert(label_entity.node);
             label_used = true;
           }
           target_index = Some(idx);
           break;
         }
-        if cf_scope.is_loop_or_switch() {
-          is_closest_loop_or_switch = false;
+        if cf_scope.is_breakable() {
+          is_closest_breakable = false;
         }
-      } else if cf_scope.is_loop_or_switch() {
+      } else if cf_scope.is_breakable() {
         target_index = Some(idx);
         break;
       }
