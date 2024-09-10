@@ -15,7 +15,7 @@ use crate::{
 use oxc::{
   allocator::Allocator,
   ast::ast::{Program, VariableDeclarationKind},
-  semantic::{ScopeId, Semantic, SymbolId},
+  semantic::{Semantic, SymbolId},
   span::GetSpan,
 };
 use rustc_hash::FxHashMap;
@@ -27,7 +27,7 @@ pub struct Analyzer<'a> {
   pub data: ExtraData<'a>,
   pub referred_nodes: ReferredNodes<'a>,
   pub exports: Vec<SymbolId>,
-  pub symbol_decls: FxHashMap<SymbolId, (VariableDeclarationKind, ScopeId, EntityDep<'a>)>,
+  pub symbol_decls: FxHashMap<SymbolId, (VariableDeclarationKind, usize, EntityDep<'a>)>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
   pub builtins: Builtins<'a>,
@@ -96,15 +96,14 @@ impl<'a> Analyzer<'a> {
     if exporting {
       self.exports.push(symbol);
     }
-    let variable_scope = if kind.is_var() {
+    let (scope_index, scope) = if kind.is_var() {
       let index = self.function_scope().variable_scope_index;
-      self.scope_context.variable_scopes.get_mut(index).unwrap()
+      (index, self.scope_context.variable_scopes.get_mut(index).unwrap())
     } else {
-      self.variable_scope_mut()
+      (self.scope_context.variable_scopes.len() - 1, self.variable_scope_mut())
     };
-    variable_scope.declare(symbol, entity);
-    let scope_id = variable_scope.id;
-    self.symbol_decls.insert(symbol, (kind, scope_id, dep));
+    scope.declare(symbol, entity);
+    self.symbol_decls.insert(symbol, (kind, scope_index, dep));
   }
 
   pub fn new_entity_dep(&self, node: EntityDepNode<'a>) -> EntityDep<'a> {
@@ -121,18 +120,18 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn set_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
-    let (kind, scope_id, dep) = self.symbol_decls.get(symbol).unwrap();
+    let (kind, scope_index, dep) = self.symbol_decls.get(symbol).unwrap();
     if kind.is_const() {
       // TODO: throw warning
     }
-    let variable_scope = self.get_variable_scope_by_id(*scope_id);
+    let variable_scope = &self.scope_context.variable_scopes[*scope_index];
     let indeterminate = self.is_relative_indeterminate(variable_scope.cf_scope_id);
     let old_val = variable_scope.get(symbol).unwrap();
     let entity = ForwardedEntity::new(
       if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },
       dep.clone(),
     );
-    self.get_variable_scope_by_id_mut(*scope_id).set(*symbol, entity).unwrap();
+    self.scope_context.variable_scopes[*scope_index].set(*symbol, entity).unwrap();
   }
 
   pub fn refer_dep(&mut self, dep: &EntityDep<'a>) {

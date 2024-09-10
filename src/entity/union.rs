@@ -77,7 +77,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     collect_effect_and_value(results)
   }
 
-  fn iterate(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+  fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
     let mut has_effect = false;
     let mut results = vec![];
     for entity in &self.0 {

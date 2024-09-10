@@ -98,14 +98,6 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.iter().map(|x| x.id).collect()
   }
 
-  pub fn get_variable_scope_by_id(&self, id: ScopeId) -> &VariableScope<'a> {
-    self.scope_context.variable_scopes.iter().find(|x| x.id == id).unwrap()
-  }
-
-  pub fn get_variable_scope_by_id_mut(&mut self, id: ScopeId) -> &mut VariableScope<'a> {
-    self.scope_context.variable_scopes.iter_mut().find(|x| x.id == id).unwrap()
-  }
-
   pub fn take_labels(&mut self) -> Vec<LabelEntity<'a>> {
     mem::take(&mut self.pending_labels)
   }
