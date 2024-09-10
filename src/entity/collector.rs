@@ -19,7 +19,9 @@ impl<'a> LiteralCollector<'a> {
   pub fn collect(&mut self, entity: Entity<'a>) -> Entity<'a> {
     if self.invalid {
       entity
-    } else if let Some(literal) = entity.get_literal() {
+    } else if let Some(literal) =
+      entity.get_literal().and_then(|lit| lit.can_build_expr().then_some(lit))
+    {
       if let Some(collected) = &self.literal {
         if collected != &literal {
           self.invalid = true;

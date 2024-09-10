@@ -1,5 +1,6 @@
 use super::{
   entity::{Entity, EntityTrait},
+  symbol::new_symbol_id,
   typeof_result::TypeofResult,
   unknown::UnknownEntity,
 };
@@ -9,6 +10,7 @@ use oxc::{
     ast::{BigintBase, Expression, NumberBase, UnaryOperator},
     AstBuilder,
   },
+  semantic::SymbolId,
   span::Span,
 };
 use rustc_hash::FxHashSet;
@@ -20,7 +22,7 @@ pub enum LiteralEntity<'a> {
   Number(F64WithEq, &'a str),
   BigInt(&'a str),
   Boolean(bool),
-  Symbol(usize),
+  Symbol(SymbolId, &'a str),
   Infinity(bool),
   NaN,
   Null,
@@ -85,34 +87,12 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    LiteralEntity::new_string(match self {
-      LiteralEntity::String(value) => *value,
-      LiteralEntity::Number(_, raw) => *raw,
-      LiteralEntity::BigInt(value) => *value,
-      LiteralEntity::Boolean(value) => {
-        if *value {
-          "true"
-        } else {
-          "false"
-        }
-      }
-      LiteralEntity::Symbol(value) => todo!(),
-      LiteralEntity::Infinity(positive) => {
-        if *positive {
-          "Infinity"
-        } else {
-          "-Infinity"
-        }
-      }
-      LiteralEntity::NaN => "NaN",
-      LiteralEntity::Null => "null",
-      LiteralEntity::Undefined => "undefined",
-    })
+    LiteralEntity::new_string(self.to_string())
   }
 
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     match self {
-      LiteralEntity::Symbol(_) => Entity::new(*self),
+      LiteralEntity::Symbol(_, _) => Entity::new(*self),
       _ => self.get_to_string(rc),
     }
   }
@@ -137,7 +117,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::Number(_, _) => TypeofResult::Number,
       LiteralEntity::BigInt(_) => TypeofResult::BigInt,
       LiteralEntity::Boolean(_) => TypeofResult::Boolean,
-      LiteralEntity::Symbol(_) => TypeofResult::Symbol,
+      LiteralEntity::Symbol(_, _) => TypeofResult::Symbol,
       LiteralEntity::Infinity(_) => TypeofResult::Number,
       LiteralEntity::NaN => TypeofResult::Number,
       LiteralEntity::Null => TypeofResult::Object,
@@ -151,7 +131,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::Number(value, _) => *value != 0.0.into(),
       LiteralEntity::BigInt(value) => !value.is_empty(),
       LiteralEntity::Boolean(value) => *value,
-      LiteralEntity::Symbol(_) => true,
+      LiteralEntity::Symbol(_, _) => true,
       LiteralEntity::Infinity(_) => true,
       LiteralEntity::NaN | LiteralEntity::Null | LiteralEntity::Undefined => false,
     })
@@ -181,7 +161,7 @@ impl<'a> Hash for LiteralEntity<'a> {
         state.write_u8(3);
         value.hash(state);
       }
-      LiteralEntity::Symbol(value) => {
+      LiteralEntity::Symbol(value, _) => {
         state.write_u8(4);
         value.hash(state);
       }
@@ -235,6 +215,10 @@ impl<'a> LiteralEntity<'a> {
     Entity::new(LiteralEntity::Undefined)
   }
 
+  pub fn new_symbol(id: SymbolId, str_rep: &'a str) -> Entity<'a> {
+    Entity::new(LiteralEntity::Symbol(id, str_rep))
+  }
+
   pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Expression<'a> {
     match self {
       LiteralEntity::String(value) => ast_builder.expression_string_literal(span, *value),
@@ -245,7 +229,7 @@ impl<'a> LiteralEntity<'a> {
         ast_builder.expression_big_int_literal(span, *value, BigintBase::Decimal)
       }
       LiteralEntity::Boolean(value) => ast_builder.expression_boolean_literal(span, *value),
-      LiteralEntity::Symbol(value) => todo!(),
+      LiteralEntity::Symbol(_, _) => unreachable!(),
       LiteralEntity::Infinity(positive) => {
         if *positive {
           ast_builder.expression_identifier_reference(span, "Infinity")
@@ -263,6 +247,10 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
+  pub fn can_build_expr(&self) -> bool {
+    !matches!(self, LiteralEntity::Symbol(_, _))
+  }
+
   pub fn to_string(&self) -> &'a str {
     match self {
       LiteralEntity::String(value) => *value,
@@ -275,7 +263,7 @@ impl<'a> LiteralEntity<'a> {
           "false"
         }
       }
-      LiteralEntity::Symbol(value) => todo!(),
+      LiteralEntity::Symbol(_, str_rep) => str_rep,
       LiteralEntity::Infinity(positive) => {
         if *positive {
           "Infinity"
@@ -307,7 +295,7 @@ impl<'a> LiteralEntity<'a> {
         }
       }
       LiteralEntity::Null => Some(Some(0.0.into())),
-      LiteralEntity::Symbol(_) => {
+      LiteralEntity::Symbol(_, _) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
         None
       }

@@ -106,7 +106,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               values.push((false, LiteralEntity::new_undefined()));
             }
           }
-          LiteralEntity::Symbol(_) => todo!(),
+          LiteralEntity::Symbol(_, _) => todo!(),
           _ => unreachable!(),
         }
       }
@@ -175,7 +175,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               string_keyed.insert(key, property);
             }
           }
-          LiteralEntity::Symbol(_) => todo!(),
+          LiteralEntity::Symbol(_, _) => todo!(),
           _ => unreachable!(),
         }
       }
@@ -232,7 +232,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               deleted = true;
             }
           }
-          LiteralEntity::Symbol(_) => todo!(),
+          LiteralEntity::Symbol(_, _) => todo!(),
           _ => unreachable!(),
         }
       }
@@ -347,7 +347,7 @@ impl<'a> ObjectEntity<'a> {
               existing.unwrap().values.push(property_val);
             }
           }
-          LiteralEntity::Symbol(key) => todo!(),
+          LiteralEntity::Symbol(key, _) => todo!(),
           _ => unreachable!(),
         }
       }

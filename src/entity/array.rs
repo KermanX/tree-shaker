@@ -55,7 +55,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               todo!("builtins");
             }
           }
-          LiteralEntity::Symbol(key) => todo!(),
+          LiteralEntity::Symbol(key, _) => todo!(),
           _ => unreachable!(),
         }
       }
@@ -100,7 +100,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               todo!("builtins");
             }
           }
-          LiteralEntity::Symbol(key) => todo!(),
+          LiteralEntity::Symbol(key, _) => todo!(),
           _ => unreachable!(),
         }
       }
