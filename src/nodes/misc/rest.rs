@@ -23,8 +23,4 @@ impl<'a> Analyzer<'a> {
 
     (has_effect, Entity::new(rest))
   }
-
-  pub fn exec_array_rest(&mut self, array: Entity<'a>, enumerated: usize) -> (bool, Entity<'a>) {
-    todo!()
-  }
 }

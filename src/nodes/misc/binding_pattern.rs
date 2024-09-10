@@ -58,17 +58,14 @@ impl<'a> Analyzer<'a> {
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
-        for (index, element) in node.elements.iter().enumerate() {
+        let (element_values, rest_value) = init.get_to_array(node.elements.len());
+        for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
-            let key = LiteralEntity::new_string(self.allocator.alloc(index.to_string()).as_str());
-            let effect_and_init = init.get_property(self, &key);
-            // FIXME: get_property !== iterate
-            self.exec_binding_pattern(element, effect_and_init, exporting, kind);
+            self.exec_binding_pattern(element, (false, value), exporting, kind);
           }
         }
         if let Some(rest) = &node.rest {
-          let effect_and_init = self.exec_array_rest(init, node.elements.len());
-          self.exec_binding_rest_element(rest, effect_and_init, exporting, kind);
+          self.exec_binding_rest_element(rest, (false, rest_value), exporting, kind);
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {

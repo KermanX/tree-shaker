@@ -13,17 +13,14 @@ impl<'a> Analyzer<'a> {
   ) {
     match node {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
-        for (index, element) in node.elements.iter().enumerate() {
+        let (element_values, rest_value) = value.get_to_array(node.elements.len());
+        for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
-            let key = LiteralEntity::new_string(self.allocator.alloc(index.to_string()).as_str());
-            let effect_and_value = value.get_property(self, &key);
-            // FIXME: get_property !== iterate
-            self.exec_assignment_target_maybe_default(element, effect_and_value);
+            self.exec_assignment_target_maybe_default(element, (false, value));
           }
         }
         if let Some(rest) = &node.rest {
-          let effect_and_value = self.exec_array_rest(value, node.elements.len());
-          self.exec_assignment_target_rest(rest, effect_and_value);
+          self.exec_assignment_target_rest(rest, (false, rest_value));
         }
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
