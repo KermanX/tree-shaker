@@ -1,6 +1,7 @@
 use super::{
   entity::{Entity, EntityTrait},
   entry::EntryEntity,
+  label::LabelEntity,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   union::UnionEntity,
@@ -8,7 +9,7 @@ use super::{
   utils::is_assignment_indeterminate,
 };
 use crate::analyzer::Analyzer;
-use oxc::semantic::ScopeId;
+use oxc::{semantic::ScopeId, syntax::number::ToJsInt32};
 use std::cell::RefCell;
 
 #[derive(Debug)]
@@ -30,7 +31,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
   }
 
-  fn get_property(&self, _analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let mut result = vec![];
@@ -48,11 +49,23 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 }
                 result.push(LiteralEntity::new_undefined());
               }
+            } else if key == "length" {
+              result.push(self.get_length().map_or_else(
+                || {
+                  UnknownEntity::new_with_deps(
+                    UnknownEntityKind::Number,
+                    vec![self.rest.borrow().as_ref().unwrap().clone()],
+                  )
+                },
+                |length| {
+                  LiteralEntity::new_number(
+                    (length as f64).into(),
+                    analyzer.allocator.alloc(length.to_string()),
+                  )
+                },
+              ));
             } else {
-              if key == "length" {
-                todo!();
-              }
-              todo!("builtins");
+              todo!("builtins {:?}", key);
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
@@ -68,6 +81,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
     let indeterminate = is_assignment_indeterminate(&self.scope_path, analyzer);
     let key = key.get_to_property_key();
+    let mut has_effect = false;
     if let Some(key_literals) = key.get_to_literals() {
       let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_added = false;
@@ -93,10 +107,30 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                   *self.rest.borrow_mut() = Some(value.clone());
                 }
               }
-            } else {
-              if key == "length" {
-                todo!();
+            } else if key == "length" {
+              if let Some(length) = value.get_literal().and_then(|lit| lit.to_number()) {
+                if let Some(length) = length.map(|l| l.0.to_js_int_32()) {
+                  let length = length as usize;
+                  let mut elements = self.elements.borrow_mut();
+                  let mut rest = self.rest.borrow_mut();
+                  if elements.len() > length {
+                    has_effect = true;
+                    elements.truncate(length);
+                    *rest = None;
+                  } else if let Some(rest) = rest.as_mut() {
+                    has_effect = true;
+                    *rest = UnionEntity::new(vec![rest.clone(), LiteralEntity::new_undefined()]);
+                  } else if elements.len() < length {
+                    has_effect = true;
+                    for _ in elements.len()..length {
+                      elements.push(LiteralEntity::new_undefined());
+                    }
+                  }
+                } else {
+                  // TODO: throw warning: Invalid array length
+                }
               }
+            } else {
               todo!("builtins");
             }
           }
@@ -104,7 +138,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
           _ => unreachable!(),
         }
       }
-      false
+      has_effect
     } else {
       self.consume_as_unknown(analyzer);
       true
@@ -202,6 +236,14 @@ impl<'a> ArrayEntity<'a> {
 
   pub fn init_rest(&self, rest: Entity<'a>) {
     *self.rest.borrow_mut() = Some(rest);
+  }
+
+  pub fn get_length(&self) -> Option<usize> {
+    if self.rest.borrow().is_some() {
+      None
+    } else {
+      Some(self.elements.borrow().len())
+    }
   }
 }
 
