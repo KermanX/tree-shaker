@@ -17,12 +17,7 @@ pub struct BuiltinFnEntity<'a> {
 impl<'a> EntityTrait<'a> for BuiltinFnEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    self.consume_self(analyzer);
-    let (_, ret_val) =
-      self.call(analyzer, &UnknownEntity::new_unknown(), &UnknownEntity::new_unknown());
-    ret_val.consume_as_unknown(analyzer);
-  }
+  fn consume_as_unknown(&self, _analyzer: &mut Analyzer<'a>) {}
 
   fn get_property(&self, analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> (bool, Entity<'a>) {
     todo!("built-ins & extra properties")

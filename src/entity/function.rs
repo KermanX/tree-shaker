@@ -6,10 +6,12 @@ use super::{
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, use_consumed_flag};
+use std::cell::Cell;
 
 #[derive(Debug, Clone)]
 pub struct FunctionEntity<'a> {
+  consumed: Cell<bool>,
   pub source: EntityDep<'a>,
 }
 
@@ -19,6 +21,8 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   }
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
+    use_consumed_flag!(self);
+
     self.consume_self(analyzer);
 
     analyzer.exec_exhaustively(|analyzer| {
@@ -121,6 +125,6 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
 impl<'a> FunctionEntity<'a> {
   pub fn new(source: EntityDep<'a>) -> Entity<'a> {
-    Entity::new(Self { source })
+    Entity::new(Self { consumed: Cell::new(false), source })
   }
 }

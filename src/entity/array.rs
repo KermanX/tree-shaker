@@ -7,12 +7,13 @@ use super::{
   unknown::{UnknownEntity, UnknownEntityKind},
   utils::is_assignment_indeterminate,
 };
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, use_consumed_flag};
 use oxc::{semantic::ScopeId, syntax::number::ToJsInt32};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 #[derive(Debug)]
 pub struct ArrayEntity<'a> {
+  consumed: Cell<bool>,
   pub scope_path: Vec<ScopeId>,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Option<Entity<'a>>>,
@@ -22,6 +23,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
+    use_consumed_flag!(self);
     for element in self.elements.borrow().iter() {
       element.consume_as_unknown(analyzer);
     }
@@ -252,6 +254,7 @@ impl<'a> ArrayEntity<'a> {
 impl<'a> Analyzer<'a> {
   pub fn new_empty_array(&self) -> ArrayEntity<'a> {
     ArrayEntity {
+      consumed: Cell::new(false),
       scope_path: self.variable_scope_path(),
       elements: RefCell::new(Vec::new()),
       rest: RefCell::new(None),

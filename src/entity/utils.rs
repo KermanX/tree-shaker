@@ -1,13 +1,11 @@
-use oxc::semantic::ScopeId;
-
-use crate::analyzer::Analyzer;
-
 use super::{
   entity::Entity,
   literal::LiteralEntity,
   union::UnionEntity,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
+use crate::analyzer::Analyzer;
+use oxc::semantic::ScopeId;
 
 pub fn collect_effect_and_value<'a>(values: Vec<(bool, Entity<'a>)>) -> (bool, Entity<'a>) {
   let mut has_effect = false;
@@ -41,4 +39,14 @@ pub fn is_assignment_indeterminate<'a>(scope_path: &Vec<ScopeId>, analyzer: &Ana
   }
   let target = analyzer.scope_context.variable_scopes[var_scope_index].cf_scope_index;
   analyzer.is_relatively_indeterminate(target)
+}
+
+#[macro_export]
+macro_rules! use_consumed_flag {
+  ($self: expr) => {
+    if $self.consumed.get() {
+      return;
+    }
+    $self.consumed.set(true);
+  };
 }

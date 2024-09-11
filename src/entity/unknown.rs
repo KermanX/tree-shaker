@@ -28,9 +28,7 @@ pub struct UnknownEntity<'a> {
 
 impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
-    for dep in self.deps.borrow().iter() {
-      dep.consume_as_unknown(analyzer);
-    }
+    self.consume_as_unknown(analyzer);
   }
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {

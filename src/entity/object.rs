@@ -7,13 +7,14 @@ use super::{
   unknown::{UnknownEntity, UnknownEntityKind},
   utils::{collect_effect_and_value, is_assignment_indeterminate},
 };
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, use_consumed_flag};
 use oxc::{ast::ast::PropertyKind, semantic::ScopeId};
 use rustc_hash::FxHashMap;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 #[derive(Debug, Clone)]
 pub struct ObjectEntity<'a> {
+  pub consumed: Cell<bool>,
   pub scope_path: Vec<ScopeId>,
   pub string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
   pub unknown_keyed: RefCell<ObjectProperty<'a>>,
@@ -60,6 +61,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
+    use_consumed_flag!(self);
     fn consume_property_as_unknown<'a>(property: &ObjectProperty<'a>, analyzer: &mut Analyzer<'a>) {
       for value in &property.values {
         match value {
@@ -411,6 +413,7 @@ impl<'a> ObjectEntity<'a> {
 impl<'a> Analyzer<'a> {
   pub fn new_empty_object(&self) -> ObjectEntity<'a> {
     ObjectEntity {
+      consumed: Cell::new(false),
       scope_path: self.variable_scope_path(),
       string_keyed: RefCell::new(FxHashMap::default()),
       unknown_keyed: RefCell::new(ObjectProperty::default()),
