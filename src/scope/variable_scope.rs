@@ -35,8 +35,18 @@ impl<'a> VariableScope<'a> {
   }
 
   pub fn declare(&mut self, kind: VariableDeclarationKind, symbol: SymbolId, entity: Entity<'a>) {
-    if self.set(symbol, (false, entity)).is_some() && !kind.is_var() {
-      panic!("Variable already declared");
+    if kind.is_var() {
+      let old = self.get(&symbol);
+      let new = match old {
+        Some(old @ (true, _)) => old.clone(),
+        _ => (false, entity),
+      };
+      self.set(symbol, new);
+    } else {
+      let old = self.set(symbol, (false, entity));
+      if old.is_some() {
+        panic!("Variable already declared");
+      }
     }
   }
 
