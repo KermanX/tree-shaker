@@ -6,7 +6,10 @@ const AST_TYPE: AstType2 = AstType2::BlockStatement;
 impl<'a> Analyzer<'a> {
   pub fn exec_block_statement(&mut self, node: &'a BlockStatement) {
     let data = self.load_data::<StatementVecData>(AST_TYPE, node);
+
+    self.push_variable_scope();
     self.exec_statement_vec(data, Some(false), &node.body);
+    self.pop_variable_scope();
   }
 }
 

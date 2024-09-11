@@ -6,7 +6,7 @@ use oxc::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_catch_clause(&mut self, node: &'a CatchClause<'a>, value: Entity<'a>) {
-    self.push_normal_cf_scope(None);
+    self.push_cf_scope_normal(None);
     self.push_variable_scope();
 
     if let Some(param) = &node.param {

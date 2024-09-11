@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
     let exec_right = |analyzer: &mut Analyzer<'a>| analyzer.exec_expression(&node.right);
 
     let exec_unknown = |analyzer: &mut Analyzer<'a>| {
-      analyzer.push_normal_cf_scope(None);
+      analyzer.push_cf_scope_normal(None);
       let right = analyzer.exec_expression(&node.right);
       analyzer.pop_cf_scope();
       (UnionEntity::new(vec![left.clone(), right]), true, true)

@@ -8,8 +8,7 @@ impl<'a> Analyzer<'a> {
     exited: Option<bool>,
     statements: &'a Vec<'a, Statement<'a>>,
   ) {
-    self.push_normal_cf_scope(exited);
-    self.push_variable_scope();
+    self.push_cf_scope_normal(exited);
 
     let mut last_stmt = None;
     for (index, statement) in statements.iter().enumerate() {
@@ -26,7 +25,6 @@ impl<'a> Analyzer<'a> {
       };
     }
 
-    self.pop_variable_scope();
     self.pop_cf_scope();
   }
 }

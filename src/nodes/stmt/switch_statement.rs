@@ -47,7 +47,7 @@ impl<'a> Analyzer<'a> {
             maybe_default_case = None;
             if !indeterminate {
               indeterminate = true;
-              self.push_normal_cf_scope(None);
+              self.push_cf_scope_normal(None);
             }
           }
         }
@@ -66,7 +66,7 @@ impl<'a> Analyzer<'a> {
     }
 
     // 3. consequent
-    self.push_breakable_cf_scope(Some(false));
+    self.push_cf_scope_breakable(Some(false));
     let mut entered = Some(false);
     for (index, case) in node.cases.iter().enumerate() {
       if self.cf_scope().must_exited() {

@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
       Some(true) => self.exec_expression(default),
       Some(false) => value,
       None => {
-        self.push_normal_cf_scope(None);
+        self.push_cf_scope_normal(None);
         let value = UnionEntity::new(vec![self.exec_expression(default), value]);
         self.pop_cf_scope();
         value

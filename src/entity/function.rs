@@ -22,7 +22,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     self.consume_self(analyzer);
 
     analyzer.exec_exhaustively(|analyzer| {
-      analyzer.push_normal_cf_scope(None);
+      analyzer.push_cf_scope_normal(None);
       let (_, ret_val) =
         self.call(analyzer, &UnknownEntity::new_unknown(), &UnknownEntity::new_unknown());
       analyzer.pop_cf_scope();

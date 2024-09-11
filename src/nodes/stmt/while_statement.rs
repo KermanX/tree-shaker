@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
     data.need_loop = true;
 
     self.exec_exhaustively(|analyzer| {
-      analyzer.push_breakable_cf_scope(None);
+      analyzer.push_cf_scope_breakable(None);
 
       analyzer.exec_statement(&node.body);
       analyzer.exec_expression(&node.test).consume_self(analyzer);

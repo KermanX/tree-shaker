@@ -120,11 +120,11 @@ impl<'a> Analyzer<'a> {
     self.push_cf_scope_with_labels(kind, labels, exited)
   }
 
-  pub fn push_normal_cf_scope(&mut self, exited: Option<bool>) {
+  pub fn push_cf_scope_normal(&mut self, exited: Option<bool>) {
     self.push_cf_scope(CfScopeKind::Normal, exited);
   }
 
-  pub fn push_breakable_cf_scope(&mut self, exited: Option<bool>) {
+  pub fn push_cf_scope_breakable(&mut self, exited: Option<bool>) {
     self.push_cf_scope(CfScopeKind::Breakable, exited);
   }
 
