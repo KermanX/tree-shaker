@@ -9,7 +9,7 @@ use crate::{
   entity::{entity::Entity, label::LabelEntity, unknown::UnknownEntity},
 };
 use cf_scope::CfScope;
-pub use cf_scope::CfScopeFlags;
+pub use cf_scope::CfScopeKind;
 use function_scope::FunctionScope;
 use oxc::semantic::ScopeId;
 use std::{mem, rc::Rc};
@@ -35,7 +35,7 @@ impl<'a> ScopeContext<'a> {
         false,
       )],
       variable_scopes: vec![VariableScope::new(0)],
-      cf_scopes: vec![CfScope::new(CfScopeFlags::Function, None, Some(false))],
+      cf_scopes: vec![CfScope::new(CfScopeKind::Function, None, Some(false))],
     }
   }
 }
@@ -66,7 +66,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_function_scope(&mut self, this: Entity<'a>, is_async: bool, is_generator: bool) {
-    let cf_scope_index = self.push_cf_scope(CfScopeFlags::Function, None, Some(false));
+    let cf_scope_index = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
     let variable_scope_index = self.push_variable_scope();
     self.scope_context.function_scopes.push(FunctionScope::new(
       cf_scope_index,
@@ -109,18 +109,18 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_cf_scope(
     &mut self,
-    flags: CfScopeFlags,
+    kind: CfScopeKind,
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
     exited: Option<bool>,
   ) -> usize {
     let index = self.scope_context.cf_scopes.len();
-    let cf_scope = CfScope::new(flags, labels, exited);
+    let cf_scope = CfScope::new(kind, labels, exited);
     self.scope_context.cf_scopes.push(cf_scope);
     index
   }
 
   pub fn push_cf_scope_normal(&mut self, exited: Option<bool>) {
-    self.push_cf_scope(CfScopeFlags::Normal, None, exited);
+    self.push_cf_scope(CfScopeKind::Normal, None, exited);
   }
 
   pub fn pop_cf_scope(&mut self) -> CfScope {
@@ -136,7 +136,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_try_scope(&mut self) {
-    let cf_scope_index = self.push_cf_scope(CfScopeFlags::Normal, None, None);
+    let cf_scope_index = self.push_cf_scope(CfScopeKind::Normal, None, None);
     self.function_scope_mut().try_scopes.push(TryScope::new(cf_scope_index));
   }
 

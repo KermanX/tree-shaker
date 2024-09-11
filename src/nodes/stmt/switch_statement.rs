@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, data::StatementVecData, scope::CfScopeFlags,
+  analyzer::Analyzer, ast::AstType2, data::StatementVecData, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::{
@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
     }
 
     // 3. consequent
-    self.push_cf_scope(CfScopeFlags::BreakableWithoutLabel, labels, Some(false));
+    self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels, Some(false));
     let mut entered = Some(false);
     for (index, case) in node.cases.iter().enumerate() {
       if self.cf_scope().must_exited() {

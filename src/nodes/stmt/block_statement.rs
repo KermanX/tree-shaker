@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, data::StatementVecData, scope::CfScopeFlags,
+  analyzer::Analyzer, ast::AstType2, data::StatementVecData, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::ast::ast::BlockStatement;
@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
     let labels = self.take_labels();
     let data = self.load_data::<StatementVecData>(AST_TYPE, node);
 
-    self.push_cf_scope(CfScopeFlags::Normal, labels, Some(false));
+    self.push_cf_scope(CfScopeKind::Normal, labels, Some(false));
     self.push_variable_scope();
     self.exec_statement_vec(data, &node.body);
     self.pop_variable_scope();

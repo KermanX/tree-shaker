@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, entity::unknown::UnknownEntity, scope::CfScopeFlags,
+  analyzer::Analyzer, ast::AstType2, entity::unknown::UnknownEntity, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::{
@@ -37,9 +37,9 @@ impl<'a> Analyzer<'a> {
 
       self.exec_for_statement_left(&node.left, value);
 
-      self.push_cf_scope(CfScopeFlags::BreakableWithoutLabel, labels.clone(), Some(false));
+      self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
       self.exec_exhaustively(|analyzer| {
-        analyzer.push_cf_scope(CfScopeFlags::Continuable, labels.clone(), None);
+        analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
         analyzer.exec_statement(&node.body);
         analyzer.pop_cf_scope();
       });

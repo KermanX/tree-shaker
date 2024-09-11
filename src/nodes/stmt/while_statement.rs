@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeFlags, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{Statement, WhileStatement},
   span::GetSpan,
@@ -28,9 +28,9 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.need_loop = true;
 
-    self.push_cf_scope(CfScopeFlags::BreakableWithoutLabel, labels.clone(), Some(false));
+    self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
     self.exec_exhaustively(|analyzer| {
-      analyzer.push_cf_scope(CfScopeFlags::Continuable, labels.clone(), None);
+      analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
 
       analyzer.exec_statement(&node.body);
       analyzer.exec_expression(&node.test).consume_self(analyzer);

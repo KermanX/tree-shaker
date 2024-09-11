@@ -1,6 +1,6 @@
 use std::usize;
 
-use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeFlags, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{IfStatement, Statement},
   span::GetSpan,
@@ -38,8 +38,8 @@ impl<'a> Analyzer<'a> {
     let mut exit_target_outer = usize::MAX;
 
     if maybe_true {
-      self.push_cf_scope(CfScopeFlags::If, None, branch_exited);
-      self.push_cf_scope(CfScopeFlags::Normal, labels.clone(), Some(false));
+      self.push_cf_scope(CfScopeKind::If, None, branch_exited);
+      self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
       self.exec_statement(&node.consequent);
       self.pop_cf_scope();
       if let Some(stopped_exit) = self.pop_cf_scope().stopped_exit {
@@ -51,8 +51,8 @@ impl<'a> Analyzer<'a> {
     }
     if maybe_false {
       if let Some(alternate) = &node.alternate {
-        self.push_cf_scope(CfScopeFlags::If, None, branch_exited);
-        self.push_cf_scope(CfScopeFlags::Normal, labels.clone(), Some(false));
+        self.push_cf_scope(CfScopeKind::If, None, branch_exited);
+        self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
         self.exec_statement(alternate);
         self.pop_cf_scope();
         if let Some(stopped_exit) = self.pop_cf_scope().stopped_exit {

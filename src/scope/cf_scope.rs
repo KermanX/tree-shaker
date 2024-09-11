@@ -1,20 +1,16 @@
-use std::rc::Rc;
-
 use crate::entity::label::LabelEntity;
-use bitflags::bitflags;
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashSet;
+use std::rc::Rc;
 
-bitflags! {
-  #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-  pub struct CfScopeFlags: u8  {
-    const Normal = 0;
-    const BreakableWithoutLabel = 1 << 0;
-    const Continuable = 1 << 1;
-    const Exhaustive = 1 << 2;
-    const If = 1 << 3;
-    const Function = 1 << 4;
-  }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum CfScopeKind {
+  Normal,
+  BreakableWithoutLabel,
+  Continuable,
+  Exhaustive,
+  If,
+  Function,
 }
 
 #[derive(Debug)]
@@ -27,7 +23,7 @@ pub struct ExhaustiveData {
 /// `None` for indeterminate
 /// `Some(true)` for exited
 pub struct CfScope<'a> {
-  pub flags: CfScopeFlags,
+  pub kind: CfScopeKind,
   pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
   pub exited: Option<bool>,
   // Exits that have been stopped by this scope's indeterminate state.
@@ -38,16 +34,16 @@ pub struct CfScope<'a> {
 
 impl<'a> CfScope<'a> {
   pub fn new(
-    flags: CfScopeFlags,
+    kind: CfScopeKind,
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
     exited: Option<bool>,
   ) -> Self {
     CfScope {
-      flags,
+      kind,
       labels,
       exited,
       stopped_exit: None,
-      exhaustive_data: if flags.contains(CfScopeFlags::Exhaustive) {
+      exhaustive_data: if kind == CfScopeKind::Exhaustive {
         Some(Box::new(ExhaustiveData { dirty: true, deps: FxHashSet::default() }))
       } else {
         None
@@ -72,19 +68,19 @@ impl<'a> CfScope<'a> {
   }
 
   pub fn is_breakable_without_label(&self) -> bool {
-    self.flags.contains(CfScopeFlags::BreakableWithoutLabel)
+    self.kind == CfScopeKind::BreakableWithoutLabel
   }
 
   pub fn is_continuable(&self) -> bool {
-    self.flags.contains(CfScopeFlags::Continuable)
+    self.kind == CfScopeKind::Continuable
   }
 
   pub fn is_if(&self) -> bool {
-    self.flags.contains(CfScopeFlags::If)
+    self.kind == CfScopeKind::If
   }
 
   pub fn is_function(&self) -> bool {
-    self.flags.contains(CfScopeFlags::Function)
+    self.kind == CfScopeKind::Function
   }
 
   pub fn mark_exhaustive_read(&mut self, symbol: SymbolId) {

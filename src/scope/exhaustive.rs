@@ -1,9 +1,9 @@
-use crate::{analyzer::Analyzer, entity::entity::Entity, scope::CfScopeFlags};
+use crate::{analyzer::Analyzer, entity::entity::Entity, scope::CfScopeKind};
 use oxc::semantic::SymbolId;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_exhaustively(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> ()) {
-    self.push_cf_scope(CfScopeFlags::Exhaustive, None, Some(false));
+    self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
     let mut round_counter = 0;
     while self.cf_scope_mut().iterate_exhaustively() {
       runner(self);
