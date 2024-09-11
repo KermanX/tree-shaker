@@ -1,5 +1,6 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, entity::unknown::UnknownEntity, transformer::Transformer,
+  analyzer::Analyzer, ast::AstType2, entity::unknown::UnknownEntity, scope::CfScopeFlags,
+  transformer::Transformer,
 };
 use oxc::{
   ast::ast::{ForOfStatement, Statement},
@@ -16,6 +17,8 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_for_of_statement(&mut self, node: &'a ForOfStatement<'a>) {
+    let labels = self.take_labels();
+
     let right = self.exec_expression(&node.right);
 
     let (iter_effect, value) = if node.r#await {
@@ -34,11 +37,13 @@ impl<'a> Analyzer<'a> {
 
       self.exec_for_statement_left(&node.left, value);
 
+      self.push_cf_scope(CfScopeFlags::BreakableWithoutLabel, labels.clone(), Some(false));
       self.exec_exhaustively(|analyzer| {
-        analyzer.push_cf_scope_breakable(None);
+        analyzer.push_cf_scope(CfScopeFlags::Continuable, labels.clone(), None);
         analyzer.exec_statement(&node.body);
         analyzer.pop_cf_scope();
       });
+      self.pop_cf_scope();
 
       self.pop_variable_scope();
     }

@@ -5,11 +5,8 @@ impl<'a> Analyzer<'a> {
   pub fn exec_statement_vec(
     &mut self,
     data: &mut StatementVecData,
-    exited: Option<bool>,
     statements: &'a Vec<'a, Statement<'a>>,
   ) {
-    self.push_cf_scope_normal(exited);
-
     let mut last_stmt = None;
     for (index, statement) in statements.iter().enumerate() {
       if self.cf_scope().must_exited() {
@@ -24,8 +21,6 @@ impl<'a> Analyzer<'a> {
         None => Some(last_stmt),
       };
     }
-
-    self.pop_cf_scope();
   }
 }
 

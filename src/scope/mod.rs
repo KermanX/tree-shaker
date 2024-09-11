@@ -9,10 +9,10 @@ use crate::{
   entity::{entity::Entity, label::LabelEntity, unknown::UnknownEntity},
 };
 use cf_scope::CfScope;
-pub use cf_scope::CfScopeKind;
+pub use cf_scope::CfScopeFlags;
 use function_scope::FunctionScope;
 use oxc::semantic::ScopeId;
-use std::mem;
+use std::{mem, rc::Rc};
 use try_scope::TryScope;
 use variable_scope::VariableScope;
 
@@ -35,7 +35,7 @@ impl<'a> ScopeContext<'a> {
         false,
       )],
       variable_scopes: vec![VariableScope::new(0)],
-      cf_scopes: vec![CfScope::new(CfScopeKind::Normal, vec![], Some(false))],
+      cf_scopes: vec![CfScope::new(CfScopeFlags::Function, None, Some(false))],
     }
   }
 }
@@ -66,7 +66,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_function_scope(&mut self, this: Entity<'a>, is_async: bool, is_generator: bool) {
-    let cf_scope_index = self.push_cf_scope(CfScopeKind::Normal, Some(false));
+    let cf_scope_index = self.push_cf_scope(CfScopeFlags::Function, None, Some(false));
     let variable_scope_index = self.push_variable_scope();
     self.scope_context.function_scopes.push(FunctionScope::new(
       cf_scope_index,
@@ -99,33 +99,29 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.iter().map(|x| x.id).collect()
   }
 
-  pub fn take_labels(&mut self) -> Vec<LabelEntity<'a>> {
-    mem::take(&mut self.pending_labels)
+  pub fn take_labels(&mut self) -> Option<Rc<Vec<LabelEntity<'a>>>> {
+    if self.pending_labels.is_empty() {
+      None
+    } else {
+      Some(Rc::new(mem::take(&mut self.pending_labels)))
+    }
   }
 
-  pub fn push_cf_scope_with_labels(
+  pub fn push_cf_scope(
     &mut self,
-    kind: CfScopeKind,
-    labels: Vec<LabelEntity<'a>>,
+    flags: CfScopeFlags,
+    labels: Option<Rc<Vec<LabelEntity<'a>>>>,
     exited: Option<bool>,
   ) -> usize {
     let index = self.scope_context.cf_scopes.len();
-    let cf_scope = CfScope::new(kind, labels, exited);
+    let cf_scope = CfScope::new(flags, labels, exited);
     self.scope_context.cf_scopes.push(cf_scope);
     index
   }
 
-  pub fn push_cf_scope(&mut self, kind: CfScopeKind, exited: Option<bool>) -> usize {
-    let labels = self.take_labels();
-    self.push_cf_scope_with_labels(kind, labels, exited)
-  }
-
   pub fn push_cf_scope_normal(&mut self, exited: Option<bool>) {
-    self.push_cf_scope(CfScopeKind::Normal, exited);
-  }
-
-  pub fn push_cf_scope_breakable(&mut self, exited: Option<bool>) {
-    self.push_cf_scope(CfScopeKind::Breakable, exited);
+    let labels = self.take_labels();
+    self.push_cf_scope(CfScopeFlags::Normal, labels, exited);
   }
 
   pub fn pop_cf_scope(&mut self) -> CfScope {
@@ -141,7 +137,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_try_scope(&mut self) {
-    let cf_scope_index = self.push_cf_scope(CfScopeKind::Normal, None);
+    let labels = self.take_labels();
+    let cf_scope_index = self.push_cf_scope(CfScopeFlags::Normal, labels, None);
     self.function_scope_mut().try_scopes.push(TryScope::new(cf_scope_index));
   }
 
@@ -178,29 +175,64 @@ impl<'a> Analyzer<'a> {
   }
 
   /// If the label is used, `true` is returned.
-  /// FIXME: `continue`
-  pub fn exit_to_label(&mut self, label: Option<&'a str>) -> bool {
+  pub fn break_to_label(&mut self, label: Option<&'a str>) -> bool {
     let mut is_closest_breakable = true;
     let mut target_index = None;
     let mut label_used = false;
     for (idx, cf_scope) in self.scope_context.cf_scopes.iter().enumerate().rev() {
+      if cf_scope.is_function() {
+        break;
+      }
+      let breakable_without_label = cf_scope.is_breakable_without_label();
       if let Some(label) = label {
         if let Some(label_entity) = cf_scope.matches_label(label) {
-          if !is_closest_breakable || !cf_scope.is_breakable() {
+          if !is_closest_breakable || !breakable_without_label {
             self.referred_nodes.insert(label_entity.node);
             label_used = true;
           }
           target_index = Some(idx);
           break;
         }
-        if cf_scope.is_breakable() {
+        if breakable_without_label {
           is_closest_breakable = false;
         }
-      } else if cf_scope.is_breakable() {
+      } else if breakable_without_label {
         target_index = Some(idx);
         break;
       }
     }
+    self.exit_to(target_index.unwrap());
+    label_used
+  }
+
+  /// If the label is used, `true` is returned.
+  pub fn continue_to_label(&mut self, label: Option<&'a str>) -> bool {
+    let mut is_closest_continuable = true;
+    let mut target_index = None;
+    let mut label_used = false;
+    for (idx, cf_scope) in self.scope_context.cf_scopes.iter().enumerate().rev() {
+      if cf_scope.is_function() {
+        break;
+      }
+      let is_continuable = cf_scope.is_continuable();
+      if let Some(label) = label {
+        if is_continuable {
+          if let Some(label_entity) = cf_scope.matches_label(label) {
+            if !is_closest_continuable {
+              self.referred_nodes.insert(label_entity.node);
+              label_used = true;
+            }
+            target_index = Some(idx);
+            break;
+          }
+          is_closest_continuable = false;
+        }
+      } else if is_continuable {
+        target_index = Some(idx);
+        break;
+      }
+    }
+    println!("label: {:?}", label);
     self.exit_to(target_index.unwrap());
     label_used
   }

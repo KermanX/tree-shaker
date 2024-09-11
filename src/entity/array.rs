@@ -1,7 +1,6 @@
 use super::{
   entity::{Entity, EntityTrait},
   entry::EntryEntity,
-  label::LabelEntity,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   union::UnionEntity,

@@ -1,20 +1,17 @@
-use crate::{analyzer::Analyzer, entity::entity::Entity, scope::CfScopeKind};
+use crate::{analyzer::Analyzer, entity::entity::Entity, scope::CfScopeFlags};
 use oxc::semantic::SymbolId;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_exhaustively(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> ()) {
-    self.push_cf_scope(CfScopeKind::Exhaustive, Some(false));
-
+    self.push_cf_scope(CfScopeFlags::Exhaustive, None, Some(false));
     let mut round_counter = 0;
-
-    while self.cf_scope_mut().check_and_clear_exhaustive_dirty() {
+    while self.cf_scope_mut().iterate_exhaustively() {
       runner(self);
       round_counter += 1;
       if round_counter > 1000 {
         unreachable!("Exhaustive loop is too long");
       }
     }
-
     self.pop_cf_scope();
   }
 

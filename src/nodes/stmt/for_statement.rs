@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeFlags, transformer::Transformer};
 use oxc::{
   ast::ast::{ForStatement, ForStatementInit, Statement},
   span::GetSpan,
@@ -13,6 +13,8 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_for_statement(&mut self, node: &'a ForStatement<'a>) {
+    let labels = self.take_labels();
+
     let data = self.load_data::<Data>(AST_TYPE, node);
 
     self.push_variable_scope();
@@ -41,8 +43,9 @@ impl<'a> Analyzer<'a> {
 
     data.need_loop = true;
 
+    self.push_cf_scope(CfScopeFlags::BreakableWithoutLabel, labels.clone(), Some(false));
     self.exec_exhaustively(|analyzer| {
-      analyzer.push_cf_scope_breakable(None);
+      analyzer.push_cf_scope(CfScopeFlags::Continuable, labels.clone(), None);
 
       analyzer.exec_statement(&node.body);
       if let Some(update) = &node.update {
@@ -54,6 +57,7 @@ impl<'a> Analyzer<'a> {
 
       analyzer.pop_cf_scope();
     });
+    self.pop_cf_scope();
 
     self.pop_variable_scope();
   }

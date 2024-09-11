@@ -1,14 +1,20 @@
+use std::rc::Rc;
+
+use crate::entity::label::LabelEntity;
+use bitflags::bitflags;
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashSet;
 
-use crate::entity::label::LabelEntity;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum CfScopeKind {
-  Normal,
-  Breakable,
-  Exhaustive,
-  If,
+bitflags! {
+  #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+  pub struct CfScopeFlags: u8  {
+    const Normal = 0;
+    const BreakableWithoutLabel = 1 << 0;
+    const Continuable = 1 << 1;
+    const Exhaustive = 1 << 2;
+    const If = 1 << 3;
+    const Function = 1 << 4;
+  }
 }
 
 #[derive(Debug)]
@@ -21,8 +27,8 @@ pub struct ExhaustiveData {
 /// `None` for indeterminate
 /// `Some(true)` for exited
 pub struct CfScope<'a> {
-  pub kind: CfScopeKind,
-  pub label: Vec<LabelEntity<'a>>,
+  pub flags: CfScopeFlags,
+  pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
   pub exited: Option<bool>,
   // Exits that have been stopped by this scope's indeterminate state.
   // Only available when `kind` is `If`.
@@ -31,13 +37,17 @@ pub struct CfScope<'a> {
 }
 
 impl<'a> CfScope<'a> {
-  pub fn new(kind: CfScopeKind, label: Vec<LabelEntity<'a>>, exited: Option<bool>) -> Self {
+  pub fn new(
+    flags: CfScopeFlags,
+    labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+    exited: Option<bool>,
+  ) -> Self {
     CfScope {
-      kind,
-      label,
+      flags,
+      labels,
       exited,
       stopped_exit: None,
-      exhaustive_data: if kind == CfScopeKind::Exhaustive {
+      exhaustive_data: if flags.contains(CfScopeFlags::Exhaustive) {
         Some(Box::new(ExhaustiveData { dirty: true, deps: FxHashSet::default() }))
       } else {
         None
@@ -54,15 +64,27 @@ impl<'a> CfScope<'a> {
   }
 
   pub fn matches_label(&self, label: &str) -> Option<&LabelEntity<'a>> {
-    self.label.iter().find(|l| l.name == label)
+    if let Some(labels) = &self.labels {
+      labels.iter().find(|l| l.name == label)
+    } else {
+      None
+    }
   }
 
-  pub fn is_breakable(&self) -> bool {
-    matches!(self.kind, CfScopeKind::Breakable)
+  pub fn is_breakable_without_label(&self) -> bool {
+    self.flags.contains(CfScopeFlags::BreakableWithoutLabel)
+  }
+
+  pub fn is_continuable(&self) -> bool {
+    self.flags.contains(CfScopeFlags::Continuable)
   }
 
   pub fn is_if(&self) -> bool {
-    matches!(self.kind, CfScopeKind::If)
+    self.flags.contains(CfScopeFlags::If)
+  }
+
+  pub fn is_function(&self) -> bool {
+    self.flags.contains(CfScopeFlags::Function)
   }
 
   pub fn mark_exhaustive_read(&mut self, symbol: SymbolId) {
@@ -92,12 +114,12 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn check_and_clear_exhaustive_dirty(&mut self) -> bool {
+  pub fn iterate_exhaustively(&mut self) -> bool {
     if let Some(data) = &mut self.exhaustive_data {
       let dirty = data.dirty;
       data.dirty = false;
       data.deps.clear();
-      dirty
+      dirty && !self.must_exited()
     } else {
       unreachable!()
     }

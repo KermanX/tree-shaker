@@ -1,4 +1,7 @@
-use crate::{analyzer::Analyzer, ast::AstType2, data::StatementVecData, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstType2, data::StatementVecData, scope::CfScopeFlags,
+  transformer::Transformer,
+};
 use oxc::{
   ast::ast::{Expression, Statement, SwitchCase, SwitchStatement},
   span::Span,
@@ -15,6 +18,7 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_switch_statement(&mut self, node: &'a SwitchStatement<'a>) {
+    let labels = self.take_labels();
     let data = self.load_data::<Data>(AST_TYPE, node);
 
     // 1. discriminant
@@ -66,7 +70,7 @@ impl<'a> Analyzer<'a> {
     }
 
     // 3. consequent
-    self.push_cf_scope_breakable(Some(false));
+    self.push_cf_scope(CfScopeFlags::BreakableWithoutLabel, labels, Some(false));
     let mut entered = Some(false);
     for (index, case) in node.cases.iter().enumerate() {
       if self.cf_scope().must_exited() {
@@ -88,7 +92,10 @@ impl<'a> Analyzer<'a> {
       }
 
       let data = self.load_data::<StatementVecData>(AstType2::SwitchCase, case);
-      self.exec_statement_vec(data, entered.map(|entered| !entered), &case.consequent);
+
+      self.push_cf_scope_normal(entered.map(|entered| !entered));
+      self.exec_statement_vec(data, &case.consequent);
+      self.pop_cf_scope();
     }
 
     self.pop_cf_scope();

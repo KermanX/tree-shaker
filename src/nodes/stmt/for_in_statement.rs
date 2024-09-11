@@ -5,6 +5,7 @@ use crate::{
     typeof_result::TypeofResult,
     unknown::{UnknownEntity, UnknownEntityKind},
   },
+  scope::CfScopeFlags,
   transformer::Transformer,
 };
 use oxc::{
@@ -21,6 +22,7 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_for_in_statement(&mut self, node: &'a ForInStatement<'a>) {
+    let labels = self.take_labels();
     let right = self.exec_expression(&node.right);
 
     // FIXME: enumerate keys!
@@ -46,11 +48,13 @@ impl<'a> Analyzer<'a> {
 
     self.exec_for_statement_left(&node.left, UnknownEntity::new(UnknownEntityKind::String));
 
+    self.push_cf_scope(CfScopeFlags::BreakableWithoutLabel, labels.clone(), Some(false));
     self.exec_exhaustively(|analyzer| {
-      analyzer.push_cf_scope_breakable(None);
+      analyzer.push_cf_scope(CfScopeFlags::Continuable, labels.clone(), None);
       analyzer.exec_statement(&node.body);
       analyzer.pop_cf_scope();
     });
+    self.pop_cf_scope();
 
     self.pop_variable_scope();
   }

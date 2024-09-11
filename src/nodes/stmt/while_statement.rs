@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeFlags, transformer::Transformer};
 use oxc::{
   ast::ast::{Statement, WhileStatement},
   span::GetSpan,
@@ -13,6 +13,8 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_while_statement(&mut self, node: &'a WhileStatement<'a>) {
+    let labels = self.take_labels();
+
     // This may be indeterminate. However, we can't know it until we execute the test.
     // And there should be no same level break/continue statement in test.
     // `a: while(() => { break a }) { }` is illegal.
@@ -26,14 +28,16 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.need_loop = true;
 
+    self.push_cf_scope(CfScopeFlags::BreakableWithoutLabel, labels.clone(), Some(false));
     self.exec_exhaustively(|analyzer| {
-      analyzer.push_cf_scope_breakable(None);
+      analyzer.push_cf_scope(CfScopeFlags::Continuable, labels.clone(), None);
 
       analyzer.exec_statement(&node.body);
       analyzer.exec_expression(&node.test).consume_self(analyzer);
 
       analyzer.pop_cf_scope();
     });
+    self.pop_cf_scope();
   }
 }
 

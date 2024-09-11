@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
     self.push_function_scope(UnknownEntity::new_unknown(), false, false);
 
     let data = self.load_data::<StatementVecData>(AST_TYPE, node);
-    self.exec_statement_vec(data, Some(false), &node.body);
+    self.exec_statement_vec(data, &node.body);
 
     self.pop_function_scope();
   }

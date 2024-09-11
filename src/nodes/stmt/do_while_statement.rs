@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstType2, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeFlags, transformer::Transformer};
 use oxc::{
   ast::ast::{DoWhileStatement, Statement},
   span::GetSpan,
@@ -14,13 +14,16 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_do_while_statement(&mut self, node: &'a DoWhileStatement<'a>) {
-    // Execute the first round.
-    self.push_cf_scope_breakable(Some(false));
-    self.exec_statement(&node.body);
-    let cf_scope = self.pop_cf_scope();
+    let labels = self.take_labels();
+    self.push_cf_scope(CfScopeFlags::BreakableWithoutLabel, labels.clone(), Some(false));
 
-    // FIXME: continue?
-    if cf_scope.must_exited() {
+    // Execute the first round.
+    self.push_cf_scope(CfScopeFlags::Continuable, labels.clone(), Some(false));
+    self.exec_statement(&node.body);
+    self.pop_cf_scope();
+
+    if self.cf_scope().must_exited() {
+      self.pop_cf_scope();
       return;
     }
 
@@ -30,6 +33,7 @@ impl<'a> Analyzer<'a> {
 
     // The rest is the same as while statement.
     if test.test_truthy() == Some(false) {
+      self.pop_cf_scope();
       return;
     }
     test.consume_self(self);
@@ -37,13 +41,15 @@ impl<'a> Analyzer<'a> {
     data.need_loop = true;
 
     self.exec_exhaustively(|analyzer| {
-      analyzer.push_cf_scope_breakable(None);
+      analyzer.push_cf_scope(CfScopeFlags::Continuable, labels.clone(), None);
 
       analyzer.exec_statement(&node.body);
       analyzer.exec_expression(&node.test).consume_self(analyzer);
 
       analyzer.pop_cf_scope();
     });
+
+    self.pop_cf_scope();
   }
 }
 
