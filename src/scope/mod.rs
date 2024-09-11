@@ -120,8 +120,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_cf_scope_normal(&mut self, exited: Option<bool>) {
-    let labels = self.take_labels();
-    self.push_cf_scope(CfScopeFlags::Normal, labels, exited);
+    self.push_cf_scope(CfScopeFlags::Normal, None, exited);
   }
 
   pub fn pop_cf_scope(&mut self) -> CfScope {
@@ -137,8 +136,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_try_scope(&mut self) {
-    let labels = self.take_labels();
-    let cf_scope_index = self.push_cf_scope(CfScopeFlags::Normal, labels, None);
+    let cf_scope_index = self.push_cf_scope(CfScopeFlags::Normal, None, None);
     self.function_scope_mut().try_scopes.push(TryScope::new(cf_scope_index));
   }
 

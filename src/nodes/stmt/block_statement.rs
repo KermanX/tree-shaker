@@ -1,13 +1,17 @@
-use crate::{analyzer::Analyzer, ast::AstType2, data::StatementVecData, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstType2, data::StatementVecData, scope::CfScopeFlags,
+  transformer::Transformer,
+};
 use oxc::ast::ast::BlockStatement;
 
 const AST_TYPE: AstType2 = AstType2::BlockStatement;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_block_statement(&mut self, node: &'a BlockStatement) {
+    let labels = self.take_labels();
     let data = self.load_data::<StatementVecData>(AST_TYPE, node);
 
-    self.push_cf_scope_normal(Some(false));
+    self.push_cf_scope(CfScopeFlags::Normal, labels, Some(false));
     self.push_variable_scope();
     self.exec_statement_vec(data, &node.body);
     self.pop_variable_scope();
