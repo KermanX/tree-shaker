@@ -1,4 +1,5 @@
 use crate::entity::entity::Entity;
+use oxc::ast::ast::VariableDeclarationKind;
 use oxc::semantic::ScopeId;
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashMap;
@@ -33,8 +34,10 @@ impl<'a> VariableScope<'a> {
     self.variables.insert(symbol, entity)
   }
 
-  pub fn declare(&mut self, symbol: SymbolId, entity: Entity<'a>) {
-    assert!(self.set(symbol, (false, entity)).is_none());
+  pub fn declare(&mut self, kind: VariableDeclarationKind, symbol: SymbolId, entity: Entity<'a>) {
+    if self.set(symbol, (false, entity)).is_some() && !kind.is_var() {
+      panic!("Variable already declared");
+    }
   }
 
   pub fn get(&self, symbol: &SymbolId) -> Option<&(bool, Entity<'a>)> {

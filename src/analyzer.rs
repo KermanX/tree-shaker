@@ -103,7 +103,7 @@ impl<'a> Analyzer<'a> {
     } else {
       (self.scope_context.variable_scopes.len() - 1, self.variable_scope_mut())
     };
-    scope.declare(symbol, entity);
+    scope.declare(kind, symbol, entity);
     self.symbol_decls.insert(symbol, (kind, scope_index, dep));
   }
 
