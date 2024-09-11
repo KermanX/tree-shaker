@@ -14,23 +14,19 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_do_while_statement(&mut self, node: &'a DoWhileStatement<'a>) {
-    let data = self.load_data::<Data>(AST_TYPE, node);
-
     // Execute the first round.
     self.push_cf_scope_breakable(Some(false));
-    self.push_variable_scope();
-
     self.exec_statement(&node.body);
+    let cf_scope = self.pop_cf_scope();
 
-    if self.cf_scope().must_exited() {
+    // FIXME: continue?
+    if cf_scope.must_exited() {
       return;
     }
 
+    let data = self.load_data::<Data>(AST_TYPE, node);
     data.need_test = true;
     let test = self.exec_expression(&node.test);
-
-    self.pop_variable_scope();
-    self.pop_cf_scope();
 
     // The rest is the same as while statement.
     if test.test_truthy() == Some(false) {
