@@ -127,7 +127,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                   }
                 } else {
                   // TODO: throw warning: Invalid array length
+                  has_effect = true;
                 }
+              } else {
+                has_effect = true;
               }
             } else {
               todo!("builtins");
