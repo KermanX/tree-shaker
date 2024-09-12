@@ -122,7 +122,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
   fn iterate(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
     if self.kind == UnknownEntityKind::Array {
-      return (false, Some(UnknownEntity::new_unknown_with_deps(vec![rc.clone()])))
+      return (false, Some(UnknownEntity::new_unknown_with_deps(vec![rc.clone()])));
     }
     if !self.maybe_object() {
       // TODO: throw warning
