@@ -1,8 +1,10 @@
+mod environment;
 mod globals;
 mod import_meta;
 mod protos;
 
 use crate::entity::entity::Entity;
+use environment::create_environment;
 use globals::create_globals;
 use import_meta::create_import_meta;
 pub use protos::Prototype;
@@ -10,9 +12,10 @@ use protos::{create_builtin_prototypes, BuiltinPrototypes};
 use rustc_hash::FxHashMap;
 
 pub struct Builtins<'a> {
-  globals: FxHashMap<&'static str, Entity<'a>>,
+  pub globals: FxHashMap<&'static str, Entity<'a>>,
   pub prototypes: BuiltinPrototypes<'a>,
-  import_meta: Entity<'a>,
+  pub import_meta: Entity<'a>,
+  pub environment: Entity<'a>,
 }
 
 impl<'a> Builtins<'a> {
@@ -21,6 +24,7 @@ impl<'a> Builtins<'a> {
       globals: create_globals(),
       prototypes: create_builtin_prototypes(),
       import_meta: create_import_meta(),
+      environment: create_environment(),
     }
   }
 

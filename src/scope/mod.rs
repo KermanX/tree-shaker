@@ -230,7 +230,6 @@ impl<'a> Analyzer<'a> {
         break;
       }
     }
-    println!("label: {:?}", label);
     self.exit_to(target_index.unwrap());
     label_used
   }

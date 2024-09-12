@@ -19,7 +19,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
-    if let Some(global) = self.builtins.get_global(&node.name).cloned() {
+    if let Some(global) = self.builtins.globals.get(node.name.as_str()).cloned() {
       self.set_data(AST_TYPE_READ, node, Data { resolvable: true });
       return global;
     }
@@ -53,7 +53,7 @@ impl<'a> Analyzer<'a> {
     let dep = self.new_entity_dep(EntityDepNode::IdentifierReference(node));
     let value = ForwardedEntity::new(value, dep);
 
-    if self.builtins.is_global(&node.name) {
+    if self.builtins.globals.contains_key(node.name.as_str()) {
       // TODO: Throw warning
     }
 

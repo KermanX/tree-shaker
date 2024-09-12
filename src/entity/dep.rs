@@ -5,11 +5,12 @@ use oxc::{
     IdentifierReference, LabelIdentifier, MemberExpression, ReturnStatement, ThrowStatement,
   },
   semantic::ScopeId,
-  span::GetSpan,
+  span::{GetSpan, SPAN},
 };
 
 #[derive(Debug, Clone, Copy)]
 pub enum EntityDepNode<'a> {
+  Environment,
   Function(&'a Function<'a>),
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
   BindingIdentifier(&'a BindingIdentifier<'a>),
@@ -31,6 +32,7 @@ pub struct EntityDep<'a> {
 impl<'a> PartialEq for EntityDepNode<'a> {
   fn eq(&self, other: &Self) -> bool {
     match (self, other) {
+      (EntityDepNode::Environment, EntityDepNode::Environment) => true,
       (EntityDepNode::Function(a), EntityDepNode::Function(b)) => a.span() == b.span(),
       (EntityDepNode::ArrowFunctionExpression(a), EntityDepNode::ArrowFunctionExpression(b)) => {
         a.span() == b.span()
@@ -65,6 +67,7 @@ impl<'a> Eq for EntityDepNode<'a> {}
 impl<'a> Hash for EntityDepNode<'a> {
   fn hash<H: Hasher>(&self, state: &mut H) {
     let span = match self {
+      EntityDepNode::Environment => SPAN,
       EntityDepNode::Function(a) => a.span(),
       EntityDepNode::ArrowFunctionExpression(a) => a.span(),
       EntityDepNode::BindingIdentifier(a) => a.span(),
