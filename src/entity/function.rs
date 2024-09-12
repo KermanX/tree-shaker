@@ -6,7 +6,7 @@ use super::{
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
-use crate::{analyzer::Analyzer, use_consumed_flag};
+use crate::{analyzer::Analyzer, entity::consumed_object, use_consumed_flag};
 use std::cell::Cell;
 
 #[derive(Debug, Clone)]
@@ -35,23 +35,23 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     });
   }
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+    if self.consumed.get() {
+      return consumed_object::get_property(analyzer, key);
+    }
     todo!("built-ins & extra properties")
   }
 
-  fn set_property(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    _key: &Entity<'a>,
-    _value: Entity<'a>,
-  ) -> bool {
+  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+    if self.consumed.get() {
+      return consumed_object::set_property(analyzer, key, value);
+    }
     todo!("built-ins & extra properties")
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
     self.consume_as_unknown(analyzer);
-    key.consume_self(analyzer);
-    true
+    consumed_object::delete_property(analyzer, key)
   }
 
   fn enumerate_properties(
@@ -59,7 +59,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     self.consume_as_unknown(analyzer);
-    UnknownEntity::new_unknown_to_entries_result(vec![])
+    consumed_object::enumerate_properties(analyzer)
   }
 
   fn call(
@@ -68,6 +68,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
+    // TODO: verify this
+    // if self.consumed.get() {
+    //   return consumed_object::call(analyzer, this, args);
+    // }
     let (has_effect, ret_val) = match &self.source.node {
       EntityDepNode::Function(node) => analyzer.call_function(node, this.clone(), args.clone()),
       EntityDepNode::ArrowFunctionExpression(node) => {
@@ -84,13 +88,13 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     // TODO: If the function is never modified, we can just return the source.
     self.consume_as_unknown(analyzer);
-    (true, UnknownEntity::new_unknown())
+    consumed_object::r#await(analyzer)
   }
 
   fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
     // TODO: If the function is never modified, should warn.
     self.consume_as_unknown(analyzer);
-    (true, Some(UnknownEntity::new_unknown()))
+    consumed_object::iterate(analyzer)
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -98,7 +102,9 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   }
 
   fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a> {
-    // FIXME: No Rc::new + clone
+    if self.consumed.get() {
+      return consumed_object::get_to_string();
+    }
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
   }
 
@@ -107,6 +113,9 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   }
 
   fn get_to_array(&self, rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
+    if self.consumed.get() {
+      return consumed_object::get_to_array(length);
+    }
     UnknownEntity::new_unknown_to_array_result(length, vec![rc.clone()])
   }
 

@@ -22,6 +22,6 @@ export function f2() {
 export function f3() {
 	let c = { value: 1 };
 	c.value++;
-	c[unknown];
-	effect();
+	c[unknown]++;
+	c[effect(), "value"]++;
 }

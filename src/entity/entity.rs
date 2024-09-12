@@ -56,9 +56,6 @@ pub trait EntityTrait<'a>: Debug {
   fn test_is_completely_unknown(&self) -> bool {
     false
   }
-  fn test_is_array(&self) -> Option<bool> {
-    None
-  }
 }
 
 #[derive(Debug)]
