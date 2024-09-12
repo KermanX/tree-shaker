@@ -28,12 +28,23 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.val.consume_as_unknown(analyzer)
   }
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
     let (has_effect, value) = self.val.get_property(analyzer, key);
     (has_effect, self.forward(value))
   }
 
-  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  fn set_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+    value: Entity<'a>,
+  ) -> bool {
     for entity in self.collected.borrow().iter() {
       entity.consume_self(analyzer);
     }
@@ -42,6 +53,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
   fn enumerate_properties(
     &self,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     for entity in self.collected.borrow().iter() {

@@ -32,7 +32,12 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
   fn consume_as_unknown(&self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       // TODO: throw warning
       (true, UnknownEntity::new_unknown())
@@ -44,6 +49,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn set_property(
     &self,
+    _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
     _key: &Entity<'a>,
     _value: Entity<'a>,
@@ -59,6 +65,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn enumerate_properties(
     &self,
+    _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     // No effect

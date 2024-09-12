@@ -35,14 +35,25 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     });
   }
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
     if self.consumed.get() {
       return consumed_object::get_property(analyzer, key);
     }
     todo!("built-ins & extra properties")
   }
 
-  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  fn set_property(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+    value: Entity<'a>,
+  ) -> bool {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, key, value);
     }
@@ -56,6 +67,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn enumerate_properties(
     &self,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     self.consume_as_unknown(analyzer);

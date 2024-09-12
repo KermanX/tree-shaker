@@ -33,7 +33,12 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
   }
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
     if self.consumed.get() {
       return consumed_object::get_property(analyzer, key);
     }
@@ -83,7 +88,13 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
   }
 
-  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  fn set_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+    value: Entity<'a>,
+  ) -> bool {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, key, value);
     }
@@ -158,6 +169,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
   fn enumerate_properties(
     &self,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     if self.consumed.get() {

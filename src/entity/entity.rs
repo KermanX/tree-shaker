@@ -7,10 +7,22 @@ pub trait EntityTrait<'a>: Debug {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>);
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>);
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>);
-  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool;
+  fn get_property(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+  ) -> (bool, Entity<'a>);
+  fn set_property(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+    value: Entity<'a>,
+  ) -> bool;
   fn enumerate_properties(
     &self,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>);
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool;
@@ -75,7 +87,7 @@ impl<'a> Entity<'a> {
   }
 
   pub fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
-    self.0.get_property(analyzer, key)
+    self.0.get_property(self, analyzer, key)
   }
 
   pub fn set_property(
@@ -84,14 +96,14 @@ impl<'a> Entity<'a> {
     key: &Entity<'a>,
     value: Entity<'a>,
   ) -> bool {
-    self.0.set_property(analyzer, key, value)
+    self.0.set_property(self, analyzer, key, value)
   }
 
   pub fn enumerate_properties(
     &self,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
-    self.0.enumerate_properties(analyzer)
+    self.0.enumerate_properties(self, analyzer)
   }
 
   pub fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {

@@ -21,12 +21,18 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 
   fn consume_as_unknown(&self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    _key: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
     todo!("built-ins & extra properties")
   }
 
   fn set_property(
     &self,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     _key: &Entity<'a>,
     _value: Entity<'a>,
@@ -42,6 +48,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 
   fn enumerate_properties(
     &self,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     self.consume_as_unknown(analyzer);
@@ -168,5 +175,4 @@ impl<'a> PureBuiltinFnEntity<'a> {
   pub fn returns_object() -> Entity<'a> {
     Self::returns_unknown_entity(UnknownEntityKind::Object)
   }
-
 }

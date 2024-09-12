@@ -21,12 +21,18 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     }
   }
 
-  fn get_property(&self, _analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(
+    &self,
+    _rc: &Entity<'a>,
+    _analyzer: &mut Analyzer<'a>,
+    _key: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
     unreachable!()
   }
 
   fn set_property(
     &self,
+    _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
     _key: &Entity<'a>,
     _value: Entity<'a>,
@@ -36,6 +42,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
   fn enumerate_properties(
     &self,
+    _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     unreachable!()

@@ -24,7 +24,12 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     self.val.consume_as_unknown(analyzer)
   }
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
     let (has_effect, value) = self.val.get_property(analyzer, key);
     if has_effect {
       analyzer.refer_dep(&self.dep);
@@ -32,7 +37,13 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     (has_effect, self.forward(value))
   }
 
-  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  fn set_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+    value: Entity<'a>,
+  ) -> bool {
     let has_effect = self.val.set_property(analyzer, key, value);
     if has_effect {
       analyzer.refer_dep(&self.dep);
@@ -42,6 +53,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
 
   fn enumerate_properties(
     &self,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     let (has_effect, properties) = self.val.enumerate_properties(analyzer);

@@ -39,7 +39,12 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     deps.clear();
   }
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
     if matches!(self.kind, UnknownEntityKind::Unknown) {
       self.consume_as_unknown(analyzer);
       key.get_to_property_key().consume_self(analyzer);
@@ -50,7 +55,13 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
   }
 
-  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  fn set_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+    value: Entity<'a>,
+  ) -> bool {
     if self.maybe_object() {
       self.consume_as_unknown(analyzer);
       key.get_to_property_key().consume_self(analyzer);
@@ -63,6 +74,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
   fn enumerate_properties(
     &self,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     if self.maybe_object() {

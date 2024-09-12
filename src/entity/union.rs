@@ -24,7 +24,12 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     }
   }
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
     let mut values = Vec::new();
     for entity in &self.0 {
       values.push(entity.get_property(analyzer, key));
@@ -32,7 +37,13 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     collect_effect_and_value(values)
   }
 
-  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  fn set_property(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+    value: Entity<'a>,
+  ) -> bool {
     let mut has_effect = false;
     for entity in &self.0 {
       has_effect |= entity.set_property(analyzer, key, value.clone());
@@ -42,6 +53,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 
   fn enumerate_properties(
     &self,
+    _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     // FIXME:

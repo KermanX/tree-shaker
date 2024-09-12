@@ -82,11 +82,16 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     consume_property_as_unknown(&self.unknown_keyed.borrow(), analyzer);
   }
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  fn get_property(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
     if self.consumed.get() {
       return consumed_object::get_property(analyzer, key);
     }
-    let this = self.get_this();
+    let this = rc.clone();
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let mut values = self.unknown_keyed.borrow().get_value(analyzer, &this);
@@ -125,11 +130,17 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
   }
 
-  fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  fn set_property(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    key: &Entity<'a>,
+    value: Entity<'a>,
+  ) -> bool {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, key, value);
     }
-    let this = self.get_this();
+    let this = rc.clone();
     let indeterminate = is_assignment_indeterminate(&self.scope_path, analyzer);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
@@ -201,12 +212,13 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
   fn enumerate_properties(
     &self,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
     if self.consumed.get() {
       return consumed_object::enumerate_properties(analyzer);
     }
-    let this = self.get_this();
+    let this = rc.clone();
     // unknown_keyed = unknown_keyed + rest
     let mut unknown_keyed = self.unknown_keyed.borrow().get_value(analyzer, &this);
     unknown_keyed.extend(self.rest.borrow().get_value(analyzer, &this));
@@ -385,10 +397,6 @@ impl<'a> ObjectEntity<'a> {
       self.init_property(PropertyKind::Init, key.clone(), value, definite);
     }
     has_effect
-  }
-
-  fn get_this(&self) -> Entity<'a> {
-    UnknownEntity::new_unknown() // TODO: handle `this`
   }
 
   fn apply_unknown_to_possible_setters(&self, analyzer: &mut Analyzer<'a>) -> bool {
