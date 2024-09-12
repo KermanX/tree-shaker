@@ -16,6 +16,7 @@ pub enum UnknownEntityKind {
   Symbol,
   Array,
   Function,
+  Regex,
   Object,
   Unknown,
 }
@@ -125,6 +126,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
       UnknownEntityKind::Symbol => TypeofResult::Symbol,
       UnknownEntityKind::Array => TypeofResult::Object,
       UnknownEntityKind::Function => TypeofResult::Function,
+      UnknownEntityKind::Regex => TypeofResult::Object,
       UnknownEntityKind::Object => TypeofResult::Object,
       UnknownEntityKind::Unknown => TypeofResult::_Unknown,
     }
@@ -199,6 +201,7 @@ impl<'a> UnknownEntity<'a> {
       UnknownEntityKind::Object
         | UnknownEntityKind::Function
         | UnknownEntityKind::Array
+        | UnknownEntityKind::Regex
         | UnknownEntityKind::Unknown
     )
   }
