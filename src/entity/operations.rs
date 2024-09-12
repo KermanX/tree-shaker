@@ -148,7 +148,12 @@ impl<'a> EntityOpHost<'a> {
       }
     }
 
-    UnionEntity::new(values)
+    if values.is_empty() {
+      // TODO: throw warning
+      UnknownEntity::new_unknown_with_deps(vec![lhs.clone(), rhs.clone()])
+    } else {
+      UnionEntity::new(values)
+    }
   }
 
   pub fn update(&self, input: &Entity<'a>, operator: &UpdateOperator) -> Entity<'a> {
@@ -177,6 +182,11 @@ impl<'a> EntityOpHost<'a> {
       values.push(UnknownEntity::new_with_deps(UnknownEntityKind::Number, vec![input.clone()]));
     }
 
-    UnionEntity::new(values)
+    if values.is_empty() {
+      // TODO: throw warning
+      UnknownEntity::new_unknown_with_deps(vec![input.clone()])
+    } else {
+      UnionEntity::new(values)
+    }
   }
 }
