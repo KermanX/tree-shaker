@@ -1,5 +1,6 @@
 mod bigint;
 mod boolean;
+mod function;
 mod null;
 mod number;
 mod object;
@@ -58,6 +59,7 @@ impl<'a> Prototype<'a> {
 pub struct BuiltinPrototypes<'a> {
   pub bigint: Prototype<'a>,
   pub boolean: Prototype<'a>,
+  pub function: Prototype<'a>,
   pub null: Prototype<'a>,
   pub number: Prototype<'a>,
   pub object: Prototype<'a>,
@@ -70,6 +72,7 @@ pub fn create_builtin_prototypes<'a>() -> BuiltinPrototypes<'a> {
   BuiltinPrototypes {
     bigint: bigint::create_bigint_prototype(),
     boolean: boolean::create_boolean_prototype(),
+    function: function::create_function_prototype(),
     null: null::create_null_prototype(),
     number: number::create_number_prototype(),
     object: object::create_object_prototype(),
