@@ -46,6 +46,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if let Some(key_literals) = key.get_to_literals() {
       let mut result = vec![];
       let mut rest_added = false;
+      let mut undefined_added = false;
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
@@ -57,7 +58,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 if let Some(rest) = self.rest.borrow().as_ref() {
                   result.push(rest.clone());
                 }
-                result.push(LiteralEntity::new_undefined());
+                if !undefined_added {
+                  undefined_added = true;
+                  result.push(LiteralEntity::new_undefined());
+                }
               }
             } else if key == "length" {
               result.push(self.get_length().map_or_else(
@@ -74,8 +78,11 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                   )
                 },
               ));
-            } else {
-              todo!("builtins {:?}", key);
+            } else if let Some(property) = analyzer.builtins.prototypes.array.get(key) {
+              result.push(property.clone());
+            } else if !undefined_added {
+              undefined_added = true;
+              result.push(LiteralEntity::new_undefined());
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
@@ -153,7 +160,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 has_effect = true;
               }
             } else {
-              todo!("builtins");
+              self.consume_as_unknown(analyzer);
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
