@@ -5,16 +5,18 @@ use super::{
   unknown::{UnknownEntity, UnknownEntityKind},
 };
 use crate::analyzer::Analyzer;
+use std::fmt::Debug;
 
-pub type BuiltinFnImplementation<'a> =
-  fn(&mut Analyzer<'a>, &Entity<'a>, &Entity<'a>) -> (bool, Entity<'a>);
-
-#[derive(Debug, Clone)]
-pub struct BuiltinFnEntity<'a> {
-  implementation: BuiltinFnImplementation<'a>,
+pub trait BuiltinFnEntity<'a>: Debug {
+  fn call_impl(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    this: &Entity<'a>,
+    args: &Entity<'a>,
+  ) -> (bool, Entity<'a>);
 }
 
-impl<'a> EntityTrait<'a> for BuiltinFnEntity<'a> {
+impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
 
   fn consume_as_unknown(&self, _analyzer: &mut Analyzer<'a>) {}
@@ -52,11 +54,7 @@ impl<'a> EntityTrait<'a> for BuiltinFnEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    let (has_effect, ret_val) = (self.implementation)(analyzer, this, args);
-    if has_effect {
-      self.consume_self(analyzer);
-    }
-    (has_effect, ret_val)
+    self.call_impl(analyzer, this, args)
   }
 
   fn r#await(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
@@ -99,8 +97,76 @@ impl<'a> EntityTrait<'a> for BuiltinFnEntity<'a> {
   }
 }
 
-impl<'a> BuiltinFnEntity<'a> {
+pub type BuiltinFnImplementation<'a> =
+  fn(&mut Analyzer<'a>, &Entity<'a>, &Entity<'a>) -> (bool, Entity<'a>);
+
+#[derive(Debug, Clone, Copy)]
+pub struct ImplementedBuiltinFnEntity<'a> {
+  implementation: BuiltinFnImplementation<'a>,
+}
+
+impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
+  fn call_impl(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    this: &Entity<'a>,
+    args: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
+    (self.implementation)(analyzer, this, args)
+  }
+}
+
+impl<'a> ImplementedBuiltinFnEntity<'a> {
   pub fn new(implementation: BuiltinFnImplementation<'a>) -> Entity<'a> {
     Entity::new(Self { implementation })
   }
+}
+
+#[derive(Debug, Clone)]
+pub struct PureBuiltinFnEntity<'a> {
+  return_value: Entity<'a>,
+}
+
+impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
+  fn call_impl(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    this: &Entity<'a>,
+    args: &Entity<'a>,
+  ) -> (bool, Entity<'a>) {
+    this.consume_as_unknown(analyzer);
+    args.consume_as_unknown(analyzer);
+    (false, self.return_value.clone())
+  }
+}
+
+impl<'a> PureBuiltinFnEntity<'a> {
+  pub fn new(return_value: Entity<'a>) -> Entity<'a> {
+    Entity::new(Self { return_value })
+  }
+
+  pub fn returns_unknown_entity(kind: UnknownEntityKind) -> Entity<'a> {
+    Entity::new(Self { return_value: UnknownEntity::new(kind) })
+  }
+
+  pub fn returns_unknown() -> Entity<'a> {
+    Self::returns_unknown_entity(UnknownEntityKind::Unknown)
+  }
+
+  pub fn returns_string() -> Entity<'a> {
+    Self::returns_unknown_entity(UnknownEntityKind::String)
+  }
+
+  pub fn returns_number() -> Entity<'a> {
+    Self::returns_unknown_entity(UnknownEntityKind::Number)
+  }
+
+  pub fn returns_boolean() -> Entity<'a> {
+    Self::returns_unknown_entity(UnknownEntityKind::Boolean)
+  }
+
+  pub fn returns_object() -> Entity<'a> {
+    Self::returns_unknown_entity(UnknownEntityKind::Object)
+  }
+
 }
