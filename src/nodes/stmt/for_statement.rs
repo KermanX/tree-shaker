@@ -36,6 +36,7 @@ impl<'a> Analyzer<'a> {
     if let Some(test) = &node.test {
       let test = self.exec_expression(test);
       if test.test_truthy() == Some(false) {
+        self.pop_variable_scope();
         return;
       }
       test.consume_self(self);
