@@ -13,7 +13,14 @@ impl<'a> Analyzer<'a> {
 
     if let Some(id) = &node.id {
       let symbol = id.symbol_id.get().unwrap();
-      self.declare_symbol(symbol, dep, entity.clone(), exporting, VariableDeclarationKind::Let);
+      self.declare_symbol(
+        symbol,
+        dep,
+        entity.clone(),
+        exporting,
+        VariableDeclarationKind::Let,
+        true,
+      );
     }
 
     entity

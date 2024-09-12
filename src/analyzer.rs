@@ -93,6 +93,7 @@ impl<'a> Analyzer<'a> {
     entity: Entity<'a>,
     exporting: bool,
     kind: VariableDeclarationKind,
+    allow_redeclare_var: bool,
   ) {
     if exporting {
       self.exports.push(symbol);
@@ -103,7 +104,7 @@ impl<'a> Analyzer<'a> {
     } else {
       (self.scope_context.variable_scopes.len() - 1, self.variable_scope_mut())
     };
-    scope.declare(kind, symbol, entity);
+    scope.declare(kind, symbol, entity, allow_redeclare_var);
     self.symbol_decls.insert(symbol, (kind, scope_index, dep));
   }
 

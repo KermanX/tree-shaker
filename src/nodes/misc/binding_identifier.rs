@@ -15,7 +15,14 @@ impl<'a> Analyzer<'a> {
   ) {
     let symbol = node.symbol_id.get().unwrap();
     let dep = self.new_entity_dep(EntityDepNode::BindingIdentifier(node));
-    self.declare_symbol(symbol, dep.clone(), ForwardedEntity::new(init, dep), exporting, kind);
+    self.declare_symbol(
+      symbol,
+      dep.clone(),
+      ForwardedEntity::new(init, dep),
+      exporting,
+      kind,
+      false,
+    );
   }
 }
 
