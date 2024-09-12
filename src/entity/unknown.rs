@@ -3,7 +3,7 @@ use super::{
   literal::LiteralEntity,
   typeof_result::TypeofResult,
 };
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, builtins::Prototype};
 use std::cell::RefCell;
 
 #[derive(Debug, Clone, Copy)]
@@ -15,7 +15,7 @@ pub enum UnknownEntityKind {
   Boolean,
   Symbol,
   Function,
-  Regex,
+  Regexp,
   Object,
   Unknown,
 }
@@ -40,31 +40,47 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   }
 
   fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
-    // TODO: Builtin properties
-    self.consume_as_unknown(analyzer);
-    key.consume_self(analyzer);
-    (true, UnknownEntity::new_unknown())
+    if matches!(self.kind, UnknownEntityKind::Unknown) {
+      self.consume_as_unknown(analyzer);
+      key.get_to_property_key().consume_self(analyzer);
+      (true, UnknownEntity::new_unknown())
+    } else {
+      let prototype = self.get_prototype(analyzer);
+      prototype.get_property(key)
+    }
   }
 
   fn set_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
-    // TODO: Builtin properties
-    self.consume_as_unknown(analyzer);
-    key.consume_self(analyzer);
-    value.consume_as_unknown(analyzer);
-    true
+    if self.maybe_object() {
+      self.consume_as_unknown(analyzer);
+      key.get_to_property_key().consume_self(analyzer);
+      value.consume_as_unknown(analyzer);
+      true
+    } else {
+      false
+    }
   }
 
   fn enumerate_properties(
     &self,
     analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
-    self.consume_as_unknown(analyzer);
-    UnknownEntity::new_unknown_to_entries_result(self.deps.borrow().clone())
+    if self.maybe_object() {
+      self.consume_as_unknown(analyzer);
+      UnknownEntity::new_unknown_to_entries_result(self.deps.borrow().clone())
+    } else {
+      (false, vec![])
+    }
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> bool {
-    self.consume_as_unknown(analyzer);
-    true
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+    if self.maybe_object() {
+      key.get_to_property_key().consume_self(analyzer);
+      self.consume_as_unknown(analyzer);
+      true
+    } else {
+      false
+    }
   }
 
   fn call(
@@ -73,6 +89,9 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
+    if !self.maybe_object() {
+      // TODO: throw warning
+    }
     self.consume_as_unknown(analyzer);
     this.consume_as_unknown(analyzer);
     args.consume_as_unknown(analyzer);
@@ -124,7 +143,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
       UnknownEntityKind::Boolean => TypeofResult::Boolean,
       UnknownEntityKind::Symbol => TypeofResult::Symbol,
       UnknownEntityKind::Function => TypeofResult::Function,
-      UnknownEntityKind::Regex => TypeofResult::Object,
+      UnknownEntityKind::Regexp => TypeofResult::Object,
       UnknownEntityKind::Object => TypeofResult::Object,
       UnknownEntityKind::Unknown => TypeofResult::_Unknown,
     }
@@ -132,9 +151,9 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
   fn test_truthy(&self) -> Option<bool> {
     match &self.kind {
-      UnknownEntityKind::Symbol
-      | UnknownEntityKind::Function
-      | UnknownEntityKind::Object => Some(true),
+      UnknownEntityKind::Symbol | UnknownEntityKind::Function | UnknownEntityKind::Object => {
+        Some(true)
+      }
       _ => None,
     }
   }
@@ -197,8 +216,22 @@ impl<'a> UnknownEntity<'a> {
       self.kind,
       UnknownEntityKind::Object
         | UnknownEntityKind::Function
-        | UnknownEntityKind::Regex
+        | UnknownEntityKind::Regexp
         | UnknownEntityKind::Unknown
     )
+  }
+
+  fn get_prototype<'b>(&self, analyzer: &'b mut Analyzer<'a>) -> &'b Prototype<'a> {
+    match &self.kind {
+      UnknownEntityKind::String => &analyzer.builtins.prototypes.string,
+      UnknownEntityKind::Number => &analyzer.builtins.prototypes.number,
+      UnknownEntityKind::BigInt => &analyzer.builtins.prototypes.bigint,
+      UnknownEntityKind::Boolean => &analyzer.builtins.prototypes.boolean,
+      UnknownEntityKind::Symbol => &analyzer.builtins.prototypes.symbol,
+      UnknownEntityKind::Function => &analyzer.builtins.prototypes.function,
+      UnknownEntityKind::Regexp => &analyzer.builtins.prototypes.regexp,
+      UnknownEntityKind::Object => &analyzer.builtins.prototypes.object,
+      UnknownEntityKind::Unknown => unreachable!(),
+    }
   }
 }

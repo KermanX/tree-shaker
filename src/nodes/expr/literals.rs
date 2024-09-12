@@ -32,6 +32,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_regexp_literal(&mut self, _node: &'a RegExpLiteral<'a>) -> Entity<'a> {
-    UnknownEntity::new(UnknownEntityKind::Regex)
+    UnknownEntity::new(UnknownEntityKind::Regexp)
   }
 }
