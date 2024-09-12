@@ -1,12 +1,11 @@
-use rustc_hash::FxHashMap;
-use std::cell::{Cell, RefCell};
-
 use crate::entity::{
-  builtin_fn::BuiltinFnEntity,
+  builtin_fn::PureBuiltinFnEntity,
   entity::Entity,
   object::{ObjectEntity, ObjectProperty, ObjectPropertyValue},
   unknown::{UnknownEntity, UnknownEntityKind},
 };
+use rustc_hash::FxHashMap;
+use std::cell::{Cell, RefCell};
 
 pub fn create_import_meta<'a>() -> Entity<'a> {
   let mut string_keyed = FxHashMap::default();
@@ -17,9 +16,7 @@ pub fn create_import_meta<'a>() -> Entity<'a> {
     ObjectProperty {
       definite: true,
       values: vec![ObjectPropertyValue::Property(
-        Some(BuiltinFnEntity::new(|_, _, _| {
-          (false, UnknownEntity::new(UnknownEntityKind::String))
-        })),
+        Some(PureBuiltinFnEntity::returns_unknown_entity(UnknownEntityKind::String)),
         None,
       )],
     },
