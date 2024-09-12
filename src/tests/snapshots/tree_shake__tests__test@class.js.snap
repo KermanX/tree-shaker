@@ -8,7 +8,9 @@ class A extends 2 {
 		super(a);
 		b();
 	}
-	fn(__unused_8EEF) {}
+	fn(__unused_8EEF) {
+		1();
+	}
 	[2] = 2;
 	get [6]() {
 		return 6;

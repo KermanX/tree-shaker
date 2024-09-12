@@ -1,9 +1,9 @@
 use super::{
   entity::{Entity, EntityTrait},
   typeof_result::TypeofResult,
-  unknown::UnknownEntity,
+  unknown::{UnknownEntity, UnknownEntityKind},
 };
-use crate::{analyzer::Analyzer, utils::F64WithEq};
+use crate::{analyzer::Analyzer, builtins::Prototype, utils::F64WithEq};
 use oxc::{
   ast::{
     ast::{BigintBase, Expression, NumberBase, UnaryOperator},
@@ -32,8 +32,14 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
   fn consume_as_unknown(&self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn get_property(&self, analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> (bool, Entity<'a>) {
-    todo!("built-ins")
+  fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+    if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
+      // TODO: throw warning
+      (true, UnknownEntity::new_unknown())
+    } else {
+      let prototype = self.get_prototype(analyzer);
+      prototype.get_property(key)
+    }
   }
 
   fn set_property(
@@ -44,9 +50,11 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   ) -> bool {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       // TODO: throw warning
+      true
+    } else {
+      // No effect
+      false
     }
-    // No effect
-    false
   }
 
   fn enumerate_properties(
@@ -58,8 +66,13 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn delete_property(&self, _analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> bool {
-    // No effect
-    false
+    if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
+      // TODO: throw warning
+      true
+    } else {
+      // No effect
+      false
+    }
   }
 
   fn call(
@@ -69,16 +82,28 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     _args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
     // TODO: throw warning
-    (false, UnknownEntity::new_unknown())
+    (true, UnknownEntity::new_unknown())
   }
 
   fn r#await(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     (false, rc.clone())
   }
 
-  fn iterate(&self, _rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
-    // TODO: throw warning
-    (true, Some(UnknownEntity::new_unknown()))
+  fn iterate(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+    match self {
+      LiteralEntity::String(value) => (
+        false,
+        if value.is_empty() {
+          None
+        } else {
+          Some(UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()]))
+        },
+      ),
+      _ => {
+        // TODO: throw warning
+        (true, Some(UnknownEntity::new_unknown()))
+      }
+    }
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -300,6 +325,19 @@ impl<'a> LiteralEntity<'a> {
       }
       LiteralEntity::NaN | LiteralEntity::Undefined => Some(None),
       LiteralEntity::Infinity(_) => None,
+    }
+  }
+
+  fn get_prototype<'b>(&self, analyzer: &'b mut Analyzer<'a>) -> &'b Prototype<'a> {
+    match self {
+      LiteralEntity::String(_) => &analyzer.builtins.prototypes.string,
+      LiteralEntity::Number(_, _) => &analyzer.builtins.prototypes.number,
+      LiteralEntity::BigInt(_) => &analyzer.builtins.prototypes.bigint,
+      LiteralEntity::Boolean(_) => &analyzer.builtins.prototypes.boolean,
+      LiteralEntity::Symbol(_, _) => &analyzer.builtins.prototypes.symbol,
+      LiteralEntity::Infinity(_) => &analyzer.builtins.prototypes.number,
+      LiteralEntity::NaN => &analyzer.builtins.prototypes.number,
+      LiteralEntity::Null | LiteralEntity::Undefined => unreachable!(),
     }
   }
 }
