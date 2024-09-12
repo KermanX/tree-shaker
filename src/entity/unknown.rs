@@ -14,7 +14,6 @@ pub enum UnknownEntityKind {
   BigInt,
   Boolean,
   Symbol,
-  Array,
   Function,
   Regex,
   Object,
@@ -124,7 +123,6 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
       UnknownEntityKind::BigInt => TypeofResult::BigInt,
       UnknownEntityKind::Boolean => TypeofResult::Boolean,
       UnknownEntityKind::Symbol => TypeofResult::Symbol,
-      UnknownEntityKind::Array => TypeofResult::Object,
       UnknownEntityKind::Function => TypeofResult::Function,
       UnknownEntityKind::Regex => TypeofResult::Object,
       UnknownEntityKind::Object => TypeofResult::Object,
@@ -135,7 +133,6 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   fn test_truthy(&self) -> Option<bool> {
     match &self.kind {
       UnknownEntityKind::Symbol
-      | UnknownEntityKind::Array
       | UnknownEntityKind::Function
       | UnknownEntityKind::Object => Some(true),
       _ => None,
@@ -179,7 +176,7 @@ impl<'a> UnknownEntity<'a> {
     for _ in 0..length {
       result.push(UnknownEntity::new_unknown_with_deps(deps.clone()));
     }
-    (result, UnknownEntity::new_with_deps(UnknownEntityKind::Array, deps))
+    (result, UnknownEntity::new_unknown_with_deps(deps))
   }
 
   pub fn new_unknown_to_entries_result(
@@ -200,7 +197,6 @@ impl<'a> UnknownEntity<'a> {
       self.kind,
       UnknownEntityKind::Object
         | UnknownEntityKind::Function
-        | UnknownEntityKind::Array
         | UnknownEntityKind::Regex
         | UnknownEntityKind::Unknown
     )
