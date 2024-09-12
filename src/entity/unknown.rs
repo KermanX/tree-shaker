@@ -6,7 +6,7 @@ use super::{
 use crate::{analyzer::Analyzer, builtins::Prototype};
 use std::cell::RefCell;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnknownEntityKind {
   // TODO: NumericString, NoneEmptyString, ...
   String,
@@ -16,6 +16,7 @@ pub enum UnknownEntityKind {
   Symbol,
   Function,
   Regexp,
+  Array,
   Object,
   Unknown,
 }
@@ -119,7 +120,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
   }
 
-  fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+  fn iterate(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+    if self.kind == UnknownEntityKind::Array {
+      return (false, Some(UnknownEntity::new_unknown_with_deps(vec![rc.clone()])))
+    }
     if !self.maybe_object() {
       // TODO: throw warning
     }
@@ -156,6 +160,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
       UnknownEntityKind::Symbol => TypeofResult::Symbol,
       UnknownEntityKind::Function => TypeofResult::Function,
       UnknownEntityKind::Regexp => TypeofResult::Object,
+      UnknownEntityKind::Array => TypeofResult::Object,
       UnknownEntityKind::Object => TypeofResult::Object,
       UnknownEntityKind::Unknown => TypeofResult::_Unknown,
     }
@@ -163,9 +168,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
   fn test_truthy(&self) -> Option<bool> {
     match &self.kind {
-      UnknownEntityKind::Symbol | UnknownEntityKind::Function | UnknownEntityKind::Object => {
-        Some(true)
-      }
+      UnknownEntityKind::Symbol
+      | UnknownEntityKind::Function
+      | UnknownEntityKind::Array
+      | UnknownEntityKind::Object => Some(true),
       _ => None,
     }
   }
@@ -227,6 +233,7 @@ impl<'a> UnknownEntity<'a> {
     matches!(
       self.kind,
       UnknownEntityKind::Object
+        | UnknownEntityKind::Array
         | UnknownEntityKind::Function
         | UnknownEntityKind::Regexp
         | UnknownEntityKind::Unknown
@@ -242,6 +249,7 @@ impl<'a> UnknownEntity<'a> {
       UnknownEntityKind::Symbol => &analyzer.builtins.prototypes.symbol,
       UnknownEntityKind::Function => &analyzer.builtins.prototypes.function,
       UnknownEntityKind::Regexp => &analyzer.builtins.prototypes.regexp,
+      UnknownEntityKind::Array => &analyzer.builtins.prototypes.array,
       UnknownEntityKind::Object => &analyzer.builtins.prototypes.object,
       UnknownEntityKind::Unknown => unreachable!(),
     }

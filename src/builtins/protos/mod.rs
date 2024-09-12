@@ -1,3 +1,4 @@
+mod array;
 mod bigint;
 mod boolean;
 mod function;
@@ -57,6 +58,7 @@ impl<'a> Prototype<'a> {
 }
 
 pub struct BuiltinPrototypes<'a> {
+  pub array: Prototype<'a>,
   pub bigint: Prototype<'a>,
   pub boolean: Prototype<'a>,
   pub function: Prototype<'a>,
@@ -70,6 +72,7 @@ pub struct BuiltinPrototypes<'a> {
 
 pub fn create_builtin_prototypes<'a>() -> BuiltinPrototypes<'a> {
   BuiltinPrototypes {
+    array: array::create_array_prototype(),
     bigint: bigint::create_bigint_prototype(),
     boolean: boolean::create_boolean_prototype(),
     function: function::create_function_prototype(),

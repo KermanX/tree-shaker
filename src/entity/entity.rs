@@ -1,4 +1,4 @@
-use super::{literal::LiteralEntity, typeof_result::TypeofResult};
+use super::{array::ArrayEntity, literal::LiteralEntity, typeof_result::TypeofResult};
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};
@@ -67,6 +67,10 @@ pub trait EntityTrait<'a>: Debug {
   }
   fn test_is_completely_unknown(&self) -> bool {
     false
+  }
+
+  fn try_into_array(&self) -> Option<Rc<ArrayEntity<'a>>> {
+    None
   }
 }
 

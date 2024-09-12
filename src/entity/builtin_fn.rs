@@ -172,6 +172,18 @@ impl<'a> PureBuiltinFnEntity<'a> {
     Self::returns_unknown_entity(UnknownEntityKind::Boolean)
   }
 
+  pub fn returns_array() -> Entity<'a> {
+    Self::returns_unknown_entity(UnknownEntityKind::Object)
+  }
+
+  pub fn returns_null() -> Entity<'a> {
+    Self::new(LiteralEntity::new_null())
+  }
+
+  pub fn returns_undefined() -> Entity<'a> {
+    Self::new(LiteralEntity::new_undefined())
+  }
+
   pub fn returns_object() -> Entity<'a> {
     Self::returns_unknown_entity(UnknownEntityKind::Object)
   }
