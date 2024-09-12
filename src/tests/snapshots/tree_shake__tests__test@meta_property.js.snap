@@ -1,12 +1,13 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/meta_property.js
 ---
 const __unused_D89E = import.meta.foo;
+const __unused_A2D6 = await import.meta.url;
 const __unused_2421 = await import.meta.foo;
 export const e1 = import.meta;
 export const e2 = import.meta.url;
 export const e3 = import.meta.foo;
-export const e4 = import.meta.url;
+export const e4 = await import.meta.url;
 export const e5 = await import.meta.foo;
