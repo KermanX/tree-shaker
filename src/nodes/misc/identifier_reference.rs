@@ -21,6 +21,7 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     if let Some(global) = self.builtins.globals.get(node.name.as_str()).cloned() {
       self.set_data(AST_TYPE_READ, node, Data { resolvable: true });
+      self.may_throw();
       return global;
     }
 

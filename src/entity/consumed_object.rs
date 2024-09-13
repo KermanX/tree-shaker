@@ -2,19 +2,22 @@ use super::{entity::Entity, unknown::UnknownEntity};
 use crate::analyzer::Analyzer;
 
 pub fn get_property<'a>(analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  analyzer.may_throw();
   key.get_to_property_key().consume_self(analyzer);
   (true, UnknownEntity::new_unknown())
 }
 
 pub fn set_property<'a>(analyzer: &mut Analyzer<'a>, key: &Entity<'a>, value: Entity<'a>) -> bool {
+  analyzer.may_throw();
   key.get_to_property_key().consume_self(analyzer);
   value.consume_as_unknown(analyzer);
   true
 }
 
 pub fn enumerate_properties<'a>(
-  _analyzer: &mut Analyzer<'a>,
+  analyzer: &mut Analyzer<'a>,
 ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
+  analyzer.may_throw();
   UnknownEntity::new_unknown_to_entries_result(vec![])
 }
 
@@ -28,16 +31,19 @@ pub fn call<'a>(
   this: &Entity<'a>,
   args: &Entity<'a>,
 ) -> (bool, Entity<'a>) {
+  analyzer.may_throw();
   this.consume_as_unknown(analyzer);
   args.consume_as_unknown(analyzer);
   (true, UnknownEntity::new_unknown())
 }
 
-pub fn r#await<'a>(_analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+pub fn r#await<'a>(analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  analyzer.may_throw();
   (true, UnknownEntity::new_unknown())
 }
 
-pub fn iterate<'a>(_analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+pub fn iterate<'a>(analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+  analyzer.may_throw();
   (true, Some(UnknownEntity::new_unknown()))
 }
 
