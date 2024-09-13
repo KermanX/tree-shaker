@@ -1,5 +1,5 @@
+use crate::ast::DeclarationKind;
 use crate::entity::entity::Entity;
-use oxc::ast::ast::VariableDeclarationKind;
 use oxc::semantic::ScopeId;
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashMap;
@@ -34,13 +34,7 @@ impl<'a> VariableScope<'a> {
     self.variables.insert(symbol, entity)
   }
 
-  pub fn declare(
-    &mut self,
-    kind: VariableDeclarationKind,
-    symbol: SymbolId,
-    entity: Entity<'a>,
-    allow_redeclare_var: bool,
-  ) {
+  pub fn declare(&mut self, kind: DeclarationKind, symbol: SymbolId, entity: Entity<'a>) {
     if kind.is_var() {
       let old = self.get(&symbol);
       let new = match old {
@@ -50,8 +44,8 @@ impl<'a> VariableScope<'a> {
       self.set(symbol, new);
     } else {
       let old = self.set(symbol, (false, entity));
-      if old.is_some() && !allow_redeclare_var {
-        panic!("Variable already declared");
+      if old.is_some() && !kind.allow_override_var() {
+        // TODO: error "Variable already declared"
       }
     }
   }

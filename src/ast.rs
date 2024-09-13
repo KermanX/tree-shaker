@@ -190,3 +190,29 @@ pub enum AstType2 {
   SimpleAssignmentTargetWrite,
   AssignmentTargetPropertyIdentifier,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DeclarationKind {
+  Var,
+  Let,
+  Const,
+  Function,
+  Class,
+  Import,
+  Caught,
+  Parameter,
+}
+
+impl DeclarationKind {
+  pub fn is_var(self) -> bool {
+    matches!(self, DeclarationKind::Var)
+  }
+
+  pub fn is_const(self) -> bool {
+    matches!(self, DeclarationKind::Const)
+  }
+
+  pub fn allow_override_var(self) -> bool {
+    matches!(self, DeclarationKind::Function | DeclarationKind::Class)
+  }
+}

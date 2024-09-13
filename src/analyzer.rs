@@ -1,5 +1,5 @@
 use crate::{
-  ast::AstType2,
+  ast::{AstType2, DeclarationKind},
   builtins::Builtins,
   data::{get_node_ptr, ExtraData, ReferredNodes},
   entity::{
@@ -15,7 +15,7 @@ use crate::{
 };
 use oxc::{
   allocator::Allocator,
-  ast::ast::{Program, VariableDeclarationKind},
+  ast::ast::Program,
   semantic::{Semantic, SymbolId},
   span::GetSpan,
 };
@@ -28,7 +28,7 @@ pub struct Analyzer<'a> {
   pub data: ExtraData<'a>,
   pub referred_nodes: ReferredNodes<'a>,
   pub exports: Vec<SymbolId>,
-  pub symbol_decls: FxHashMap<SymbolId, (VariableDeclarationKind, usize, EntityDep<'a>)>,
+  pub symbol_decls: FxHashMap<SymbolId, (DeclarationKind, usize, EntityDep<'a>)>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
   pub builtins: Builtins<'a>,
@@ -92,8 +92,7 @@ impl<'a> Analyzer<'a> {
     dep: EntityDep<'a>,
     entity: Entity<'a>,
     exporting: bool,
-    kind: VariableDeclarationKind,
-    allow_redeclare_var: bool,
+    kind: DeclarationKind,
   ) {
     if exporting {
       self.exports.push(symbol);
@@ -104,7 +103,7 @@ impl<'a> Analyzer<'a> {
     } else {
       (self.scope_context.variable_scopes.len() - 1, self.variable_scope_mut())
     };
-    scope.declare(kind, symbol, entity, allow_redeclare_var);
+    scope.declare(kind, symbol, entity);
     self.symbol_decls.insert(symbol, (kind, scope_index, dep));
   }
 

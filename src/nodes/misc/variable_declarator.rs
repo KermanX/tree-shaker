@@ -1,10 +1,8 @@
+use crate::ast::DeclarationKind;
 use crate::entity::entity::Entity;
 use crate::entity::literal::LiteralEntity;
 use crate::{transformer::Transformer, Analyzer};
-use oxc::{
-  ast::ast::{VariableDeclarationKind, VariableDeclarator},
-  span::GetSpan,
-};
+use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_variable_declarator(
@@ -12,7 +10,7 @@ impl<'a> Analyzer<'a> {
     node: &'a VariableDeclarator,
     init: Option<Entity<'a>>,
     exporting: bool,
-    kind: VariableDeclarationKind,
+    kind: DeclarationKind,
   ) {
     let init = init.unwrap_or_else(|| match &node.init {
       Some(init) => self.exec_expression(init),

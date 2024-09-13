@@ -1,6 +1,8 @@
-use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::DeclarationKind, entity::entity::Entity, transformer::Transformer,
+};
 use oxc::{
-  ast::ast::{CatchClause, CatchParameter, VariableDeclarationKind},
+  ast::ast::{CatchClause, CatchParameter},
   span::GetSpan,
 };
 
@@ -10,12 +12,7 @@ impl<'a> Analyzer<'a> {
     self.push_variable_scope();
 
     if let Some(param) = &node.param {
-      self.exec_binding_pattern(
-        &param.pattern,
-        (false, value),
-        false,
-        VariableDeclarationKind::Let,
-      );
+      self.exec_binding_pattern(&param.pattern, (false, value), false, DeclarationKind::Caught);
     }
 
     self.exec_block_statement(&node.body);

@@ -1,5 +1,7 @@
-use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
-use oxc::ast::ast::VariableDeclaration;
+use crate::{
+  analyzer::Analyzer, ast::DeclarationKind, entity::entity::Entity, transformer::Transformer,
+};
+use oxc::ast::ast::{VariableDeclaration, VariableDeclarationKind};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_variable_declaration(
@@ -9,7 +11,16 @@ impl<'a> Analyzer<'a> {
     init: Option<Entity<'a>>,
   ) {
     for declarator in &node.declarations {
-      self.exec_variable_declarator(declarator, init.clone(), exporting, node.kind);
+      self.exec_variable_declarator(
+        declarator,
+        init.clone(),
+        exporting,
+        match &node.kind {
+          VariableDeclarationKind::Var => DeclarationKind::Var,
+          VariableDeclarationKind::Let => DeclarationKind::Let,
+          VariableDeclarationKind::Const => DeclarationKind::Const,
+        },
+      );
     }
   }
 }

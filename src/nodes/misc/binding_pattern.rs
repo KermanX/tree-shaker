@@ -1,8 +1,13 @@
-use crate::{ast::AstType2, entity::entity::Entity, transformer::Transformer, Analyzer};
+use crate::{
+  ast::{AstType2, DeclarationKind},
+  entity::entity::Entity,
+  transformer::Transformer,
+  Analyzer,
+};
 use oxc::{
   ast::ast::{
     ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,
-    ObjectPattern, TSTypeAnnotation, VariableDeclarationKind,
+    ObjectPattern, TSTypeAnnotation,
   },
   span::GetSpan,
 };
@@ -29,7 +34,7 @@ impl<'a> Analyzer<'a> {
     node: &'a BindingPattern<'a>,
     (effect, init): (bool, Entity<'a>),
     exporting: bool,
-    kind: VariableDeclarationKind,
+    kind: DeclarationKind,
   ) {
     if effect {
       let data = self.load_data::<Data>(AstType2::BindingPattern, node);

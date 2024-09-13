@@ -1,22 +1,18 @@
+use crate::ast::DeclarationKind;
 use crate::entity::entity::Entity;
 use crate::{transformer::Transformer, Analyzer};
-use oxc::ast::ast::{FormalParameter, FormalParameters, VariableDeclarationKind};
+use oxc::ast::ast::{FormalParameter, FormalParameters};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_formal_parameters(&mut self, node: &'a FormalParameters<'a>, args: Entity<'a>) {
     let resolved = args.get_to_array(node.items.len());
 
     for (param, arg) in node.items.iter().zip(resolved.0) {
-      self.exec_binding_pattern(&param.pattern, (false, arg), false, VariableDeclarationKind::Let);
+      self.exec_binding_pattern(&param.pattern, (false, arg), false, DeclarationKind::Parameter);
     }
 
     if let Some(rest) = &node.rest {
-      self.exec_binding_rest_element(
-        rest,
-        (false, resolved.1),
-        false,
-        VariableDeclarationKind::Let,
-      );
+      self.exec_binding_rest_element(rest, (false, resolved.1), false, DeclarationKind::Parameter);
     }
   }
 }

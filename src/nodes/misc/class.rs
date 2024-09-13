@@ -1,12 +1,10 @@
 use crate::{
   analyzer::Analyzer,
+  ast::DeclarationKind,
   entity::{entity::Entity, unknown::UnknownEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::{
-  Class, ClassBody, TSTypeParameterDeclaration, TSTypeParameterInstantiation,
-  VariableDeclarationKind,
-};
+use oxc::ast::ast::{Class, ClassBody, TSTypeParameterDeclaration, TSTypeParameterInstantiation};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_class(&mut self, node: &'a Class<'a>, exporting: bool) -> Entity<'a> {
@@ -21,7 +19,7 @@ impl<'a> Analyzer<'a> {
         id,
         UnknownEntity::new_unknown(),
         exporting,
-        VariableDeclarationKind::Let,
+        DeclarationKind::Class,
       );
     }
 

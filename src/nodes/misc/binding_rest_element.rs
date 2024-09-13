@@ -1,6 +1,7 @@
+use crate::ast::DeclarationKind;
 use crate::entity::entity::Entity;
 use crate::{transformer::Transformer, Analyzer};
-use oxc::ast::ast::{BindingRestElement, VariableDeclarationKind};
+use oxc::ast::ast::BindingRestElement;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_binding_rest_element(
@@ -8,7 +9,7 @@ impl<'a> Analyzer<'a> {
     node: &'a BindingRestElement<'a>,
     effect_and_init: (bool, Entity<'a>),
     exporting: bool,
-    kind: VariableDeclarationKind,
+    kind: DeclarationKind,
   ) {
     self.exec_binding_pattern(&node.argument, effect_and_init, exporting, kind);
   }
