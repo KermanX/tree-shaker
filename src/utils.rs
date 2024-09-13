@@ -8,17 +8,7 @@ use oxc::{
   },
   span::SPAN,
 };
-use regex::Regex;
-use std::{
-  hash::{Hash, Hasher},
-  sync::LazyLock,
-};
-
-static NUMERIC_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[0-9]+$").unwrap());
-
-pub fn is_numeric_string(s: &str) -> bool {
-  NUMERIC_REGEX.is_match(s)
-}
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Copy, Clone)]
 pub struct F64WithEq(pub f64);

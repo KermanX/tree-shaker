@@ -1,10 +1,8 @@
 use crate::ast::AstType2;
-use crate::build_effect;
 use crate::entity::collector::LiteralCollector;
 use crate::entity::entity::Entity;
 use crate::entity::literal::LiteralEntity;
 use crate::{transformer::Transformer, Analyzer};
-use oxc::span::SPAN;
 use oxc::{ast::ast::PropertyKey, span::GetSpan};
 
 const AST_TYPE: AstType2 = AstType2::PropertyKey;
@@ -32,6 +30,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   /// Returns (computed, node)
+  /// Notice that even if `need_val` is `false`, and the expression has side-effect, the transformed expression still evaluates to the original value.
   pub fn transform_property_key(
     &self,
     node: &'a PropertyKey<'a>,
@@ -44,29 +43,30 @@ impl<'a> Transformer<'a> {
       }
       _ => {
         let data = self.get_data::<Data>(AST_TYPE, node);
-        if let Some(LiteralEntity::String(s)) = data.collector.collected() {
-          need_val.then(|| {
-            let span = node.span();
-            let expr = self.transform_expression(node.to_expression(), false);
-            if let Some(expr) = expr {
-              // TODO: This is not the minimal representation, to fix this we need two expression nodes.
-              (
-                true,
-                self.ast_builder.property_key_expression(build_effect!(
-                  self.ast_builder,
-                  span,
-                  Some(expr);
-                  self.ast_builder.expression_string_literal(SPAN, s)
-                )),
-              )
+        let span = node.span();
+        let node = node.to_expression();
+        if let Some((r#static, s)) = data.collector.collected_property_key(&self.config) {
+          let effect = self.transform_expression(node, false);
+          if effect.is_some() || need_val {
+            let expr = self.transform_expression(node, true).unwrap();
+            Some((true, self.ast_builder.property_key_expression(expr)))
+          } else if need_val {
+            if r#static {
+              Some((false, self.ast_builder.property_key_identifier_name(span, s)))
             } else {
-              // FIXME: Only valid identifier names are allowed
-              (false, self.ast_builder.property_key_identifier_name(span, s))
+              Some((
+                false,
+                self
+                  .ast_builder
+                  .property_key_expression(self.ast_builder.expression_string_literal(span, s)),
+              ))
             }
-          })
+          } else {
+            None
+          }
         } else {
-          let expr = self.transform_expression(node.to_expression(), need_val);
-          expr.map(|e| (true, self.ast_builder.property_key_expression(e)))
+          let expr = self.transform_expression(node, true).unwrap();
+          Some((true, self.ast_builder.property_key_expression(expr)))
         }
       }
     }

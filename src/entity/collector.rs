@@ -1,6 +1,5 @@
+use crate::{analyzer::Analyzer, TreeShakeConfig};
 use std::{cell::RefCell, rc::Rc};
-
-use crate::analyzer::{self, Analyzer};
 
 use super::{collected::CollectedEntity, entity::Entity, literal::LiteralEntity};
 use oxc::{
@@ -58,6 +57,16 @@ impl<'a> LiteralCollector<'a> {
     } else {
       self.literal
     }
+  }
+
+  pub fn collected_property_key(&self, config: &TreeShakeConfig) -> Option<(bool, &'a str)> {
+    let collected = self.collected()?;
+    let str = collected.to_string();
+    if str.len() > config.max_simple_string_length {
+      return None;
+    }
+    let r#static = !config.static_property_key_regex.is_match(str);
+    Some((r#static, str))
   }
 
   pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Option<Expression<'a>> {
