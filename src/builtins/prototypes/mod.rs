@@ -5,6 +5,7 @@ mod function;
 mod null;
 mod number;
 mod object;
+mod promise;
 mod regexp;
 mod string;
 mod symbol;
@@ -63,6 +64,7 @@ pub struct BuiltinPrototypes<'a> {
   pub null: Prototype<'a>,
   pub number: Prototype<'a>,
   pub object: Prototype<'a>,
+  pub promise: Prototype<'a>,
   pub regexp: Prototype<'a>,
   pub string: Prototype<'a>,
   pub symbol: Prototype<'a>,
@@ -77,6 +79,7 @@ pub fn create_builtin_prototypes<'a>() -> BuiltinPrototypes<'a> {
     null: null::create_null_prototype(),
     number: number::create_number_prototype(),
     object: object::create_object_prototype(),
+    promise: promise::create_promise_prototype(),
     regexp: regexp::create_regexp_prototype(),
     string: string::create_string_prototype(),
     symbol: symbol::create_symbol_prototype(),

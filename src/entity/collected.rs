@@ -30,7 +30,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
   fn get_property(
     &self,
-    rc: &Entity<'a>,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     key: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
