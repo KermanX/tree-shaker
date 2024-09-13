@@ -4,11 +4,12 @@ use oxc::{
 };
 use std::fs;
 
-use crate::TreeShakeOptions;
+use crate::{TreeShakeConfig, TreeShakeOptions};
 
 fn tree_shake(input: String) -> String {
   let do_minify = input.contains("@minify");
   let result = crate::tree_shake(TreeShakeOptions {
+    config: TreeShakeConfig::default(),
     allocator: &Allocator::default(),
     source_type: SourceType::default().with_module(true).with_always_strict(true),
     source_text: input,

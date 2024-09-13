@@ -3,6 +3,7 @@ use crate::{
   ast::AstType2,
   data::{get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData},
   entity::dep::EntityDepNode,
+  TreeShakeConfig,
 };
 use oxc::{
   allocator::{Allocator, CloneIn},
@@ -21,6 +22,7 @@ use std::{
 };
 
 pub struct Transformer<'a> {
+  pub config: TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub ast_builder: AstBuilder<'a>,
   pub data: ExtraData<'a>,
@@ -29,8 +31,8 @@ pub struct Transformer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn new(analyzer: Analyzer<'a>) -> Self {
-    let Analyzer { allocator, data, referred_nodes, .. } = analyzer;
-    Transformer { allocator, ast_builder: AstBuilder::new(allocator), data, referred_nodes }
+    let Analyzer { config, allocator, data, referred_nodes, .. } = analyzer;
+    Transformer { config, allocator, ast_builder: AstBuilder::new(allocator), data, referred_nodes }
   }
 
   pub fn transform_program(&self, node: &'a Program<'a>) -> Program<'a> {

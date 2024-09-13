@@ -8,6 +8,7 @@ extern crate napi_derive;
 #[napi]
 pub fn tree_shake(input: String, do_tree_shake: bool, do_minify: bool, eval_mode: bool) -> String {
   let result = tree_shake::tree_shake(tree_shake::TreeShakeOptions {
+    config: tree_shake::TreeShakeConfig::default(),
     allocator: &Allocator::default(),
     source_type: SourceType::default().with_module(true).with_always_strict(true),
     source_text: input,

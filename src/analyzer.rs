@@ -12,6 +12,7 @@ use crate::{
     unknown::UnknownEntity,
   },
   scope::ScopeContext,
+  TreeShakeConfig,
 };
 use oxc::{
   allocator::Allocator,
@@ -23,6 +24,7 @@ use rustc_hash::FxHashMap;
 use std::mem;
 
 pub struct Analyzer<'a> {
+  pub config: TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub sematic: Semantic<'a>,
   pub data: ExtraData<'a>,
@@ -37,8 +39,9 @@ pub struct Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new(allocator: &'a Allocator, sematic: Semantic<'a>) -> Self {
+  pub fn new(config: TreeShakeConfig, allocator: &'a Allocator, sematic: Semantic<'a>) -> Self {
     Analyzer {
+      config,
       allocator,
       sematic,
       data: Default::default(),

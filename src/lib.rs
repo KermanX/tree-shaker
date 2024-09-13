@@ -1,17 +1,20 @@
 mod analyzer;
 mod ast;
 mod builtins;
+mod config;
 mod data;
 mod effect_builder;
 mod entity;
 mod nodes;
 mod scope;
-#[cfg(test)]
-mod tests;
 mod transformer;
 mod utils;
 
+#[cfg(test)]
+mod tests;
+
 use analyzer::Analyzer;
+pub use config::TreeShakeConfig;
 use oxc::{
   allocator::Allocator,
   ast::AstBuilder,
@@ -25,6 +28,7 @@ use transformer::Transformer;
 use utils::{transform_eval_mode_decode, transform_eval_mode_encode};
 
 pub struct TreeShakeOptions<'a> {
+  pub config: TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub source_type: SourceType,
   pub source_text: String,
@@ -41,6 +45,7 @@ pub struct TreeShakeReturn {
 
 pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
   let TreeShakeOptions {
+    config,
     allocator,
     source_type,
     source_text,
@@ -64,7 +69,7 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
 
   if tree_shake {
     // Step 1: Analyze the program
-    let mut analyzer = Analyzer::new(&allocator, sematic);
+    let mut analyzer = Analyzer::new(config, &allocator, sematic);
     analyzer.exec_program(ast);
 
     // Step 2: Remove dead code (transform)
