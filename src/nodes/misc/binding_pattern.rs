@@ -15,6 +15,7 @@ use oxc::{
 #[derive(Debug, Default)]
 struct Data {
   has_effect: bool,
+  need_destruct: bool,
 }
 
 #[derive(Debug, Default)]
@@ -68,8 +69,8 @@ impl<'a> Analyzer<'a> {
     node: &'a BindingPattern<'a>,
     (effect, init): (bool, Entity<'a>),
   ) {
+    let data = self.load_data::<Data>(AstType2::BindingPattern, node);
     if effect {
-      let data = self.load_data::<Data>(AstType2::BindingPattern, node);
       data.has_effect = true;
     }
     match &node.kind {
@@ -77,6 +78,11 @@ impl<'a> Analyzer<'a> {
         self.init_binding_identifier(node, init);
       }
       BindingPatternKind::ObjectPattern(node) => {
+        if init.test_nullish() != Some(false) {
+          self.may_throw();
+          data.need_destruct = true;
+        }
+
         let mut enumerated = vec![];
         for property in &node.properties {
           let key = self.exec_property_key(&property.key);
@@ -158,7 +164,7 @@ impl<'a> Transformer<'a> {
             ));
           }
         }
-        if transformed_properties.is_empty() && rest.is_none() {
+        if transformed_properties.is_empty() && rest.is_none() && !data.need_destruct {
           None
         } else {
           Some(self.ast_builder.binding_pattern(

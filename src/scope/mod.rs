@@ -78,10 +78,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn pop_function_scope(&mut self) -> (bool, Entity<'a>) {
-    let ret_val = self.scope_context.function_scopes.pop().unwrap().ret_val(self);
+    let (may_throw, ret_val) = self.scope_context.function_scopes.pop().unwrap().finalize(self);
     let has_effect = self.pop_variable_scope().has_effect;
     self.pop_cf_scope();
-    (has_effect, ret_val)
+    (may_throw | has_effect, ret_val)
   }
 
   pub fn push_variable_scope(&mut self) -> usize {
@@ -235,6 +235,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn is_relatively_indeterminate(&self, target: usize) -> bool {
-    return self.scope_context.cf_scopes[target..].iter().any(CfScope::is_indeterminate);
+    self.scope_context.cf_scopes[target..].iter().any(CfScope::is_indeterminate)
   }
 }

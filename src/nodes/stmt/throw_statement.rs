@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
     let dep = self.new_entity_dep(EntityDepNode::ThrowStatement(node));
 
     let try_scope = self.try_scope_mut();
-    try_scope.thrown_values.push(ForwardedEntity::new(value, dep));
+    try_scope.throw(ForwardedEntity::new(value, dep));
     let cf_scope_index = try_scope.cf_scope_index;
     self.exit_to(cf_scope_index);
   }

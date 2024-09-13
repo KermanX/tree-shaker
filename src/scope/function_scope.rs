@@ -40,17 +40,23 @@ impl<'a> FunctionScope<'a> {
     }
   }
 
-  pub fn ret_val(self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     assert_eq!(self.try_scopes.len(), 1);
 
     // Does not track values thrown out of function scope
-    self.try_scopes.into_iter().next().unwrap().thrown_val().consume_as_unknown(analyzer);
+    let try_scope = self.try_scopes.into_iter().next().unwrap();
+    let may_throw = try_scope.may_throw;
+    try_scope.thrown_val().consume_as_unknown(analyzer);
+
+    if may_throw {
+      analyzer.may_throw();
+    }
 
     if self.is_generator {
       for value in &self.returned_values {
         value.consume_as_unknown(analyzer);
       }
-      return UnknownEntity::new_unknown();
+      return (true, UnknownEntity::new_unknown());
     }
 
     let value = if self.returned_values.is_empty() {
@@ -58,10 +64,9 @@ impl<'a> FunctionScope<'a> {
     } else {
       UnionEntity::new(self.returned_values)
     };
-    if self.is_async {
-      PromiseEntity::new(self.has_await_effect, value)
-    } else {
-      value
-    }
+    (
+      may_throw,
+      if self.is_async { PromiseEntity::new(self.has_await_effect, value) } else { value },
+    )
   }
 }
