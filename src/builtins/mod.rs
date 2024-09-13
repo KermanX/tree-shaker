@@ -1,14 +1,14 @@
 mod environment;
 mod globals;
 mod import_meta;
-mod protos;
+mod prototypes;
 
 use crate::entity::entity::Entity;
 use environment::create_environment;
 use globals::create_globals;
 use import_meta::create_import_meta;
-pub use protos::Prototype;
-use protos::{create_builtin_prototypes, BuiltinPrototypes};
+pub use prototypes::Prototype;
+use prototypes::{create_builtin_prototypes, BuiltinPrototypes};
 use rustc_hash::FxHashMap;
 
 pub struct Builtins<'a> {
