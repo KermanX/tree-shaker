@@ -4,14 +4,21 @@ use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::BindingRestElement;
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_binding_rest_element(
+  pub fn declare_binding_rest_element(
     &mut self,
     node: &'a BindingRestElement<'a>,
-    effect_and_init: (bool, Entity<'a>),
     exporting: bool,
     kind: DeclarationKind,
   ) {
-    self.exec_binding_pattern(&node.argument, effect_and_init, exporting, kind);
+    self.declare_binding_pattern(&node.argument, exporting, kind);
+  }
+
+  pub fn init_binding_rest_element(
+    &mut self,
+    node: &'a BindingRestElement<'a>,
+    effect_and_init: (bool, Entity<'a>),
+  ) {
+    self.exec_binding_pattern(&node.argument, effect_and_init);
   }
 }
 

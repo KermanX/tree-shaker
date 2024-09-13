@@ -5,19 +5,26 @@ use crate::{transformer::Transformer, Analyzer};
 use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
 
 impl<'a> Analyzer<'a> {
+  pub fn declare_variable_declarator(
+    &mut self,
+    node: &'a VariableDeclarator,
+    exporting: bool,
+    kind: DeclarationKind,
+  ) {
+    self.declare_binding_pattern(&node.id, exporting, kind);
+  }
+
   pub fn exec_variable_declarator(
     &mut self,
     node: &'a VariableDeclarator,
     init: Option<Entity<'a>>,
-    exporting: bool,
-    kind: DeclarationKind,
   ) {
     let init = init.unwrap_or_else(|| match &node.init {
       Some(init) => self.exec_expression(init),
       None => LiteralEntity::new_undefined(),
     });
 
-    self.exec_binding_pattern(&node.id, (false, init), exporting, kind);
+    self.exec_binding_pattern(&node.id, (false, init));
   }
 }
 

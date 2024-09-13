@@ -2,16 +2,31 @@ use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::Declaration;
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_declaration(&mut self, node: &'a Declaration<'a>, exporting: bool) {
+  pub fn declare_declaration(&mut self, node: &'a Declaration<'a>, exporting: bool) {
     match node {
       Declaration::VariableDeclaration(node) => {
-        self.exec_variable_declaration(node, exporting, None);
+        self.declare_variable_declaration(node, exporting);
       }
       Declaration::FunctionDeclaration(node) => {
-        self.exec_function(node, exporting);
+        self.declare_function(node, exporting);
       }
       Declaration::ClassDeclaration(node) => {
-        self.exec_class(node, exporting);
+        self.declare_class(node, exporting);
+      }
+      _ => unreachable!(),
+    }
+  }
+
+  pub fn init_declaration(&mut self, node: &'a Declaration<'a>) {
+    match node {
+      Declaration::VariableDeclaration(node) => {
+        self.init_variable_declaration(node, None);
+      }
+      Declaration::FunctionDeclaration(_node) => {
+        // Nothing to do
+      }
+      Declaration::ClassDeclaration(node) => {
+        self.init_class(node);
       }
       _ => unreachable!(),
     }

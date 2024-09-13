@@ -8,17 +8,14 @@ use oxc::ast::ast::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
+  pub fn declare_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
     match node {
       ModuleDeclaration::ImportDeclaration(node) => {
         if let Some(specifiers) = &node.specifiers {
           for specifier in specifiers {
-            self.exec_binding_identifier(
-              specifier.local(),
-              UnknownEntity::new_unknown(),
-              false,
-              DeclarationKind::Import,
-            )
+            let local = specifier.local();
+            self.declare_binding_identifier(local, false, DeclarationKind::Import);
+            self.init_binding_identifier(local, UnknownEntity::new_unknown());
           }
         }
       }
@@ -27,30 +24,77 @@ impl<'a> Analyzer<'a> {
           // Re-exports. Nothing to do.
           return;
         }
-        node.declaration.as_ref().map(|declaration| self.exec_declaration(declaration, true));
+        if let Some(declaration) = &node.declaration {
+          self.declare_declaration(declaration, true);
+        }
         for specifier in &node.specifiers {
           match &specifier.local {
             ModuleExportName::IdentifierReference(node) => {
-              self.exec_identifier_reference_export(node);
+              let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
+              let symbol = reference.symbol_id();
+              self.named_exports.push(symbol.unwrap());
             }
             _ => unreachable!(),
           }
         }
       }
       ModuleDeclaration::ExportDefaultDeclaration(node) => {
-        let value = match &node.declaration {
+        match &node.declaration {
           ExportDefaultDeclarationKind::FunctionDeclaration(node) => {
+            if node.id.is_none() {
+              // Patch `export default function(){}`
+              return;
+            }
             // Pass `exporting` as `false` because it is actually used as an expression
-            self.exec_function(node, false)
+            self.declare_function(node, false);
           }
           ExportDefaultDeclarationKind::ClassDeclaration(node) => {
+            if node.id.is_none() {
+              // Patch `export default class{}`
+              return;
+            }
             // Pass `exporting` as `false` because it is actually used as an expression
-            self.exec_class(node, false)
+            self.declare_class(node, false);
+          }
+          _expr => {}
+        };
+      }
+      ModuleDeclaration::ExportAllDeclaration(_node) => {
+        // Nothing to do
+      }
+      _ => unreachable!(),
+    }
+  }
+
+  pub fn init_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
+    match node {
+      ModuleDeclaration::ImportDeclaration(_node) => {}
+      ModuleDeclaration::ExportNamedDeclaration(node) => {
+        if node.source.is_some() {
+          // Re-exports. Nothing to do.
+          return;
+        }
+        if let Some(declaration) = &node.declaration {
+          self.init_declaration(declaration);
+        }
+      }
+      ModuleDeclaration::ExportDefaultDeclaration(node) => {
+        let value = match &node.declaration {
+          ExportDefaultDeclarationKind::FunctionDeclaration(node) => self.exec_function(node),
+          ExportDefaultDeclarationKind::ClassDeclaration(node) => {
+            if node.id.is_none() {
+              // Patch `export default class{}`
+              self.exec_class(node)
+            } else {
+              self.init_class(node)
+            }
           }
           node => self.exec_expression(node.to_expression()),
         };
-        // FIXME: delay this
-        value.consume_as_unknown(self);
+        if self.default_export.is_some() {
+          // TODO: throw error
+        }
+        self.default_export = Some(value);
       }
       ModuleDeclaration::ExportAllDeclaration(_node) => {
         // Nothing to do

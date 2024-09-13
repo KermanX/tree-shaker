@@ -26,6 +26,20 @@ use oxc::{
 };
 
 impl<'a> Analyzer<'a> {
+  pub fn declare_statement(&mut self, node: &'a Statement) {
+    match node {
+      match_declaration!(Statement) => {
+        let node = node.to_declaration();
+        self.declare_declaration(node, false);
+      }
+      match_module_declaration!(Statement) => {
+        let node = node.to_module_declaration();
+        self.declare_module_declaration(node);
+      }
+      _ => {}
+    }
+  }
+
   pub fn exec_statement(&mut self, node: &'a Statement) {
     if !matches!(
       node,
@@ -45,11 +59,11 @@ impl<'a> Analyzer<'a> {
     match node {
       match_declaration!(Statement) => {
         let node = node.to_declaration();
-        self.exec_declaration(node, false);
+        self.init_declaration(node);
       }
       match_module_declaration!(Statement) => {
         let node = node.to_module_declaration();
-        self.exec_module_declaration(node);
+        self.init_module_declaration(node);
       }
       Statement::ExpressionStatement(node) => {
         self.exec_expression(&node.expression);

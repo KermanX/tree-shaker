@@ -22,7 +22,8 @@ impl<'a> Analyzer<'a> {
     if let Some(init) = &node.init {
       match init {
         ForStatementInit::VariableDeclaration(node) => {
-          self.exec_variable_declaration(node, false, None);
+          self.declare_variable_declaration(node, false);
+          self.init_variable_declaration(node, None);
         }
         ForStatementInit::UsingDeclaration(_node) => {
           unreachable!();

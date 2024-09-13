@@ -12,7 +12,8 @@ impl<'a> Analyzer<'a> {
     self.push_variable_scope();
 
     if let Some(param) = &node.param {
-      self.exec_binding_pattern(&param.pattern, (false, value), false, DeclarationKind::Caught);
+      self.declare_binding_pattern(&param.pattern, false, DeclarationKind::Caught);
+      self.exec_binding_pattern(&param.pattern, (false, value));
     }
 
     self.exec_block_statement(&node.body);

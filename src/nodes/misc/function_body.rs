@@ -1,38 +1,19 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
+  data::StatementVecData,
   entity::{dep::EntityDepNode, forwarded::ForwardedEntity},
   transformer::Transformer,
 };
-use oxc::{
-  ast::ast::{ExpressionStatement, FunctionBody, Statement},
-  span::{GetSpan, Span},
-};
+use oxc::ast::ast::{ExpressionStatement, FunctionBody, Statement};
 
 const AST_TYPE: AstType2 = AstType2::FunctionBody;
 
-#[derive(Debug, Default)]
-struct Data {
-  last_stmt: Option<Span>,
-}
-
 impl<'a> Analyzer<'a> {
   pub fn exec_function_body(&mut self, node: &'a FunctionBody<'a>) {
-    let mut span: Option<Span> = None;
-    for statement in &node.statements {
-      if self.cf_scope().must_exited() {
-        break;
-      }
-      self.exec_statement(statement);
-      span = Some(statement.span());
-    }
-    if let Some(span) = span {
-      let data = self.load_data::<Data>(AST_TYPE, node);
-      data.last_stmt = match data.last_stmt {
-        Some(current_span) => Some(current_span.max(span)),
-        None => Some(span),
-      };
-    }
+    let data = self.load_data::<StatementVecData>(AST_TYPE, node);
+
+    self.exec_statement_vec(data, &node.statements);
   }
 
   pub fn exec_function_expression_body(&mut self, node: &'a FunctionBody<'a>) {
@@ -50,25 +31,13 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_function_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<StatementVecData>(AST_TYPE, node);
 
     let FunctionBody { span, directives, statements, .. } = node;
 
-    let mut transformed_statements = self.ast_builder.vec();
+    let statements = self.transform_statement_vec(data, statements);
 
-    for statement in statements {
-      let span = statement.span();
-
-      if let Some(statement) = self.transform_statement(statement) {
-        transformed_statements.push(statement);
-      }
-
-      if data.last_stmt == Some(span) {
-        break;
-      }
-    }
-
-    self.ast_builder.function_body(*span, self.clone_node(directives), transformed_statements)
+    self.ast_builder.function_body(*span, self.clone_node(directives), statements)
   }
 
   pub fn transform_function_expression_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {

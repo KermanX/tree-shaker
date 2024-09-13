@@ -1,7 +1,7 @@
 use crate::{
   ast::{AstType2, DeclarationKind},
   builtins::Builtins,
-  data::{get_node_ptr, ExtraData, ReferredNodes},
+  data::{get_node_ptr, ExtraData, ReferredNodes, StatementVecData},
   entity::{
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
@@ -27,7 +27,8 @@ pub struct Analyzer<'a> {
   pub sematic: Semantic<'a>,
   pub data: ExtraData<'a>,
   pub referred_nodes: ReferredNodes<'a>,
-  pub exports: Vec<SymbolId>,
+  pub named_exports: Vec<SymbolId>,
+  pub default_export: Option<Entity<'a>>,
   pub symbol_decls: FxHashMap<SymbolId, (DeclarationKind, usize, EntityDep<'a>)>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
@@ -42,7 +43,8 @@ impl<'a> Analyzer<'a> {
       sematic,
       data: Default::default(),
       referred_nodes: Default::default(),
-      exports: Vec::new(),
+      named_exports: Vec::new(),
+      default_export: None,
       symbol_decls: Default::default(),
       scope_context: ScopeContext::new(),
       pending_labels: Vec::new(),
@@ -51,16 +53,17 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn exec_program(&mut self, ast: &'a Program<'a>) {
-    for statement in &ast.body {
-      self.exec_statement(statement);
-    }
+  pub fn exec_program(&mut self, node: &'a Program<'a>) {
+    let data = self.load_data::<StatementVecData>(AstType2::Program, node);
+    self.exec_statement_vec(data, &node.body);
 
     debug_assert_eq!(self.scope_context.function_scopes.len(), 1);
     debug_assert_eq!(self.scope_context.variable_scopes.len(), 1);
     debug_assert_eq!(self.scope_context.cf_scopes.len(), 1);
 
-    for symbol in self.exports.clone() {
+    // Consume exports
+    self.default_export.take().map(|entity| entity.consume_as_unknown(self));
+    for symbol in self.named_exports.clone() {
       let entity = self.get_symbol(&symbol).clone();
       entity.consume_as_unknown(self);
     }
@@ -90,12 +93,12 @@ impl<'a> Analyzer<'a> {
     &mut self,
     symbol: SymbolId,
     dep: EntityDep<'a>,
-    entity: Entity<'a>,
     exporting: bool,
     kind: DeclarationKind,
+    value: Option<Entity<'a>>,
   ) {
     if exporting {
-      self.exports.push(symbol);
+      self.named_exports.push(symbol);
     }
     let (scope_index, scope) = if kind.is_var() {
       let index = self.function_scope().variable_scope_index;
@@ -103,8 +106,14 @@ impl<'a> Analyzer<'a> {
     } else {
       (self.scope_context.variable_scopes.len() - 1, self.variable_scope_mut())
     };
-    scope.declare(kind, symbol, entity);
+    scope.declare(kind, symbol, value);
     self.symbol_decls.insert(symbol, (kind, scope_index, dep));
+  }
+
+  pub fn init_symbol(&mut self, symbol: SymbolId, value: Entity<'a>) {
+    let scope_index = self.symbol_decls.get(&symbol).unwrap().1;
+    let scope = self.scope_context.variable_scopes.get_mut(scope_index).unwrap();
+    scope.init(symbol, value);
   }
 
   pub fn new_entity_dep(&self, node: EntityDepNode<'a>) -> EntityDep<'a> {
@@ -115,7 +124,7 @@ impl<'a> Analyzer<'a> {
     let (_, scope_index, _) = self.symbol_decls.get(symbol).unwrap();
     let variable_scope = &self.scope_context.variable_scopes[*scope_index];
     let cf_scope_index = variable_scope.cf_scope_index;
-    let val = self.scope_context.variable_scopes[*scope_index].get(symbol).unwrap().clone().1;
+    let val = self.scope_context.variable_scopes[*scope_index].read(symbol).unwrap().clone().1;
     self.mark_exhaustive_read(&val, *symbol, cf_scope_index);
     val
   }
@@ -127,7 +136,7 @@ impl<'a> Analyzer<'a> {
     }
     let variable_scope = &self.scope_context.variable_scopes[scope_index];
     let cf_scope_index = variable_scope.cf_scope_index;
-    let (is_consumed_exhaustively, old_val) = variable_scope.get(symbol).unwrap().clone();
+    let (is_consumed_exhaustively, old_val) = variable_scope.read(symbol).unwrap().clone();
     if is_consumed_exhaustively {
       new_val.consume_as_unknown(self);
     } else {
@@ -145,7 +154,7 @@ impl<'a> Analyzer<'a> {
           ),
         )
       };
-      self.scope_context.variable_scopes[scope_index].set(*symbol, entity_to_set).unwrap();
+      self.scope_context.variable_scopes[scope_index].write(*symbol, entity_to_set);
     }
   }
 

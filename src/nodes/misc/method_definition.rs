@@ -4,7 +4,7 @@ use oxc::ast::ast::{ClassElement, MethodDefinition};
 impl<'a> Analyzer<'a> {
   pub fn exec_method_definition(&mut self, node: &'a MethodDefinition<'a>) {
     let key = self.exec_property_key(&node.key);
-    let value = self.exec_function(&node.value, false);
+    let value = self.exec_function(&node.value);
 
     key.consume_self(self);
     value.consume_as_unknown(self);

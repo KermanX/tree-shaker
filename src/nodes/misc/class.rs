@@ -7,25 +7,28 @@ use crate::{
 use oxc::ast::ast::{Class, ClassBody, TSTypeParameterDeclaration, TSTypeParameterInstantiation};
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_class(&mut self, node: &'a Class<'a>, exporting: bool) -> Entity<'a> {
+  pub fn exec_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
     let super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
 
     for element in &node.body.body {
       self.exec_class_element(element);
     }
 
-    if let Some(id) = &node.id {
-      self.exec_binding_identifier(
-        id,
-        UnknownEntity::new_unknown(),
-        exporting,
-        DeclarationKind::Class,
-      );
-    }
-
     super_class.map(|entity| entity.consume_as_unknown(self));
 
     UnknownEntity::new_unknown()
+  }
+
+  pub fn declare_class(&mut self, node: &'a Class<'a>, exporting: bool) {
+    self.declare_binding_identifier(node.id.as_ref().unwrap(), exporting, DeclarationKind::Class);
+  }
+
+  pub fn init_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
+    let value = self.exec_class(node);
+
+    self.init_binding_identifier(node.id.as_ref().unwrap(), value.clone());
+
+    value
   }
 }
 

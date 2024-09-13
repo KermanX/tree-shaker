@@ -23,6 +23,40 @@ struct AssignmentPatternData {
 }
 
 impl<'a> Analyzer<'a> {
+  pub fn declare_binding_pattern(
+    &mut self,
+    node: &'a BindingPattern<'a>,
+    exporting: bool,
+    kind: DeclarationKind,
+  ) {
+    match &node.kind {
+      BindingPatternKind::BindingIdentifier(node) => {
+        self.declare_binding_identifier(node, exporting, kind);
+      }
+      BindingPatternKind::ObjectPattern(node) => {
+        for property in &node.properties {
+          self.declare_binding_pattern(&property.value, exporting, kind);
+        }
+        if let Some(rest) = &node.rest {
+          self.declare_binding_rest_element(rest, exporting, kind);
+        }
+      }
+      BindingPatternKind::ArrayPattern(node) => {
+        for element in &node.elements {
+          if let Some(element) = element {
+            self.declare_binding_pattern(element, exporting, kind);
+          }
+        }
+        if let Some(rest) = &node.rest {
+          self.declare_binding_rest_element(rest, exporting, kind);
+        }
+      }
+      BindingPatternKind::AssignmentPattern(node) => {
+        self.declare_binding_pattern(&node.left, exporting, kind);
+      }
+    }
+  }
+
   /// effect_and_init is a tuple of (effect, init)
   /// effect is a boolean value that indicates whether the binding pattern has an effect:
   /// ```js
@@ -33,8 +67,6 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a BindingPattern<'a>,
     (effect, init): (bool, Entity<'a>),
-    exporting: bool,
-    kind: DeclarationKind,
   ) {
     if effect {
       let data = self.load_data::<Data>(AstType2::BindingPattern, node);
@@ -42,7 +74,7 @@ impl<'a> Analyzer<'a> {
     }
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
-        self.exec_binding_identifier(node, init, exporting, kind);
+        self.init_binding_identifier(node, init);
       }
       BindingPatternKind::ObjectPattern(node) => {
         let mut enumerated = vec![];
@@ -50,22 +82,22 @@ impl<'a> Analyzer<'a> {
           let key = self.exec_property_key(&property.key);
           enumerated.push(key.clone());
           let effect_and_init = init.get_property(self, &key);
-          self.exec_binding_pattern(&property.value, effect_and_init, exporting, kind);
+          self.exec_binding_pattern(&property.value, effect_and_init);
         }
         if let Some(rest) = &node.rest {
           let effect_and_init = self.exec_object_rest(init, enumerated);
-          self.exec_binding_rest_element(rest, effect_and_init, exporting, kind);
+          self.init_binding_rest_element(rest, effect_and_init);
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
         let (element_values, rest_value) = init.get_to_array(node.elements.len());
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
-            self.exec_binding_pattern(element, (false, value), exporting, kind);
+            self.exec_binding_pattern(element, (false, value));
           }
         }
         if let Some(rest) = &node.rest {
-          self.exec_binding_rest_element(rest, (false, rest_value), exporting, kind);
+          self.init_binding_rest_element(rest, (false, rest_value));
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {
@@ -75,7 +107,7 @@ impl<'a> Analyzer<'a> {
           self.load_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
         data.need_right |= need_right;
 
-        self.exec_binding_pattern(&node.left, (false, binding_val), exporting, kind);
+        self.exec_binding_pattern(&node.left, (false, binding_val));
       }
     }
   }

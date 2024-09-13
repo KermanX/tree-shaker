@@ -7,6 +7,10 @@ impl<'a> Analyzer<'a> {
     data: &mut StatementVecData,
     statements: &'a Vec<'a, Statement<'a>>,
   ) {
+    for statement in statements {
+      self.declare_statement(statement);
+    }
+
     let mut last_stmt = None;
     for (index, statement) in statements.iter().enumerate() {
       if self.cf_scope().must_exited() {

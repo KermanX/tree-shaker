@@ -6,16 +6,17 @@ use crate::{transformer::Transformer, Analyzer};
 use oxc::ast::ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration};
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_function(&mut self, node: &'a Function<'a>, exporting: bool) -> Entity<'a> {
+  pub fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
     let dep = self.new_entity_dep(EntityDepNode::Function(node));
-    let entity = FunctionEntity::new(dep.clone());
+    FunctionEntity::new(dep.clone())
+  }
 
-    if let Some(id) = &node.id {
-      let symbol = id.symbol_id.get().unwrap();
-      self.declare_symbol(symbol, dep, entity.clone(), exporting, DeclarationKind::Function);
-    }
+  pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
+    let dep = self.new_entity_dep(EntityDepNode::Function(node));
+    let entity = self.exec_function(node);
 
-    entity
+    let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
+    self.declare_symbol(symbol, dep, exporting, DeclarationKind::Function, Some(entity.clone()));
   }
 
   pub fn call_function(

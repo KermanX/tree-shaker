@@ -1,5 +1,7 @@
 use crate::ast::DeclarationKind;
 use crate::entity::entity::Entity;
+use crate::entity::literal::LiteralEntity;
+use crate::entity::unknown::UnknownEntity;
 use oxc::semantic::ScopeId;
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashMap;
@@ -10,7 +12,7 @@ pub struct VariableScope<'a> {
   pub id: ScopeId,
   pub has_effect: bool,
   /// (is_consumed_exhaustively, entity)
-  pub variables: FxHashMap<SymbolId, (bool, Entity<'a>)>,
+  pub variables: FxHashMap<SymbolId, (bool, Option<Entity<'a>>)>,
   pub cf_scope_index: usize,
 }
 
@@ -26,35 +28,47 @@ impl<'a> VariableScope<'a> {
     }
   }
 
-  pub fn set(
-    &mut self,
-    symbol: SymbolId,
-    entity: (bool, Entity<'a>),
-  ) -> Option<(bool, Entity<'a>)> {
-    self.variables.insert(symbol, entity)
-  }
-
-  pub fn declare(&mut self, kind: DeclarationKind, symbol: SymbolId, entity: Entity<'a>) {
+  pub fn declare(&mut self, kind: DeclarationKind, symbol: SymbolId, value: Option<Entity<'a>>) {
     if kind.is_var() {
-      let old = self.get(&symbol);
+      let old = self.variables.get(&symbol);
       let new = match old {
         Some(old @ (true, _)) => old.clone(),
-        _ => (false, entity),
+        _ => (false, Some(value.unwrap_or_else(LiteralEntity::new_undefined))),
       };
-      self.set(symbol, new);
+      self.variables.insert(symbol, new);
     } else {
-      let old = self.set(symbol, (false, entity));
+      let old = self.variables.insert(symbol, (false, value));
       if old.is_some() && !kind.allow_override_var() {
         // TODO: error "Variable already declared"
       }
     }
   }
 
-  pub fn get(&self, symbol: &SymbolId) -> Option<&(bool, Entity<'a>)> {
-    self.variables.get(symbol)
+  pub fn init(&mut self, symbol: SymbolId, value: Entity<'a>) {
+    let old = self.variables.get_mut(&symbol).unwrap();
+    old.1 = Some(value);
   }
 
-  pub fn has(&self, symbol: &SymbolId) -> bool {
-    self.variables.contains_key(symbol)
+  pub fn read(&self, symbol: &SymbolId) -> Option<(bool, Entity<'a>)> {
+    if let Some((consumed, value)) = self.variables.get(symbol) {
+      let value = value.as_ref().map_or_else(
+        || {
+          // TODO: throw TDZ error
+          UnknownEntity::new_unknown()
+        },
+        Entity::clone,
+      );
+      Some((*consumed, value))
+    } else {
+      None
+    }
+  }
+
+  pub fn write(&mut self, symbol: SymbolId, (consumed, value): (bool, Entity<'a>)) {
+    let old = self.variables.get_mut(&symbol).unwrap();
+    if old.1.is_none() {
+      // TODO: throw TDZ error
+    }
+    *old = (consumed, Some(value));
   }
 }

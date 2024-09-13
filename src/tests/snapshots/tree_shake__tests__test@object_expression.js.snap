@@ -14,9 +14,7 @@ export function main() {
 		get b() {
 			effect();
 		},
-		set a(__unused_199B) {
-			effect, value;
-		}
+		set a(__unused_199B) {}
 	};
 	effect(2);
 	obj3.b;

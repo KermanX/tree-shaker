@@ -4,16 +4,14 @@ use crate::{
 use oxc::ast::ast::{VariableDeclaration, VariableDeclarationKind};
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_variable_declaration(
+  pub fn declare_variable_declaration(
     &mut self,
     node: &'a VariableDeclaration<'a>,
     exporting: bool,
-    init: Option<Entity<'a>>,
   ) {
     for declarator in &node.declarations {
-      self.exec_variable_declarator(
+      self.declare_variable_declarator(
         declarator,
-        init.clone(),
         exporting,
         match &node.kind {
           VariableDeclarationKind::Var => DeclarationKind::Var,
@@ -21,6 +19,16 @@ impl<'a> Analyzer<'a> {
           VariableDeclarationKind::Const => DeclarationKind::Const,
         },
       );
+    }
+  }
+
+  pub fn init_variable_declaration(
+    &mut self,
+    node: &'a VariableDeclaration<'a>,
+    init: Option<Entity<'a>>,
+  ) {
+    for declarator in &node.declarations {
+      self.exec_variable_declarator(declarator, init.clone());
     }
   }
 }

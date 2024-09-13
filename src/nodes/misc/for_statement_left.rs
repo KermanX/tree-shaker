@@ -5,7 +5,8 @@ impl<'a> Analyzer<'a> {
   pub fn exec_for_statement_left(&mut self, node: &'a ForStatementLeft<'a>, init: Entity<'a>) {
     match node {
       ForStatementLeft::VariableDeclaration(node) => {
-        self.exec_variable_declaration(node, false, Some(init))
+        self.declare_variable_declaration(node, false);
+        self.init_variable_declaration(node, Some(init));
       }
       ForStatementLeft::UsingDeclaration(_node) => unreachable!(),
       _ => self.exec_assignment_target(node.to_assignment_target(), (false, init)),

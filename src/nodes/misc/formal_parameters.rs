@@ -8,11 +8,13 @@ impl<'a> Analyzer<'a> {
     let resolved = args.get_to_array(node.items.len());
 
     for (param, arg) in node.items.iter().zip(resolved.0) {
-      self.exec_binding_pattern(&param.pattern, (false, arg), false, DeclarationKind::Parameter);
+      self.declare_binding_pattern(&param.pattern, false, DeclarationKind::Parameter);
+      self.exec_binding_pattern(&param.pattern, (false, arg));
     }
 
     if let Some(rest) = &node.rest {
-      self.exec_binding_rest_element(rest, (false, resolved.1), false, DeclarationKind::Parameter);
+      self.declare_binding_rest_element(rest, false, DeclarationKind::Parameter);
+      self.init_binding_rest_element(rest, (false, resolved.1));
     }
   }
 }

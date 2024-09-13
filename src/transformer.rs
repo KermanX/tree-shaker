@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  data::{get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes},
+  data::{get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData},
   entity::dep::EntityDepNode,
 };
 use oxc::{
@@ -33,21 +33,18 @@ impl<'a> Transformer<'a> {
     Transformer { allocator, ast_builder: AstBuilder::new(allocator), data, referred_nodes }
   }
 
-  pub fn transform_program(&self, ast: &'a Program<'a>) -> Program<'a> {
-    let Program { span, source_type, hashbang, directives, body, .. } = ast;
-    let mut transformed_body = self.ast_builder.vec();
-    for stmt in body {
-      let new_statement = self.transform_statement(stmt);
-      if let Some(transformed) = new_statement {
-        transformed_body.push(transformed);
-      }
-    }
+  pub fn transform_program(&self, node: &'a Program<'a>) -> Program<'a> {
+    let Program { span, source_type, hashbang, directives, body, .. } = node;
+
+    let data = self.get_data::<StatementVecData>(AstType2::Program, node);
+    let body = self.transform_statement_vec(data, body);
+
     self.ast_builder.program(
       *span,
       *source_type,
       self.clone_node(hashbang),
       self.clone_node(directives),
-      transformed_body,
+      body,
     )
   }
 }
