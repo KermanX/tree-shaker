@@ -2,9 +2,9 @@
 pub struct TreeShakeConfig {
   pub unknown_global_side_effects: bool,
 
-  pub min_simple_number_value: i8,
-  pub max_simple_number_value: i8,
-  pub max_simple_string_length: u8,
+  pub min_simple_number_value: i64,
+  pub max_simple_number_value: i64,
+  pub max_simple_string_length: usize,
 }
 
 impl Default for TreeShakeConfig {
@@ -14,7 +14,7 @@ impl Default for TreeShakeConfig {
 
       min_simple_number_value: -999,
       max_simple_number_value: 999,
-      max_simple_string_length: 8,
+      max_simple_string_length: 12,
     }
   }
 }

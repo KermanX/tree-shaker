@@ -91,7 +91,7 @@ impl<'a> Analyzer<'a> {
     };
 
     let data = self.load_data::<Data>(AST_TYPE, node);
-    data.collector.collect(entity)
+    data.collector.collect(self, entity)
   }
 }
 

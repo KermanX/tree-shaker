@@ -1,5 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
+use crate::analyzer::{self, Analyzer};
+
 use super::{collected::CollectedEntity, entity::Entity, literal::LiteralEntity};
 use oxc::{
   ast::{ast::Expression, AstBuilder},
@@ -16,11 +18,11 @@ pub struct LiteralCollector<'a> {
 }
 
 impl<'a> LiteralCollector<'a> {
-  pub fn collect(&mut self, entity: Entity<'a>) -> Entity<'a> {
+  pub fn collect(&mut self, analyzer: &Analyzer<'a>, entity: Entity<'a>) -> Entity<'a> {
     if self.invalid {
       entity
     } else if let Some(literal) =
-      entity.get_literal().and_then(|lit| lit.can_build_expr().then_some(lit))
+      entity.get_literal().and_then(|lit| lit.can_build_expr(analyzer).then_some(lit))
     {
       if let Some(collected) = &self.literal {
         if collected != &literal {

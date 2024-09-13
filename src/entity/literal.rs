@@ -278,8 +278,23 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
-  pub fn can_build_expr(&self) -> bool {
-    !matches!(self, LiteralEntity::Symbol(_, _))
+  pub fn can_build_expr(&self, analyzer: &Analyzer<'a>) -> bool {
+    let config = &analyzer.config;
+    match self {
+      LiteralEntity::String(value) => value.len() <= config.max_simple_string_length,
+      LiteralEntity::Number(value, _) => {
+        value.0.fract() == 0.0
+          && config.min_simple_number_value <= (value.0 as i64)
+          && (value.0 as i64) <= config.max_simple_number_value
+      }
+      LiteralEntity::BigInt(_) => false,
+      LiteralEntity::Boolean(_) => true,
+      LiteralEntity::Symbol(_, _) => false,
+      LiteralEntity::Infinity(_) => true,
+      LiteralEntity::NaN => true,
+      LiteralEntity::Null => true,
+      LiteralEntity::Undefined => true,
+    }
   }
 
   pub fn to_string(&self) -> &'a str {
