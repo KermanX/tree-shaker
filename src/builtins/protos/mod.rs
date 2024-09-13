@@ -32,28 +32,26 @@ impl<'a> Prototype<'a> {
 
   pub fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>) {
     let key = key.get_to_property_key();
-    if let Some(key_literals) = key.get_to_literals() {
-      let mut values = vec![];
-      let mut undefined_added = false;
-      for key_literal in key_literals {
-        match key_literal {
-          LiteralEntity::String(key) => {
-            if let Some(property) = self.get(key) {
-              values.push(property.clone());
-            } else if !undefined_added {
-              undefined_added = true;
-              values.push(LiteralEntity::new_undefined());
+    'known: {
+      if let Some(key_literals) = key.get_to_literals() {
+        let mut values = vec![];
+        for key_literal in key_literals {
+          match key_literal {
+            LiteralEntity::String(key) => {
+              if let Some(property) = self.get(key) {
+                values.push(property.clone());
+              } else {
+                break 'known;
+              }
             }
+            LiteralEntity::Symbol(_, _) => break 'known,
+            _ => unreachable!(),
           }
-          LiteralEntity::Symbol(_, _) => todo!(),
-          _ => unreachable!(),
         }
+        return (false, EntryEntity::new(UnionEntity::new(values), key.clone()));
       }
-      (false, EntryEntity::new(UnionEntity::new(values), key.clone()))
-    } else {
-      // TODO: like set_property, call getters and collect all possible values
-      (false, EntryEntity::new(UnknownEntity::new_unknown(), key.clone()))
     }
+    (false, EntryEntity::new(UnknownEntity::new_unknown(), key.clone()))
   }
 }
 

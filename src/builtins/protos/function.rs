@@ -14,6 +14,7 @@ pub fn create_function_prototype<'a>() -> Prototype<'a> {
   prototype.insert("length", UnknownEntity::new(UnknownEntityKind::Number));
   prototype.insert("arguments", UnknownEntity::new_unknown());
   prototype.insert("caller", UnknownEntity::new_unknown());
+  prototype.insert("name", UnknownEntity::new_unknown());
 
   prototype
 }

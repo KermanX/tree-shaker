@@ -1,4 +1,5 @@
 use super::{
+  consumed_object,
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
@@ -25,34 +26,33 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    _key: &Entity<'a>,
+    key: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    todo!("built-ins & extra properties")
+    analyzer.builtins.prototypes.function.get_property(key)
   }
 
   fn set_property(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    _key: &Entity<'a>,
-    _value: Entity<'a>,
+    key: &Entity<'a>,
+    value: Entity<'a>,
   ) -> bool {
-    todo!("built-ins & extra properties")
+    // TODO: throw warning
+    consumed_object::set_property(analyzer, key, value)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
-    self.consume_as_unknown(analyzer);
-    key.consume_self(analyzer);
-    true
+    // TODO: throw warning
+    consumed_object::delete_property(analyzer, key)
   }
 
   fn enumerate_properties(
     &self,
     _rc: &Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
+    _analyzer: &mut Analyzer<'a>,
   ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
-    self.consume_as_unknown(analyzer);
-    UnknownEntity::new_unknown_to_entries_result(vec![])
+    (false, vec![])
   }
 
   fn call(
@@ -69,9 +69,8 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
-    self.consume_as_unknown(analyzer);
     // TODO: throw warning
-    (true, Some(UnknownEntity::new_unknown()))
+    consumed_object::iterate(analyzer)
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -79,7 +78,6 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a> {
-    // FIXME: No Rc::new + clone
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
   }
 

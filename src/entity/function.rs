@@ -37,27 +37,25 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn get_property(
     &self,
-    rc: &Entity<'a>,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     key: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
     if self.consumed.get() {
       return consumed_object::get_property(analyzer, key);
     }
-    todo!("built-ins & extra properties")
+    analyzer.builtins.prototypes.function.get_property(key)
   }
 
   fn set_property(
     &self,
-    rc: &Entity<'a>,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     key: &Entity<'a>,
     value: Entity<'a>,
   ) -> bool {
-    if self.consumed.get() {
-      return consumed_object::set_property(analyzer, key, value);
-    }
-    todo!("built-ins & extra properties")
+    self.consume_as_unknown(analyzer);
+    consumed_object::set_property(analyzer, key, value)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
@@ -80,10 +78,6 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    // TODO: verify this
-    // if self.consumed.get() {
-    //   return consumed_object::call(analyzer, this, args);
-    // }
     let (has_effect, ret_val) = match &self.source.node {
       EntityDepNode::Function(node) => analyzer.call_function(node, this.clone(), args.clone()),
       EntityDepNode::ArrowFunctionExpression(node) => {
@@ -97,16 +91,18 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     (has_effect, ForwardedEntity::new(ret_val, self.source.clone()))
   }
 
-  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
-    // TODO: If the function is never modified, we can just return the source.
-    self.consume_as_unknown(analyzer);
-    consumed_object::r#await(analyzer)
+  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+    if self.consumed.get() {
+      return consumed_object::r#await(analyzer);
+    }
+    (false, rc.clone())
   }
 
-  fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
-    // TODO: If the function is never modified, should warn.
-    self.consume_as_unknown(analyzer);
-    consumed_object::iterate(analyzer)
+  fn iterate(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+    if self.consumed.get() {
+      return consumed_object::iterate(analyzer);
+    }
+    (true, Some(UnknownEntity::new_unknown_with_deps(vec![rc.clone()])))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
