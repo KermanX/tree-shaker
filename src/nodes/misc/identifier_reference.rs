@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
     self.set_data(AST_TYPE_READ, node, Data { resolvable: symbol.is_some() });
 
     if let Some(symbol) = symbol {
-      self.get_symbol(&symbol)
+      self.read_symbol(&symbol)
     } else {
       // TODO: Handle globals
       self.refer_global_dep();
@@ -57,7 +57,7 @@ impl<'a> Analyzer<'a> {
     self.set_data(AST_TYPE_WRITE, node, Data { resolvable: symbol.is_some() });
 
     if let Some(symbol) = symbol {
-      self.set_symbol(&symbol, value);
+      self.write_symbol(&symbol, value);
     } else {
       value.consume_as_unknown(self);
       // TODO: Handle globals

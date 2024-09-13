@@ -49,19 +49,16 @@ impl<'a> VariableScope<'a> {
     old.1 = Some(value);
   }
 
-  pub fn read(&self, symbol: &SymbolId) -> Option<(bool, Entity<'a>)> {
-    if let Some((consumed, value)) = self.variables.get(symbol) {
-      let value = value.as_ref().map_or_else(
-        || {
-          // TODO: throw TDZ error
-          UnknownEntity::new_unknown()
-        },
-        Entity::clone,
-      );
-      Some((*consumed, value))
-    } else {
-      None
-    }
+  pub fn read(&self, symbol: &SymbolId) -> (bool, Entity<'a>) {
+    let (consumed, value) = self.variables.get(symbol).unwrap();
+    let value = value.as_ref().map_or_else(
+      || {
+        // TODO: throw TDZ error
+        UnknownEntity::new_unknown()
+      },
+      Entity::clone,
+    );
+    (*consumed, value)
   }
 
   pub fn write(&mut self, symbol: SymbolId, (consumed, value): (bool, Entity<'a>)) {

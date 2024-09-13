@@ -64,7 +64,7 @@ impl<'a> Analyzer<'a> {
     // Consume exports
     self.default_export.take().map(|entity| entity.consume_as_unknown(self));
     for symbol in self.named_exports.clone() {
-      let entity = self.get_symbol(&symbol).clone();
+      let entity = self.read_symbol(&symbol).clone();
       entity.consume_as_unknown(self);
     }
   }
@@ -120,23 +120,23 @@ impl<'a> Analyzer<'a> {
     EntityDep { node, scope_path: self.variable_scope_path() }
   }
 
-  pub fn get_symbol(&mut self, symbol: &SymbolId) -> Entity<'a> {
+  pub fn read_symbol(&mut self, symbol: &SymbolId) -> Entity<'a> {
     let (_, scope_index, _) = self.symbol_decls.get(symbol).unwrap();
     let variable_scope = &self.scope_context.variable_scopes[*scope_index];
     let cf_scope_index = variable_scope.cf_scope_index;
-    let val = self.scope_context.variable_scopes[*scope_index].read(symbol).unwrap().clone().1;
+    let val = self.scope_context.variable_scopes[*scope_index].read(symbol).1;
     self.mark_exhaustive_read(&val, *symbol, cf_scope_index);
     val
   }
 
-  pub fn set_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
+  pub fn write_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
     let (kind, scope_index, dep) = self.symbol_decls.get(symbol).unwrap().clone();
     if kind.is_const() {
       // TODO: throw warning
     }
     let variable_scope = &self.scope_context.variable_scopes[scope_index];
     let cf_scope_index = variable_scope.cf_scope_index;
-    let (is_consumed_exhaustively, old_val) = variable_scope.read(symbol).unwrap().clone();
+    let (is_consumed_exhaustively, old_val) = variable_scope.read(symbol);
     if is_consumed_exhaustively {
       new_val.consume_as_unknown(self);
     } else {
