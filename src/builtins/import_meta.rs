@@ -24,7 +24,7 @@ pub fn create_import_meta<'a>() -> Entity<'a> {
 
   Entity::new(ObjectEntity {
     consumed: Cell::new(false),
-    scope_path: vec![],
+    cf_scopes: vec![],
     string_keyed: RefCell::new(string_keyed),
     unknown_keyed: RefCell::new(ObjectProperty::default()),
     rest: RefCell::new(ObjectProperty {

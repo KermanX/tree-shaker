@@ -1,11 +1,13 @@
 use crate::{
   analyzer::Analyzer,
   entity::{dep::EntityDepNode, entity::Entity, function::FunctionEntity},
+  scope::variable_scope::VariableScopes,
   transformer::Transformer,
 };
 use oxc::ast::ast::{
   ArrowFunctionExpression, Expression, TSTypeAnnotation, TSTypeParameterDeclaration,
 };
+use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_arrow_function_expression(
@@ -13,15 +15,16 @@ impl<'a> Analyzer<'a> {
     node: &'a ArrowFunctionExpression<'a>,
   ) -> Entity<'a> {
     let dep = self.new_entity_dep(EntityDepNode::ArrowFunctionExpression(node));
-    FunctionEntity::new(dep.clone())
+    FunctionEntity::new(dep.clone(), self.scope_context.variable_scopes.clone())
   }
 
   pub fn call_arrow_function_expression(
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
+    variable_scopes: Rc<VariableScopes<'a>>,
     args: Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    self.push_function_scope(self.function_scope().this.clone(), node.r#async, false);
+    self.push_call_scope(variable_scopes, self.call_scope().this.clone(), node.r#async, false);
 
     self.exec_formal_parameters(&node.params, args);
     if node.expression {
@@ -30,7 +33,7 @@ impl<'a> Analyzer<'a> {
       self.exec_function_body(&node.body);
     }
 
-    self.pop_function_scope()
+    self.pop_call_scope()
   }
 }
 

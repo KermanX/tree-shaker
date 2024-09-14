@@ -5,7 +5,7 @@ use super::{
   unknown::UnknownEntity,
   utils::collect_effect_and_value,
 };
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, scope::CfScopeKind};
 use rustc_hash::FxHashSet;
 
 #[derive(Debug)]
@@ -75,9 +75,11 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
     let mut results = Vec::new();
+    analyzer.push_cf_scope(CfScopeKind::Normal, None, None);
     for entity in &self.0 {
       results.push(entity.call(analyzer, this, args));
     }
+    analyzer.pop_cf_scope();
     collect_effect_and_value(results)
   }
 

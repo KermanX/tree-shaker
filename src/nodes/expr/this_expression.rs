@@ -3,7 +3,7 @@ use oxc::ast::ast::{Expression, ThisExpression};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_this_expression(&mut self, _node: &'a ThisExpression) -> Entity<'a> {
-    self.function_scope().this.clone()
+    self.call_scope().this.clone()
   }
 }
 

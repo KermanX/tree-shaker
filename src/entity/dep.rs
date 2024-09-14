@@ -1,7 +1,7 @@
 use core::hash::{Hash, Hasher};
 use oxc::{
   ast::ast::{
-    Argument, ArrowFunctionExpression, BindingIdentifier, Function, FunctionBody,
+    Argument, ArrowFunctionExpression, BindingIdentifier, CallExpression, Function, FunctionBody,
     IdentifierReference, LabelIdentifier, MemberExpression, ReturnStatement, ThrowStatement,
   },
   semantic::ScopeId,
@@ -21,6 +21,7 @@ pub enum EntityDepNode<'a> {
   FunctionBodyAsExpression(&'a FunctionBody<'a>),
   Argument(&'a Argument<'a>),
   ThrowStatement(&'a ThrowStatement<'a>),
+  CallExpression(&'a CallExpression<'a>),
 }
 
 #[derive(Debug, Clone)]
@@ -57,6 +58,7 @@ impl<'a> PartialEq for EntityDepNode<'a> {
       }
       (EntityDepNode::Argument(a), EntityDepNode::Argument(b)) => a.span() == b.span(),
       (EntityDepNode::ThrowStatement(a), EntityDepNode::ThrowStatement(b)) => a.span() == b.span(),
+      (EntityDepNode::CallExpression(a), EntityDepNode::CallExpression(b)) => a.span() == b.span(),
       _ => false,
     }
   }
@@ -78,6 +80,7 @@ impl<'a> Hash for EntityDepNode<'a> {
       EntityDepNode::FunctionBodyAsExpression(a) => a.span(),
       EntityDepNode::Argument(a) => a.span(),
       EntityDepNode::ThrowStatement(a) => a.span(),
+      EntityDepNode::CallExpression(a) => a.span(),
     };
     span.hash(state);
   }

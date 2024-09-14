@@ -1,4 +1,4 @@
-use super::try_scope::TryScope;
+use super::{try_scope::TryScope, variable_scope::VariableScopes};
 use crate::{
   analyzer::Analyzer,
   entity::{
@@ -8,7 +8,8 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct FunctionScope<'a> {
+pub struct CallScope<'a> {
+  pub old_variable_scopes: VariableScopes<'a>,
   pub cf_scope_index: usize,
   pub variable_scope_index: usize,
   pub this: Entity<'a>,
@@ -20,15 +21,17 @@ pub struct FunctionScope<'a> {
   pub is_generator: bool,
 }
 
-impl<'a> FunctionScope<'a> {
+impl<'a> CallScope<'a> {
   pub fn new(
+    old_variable_scopes: VariableScopes<'a>,
     cf_scope_index: usize,
     variable_scope_index: usize,
     this: Entity<'a>,
     is_async: bool,
     is_generator: bool,
   ) -> Self {
-    FunctionScope {
+    CallScope {
+      old_variable_scopes,
       cf_scope_index,
       variable_scope_index,
       this,
@@ -40,7 +43,7 @@ impl<'a> FunctionScope<'a> {
     }
   }
 
-  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (VariableScopes<'a>, bool, Entity<'a>) {
     assert_eq!(self.try_scopes.len(), 1);
 
     // Does not track values thrown out of function scope
@@ -56,7 +59,7 @@ impl<'a> FunctionScope<'a> {
       for value in &self.returned_values {
         value.consume_as_unknown(analyzer);
       }
-      return (true, UnknownEntity::new_unknown());
+      return (self.old_variable_scopes, true, UnknownEntity::new_unknown());
     }
 
     let value = if self.returned_values.is_empty() {
@@ -65,6 +68,7 @@ impl<'a> FunctionScope<'a> {
       UnionEntity::new(self.returned_values)
     };
     (
+      self.old_variable_scopes,
       may_throw,
       if self.is_async { PromiseEntity::new(self.has_await_effect, value) } else { value },
     )

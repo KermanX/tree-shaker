@@ -1,14 +1,17 @@
-use crate::ast::DeclarationKind;
-use crate::entity::dep::EntityDepNode;
-use crate::entity::entity::Entity;
-use crate::entity::function::FunctionEntity;
-use crate::{transformer::Transformer, Analyzer};
+use crate::{
+  analyzer::Analyzer,
+  ast::DeclarationKind,
+  entity::{dep::EntityDepNode, entity::Entity, function::FunctionEntity},
+  scope::variable_scope::VariableScopes,
+  transformer::Transformer,
+};
 use oxc::ast::ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration};
+use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
     let dep = self.new_entity_dep(EntityDepNode::Function(node));
-    FunctionEntity::new(dep.clone())
+    FunctionEntity::new(dep.clone(), self.scope_context.variable_scopes.clone())
   }
 
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
@@ -22,15 +25,16 @@ impl<'a> Analyzer<'a> {
   pub fn call_function(
     &mut self,
     node: &'a Function<'a>,
+    variable_scopes: Rc<VariableScopes<'a>>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    self.push_function_scope(this, node.r#async, node.generator);
+    self.push_call_scope(variable_scopes, this, node.r#async, node.generator);
 
     self.exec_formal_parameters(&node.params, args);
     self.exec_function_body(node.body.as_ref().unwrap());
 
-    self.pop_function_scope()
+    self.pop_call_scope()
   }
 }
 

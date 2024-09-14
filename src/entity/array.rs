@@ -6,16 +6,15 @@ use super::{
   typeof_result::TypeofResult,
   union::UnionEntity,
   unknown::{UnknownEntity, UnknownEntityKind},
-  utils::is_assignment_indeterminate,
 };
-use crate::{analyzer::Analyzer, use_consumed_flag};
-use oxc::{semantic::ScopeId, syntax::number::ToJsInt32};
+use crate::{analyzer::Analyzer, scope::cf_scope::CfScopes, use_consumed_flag};
+use oxc::syntax::number::ToJsInt32;
 use std::cell::{Cell, RefCell};
 
 #[derive(Debug)]
 pub struct ArrayEntity<'a> {
   consumed: Cell<bool>,
-  pub scope_path: Vec<ScopeId>,
+  cf_scopes: CfScopes<'a>,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Option<Entity<'a>>>,
 }
@@ -105,7 +104,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, key, value);
     }
-    let indeterminate = is_assignment_indeterminate(&self.scope_path, analyzer);
+    let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
     let key = key.get_to_property_key();
     let mut has_effect = false;
     if let Some(key_literals) = key.get_to_literals() {
@@ -300,7 +299,7 @@ impl<'a> Analyzer<'a> {
   pub fn new_empty_array(&self) -> ArrayEntity<'a> {
     ArrayEntity {
       consumed: Cell::new(false),
-      scope_path: self.variable_scope_path(),
+      cf_scopes: self.scope_context.cf_scopes.clone(),
       elements: RefCell::new(Vec::new()),
       rest: RefCell::new(None),
     }

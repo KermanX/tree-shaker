@@ -22,7 +22,7 @@ impl<'a> Analyzer<'a> {
     self.exec_statement(&node.body);
     self.pop_cf_scope();
 
-    if self.cf_scope().must_exited() {
+    if self.cf_scope().borrow().must_exited() {
       self.pop_cf_scope();
       return;
     }

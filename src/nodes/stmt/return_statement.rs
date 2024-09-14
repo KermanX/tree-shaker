@@ -14,9 +14,9 @@ impl<'a> Analyzer<'a> {
     let dep = self.new_entity_dep(EntityDepNode::ReturnStatement(node));
     let value = ForwardedEntity::new(value, dep);
 
-    let function_scope = self.function_scope_mut();
-    function_scope.returned_values.push(value);
-    let cf_scope_id = function_scope.cf_scope_index;
+    let call_scope = self.call_scope_mut();
+    call_scope.returned_values.push(value);
+    let cf_scope_id = call_scope.cf_scope_index;
     self.exit_to(cf_scope_id);
   }
 }

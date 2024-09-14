@@ -6,13 +6,22 @@ use super::{
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
-use crate::{analyzer::Analyzer, entity::consumed_object, use_consumed_flag};
-use std::cell::Cell;
+use crate::{
+  analyzer::Analyzer,
+  entity::consumed_object,
+  scope::variable_scope::{VariableScope, VariableScopes},
+  use_consumed_flag,
+};
+use std::{
+  cell::{Cell, RefCell},
+  rc::Rc,
+};
 
 #[derive(Debug, Clone)]
 pub struct FunctionEntity<'a> {
   consumed: Cell<bool>,
   pub source: EntityDep<'a>,
+  pub variable_scopes: Rc<VariableScopes<'a>>,
 }
 
 impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
@@ -78,17 +87,20 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    let (has_effect, ret_val) = match &self.source.node {
-      EntityDepNode::Function(node) => analyzer.call_function(node, this.clone(), args.clone()),
+    let variable_scopes = self.variable_scopes.clone();
+    let (may_throw, ret_val) = match &self.source.node {
+      EntityDepNode::Function(node) => {
+        analyzer.call_function(node, variable_scopes, this.clone(), args.clone())
+      }
       EntityDepNode::ArrowFunctionExpression(node) => {
-        analyzer.call_arrow_function_expression(node, args.clone())
+        analyzer.call_arrow_function_expression(node, variable_scopes, args.clone())
       }
       _ => unreachable!(),
     };
-    if has_effect {
+    if may_throw {
       self.consume_self(analyzer);
     }
-    (has_effect, ForwardedEntity::new(ret_val, self.source.clone()))
+    (may_throw, ForwardedEntity::new(ret_val, self.source.clone()))
   }
 
   fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
@@ -141,7 +153,14 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 }
 
 impl<'a> FunctionEntity<'a> {
-  pub fn new(source: EntityDep<'a>) -> Entity<'a> {
-    Entity::new(Self { consumed: Cell::new(false), source })
+  pub fn new(
+    source: EntityDep<'a>,
+    variable_scopes: Vec<Rc<RefCell<VariableScope<'a>>>>,
+  ) -> Entity<'a> {
+    Entity::new(Self {
+      consumed: Cell::new(false),
+      source,
+      variable_scopes: Rc::new(variable_scopes),
+    })
   }
 }

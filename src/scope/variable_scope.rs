@@ -5,26 +5,31 @@ use crate::entity::unknown::UnknownEntity;
 use oxc::semantic::ScopeId;
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashMap;
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::atomic::{AtomicU32, Ordering};
+
+use super::cf_scope::CfScopes;
 
 #[derive(Debug)]
 pub struct VariableScope<'a> {
   pub id: ScopeId,
-  pub has_effect: bool,
+  /// Cf scopes when the scope was created
+  pub cf_scopes: CfScopes<'a>,
   /// (is_consumed_exhaustively, entity)
   pub variables: FxHashMap<SymbolId, (bool, Option<Entity<'a>>)>,
-  pub cf_scope_index: usize,
 }
+
+pub type VariableScopes<'a> = Vec<Rc<RefCell<VariableScope<'a>>>>;
 
 static VARIABLE_SCOPE_ID: AtomicU32 = AtomicU32::new(0);
 
 impl<'a> VariableScope<'a> {
-  pub fn new(cf_scope_index: usize) -> Self {
+  pub fn new(cf_scopes: CfScopes<'a>) -> Self {
     Self {
       id: ScopeId::new(VARIABLE_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
-      has_effect: false,
+      cf_scopes,
       variables: FxHashMap::default(),
-      cf_scope_index,
     }
   }
 

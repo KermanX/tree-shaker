@@ -18,6 +18,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_call_expression(&mut self, node: &'a CallExpression) -> Entity<'a> {
     let callee = self.exec_expression(&node.callee);
 
+    // TODO: TODO: TODO: FIXME: FIXME:
     let indeterminate = if node.optional {
       match callee.test_nullish() {
         Some(true) => return LiteralEntity::new_undefined(),

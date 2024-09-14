@@ -42,7 +42,7 @@ impl<'a> Analyzer<'a> {
       self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
       self.exec_statement(&node.consequent);
       self.pop_cf_scope();
-      if let Some(stopped_exit) = self.pop_cf_scope().stopped_exit {
+      if let Some(stopped_exit) = self.pop_cf_scope().borrow().stopped_exit {
         exit_target_inner = exit_target_inner.max(stopped_exit);
         exit_target_outer = exit_target_outer.min(stopped_exit);
       } else {
@@ -55,7 +55,7 @@ impl<'a> Analyzer<'a> {
         self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
         self.exec_statement(alternate);
         self.pop_cf_scope();
-        if let Some(stopped_exit) = self.pop_cf_scope().stopped_exit {
+        if let Some(stopped_exit) = self.pop_cf_scope().borrow().stopped_exit {
           exit_target_inner = exit_target_inner.max(stopped_exit);
           exit_target_outer = exit_target_outer.min(stopped_exit);
         } else {
@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
       self.exit_to(exit_target_inner);
       for cf_scope in self.scope_context.cf_scopes[exit_target_outer..exit_target_inner].iter_mut()
       {
-        cf_scope.exited = None;
+        cf_scope.borrow_mut().exited = None;
       }
     }
 

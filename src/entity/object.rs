@@ -6,17 +6,17 @@ use super::{
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
-  utils::{collect_effect_and_value, is_assignment_indeterminate},
+  utils::collect_effect_and_value,
 };
-use crate::{analyzer::Analyzer, use_consumed_flag};
-use oxc::{ast::ast::PropertyKind, semantic::ScopeId};
+use crate::{analyzer::Analyzer, scope::cf_scope::CfScopes, use_consumed_flag};
+use oxc::ast::ast::PropertyKind;
 use rustc_hash::FxHashMap;
 use std::cell::{Cell, RefCell};
 
 #[derive(Debug, Clone)]
 pub struct ObjectEntity<'a> {
   pub consumed: Cell<bool>,
-  pub scope_path: Vec<ScopeId>,
+  pub cf_scopes: CfScopes<'a>,
   pub string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
   pub unknown_keyed: RefCell<ObjectProperty<'a>>,
   // TODO: symbol_keyed
@@ -141,7 +141,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       return consumed_object::set_property(analyzer, key, value);
     }
     let this = rc.clone();
-    let indeterminate = is_assignment_indeterminate(&self.scope_path, analyzer);
+    let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let mut has_effect = false;
@@ -243,7 +243,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       return consumed_object::delete_property(analyzer, key);
     }
     self.consume_self(analyzer);
-    let indeterminate = is_assignment_indeterminate(&self.scope_path, analyzer);
+    let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let definite = key_literals.len() == 1;
@@ -439,7 +439,7 @@ impl<'a> Analyzer<'a> {
   pub fn new_empty_object(&self) -> ObjectEntity<'a> {
     ObjectEntity {
       consumed: Cell::new(false),
-      scope_path: self.variable_scope_path(),
+      cf_scopes: self.scope_context.cf_scopes.clone(),
       string_keyed: RefCell::new(FxHashMap::default()),
       unknown_keyed: RefCell::new(ObjectProperty::default()),
       rest: RefCell::new(ObjectProperty::default()),

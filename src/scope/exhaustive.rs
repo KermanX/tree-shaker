@@ -5,7 +5,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_exhaustively(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> ()) {
     self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
     let mut round_counter = 0;
-    while self.cf_scope_mut().iterate_exhaustively() {
+    while self.cf_scope().borrow_mut().iterate_exhaustively() {
       runner(self);
       round_counter += 1;
       if round_counter > 1000 {
@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
   pub fn mark_exhaustive_read(&mut self, val: &Entity<'a>, symbol: SymbolId, target: usize) {
     if !val.test_is_completely_unknown() {
       for scope in &mut self.scope_context.cf_scopes[target..] {
-        scope.mark_exhaustive_read(symbol)
+        scope.borrow_mut().mark_exhaustive_read(symbol)
       }
     }
   }
@@ -34,7 +34,7 @@ impl<'a> Analyzer<'a> {
     } else {
       let mut should_consume = false;
       for scope in &mut self.scope_context.cf_scopes[target..] {
-        should_consume |= scope.mark_exhaustive_write(symbol)
+        should_consume |= scope.borrow_mut().mark_exhaustive_write(symbol)
       }
       should_consume
     }

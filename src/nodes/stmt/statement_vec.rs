@@ -13,7 +13,7 @@ impl<'a> Analyzer<'a> {
 
     let mut last_stmt = None;
     for (index, statement) in statements.iter().enumerate() {
-      if self.cf_scope().must_exited() {
+      if self.cf_scope().borrow().must_exited() {
         break;
       }
       self.exec_statement(statement);

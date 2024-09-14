@@ -16,11 +16,11 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.has_effect |= has_effect;
 
-    let function_scope = self.function_scope_mut();
-    if !function_scope.is_async {
+    let call_scope = self.call_scope_mut();
+    if !call_scope.is_async {
       // TODO: throw warning
     }
-    function_scope.has_await_effect |= has_effect;
+    call_scope.has_await_effect |= has_effect;
 
     awaited
   }
