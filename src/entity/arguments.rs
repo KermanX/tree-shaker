@@ -1,4 +1,5 @@
 use super::{
+  dep::EntityDep,
   entity::{Entity, EntityTrait},
   typeof_result::TypeofResult,
   unknown::UnknownEntity,
@@ -25,8 +26,9 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
+    _dep: EntityDep,
     _key: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     unreachable!()
   }
 
@@ -34,9 +36,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
+    _dep: EntityDep,
     _key: &Entity<'a>,
     _value: Entity<'a>,
-  ) -> bool {
+  ) {
     unreachable!()
   }
 
@@ -44,7 +47,8 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
+    _dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     unreachable!()
   }
 
@@ -55,9 +59,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   fn call(
     &self,
     _analyzer: &mut Analyzer<'a>,
+    _dep: EntityDep,
     _this: &Entity<'a>,
     _args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     unreachable!()
   }
 

@@ -5,9 +5,9 @@ impl<'a> Analyzer<'a> {
   pub fn exec_assignment_target_rest(
     &mut self,
     node: &'a AssignmentTargetRest<'a>,
-    effect_and_value: (bool, Entity<'a>),
+    value: Entity<'a>,
   ) {
-    self.exec_assignment_target(&node.target, effect_and_value)
+    self.exec_assignment_target(&node.target, value)
   }
 }
 

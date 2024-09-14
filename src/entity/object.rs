@@ -1,12 +1,13 @@
 use super::{
   arguments::ArgumentsEntity,
   consumed_object,
+  dep::EntityDep,
   entity::{Entity, EntityTrait},
   entry::EntryEntity,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
+  union::UnionEntity,
   unknown::{UnknownEntity, UnknownEntityKind},
-  utils::collect_effect_and_value,
 };
 use crate::{analyzer::Analyzer, scope::cf_scope::CfScopes, use_consumed_flag};
 use oxc::ast::ast::PropertyKind;
@@ -31,13 +32,18 @@ pub enum ObjectPropertyValue<'a> {
 }
 
 impl<'a> ObjectPropertyValue<'a> {
-  pub fn get_value(&self, analyzer: &mut Analyzer<'a>, this: &Entity<'a>) -> (bool, Entity<'a>) {
+  pub fn get_value(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+    this: &Entity<'a>,
+  ) -> Entity<'a> {
     match self {
-      ObjectPropertyValue::Field(value) => (false, value.clone()),
+      ObjectPropertyValue::Field(value) => value.clone(),
       ObjectPropertyValue::Property(Some(getter), _) => {
-        getter.call(analyzer, this, &ArgumentsEntity::new(vec![]))
+        getter.call(analyzer, dep, this, &ArgumentsEntity::new(vec![]))
       }
-      _ => (false, LiteralEntity::new_undefined()),
+      _ => LiteralEntity::new_undefined(),
     }
   }
 }
@@ -52,9 +58,10 @@ impl<'a> ObjectProperty<'a> {
   pub fn get_value(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
-  ) -> Vec<(bool, Entity<'a>)> {
-    self.values.iter().map(|property| property.get_value(analyzer, this)).collect()
+  ) -> Vec<Entity<'a>> {
+    self.values.iter().map(|property| property.get_value(analyzer, dep, this)).collect()
   }
 }
 
@@ -86,15 +93,15 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_property(analyzer, key);
+      return consumed_object::get_property(analyzer, dep, key);
     }
     let this = rc.clone();
-    let key = key.get_to_property_key();
-    if let Some(key_literals) = key.get_to_literals() {
-      let mut values = self.unknown_keyed.borrow().get_value(analyzer, &this);
+    if let Some(key_literals) = key.get_to_property_key().get_to_literals() {
+      let mut values = self.unknown_keyed.borrow().get_value(analyzer, dep, &this);
       let mut rest_added = false;
       let mut undefined_added = false;
       for key_literal in key_literals {
@@ -102,31 +109,30 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           LiteralEntity::String(key) => {
             let string_keyed = self.string_keyed.borrow();
             let add_undefined = if let Some(property) = string_keyed.get(key) {
-              values.extend(property.get_value(analyzer, &this));
+              values.extend(property.get_value(analyzer, dep, &this));
               !property.definite
             } else if !rest_added {
               rest_added = true;
               let rest = self.rest.borrow();
-              values.extend(rest.get_value(analyzer, &this));
+              values.extend(rest.get_value(analyzer, dep, &this));
               true
             } else {
               false
             };
             if add_undefined && !undefined_added {
               undefined_added = true;
-              values.push((false, LiteralEntity::new_undefined()));
+              values.push(LiteralEntity::new_undefined());
             }
           }
           LiteralEntity::Symbol(_, _) => todo!(),
           _ => unreachable!(),
         }
       }
-      let (has_effect, value) = collect_effect_and_value(values);
-      (has_effect, EntryEntity::new(value, key.clone()))
+      EntryEntity::new(UnionEntity::new(values), key.clone())
     } else {
       // TODO: like set_property, call getters and collect all possible values
       self.consume_as_unknown(analyzer);
-      (true, EntryEntity::new(UnknownEntity::new_unknown(), key.clone()))
+      consumed_object::get_property(analyzer, dep, key)
     }
   }
 
@@ -134,17 +140,17 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
     value: Entity<'a>,
-  ) -> bool {
+  ) {
     if self.consumed.get() {
-      return consumed_object::set_property(analyzer, key, value);
+      return consumed_object::set_property(analyzer, dep, key, value);
     }
     let this = rc.clone();
     let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
-      let mut has_effect = false;
       let indeterminate = indeterminate || self.unknown_keyed.borrow().values.len() > 0;
       let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_set = false;
@@ -165,9 +171,12 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                 property.values.iter().chain(self.unknown_keyed.borrow().values.iter())
               {
                 if let ObjectPropertyValue::Property(_, Some(setter)) = property_val {
-                  has_effect |= setter
-                    .call(analyzer, &this, &ArgumentsEntity::new(vec![(false, value.clone())]))
-                    .0;
+                  setter.call(
+                    analyzer,
+                    dep,
+                    &this,
+                    &ArgumentsEntity::new(vec![(false, value.clone())]),
+                  );
                 }
               }
               if indeterminate || !property.definite || property.values.is_empty() {
@@ -181,9 +190,12 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                 for property in rest.values.iter().chain(self.unknown_keyed.borrow().values.iter())
                 {
                   if let ObjectPropertyValue::Property(_, Some(setter)) = property {
-                    has_effect |= setter
-                      .call(analyzer, &this, &ArgumentsEntity::new(vec![(false, value.clone())]))
-                      .0;
+                    setter.call(
+                      analyzer,
+                      dep,
+                      &this,
+                      &ArgumentsEntity::new(vec![(false, value.clone())]),
+                    );
                   }
                 }
               }
@@ -199,14 +211,13 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           _ => unreachable!(),
         }
       }
-      has_effect
     } else {
       self
         .unknown_keyed
         .borrow_mut()
         .values
         .push(ObjectPropertyValue::Field(EntryEntity::new(value, key)));
-      self.apply_unknown_to_possible_setters(analyzer)
+      self.apply_unknown_to_possible_setters(analyzer, dep)
     }
   }
 
@@ -214,28 +225,24 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
+    dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     if self.consumed.get() {
-      return consumed_object::enumerate_properties(analyzer);
+      return consumed_object::enumerate_properties(analyzer, dep);
     }
     let this = rc.clone();
     // unknown_keyed = unknown_keyed + rest
-    let mut unknown_keyed = self.unknown_keyed.borrow().get_value(analyzer, &this);
-    unknown_keyed.extend(self.rest.borrow().get_value(analyzer, &this));
-    let mut has_effect = false;
+    let mut unknown_keyed = self.unknown_keyed.borrow().get_value(analyzer, dep, &this);
+    unknown_keyed.extend(self.rest.borrow().get_value(analyzer, dep, &this));
     let mut result = Vec::new();
     if unknown_keyed.len() > 0 {
-      let (effect, value) = collect_effect_and_value(unknown_keyed);
-      has_effect |= effect;
-      result.push((false, UnknownEntity::new_unknown(), value));
+      result.push((false, UnknownEntity::new_unknown(), UnionEntity::new(unknown_keyed)));
     }
     for (key, properties) in self.string_keyed.borrow().iter() {
-      let values = properties.get_value(analyzer, &this);
-      let (effect, value) = collect_effect_and_value(values);
-      has_effect |= effect;
-      result.push((properties.definite, LiteralEntity::new_string(key), value));
+      let values = properties.get_value(analyzer, dep, &this);
+      result.push((properties.definite, LiteralEntity::new_string(key), UnionEntity::new(values)));
     }
-    (has_effect, result)
+    result
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
@@ -276,11 +283,12 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     self.consume_as_unknown(analyzer);
-    consumed_object::call(analyzer, this, args)
+    consumed_object::call(analyzer, dep, this, args)
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
@@ -391,47 +399,47 @@ impl<'a> ObjectEntity<'a> {
     }
   }
 
-  pub fn init_spread(&self, analyzer: &mut Analyzer<'a>, argument: Entity<'a>) -> bool {
-    let (has_effect, properties) = argument.enumerate_properties(analyzer);
+  pub fn init_spread(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl Into<EntityDep>,
+    argument: Entity<'a>,
+  ) {
+    let properties = argument.enumerate_properties(analyzer, dep);
     for (definite, key, value) in properties {
       self.init_property(PropertyKind::Init, key.clone(), value, definite);
     }
-    has_effect
   }
 
-  fn apply_unknown_to_possible_setters(&self, analyzer: &mut Analyzer<'a>) -> bool {
+  fn apply_unknown_to_possible_setters(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep) {
     fn apply_unknown_to_vec<'a>(
       analyzer: &mut Analyzer<'a>,
+      dep: EntityDep,
       property: &ObjectProperty<'a>,
       this: &Entity<'a>,
-    ) -> bool {
-      let mut has_effect = false;
+    ) {
       for property in &property.values {
         if let ObjectPropertyValue::Property(_, Some(setter)) = property {
-          has_effect |= setter
-            .call(
-              analyzer,
-              this,
-              &ArgumentsEntity::new(vec![(false, UnknownEntity::new_unknown())]),
-            )
-            .0;
+          setter.call(
+            analyzer,
+            dep,
+            this,
+            &ArgumentsEntity::new(vec![(false, UnknownEntity::new_unknown())]),
+          );
         }
       }
-      has_effect
     }
 
-    let mut has_effect = false;
     for property in self.string_keyed.borrow().values() {
-      has_effect |= apply_unknown_to_vec(analyzer, property, &UnknownEntity::new_unknown());
+      apply_unknown_to_vec(analyzer, dep, property, &UnknownEntity::new_unknown());
     }
-    has_effect |= apply_unknown_to_vec(
+    apply_unknown_to_vec(
       analyzer,
+      dep,
       &mut self.unknown_keyed.borrow(),
       &UnknownEntity::new_unknown(),
     );
-    has_effect |=
-      apply_unknown_to_vec(analyzer, &mut self.rest.borrow(), &UnknownEntity::new_unknown());
-    has_effect
+    apply_unknown_to_vec(analyzer, dep, &mut self.rest.borrow(), &UnknownEntity::new_unknown());
   }
 }
 

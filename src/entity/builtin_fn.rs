@@ -1,5 +1,6 @@
 use super::{
   consumed_object,
+  dep::EntityDep,
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
@@ -12,9 +13,10 @@ pub trait BuiltinFnEntity<'a>: Debug {
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>);
+  ) -> Entity<'a>;
 }
 
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
@@ -26,20 +28,22 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    analyzer.builtins.prototypes.function.get_property(key)
+  ) -> Entity<'a> {
+    analyzer.builtins.prototypes.function.get_property(key, dep)
   }
 
   fn set_property(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
     value: Entity<'a>,
-  ) -> bool {
+  ) {
     // TODO: throw warning
-    consumed_object::set_property(analyzer, key, value)
+    consumed_object::set_property(analyzer, dep, key, value)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
@@ -51,17 +55,19 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
-    (false, vec![])
+    _dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+    vec![]
   }
 
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    self.call_impl(analyzer, this, args)
+  ) -> Entity<'a> {
+    self.call_impl(analyzer, dep, this, args)
   }
 
   fn r#await(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
@@ -103,7 +109,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 }
 
 pub type BuiltinFnImplementation<'a> =
-  fn(&mut Analyzer<'a>, &Entity<'a>, &Entity<'a>) -> (bool, Entity<'a>);
+  fn(&mut Analyzer<'a>, &Entity<'a>, &Entity<'a>) -> Entity<'a>;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ImplementedBuiltinFnEntity<'a> {
@@ -114,9 +120,10 @@ impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
+    _dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     (self.implementation)(analyzer, this, args)
   }
 }
@@ -136,12 +143,13 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
+    _dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     this.consume_as_unknown(analyzer);
     args.consume_as_unknown(analyzer);
-    (false, self.return_value.clone())
+    self.return_value.clone()
   }
 }
 

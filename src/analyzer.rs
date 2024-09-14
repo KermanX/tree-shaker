@@ -3,13 +3,8 @@ use crate::{
   builtins::Builtins,
   data::{get_node_ptr, ExtraData, ReferredNodes, StatementVecData},
   entity::{
-    dep::{EntityDep, EntityDepNode},
-    entity::Entity,
-    forwarded::ForwardedEntity,
-    label::LabelEntity,
-    operations::EntityOpHost,
-    union::UnionEntity,
-    unknown::UnknownEntity,
+    dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, label::LabelEntity,
+    operations::EntityOpHost, union::UnionEntity, unknown::UnknownEntity,
   },
   scope::{variable_scope::VariableScope, ScopeContext},
   TreeShakeConfig,
@@ -32,7 +27,7 @@ pub struct Analyzer<'a> {
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
   pub symbol_decls:
-    FxHashMap<SymbolId, (DeclarationKind, Rc<RefCell<VariableScope<'a>>>, EntityDep<'a>)>,
+    FxHashMap<SymbolId, (DeclarationKind, Rc<RefCell<VariableScope<'a>>>, EntityDep)>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
   pub builtins: Builtins<'a>,
@@ -96,7 +91,7 @@ impl<'a> Analyzer<'a> {
   pub fn declare_symbol(
     &mut self,
     symbol: SymbolId,
-    dep: EntityDep<'a>,
+    decl_dep: impl Into<EntityDep>,
     exporting: bool,
     kind: DeclarationKind,
     value: Option<Entity<'a>>,
@@ -111,16 +106,12 @@ impl<'a> Analyzer<'a> {
       self.variable_scope().clone()
     };
     variable_scope.borrow_mut().declare(kind, symbol, value);
-    self.symbol_decls.insert(symbol, (kind, variable_scope, dep));
+    self.symbol_decls.insert(symbol, (kind, variable_scope, decl_dep.into()));
   }
 
   pub fn init_symbol(&mut self, symbol: SymbolId, value: Entity<'a>) {
     let variable_scope = &self.symbol_decls.get(&symbol).unwrap().1;
     variable_scope.borrow_mut().init(symbol, value);
-  }
-
-  pub fn new_entity_dep(&self, node: EntityDepNode<'a>) -> EntityDep<'a> {
-    EntityDep { node, scope_path: self.variable_scope_path() }
   }
 
   pub fn read_symbol(&mut self, symbol: &SymbolId) -> Entity<'a> {
@@ -132,7 +123,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn write_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
-    let (kind, variable_scope, dep) = self.symbol_decls.get(symbol).unwrap().clone();
+    let (kind, variable_scope, decl_dep) = self.symbol_decls.get(symbol).unwrap().clone();
     if kind.is_const() {
       // TODO: throw warning
     }
@@ -153,7 +144,7 @@ impl<'a> Analyzer<'a> {
           false,
           ForwardedEntity::new(
             if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },
-            dep,
+            decl_dep,
           ),
         )
       };
@@ -161,23 +152,17 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn refer_dep(&mut self, dep: &EntityDep<'a>) {
-    self.referred_nodes.insert(dep.node);
-
-    // TODO: TODO:
-    // let mut diff = false;
-    // for (i, scope) in self.scope_context.variable_scopes.iter_mut().enumerate() {
-    //   if diff || dep.scope_path.get(i) != Some(&scope.id) {
-    //     diff = true;
-    //     scope.has_effect = true;
-    //   }
-    // }
+  pub fn refer_dep(&mut self, dep: EntityDep) {
+    self.referred_nodes.insert(dep);
   }
 
   pub fn refer_global_dep(&mut self) {
-    // TODO: TODO:
-    // for scope in self.scope_context.variable_scopes.iter_mut() {
-    //   scope.has_effect = true;
-    // }
+    if self.config.unknown_global_side_effects {
+      self.may_throw();
+      let deps = self.scope_context.call_scopes.iter().map(|scope| scope.dep).collect::<Vec<_>>();
+      for dep in deps {
+        self.refer_dep(dep);
+      }
+    }
   }
 }

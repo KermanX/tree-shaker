@@ -1,18 +1,11 @@
-use crate::ast::AstType2;
-use crate::build_effect;
-use crate::entity::entity::Entity;
-use crate::{analyzer::Analyzer, transformer::Transformer};
-use oxc::ast::ast::{
-  Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, SpreadElement,
+use crate::{analyzer::Analyzer, build_effect, entity::entity::Entity, transformer::Transformer};
+use oxc::{
+  ast::{
+    ast::{Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, SpreadElement},
+    AstKind,
+  },
+  span::{GetSpan, SPAN},
 };
-use oxc::span::{GetSpan, SPAN};
-
-const AST_TYPE: AstType2 = AstType2::SpreadElement;
-
-#[derive(Debug, Default)]
-struct Data {
-  has_effect: bool,
-}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
@@ -27,10 +20,7 @@ impl<'a> Analyzer<'a> {
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);
-          let has_effect = object.init_spread(self, argument);
-
-          let data = self.load_data::<Data>(AST_TYPE, node.as_ref());
-          data.has_effect |= has_effect;
+          object.init_spread(self, AstKind::SpreadElement(node), argument);
         }
       }
     }
@@ -81,8 +71,7 @@ impl<'a> Transformer<'a> {
           }
         }
         ObjectPropertyKind::SpreadProperty(node) => {
-          let data = self.get_data::<Data>(AST_TYPE, node.as_ref());
-          let need_spread = need_val || data.has_effect;
+          let need_spread = need_val || self.is_referred(AstKind::SpreadElement(node));
 
           let SpreadElement { span, argument, .. } = node.as_ref();
 

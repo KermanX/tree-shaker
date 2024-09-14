@@ -5,15 +5,18 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::{
-  ast::ast::{
-    AssignmentTargetProperty, AssignmentTargetPropertyIdentifier, AssignmentTargetPropertyProperty,
+  ast::{
+    ast::{
+      AssignmentTargetProperty, AssignmentTargetPropertyIdentifier,
+      AssignmentTargetPropertyProperty,
+    },
+    AstKind,
   },
   span::{GetSpan, SPAN},
 };
 
 #[derive(Debug, Default)]
 struct IdentifierData {
-  has_effect: bool,
   need_init: bool,
 }
 
@@ -28,7 +31,7 @@ impl<'a> Analyzer<'a> {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = LiteralEntity::new_string(node.binding.name.as_str());
 
-        let (has_effect, value) = value.get_property(self, &key);
+        let value = value.get_property(self, AstKind::Ass, &key);
 
         let (need_init, value) = if let Some(init) = &node.init {
           self.exec_with_default(init, value)
@@ -38,7 +41,6 @@ impl<'a> Analyzer<'a> {
 
         let data = self
           .load_data::<IdentifierData>(AstType2::AssignmentTargetPropertyIdentifier, node.as_ref());
-        data.has_effect |= has_effect;
         data.need_init |= need_init;
 
         self.exec_identifier_reference_write(&node.binding, value);
@@ -47,8 +49,8 @@ impl<'a> Analyzer<'a> {
       }
       AssignmentTargetProperty::AssignmentTargetPropertyProperty(node) => {
         let key = self.exec_property_key(&node.name);
-        let effect_and_value = value.get_property(self, &key);
-        self.exec_assignment_target_maybe_default(&node.binding, effect_and_value);
+        let value = value.get_property(self, dep, &key);
+        self.exec_assignment_target_maybe_default(&node.binding, value);
         key
       }
     }
@@ -61,6 +63,7 @@ impl<'a> Transformer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     has_rest: bool,
   ) -> Option<AssignmentTargetProperty<'a>> {
+    let is_referred = self.is_referred(AstKind::AssignmentTargetProperty(node));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let data = self
@@ -78,7 +81,7 @@ impl<'a> Transformer<'a> {
           })
           .flatten();
 
-        if data.has_effect && binding.is_none() {
+        if is_referred && binding.is_none() {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
             *span,
             self.ast_builder.property_key_identifier_name(binding_span, binding_name),

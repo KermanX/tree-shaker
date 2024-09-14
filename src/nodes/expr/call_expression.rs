@@ -1,16 +1,19 @@
-use crate::ast::AstType2;
-use crate::entity::entity::Entity;
-use crate::entity::literal::LiteralEntity;
-use crate::entity::union::UnionEntity;
-use crate::entity::unknown::UnknownEntity;
-use crate::{build_effect_from_arr, transformer::Transformer, Analyzer};
-use oxc::ast::ast::{CallExpression, Expression, TSTypeParameterInstantiation};
+use crate::{
+  analyzer::Analyzer,
+  ast::AstType2,
+  build_effect_from_arr,
+  entity::{entity::Entity, literal::LiteralEntity, union::UnionEntity, unknown::UnknownEntity},
+  transformer::Transformer,
+};
+use oxc::ast::{
+  ast::{CallExpression, Expression, TSTypeParameterInstantiation},
+  AstKind,
+};
 
 const AST_TYPE: AstType2 = AstType2::CallExpression;
 
 #[derive(Debug, Default)]
 pub struct Data {
-  has_effect: bool,
   need_optional: bool,
 }
 
@@ -35,10 +38,10 @@ impl<'a> Analyzer<'a> {
 
     let args = self.exec_arguments(&node.arguments);
     // TODO: Track `this`. Refer https://github.com/oxc-project/oxc/issues/4341
-    let (has_effect, ret_val) = callee.call(self, &UnknownEntity::new_unknown(), &args);
+    let ret_val =
+      callee.call(self, AstKind::CallExpression(node), &UnknownEntity::new_unknown(), &args);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
-    data.has_effect |= has_effect;
     data.need_optional |= indeterminate;
 
     if indeterminate {
@@ -60,7 +63,7 @@ impl<'a> Transformer<'a> {
 
     let CallExpression { span, callee, arguments, .. } = node;
 
-    let need_call = need_val || data.has_effect;
+    let need_call = need_val || self.is_referred(AstKind::CallExpression(node));
 
     if need_call {
       // Need call

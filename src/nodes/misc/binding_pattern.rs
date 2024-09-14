@@ -13,8 +13,7 @@ use oxc::{
 };
 
 #[derive(Debug, Default)]
-struct Data {
-  has_effect: bool,
+struct ObjectPatternData {
   need_destruct: bool,
 }
 
@@ -58,21 +57,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  /// effect_and_init is a tuple of (effect, init)
-  /// effect is a boolean value that indicates whether the binding pattern has an effect:
-  /// ```js
-  /// const { a } = { get a() { effect() }};
-  /// ```
-  /// here `a` has an effect
-  pub fn exec_binding_pattern(
-    &mut self,
-    node: &'a BindingPattern<'a>,
-    (effect, init): (bool, Entity<'a>),
-  ) {
-    let data = self.load_data::<Data>(AstType2::BindingPattern, node);
-    if effect {
-      data.has_effect = true;
-    }
+  pub fn exec_binding_pattern(&mut self, node: &'a BindingPattern<'a>, init: Entity<'a>) {
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
         self.init_binding_identifier(node, init);
@@ -80,6 +65,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         if init.test_nullish() != Some(false) {
           self.may_throw();
+          let data = self.load_data::<ObjectPatternData>(AstType2::ObjectPattern, node.as_ref());
           data.need_destruct = true;
         }
 
@@ -87,23 +73,23 @@ impl<'a> Analyzer<'a> {
         for property in &node.properties {
           let key = self.exec_property_key(&property.key);
           enumerated.push(key.clone());
-          let effect_and_init = init.get_property(self, &key);
-          self.exec_binding_pattern(&property.value, effect_and_init);
+          let init = init.get_property(self, &key);
+          self.exec_binding_pattern(&property.value, init);
         }
         if let Some(rest) = &node.rest {
-          let effect_and_init = self.exec_object_rest(init, enumerated);
-          self.init_binding_rest_element(rest, effect_and_init);
+          let init = self.exec_object_rest(init, enumerated);
+          self.init_binding_rest_element(rest, init);
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
         let (element_values, rest_value) = init.get_to_array(node.elements.len());
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
-            self.exec_binding_pattern(element, (false, value));
+            self.exec_binding_pattern(element, value);
           }
         }
         if let Some(rest) = &node.rest {
-          self.init_binding_rest_element(rest, (false, rest_value));
+          self.init_binding_rest_element(rest, rest_value);
         }
       }
       BindingPatternKind::AssignmentPattern(node) => {
@@ -113,7 +99,7 @@ impl<'a> Analyzer<'a> {
           self.load_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
         data.need_right |= need_right;
 
-        self.exec_binding_pattern(&node.left, (false, binding_val));
+        self.exec_binding_pattern(&node.left, binding_val);
       }
     }
   }
@@ -124,8 +110,6 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a BindingPattern<'a>,
   ) -> Option<BindingPattern<'a>> {
-    let data = self.get_data::<Data>(AstType2::BindingPattern, node);
-
     let span = node.span();
 
     let BindingPattern { kind, .. } = node;
@@ -142,6 +126,8 @@ impl<'a> Transformer<'a> {
       }
       BindingPatternKind::ObjectPattern(node) => {
         let ObjectPattern { span, properties, rest, .. } = node.as_ref();
+
+        let data = self.get_data::<ObjectPatternData>(AstType2::ObjectPattern, node.as_ref());
 
         let rest = rest.as_ref().and_then(|rest| self.transform_binding_rest_element(rest));
 

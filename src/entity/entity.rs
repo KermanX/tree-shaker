@@ -1,4 +1,6 @@
-use super::{array::ArrayEntity, literal::LiteralEntity, typeof_result::TypeofResult};
+use super::{
+  array::ArrayEntity, dep::EntityDep, literal::LiteralEntity, typeof_result::TypeofResult,
+};
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};
@@ -11,27 +13,31 @@ pub trait EntityTrait<'a>: Debug {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
-  ) -> (bool, Entity<'a>);
+  ) -> Entity<'a>;
   fn set_property(
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
     value: Entity<'a>,
-  ) -> bool;
+  );
   fn enumerate_properties(
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>);
+    dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)>;
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool;
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>);
+  ) -> Entity<'a>;
   fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>);
   fn iterate(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>);
 
@@ -90,24 +96,31 @@ impl<'a> Entity<'a> {
     self.0.consume_as_unknown(analyzer)
   }
 
-  pub fn get_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> (bool, Entity<'a>) {
-    self.0.get_property(self, analyzer, key)
+  pub fn get_property(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl Into<EntityDep>,
+    key: &Entity<'a>,
+  ) -> Entity<'a> {
+    self.0.get_property(self, analyzer, dep.into(), key)
   }
 
   pub fn set_property(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: impl Into<EntityDep>,
     key: &Entity<'a>,
     value: Entity<'a>,
-  ) -> bool {
-    self.0.set_property(self, analyzer, key, value)
+  ) {
+    self.0.set_property(self, analyzer, dep.into(), key, value)
   }
 
   pub fn enumerate_properties(
     &self,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
-    self.0.enumerate_properties(self, analyzer)
+    dep: impl Into<EntityDep>,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+    self.0.enumerate_properties(self, analyzer, dep.into())
   }
 
   pub fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
@@ -117,10 +130,11 @@ impl<'a> Entity<'a> {
   pub fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: impl Into<EntityDep>,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    self.0.call(analyzer, this, args)
+  ) -> Entity<'a> {
+    self.0.call(analyzer, dep.into(), this, args)
   }
 
   pub fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {

@@ -1,10 +1,10 @@
-use crate::ast::AstType2;
-use crate::entity::dep::EntityDepNode;
-use crate::entity::entity::Entity;
-use crate::entity::forwarded::ForwardedEntity;
-use crate::entity::unknown::UnknownEntity;
-use crate::{transformer::Transformer, Analyzer};
-use oxc::ast::ast::IdentifierReference;
+use crate::{
+  analyzer::Analyzer,
+  ast::AstType2,
+  entity::{entity::Entity, forwarded::ForwardedEntity, unknown::UnknownEntity},
+  transformer::Transformer,
+};
+use oxc::ast::{ast::IdentifierReference, AstKind};
 
 const AST_TYPE_READ: AstType2 = AstType2::IdentifierReferenceRead;
 const AST_TYPE_WRITE: AstType2 = AstType2::IdentifierReferenceWrite;
@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
     value: Entity<'a>,
   ) {
-    let dep = self.new_entity_dep(EntityDepNode::IdentifierReference(node));
+    let dep = AstKind::IdentifierReference(node);
     let value = ForwardedEntity::new(value, dep);
 
     if self.builtins.globals.contains_key(node.name.as_str()) {
@@ -84,7 +84,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<IdentifierReference<'a>> {
     let data = self.get_data::<Data>(AST_TYPE_WRITE, node);
 
-    let referred = self.is_referred(EntityDepNode::IdentifierReference(node));
+    let referred = self.is_referred(AstKind::IdentifierReference(node));
     (!data.resolvable || referred).then(|| self.clone_node(node))
   }
 }

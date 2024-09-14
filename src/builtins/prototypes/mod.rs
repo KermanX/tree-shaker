@@ -11,7 +11,7 @@ mod string;
 mod symbol;
 
 use crate::entity::{
-  entity::Entity, entry::EntryEntity, literal::LiteralEntity, union::UnionEntity,
+  dep::EntityDep, entity::Entity, entry::EntryEntity, literal::LiteralEntity, union::UnionEntity,
   unknown::UnknownEntity,
 };
 use rustc_hash::FxHashMap;
@@ -31,7 +31,7 @@ impl<'a> Prototype<'a> {
     self.0.get(key)
   }
 
-  pub fn get_property(&self, key: &Entity<'a>) -> (bool, Entity<'a>) {
+  pub fn get_property(&self, key: &Entity<'a>, _dep: EntityDep) -> Entity<'a> {
     let key = key.get_to_property_key();
     'known: {
       if let Some(key_literals) = key.get_to_literals() {
@@ -49,10 +49,10 @@ impl<'a> Prototype<'a> {
             _ => unreachable!(),
           }
         }
-        return (false, EntryEntity::new(UnionEntity::new(values), key.clone()));
+        return EntryEntity::new(UnionEntity::new(values), key.clone());
       }
     }
-    (false, EntryEntity::new(UnknownEntity::new_unknown(), key.clone()))
+    EntryEntity::new(UnknownEntity::new_unknown(), key.clone())
   }
 }
 

@@ -1,4 +1,5 @@
 use super::{
+  dep::EntityDep,
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
@@ -27,45 +28,36 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    let (has_effect, value) = self.value.get_property(analyzer, key);
-    if has_effect {
-      self.key.consume_self(analyzer);
-    }
-    (has_effect, self.forward(value))
+  ) -> Entity<'a> {
+    let value = self.value.get_property(analyzer, dep, key);
+    self.forward(value)
   }
 
   fn set_property(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
     value: Entity<'a>,
-  ) -> bool {
-    let has_effect = self.value.set_property(analyzer, key, value);
-    if has_effect {
-      self.key.consume_self(analyzer);
-    }
-    has_effect
+  ) {
+    self.value.set_property(analyzer, dep, key, value);
   }
 
   fn enumerate_properties(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
-    let (has_effect, properties) = self.value.enumerate_properties(analyzer);
-    if has_effect {
-      self.key.consume_self(analyzer);
-    }
-    (
-      has_effect,
-      properties
-        .into_iter()
-        .map(|(definite, key, value)| (definite, key, self.forward(value)))
-        .collect(),
-    )
+    dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+    self
+      .value
+      .enumerate_properties(analyzer, dep)
+      .into_iter()
+      .map(|(definite, key, value)| (definite, key, self.forward(value)))
+      .collect()
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
@@ -75,14 +67,12 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    let (has_effect, ret_val) = self.value.call(analyzer, this, args);
-    if has_effect {
-      self.key.consume_self(analyzer);
-    }
-    (has_effect, self.forward(ret_val))
+  ) -> Entity<'a> {
+    let ret_val = self.value.call(analyzer, dep, this, args);
+    self.forward(ret_val)
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {

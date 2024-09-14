@@ -3,22 +3,22 @@ use crate::{
   ast::AstType2,
   build_effect,
   entity::{
-    dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity,
-    union::UnionEntity,
+    entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity, union::UnionEntity,
   },
   transformer::Transformer,
 };
-use oxc::ast::ast::{
-  ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
-  StaticMemberExpression,
+use oxc::ast::{
+  ast::{
+    ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
+    StaticMemberExpression,
+  },
+  AstKind,
 };
 
 const AST_TYPE_READ: AstType2 = AstType2::MemberExpressionRead;
-const AST_TYPE_WRITE: AstType2 = AstType2::MemberExpressionWrite;
 
 #[derive(Debug, Default)]
 struct Data {
-  has_effect: bool,
   need_optional: bool,
 }
 
@@ -42,10 +42,9 @@ impl<'a> Analyzer<'a> {
 
     let key = self.exec_key(node);
     // TODO: handle optional
-    let (has_effect, value) = object.get_property(self, &key);
+    let value = object.get_property(self, AstKind::MemberExpression(node), &key);
 
     let data = self.load_data::<Data>(AST_TYPE_READ, node);
-    data.has_effect |= has_effect;
     data.need_optional |= indeterminate;
 
     if indeterminate {
@@ -61,15 +60,12 @@ impl<'a> Analyzer<'a> {
     node: &'a MemberExpression<'a>,
     value: Entity<'a>,
   ) {
-    let dep = self.new_entity_dep(EntityDepNode::MemberExpression(node));
+    let dep = AstKind::MemberExpression(node);
     let value = ForwardedEntity::new(value, dep);
 
     let object = self.exec_expression(node.object());
     let key = self.exec_key(node);
-    let has_effect = object.set_property(self, &key, value);
-
-    let data = self.load_data::<Data>(AST_TYPE_WRITE, node);
-    data.has_effect |= has_effect;
+    object.set_property(self, dep, &key, value);
   }
 
   fn exec_key(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {
@@ -93,7 +89,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let data = self.get_data::<Data>(AST_TYPE_READ, node);
 
-    let need_read = need_val || data.has_effect;
+    let need_read = need_val || self.is_referred(AstKind::MemberExpression(node));
 
     match node {
       MemberExpression::ComputedMemberExpression(node) => {
@@ -152,10 +148,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a MemberExpression<'a>,
   ) -> Option<MemberExpression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE_WRITE, node);
-
-    let referred = self.is_referred(EntityDepNode::MemberExpression(node));
-    let need_write = referred || data.has_effect;
+    let need_write = self.is_referred(AstKind::MemberExpression(node));
 
     // TODO: side effect
     need_write.then(|| self.clone_node(node))

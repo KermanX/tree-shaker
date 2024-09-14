@@ -1,9 +1,8 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{dep::EntityDepNode, label::LabelEntity},
-  transformer::Transformer,
+use crate::{analyzer::Analyzer, entity::label::LabelEntity, transformer::Transformer};
+use oxc::ast::{
+  ast::{LabeledStatement, Statement},
+  AstKind,
 };
-use oxc::ast::ast::{LabeledStatement, Statement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_labeled_statement(&mut self, node: &'a LabeledStatement<'a>) {
@@ -21,7 +20,7 @@ impl<'a> Transformer<'a> {
 
     let body = self.transform_statement(body);
 
-    if self.is_referred(EntityDepNode::LabelIdentifier(&label)) {
+    if self.is_referred(AstKind::LabelIdentifier(&label)) {
       Some(self.ast_builder.statement_labeled(*span, label.clone(), body.unwrap()))
     } else {
       body

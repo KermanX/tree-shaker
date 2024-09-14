@@ -25,8 +25,8 @@ impl<'a> Analyzer<'a> {
           enumerated.push(self.exec_assignment_target_property(property, value.clone()));
         }
         if let Some(rest) = &node.rest {
-          let effect_and_value = self.exec_object_rest(value, enumerated);
-          self.exec_assignment_target_rest(rest, effect_and_value);
+          let init = self.exec_object_rest(value, enumerated);
+          self.exec_assignment_target_rest(rest, init);
         }
       }
     }

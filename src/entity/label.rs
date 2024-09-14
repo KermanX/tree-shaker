@@ -1,14 +1,18 @@
-use super::dep::EntityDepNode;
-use oxc::ast::ast::LabelIdentifier;
+use super::dep::EntityDep;
+use oxc::ast::{ast::LabelIdentifier, AstKind};
 
 #[derive(Debug, Clone, Copy)]
 pub struct LabelEntity<'a> {
   pub name: &'a str,
-  pub node: EntityDepNode<'a>,
+  pub node: &'a LabelIdentifier<'a>,
 }
 
 impl<'a> LabelEntity<'a> {
   pub fn new(node: &'a LabelIdentifier<'a>) -> Self {
-    LabelEntity { name: &node.name, node: EntityDepNode::LabelIdentifier(&node) }
+    LabelEntity { name: &node.name, node }
+  }
+
+  pub fn dep(&self) -> EntityDep {
+    AstKind::LabelIdentifier(self.node).into()
   }
 }

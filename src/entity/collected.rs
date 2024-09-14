@@ -1,4 +1,5 @@
 use super::{
+  dep::EntityDep,
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
@@ -32,34 +33,37 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    let (has_effect, value) = self.val.get_property(analyzer, key);
-    (has_effect, self.forward(value))
+  ) -> Entity<'a> {
+    let value = self.val.get_property(analyzer, dep, key);
+    self.forward(value)
   }
 
   fn set_property(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
     value: Entity<'a>,
-  ) -> bool {
+  ) {
     for entity in self.collected.borrow().iter() {
       entity.consume_self(analyzer);
     }
-    self.val.set_property(analyzer, key, value)
+    self.val.set_property(analyzer, dep, key, value)
   }
 
   fn enumerate_properties(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
+    dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     for entity in self.collected.borrow().iter() {
       entity.consume_self(analyzer);
     }
-    self.val.enumerate_properties(analyzer)
+    self.val.enumerate_properties(analyzer, dep)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
@@ -72,14 +76,12 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    let (has_effect, ret_cal) = self.val.call(analyzer, this, args);
-    if has_effect {
-      self.consume_self(analyzer);
-    }
-    (has_effect, self.forward(ret_cal))
+  ) -> Entity<'a> {
+    let ret_cal = self.val.call(analyzer, dep, this, args);
+    self.forward(ret_cal)
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {

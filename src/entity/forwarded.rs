@@ -10,17 +10,17 @@ use rustc_hash::FxHashSet;
 #[derive(Debug)]
 pub struct ForwardedEntity<'a> {
   val: Entity<'a>,
-  dep: EntityDep<'a>,
+  dep: EntityDep,
 }
 
 impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.refer_dep(&self.dep);
+    self.refer_dep(analyzer);
     self.val.consume_self(analyzer)
   }
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.refer_dep(&self.dep);
+    self.refer_dep(analyzer);
     self.val.consume_as_unknown(analyzer)
   }
 
@@ -28,45 +28,36 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    let (has_effect, value) = self.val.get_property(analyzer, key);
-    if has_effect {
-      analyzer.refer_dep(&self.dep);
-    }
-    (has_effect, self.forward(value))
+  ) -> Entity<'a> {
+    let value = self.val.get_property(analyzer, dep, key);
+    self.forward(value)
   }
 
   fn set_property(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
     value: Entity<'a>,
-  ) -> bool {
-    let has_effect = self.val.set_property(analyzer, key, value);
-    if has_effect {
-      analyzer.refer_dep(&self.dep);
-    }
-    has_effect
+  ) {
+    self.val.set_property(analyzer, dep, key, value);
   }
 
   fn enumerate_properties(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
-    let (has_effect, properties) = self.val.enumerate_properties(analyzer);
-    if has_effect {
-      analyzer.refer_dep(&self.dep);
-    }
-    (
-      has_effect,
-      properties
-        .into_iter()
-        .map(|(definite, key, value)| (definite, key, self.forward(value)))
-        .collect(),
-    )
+    dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+    self
+      .val
+      .enumerate_properties(analyzer, dep)
+      .into_iter()
+      .map(|(definite, key, value)| (definite, key, self.forward(value)))
+      .collect()
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
@@ -76,14 +67,12 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    let (has_effect, ret_val) = self.val.call(analyzer, this, args);
-    if has_effect {
-      analyzer.refer_dep(&self.dep);
-    }
-    (has_effect, self.forward(ret_val))
+  ) -> Entity<'a> {
+    let ret_val = self.val.call(analyzer, dep, this, args);
+    self.forward(ret_val)
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
@@ -137,11 +126,15 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
 }
 
 impl<'a> ForwardedEntity<'a> {
-  pub fn new(val: Entity<'a>, dep: EntityDep<'a>) -> Entity<'a> {
-    Entity::new(Self { val, dep })
+  pub fn new(val: Entity<'a>, dep: impl Into<EntityDep>) -> Entity<'a> {
+    Entity::new(Self { val, dep: dep.into() })
   }
 
   pub fn forward(&self, val: Entity<'a>) -> Entity<'a> {
     ForwardedEntity::new(val, self.dep.clone())
+  }
+
+  fn refer_dep(&self, analyzer: &mut Analyzer<'a>) {
+    analyzer.refer_dep(self.dep);
   }
 }

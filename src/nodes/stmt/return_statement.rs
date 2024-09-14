@@ -1,9 +1,12 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{dep::EntityDepNode, forwarded::ForwardedEntity, literal::LiteralEntity},
+  entity::{forwarded::ForwardedEntity, literal::LiteralEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::{ReturnStatement, Statement};
+use oxc::ast::{
+  ast::{ReturnStatement, Statement},
+  AstKind,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_return_statement(&mut self, node: &'a ReturnStatement) {
@@ -11,7 +14,7 @@ impl<'a> Analyzer<'a> {
       .argument
       .as_ref()
       .map_or_else(|| LiteralEntity::new_undefined(), |expr| self.exec_expression(expr));
-    let dep = self.new_entity_dep(EntityDepNode::ReturnStatement(node));
+    let dep = AstKind::ReturnStatement(node);
     let value = ForwardedEntity::new(value, dep);
 
     let call_scope = self.call_scope_mut();
@@ -23,7 +26,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_return_statement(&self, node: &'a ReturnStatement<'a>) -> Option<Statement<'a>> {
-    let need_val = self.is_referred(EntityDepNode::ReturnStatement(&node));
+    let need_val = self.is_referred(AstKind::ReturnStatement(&node));
 
     let ReturnStatement { span, argument } = node;
 

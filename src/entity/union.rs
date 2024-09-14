@@ -1,9 +1,10 @@
 use super::{
+  consumed_object,
+  dep::EntityDep,
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   unknown::UnknownEntity,
-  utils::collect_effect_and_value,
 };
 use crate::{analyzer::Analyzer, scope::CfScopeKind};
 use rustc_hash::FxHashSet;
@@ -28,36 +29,38 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     let mut values = Vec::new();
     for entity in &self.0 {
-      values.push(entity.get_property(analyzer, key));
+      values.push(entity.get_property(analyzer, dep, key));
     }
-    collect_effect_and_value(values)
+    UnionEntity::new(values)
   }
 
   fn set_property(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
     value: Entity<'a>,
-  ) -> bool {
-    let mut has_effect = false;
+  ) {
     for entity in &self.0 {
-      has_effect |= entity.set_property(analyzer, key, value.clone());
+      entity.set_property(analyzer, dep, key, value.clone());
     }
-    has_effect
   }
 
   fn enumerate_properties(
     &self,
     _rc: &Entity<'a>,
-    _analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     // FIXME:
-    UnknownEntity::new_unknown_to_entries_result(self.0.clone())
+    self.consume_as_unknown(analyzer);
+    consumed_object::enumerate_properties(analyzer, dep)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
@@ -71,24 +74,28 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     let mut results = Vec::new();
     analyzer.push_cf_scope(CfScopeKind::Normal, None, None);
     for entity in &self.0 {
-      results.push(entity.call(analyzer, this, args));
+      results.push(entity.call(analyzer, dep, this, args));
     }
     analyzer.pop_cf_scope();
-    collect_effect_and_value(results)
+    UnionEntity::new(results)
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
-    let mut results = Vec::new();
+    let mut await_effect = false;
+    let mut values = Vec::new();
     for entity in &self.0 {
-      results.push(entity.r#await(analyzer));
+      let (effect, value) = entity.r#await(analyzer);
+      await_effect |= effect;
+      values.push(value);
     }
-    collect_effect_and_value(results)
+    (await_effect, UnionEntity::new(values))
   }
 
   fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
@@ -186,16 +193,16 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 }
 
 impl<'a> UnionEntity<'a> {
-  pub fn new(entities: Vec<Entity<'a>>) -> Entity<'a> {
-    debug_assert!(!entities.is_empty());
-    if entities.len() == 1 {
-      entities.first().unwrap().clone()
+  pub fn new(values: Vec<Entity<'a>>) -> Entity<'a> {
+    debug_assert!(!values.is_empty());
+    if values.len() == 1 {
+      values.first().unwrap().clone()
     } else {
-      let has_unknown = entities.iter().any(|entity| entity.test_is_completely_unknown());
+      let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
       if has_unknown {
         UnknownEntity::new_unknown()
       } else {
-        Entity::new(UnionEntity(entities))
+        Entity::new(UnionEntity(values))
       }
     }
   }

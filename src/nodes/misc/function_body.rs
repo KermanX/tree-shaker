@@ -1,11 +1,11 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  data::StatementVecData,
-  entity::{dep::EntityDepNode, forwarded::ForwardedEntity},
+  analyzer::Analyzer, ast::AstType2, data::StatementVecData, entity::forwarded::ForwardedEntity,
   transformer::Transformer,
 };
-use oxc::ast::ast::{ExpressionStatement, FunctionBody, Statement};
+use oxc::ast::{
+  ast::{ExpressionStatement, FunctionBody, Statement},
+  AstKind,
+};
 
 const AST_TYPE: AstType2 = AstType2::FunctionBody;
 
@@ -19,7 +19,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_function_expression_body(&mut self, node: &'a FunctionBody<'a>) {
     debug_assert!(node.statements.len() == 1);
     if let Some(Statement::ExpressionStatement(expr)) = node.statements.first() {
-      let dep = self.new_entity_dep(EntityDepNode::FunctionBodyAsExpression(node));
+      let dep = AstKind::FunctionBody(node);
       let value = self.exec_expression(&expr.expression);
       let call_scope = self.call_scope_mut();
       call_scope.returned_values.push(ForwardedEntity::new(value, dep));
@@ -41,7 +41,7 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn transform_function_expression_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {
-    let need_val = self.is_referred(EntityDepNode::FunctionBodyAsExpression(&node));
+    let need_val = self.is_referred(AstKind::FunctionBody(&node));
 
     let FunctionBody { span, directives, statements, .. } = node;
 

@@ -1,10 +1,9 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{dep::EntityDepNode, forwarded::ForwardedEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, entity::forwarded::ForwardedEntity, transformer::Transformer};
 use oxc::{
-  ast::ast::{Statement, ThrowStatement},
+  ast::{
+    ast::{Statement, ThrowStatement},
+    AstKind,
+  },
   span::GetSpan,
 };
 
@@ -12,7 +11,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_throw_statement(&mut self, node: &'a ThrowStatement<'a>) {
     let value = self.exec_expression(&node.argument);
 
-    let dep = self.new_entity_dep(EntityDepNode::ThrowStatement(node));
+    let dep = AstKind::ThrowStatement(node);
 
     let try_scope = self.try_scope_mut();
     try_scope.throw(ForwardedEntity::new(value, dep));
@@ -23,7 +22,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_throw_statement(&self, node: &'a ThrowStatement<'a>) -> Option<Statement<'a>> {
-    let need_val = self.is_referred(EntityDepNode::ThrowStatement(&node));
+    let need_val = self.is_referred(AstKind::ThrowStatement(&node));
 
     let ThrowStatement { span, argument, .. } = node;
 

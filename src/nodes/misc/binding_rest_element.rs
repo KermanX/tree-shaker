@@ -13,12 +13,8 @@ impl<'a> Analyzer<'a> {
     self.declare_binding_pattern(&node.argument, exporting, kind);
   }
 
-  pub fn init_binding_rest_element(
-    &mut self,
-    node: &'a BindingRestElement<'a>,
-    effect_and_init: (bool, Entity<'a>),
-  ) {
-    self.exec_binding_pattern(&node.argument, effect_and_init);
+  pub fn init_binding_rest_element(&mut self, node: &'a BindingRestElement<'a>, init: Entity<'a>) {
+    self.exec_binding_pattern(&node.argument, init);
   }
 }
 

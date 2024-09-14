@@ -1,5 +1,6 @@
 use super::{
   consumed_object,
+  dep::EntityDep,
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
@@ -26,29 +27,32 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    analyzer.builtins.prototypes.promise.get_property(key)
+  ) -> Entity<'a> {
+    analyzer.builtins.prototypes.promise.get_property(key, dep)
   }
 
   fn set_property(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
     value: Entity<'a>,
-  ) -> bool {
+  ) {
     self.consume_as_unknown(analyzer);
-    consumed_object::set_property(analyzer, key, value)
+    consumed_object::set_property(analyzer, dep, key, value)
   }
 
   fn enumerate_properties(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
+    dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     self.consume_as_unknown(analyzer);
-    consumed_object::enumerate_properties(analyzer)
+    consumed_object::enumerate_properties(analyzer, dep)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
@@ -59,11 +63,12 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     self.consume_as_unknown(analyzer);
-    consumed_object::call(analyzer, this, args)
+    consumed_object::call(analyzer, dep, this, args)
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {

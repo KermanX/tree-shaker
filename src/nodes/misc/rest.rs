@@ -1,16 +1,20 @@
 use crate::{
   analyzer::Analyzer,
-  entity::entity::{Entity, EntityTrait},
+  entity::{
+    dep::EntityDep,
+    entity::{Entity, EntityTrait},
+  },
 };
 use oxc::ast::ast::PropertyKind;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_object_rest(
     &mut self,
+    dep: EntityDep,
     object: Entity<'a>,
     enumerated: Vec<Entity<'a>>,
-  ) -> (bool, Entity<'a>) {
-    let (has_effect, properties) = object.enumerate_properties(self);
+  ) -> Entity<'a> {
+    let properties = object.enumerate_properties(self, dep);
 
     let rest = self.new_empty_object();
     for (definite, key, value) in properties {
@@ -21,6 +25,6 @@ impl<'a> Analyzer<'a> {
       rest.delete_property(self, &key);
     }
 
-    (has_effect, Entity::new(rest))
+    Entity::new(rest)
   }
 }

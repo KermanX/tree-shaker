@@ -1,4 +1,6 @@
 use super::{
+  consumed_object,
+  dep::EntityDep,
   entity::{Entity, EntityTrait},
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
@@ -36,30 +38,31 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       // TODO: throw warning
-      (true, UnknownEntity::new_unknown())
+      consumed_object::get_property(analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
-      prototype.get_property(key)
+      prototype.get_property(key, dep)
     }
   }
 
   fn set_property(
     &self,
     _rc: &Entity<'a>,
-    _analyzer: &mut Analyzer<'a>,
-    _key: &Entity<'a>,
-    _value: Entity<'a>,
-  ) -> bool {
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+    key: &Entity<'a>,
+    value: Entity<'a>,
+  ) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       // TODO: throw warning
-      true
+      consumed_object::set_property(analyzer, dep, key, value)
     } else {
       // No effect
-      false
     }
   }
 
@@ -67,9 +70,10 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
+    _dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     // No effect
-    (false, vec![])
+    vec![]
   }
 
   fn delete_property(&self, _analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> bool {
@@ -84,12 +88,13 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn call(
     &self,
-    _analyzer: &mut Analyzer<'a>,
-    _this: &Entity<'a>,
-    _args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+    this: &Entity<'a>,
+    args: &Entity<'a>,
+  ) -> Entity<'a> {
     // TODO: throw warning
-    (true, UnknownEntity::new_unknown())
+    consumed_object::call(analyzer, dep, this, args)
   }
 
   fn r#await(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {

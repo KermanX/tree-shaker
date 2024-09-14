@@ -1,11 +1,16 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{dep::EntityDepNode, entity::Entity, function::FunctionEntity},
+  entity::{
+    dep::EntityDep,
+    entity::Entity,
+    function::{FunctionEntity, FunctionEntitySource},
+  },
   scope::variable_scope::VariableScopes,
   transformer::Transformer,
 };
-use oxc::ast::ast::{
-  ArrowFunctionExpression, Expression, TSTypeAnnotation, TSTypeParameterDeclaration,
+use oxc::ast::{
+  ast::{ArrowFunctionExpression, Expression, TSTypeAnnotation, TSTypeParameterDeclaration},
+  AstKind,
 };
 use std::rc::Rc;
 
@@ -14,17 +19,20 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
   ) -> Entity<'a> {
-    let dep = self.new_entity_dep(EntityDepNode::ArrowFunctionExpression(node));
-    FunctionEntity::new(dep.clone(), self.scope_context.variable_scopes.clone())
+    FunctionEntity::new(
+      FunctionEntitySource::ArrowFunctionExpression(node),
+      self.scope_context.variable_scopes.clone(),
+    )
   }
 
   pub fn call_arrow_function_expression(
     &mut self,
+    dep: EntityDep,
     node: &'a ArrowFunctionExpression<'a>,
     variable_scopes: Rc<VariableScopes<'a>>,
     args: Entity<'a>,
-  ) -> (bool, Entity<'a>) {
-    self.push_call_scope(variable_scopes, self.call_scope().this.clone(), node.r#async, false);
+  ) -> Entity<'a> {
+    self.push_call_scope(dep, variable_scopes, self.call_scope().this.clone(), node.r#async, false);
 
     self.exec_formal_parameters(&node.params, args);
     if node.expression {
@@ -43,7 +51,7 @@ impl<'a> Transformer<'a> {
     node: &'a ArrowFunctionExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    if need_val || self.is_referred(EntityDepNode::ArrowFunctionExpression(&node)) {
+    if need_val || self.is_referred(AstKind::ArrowFunctionExpression(&node)) {
       let ArrowFunctionExpression { span, expression, r#async, params, body, .. } = node;
 
       let params = self.transform_formal_parameters(params);

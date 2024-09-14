@@ -1,20 +1,13 @@
 use crate::{
   analyzer::Analyzer,
-  ast::AstType2,
   build_effect_from_arr,
   entity::{entity::Entity, unknown::UnknownEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::{
-  Expression, TSTypeParameterInstantiation, TaggedTemplateExpression, TemplateLiteral,
+use oxc::ast::{
+  ast::{Expression, TSTypeParameterInstantiation, TaggedTemplateExpression, TemplateLiteral},
+  AstKind,
 };
-
-const AST_TYPE: AstType2 = AstType2::TaggedTemplateExpression;
-
-#[derive(Debug, Default)]
-pub struct Data {
-  has_effect: bool,
-}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_tagged_template_expression(
@@ -28,13 +21,12 @@ impl<'a> Analyzer<'a> {
 
     // TODO: this
     // TODO: more specific arguments
-    let (has_effect, ret_val) =
-      tag.call(self, &UnknownEntity::new_unknown(), &UnknownEntity::new_unknown());
-
-    let data = self.load_data::<Data>(AST_TYPE, node);
-    data.has_effect |= has_effect;
-
-    ret_val
+    tag.call(
+      self,
+      AstKind::TaggedTemplateExpression(node),
+      &UnknownEntity::new_unknown(),
+      &UnknownEntity::new_unknown(),
+    )
   }
 }
 
@@ -44,11 +36,9 @@ impl<'a> Transformer<'a> {
     node: &'a TaggedTemplateExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
-
     let TaggedTemplateExpression { span, tag, quasi, .. } = node;
 
-    let need_call = need_val || data.has_effect;
+    let need_call = need_val || self.is_referred(AstKind::TaggedTemplateExpression(node));
 
     if need_call {
       let tag = self.transform_expression(tag, true).unwrap();

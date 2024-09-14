@@ -4,23 +4,8 @@ use oxc::{
   span::GetSpan,
 };
 
-const AST_TYPE: AstType2 = AstType2::AssignmentTarget;
-
-#[derive(Debug, Default)]
-pub struct Data {
-  has_effect: bool,
-}
-
 impl<'a> Analyzer<'a> {
-  pub fn exec_assignment_target(
-    &mut self,
-    node: &'a AssignmentTarget<'a>,
-    (effect, value): (bool, Entity<'a>),
-  ) {
-    if effect {
-      let data = self.load_data::<Data>(AST_TYPE, node);
-      data.has_effect = true;
-    }
+  pub fn exec_assignment_target(&mut self, node: &'a AssignmentTarget<'a>, value: Entity<'a>) {
     match node {
       match_simple_assignment_target!(AssignmentTarget) => {
         self.exec_simple_assignment_target_write(node.to_simple_assignment_target(), value);
@@ -39,8 +24,6 @@ impl<'a> Transformer<'a> {
     node: &'a AssignmentTarget<'a>,
     in_rest: bool,
   ) -> (bool, Option<AssignmentTarget<'a>>) {
-    let data = self.get_data::<Data>(AST_TYPE, node);
-
     let transformed = match node {
       match_simple_assignment_target!(AssignmentTarget) => self
         .transform_simple_assignment_target_write(node.to_simple_assignment_target())

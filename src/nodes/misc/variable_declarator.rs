@@ -24,7 +24,7 @@ impl<'a> Analyzer<'a> {
       None => LiteralEntity::new_undefined(),
     });
 
-    self.exec_binding_pattern(&node.id, (false, init));
+    self.exec_binding_pattern(&node.id, init);
   }
 }
 

@@ -5,16 +5,16 @@ use oxc::ast::ast::{FormalParameter, FormalParameters};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_formal_parameters(&mut self, node: &'a FormalParameters<'a>, args: Entity<'a>) {
-    let resolved = args.get_to_array(node.items.len());
+    let (elements_init, rest_init) = args.get_to_array(node.items.len());
 
-    for (param, arg) in node.items.iter().zip(resolved.0) {
+    for (param, init) in node.items.iter().zip(elements_init) {
       self.declare_binding_pattern(&param.pattern, false, DeclarationKind::Parameter);
-      self.exec_binding_pattern(&param.pattern, (false, arg));
+      self.exec_binding_pattern(&param.pattern, init);
     }
 
     if let Some(rest) = &node.rest {
       self.declare_binding_rest_element(rest, false, DeclarationKind::Parameter);
-      self.init_binding_rest_element(rest, (false, resolved.1));
+      self.init_binding_rest_element(rest, rest_init);
     }
   }
 }

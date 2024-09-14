@@ -1,4 +1,6 @@
 use super::{
+  consumed_object,
+  dep::EntityDep,
   entity::{Entity, EntityTrait},
   literal::LiteralEntity,
   typeof_result::TypeofResult,
@@ -44,15 +46,14 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     if matches!(self.kind, UnknownEntityKind::Unknown) {
-      self.consume_as_unknown(analyzer);
-      key.get_to_property_key().consume_self(analyzer);
-      (true, UnknownEntity::new_unknown())
+      consumed_object::get_property(analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
-      prototype.get_property(key)
+      prototype.get_property(key, dep)
     }
   }
 
@@ -60,16 +61,14 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     key: &Entity<'a>,
     value: Entity<'a>,
-  ) -> bool {
+  ) {
     if self.maybe_object() {
-      self.consume_as_unknown(analyzer);
-      key.get_to_property_key().consume_self(analyzer);
-      value.consume_as_unknown(analyzer);
-      true
+      consumed_object::set_property(analyzer, dep, key, value)
     } else {
-      false
+      // Primitives. No effect
     }
   }
 
@@ -77,12 +76,12 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
+    dep: EntityDep,
+  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     if self.maybe_object() {
-      self.consume_as_unknown(analyzer);
-      UnknownEntity::new_unknown_to_entries_result(self.deps.borrow().clone())
+      consumed_object::enumerate_properties(analyzer, dep)
     } else {
-      (false, vec![])
+      vec![]
     }
   }
 
@@ -99,16 +98,14 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
-  ) -> (bool, Entity<'a>) {
+  ) -> Entity<'a> {
     if !self.maybe_object() {
       // TODO: throw warning
     }
-    self.consume_as_unknown(analyzer);
-    this.consume_as_unknown(analyzer);
-    args.consume_as_unknown(analyzer);
-    (true, UnknownEntity::new_unknown())
+    consumed_object::call(analyzer, dep, this, args)
   }
 
   fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
@@ -214,19 +211,6 @@ impl<'a> UnknownEntity<'a> {
       result.push(UnknownEntity::new_unknown_with_deps(deps.clone()));
     }
     (result, UnknownEntity::new_unknown_with_deps(deps))
-  }
-
-  pub fn new_unknown_to_entries_result(
-    deps: Vec<Entity<'a>>,
-  ) -> (bool, Vec<(bool, Entity<'a>, Entity<'a>)>) {
-    (
-      true,
-      vec![(
-        false,
-        UnknownEntity::new_unknown_with_deps(deps.clone()),
-        UnknownEntity::new_unknown_with_deps(deps),
-      )],
-    )
   }
 
   pub fn maybe_object(&self) -> bool {

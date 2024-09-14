@@ -13,7 +13,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_assignment_target_maybe_default(
     &mut self,
     node: &'a AssignmentTargetMaybeDefault<'a>,
-    (effect, value): (bool, Entity<'a>),
+    value: Entity<'a>,
   ) {
     match node {
       AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(node) => {
@@ -23,9 +23,9 @@ impl<'a> Analyzer<'a> {
           self.load_data::<WithDefaultData>(AstType2::AssignmentTargetWithDefault, node.as_ref());
         data.need_init |= need_init;
 
-        self.exec_assignment_target(&node.binding, (effect, value));
+        self.exec_assignment_target(&node.binding, value);
       }
-      _ => self.exec_assignment_target(node.to_assignment_target(), (effect, value)),
+      _ => self.exec_assignment_target(node.to_assignment_target(), value),
     }
   }
 }
