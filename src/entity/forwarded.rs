@@ -31,7 +31,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     dep: EntityDep,
     key: &Entity<'a>,
   ) -> Entity<'a> {
-    let value = self.val.get_property(analyzer, dep, key);
+    let value = self.val.get_property(analyzer, (self.dep.clone(), dep), key);
     self.forward(value)
   }
 
@@ -43,7 +43,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.val.set_property(analyzer, dep, key, value);
+    self.val.set_property(analyzer, (self.dep.clone(), dep), key, value);
   }
 
   fn enumerate_properties(
@@ -54,7 +54,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     self
       .val
-      .enumerate_properties(analyzer, dep)
+      .enumerate_properties(analyzer, (self.dep.clone(), dep))
       .into_iter()
       .map(|(definite, key, value)| (definite, key, self.forward(value)))
       .collect()
@@ -71,7 +71,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    let ret_val = self.val.call(analyzer, dep, this, args);
+    let ret_val = self.val.call(analyzer, (self.dep.clone(), dep), this, args);
     self.forward(ret_val)
   }
 

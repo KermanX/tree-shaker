@@ -74,7 +74,7 @@ impl<'a> Analyzer<'a> {
 
         let mut enumerated = vec![];
         for property in &node.properties {
-          let dep = EntityDepNode::from((AstType2::BindingProperty, node.as_ref()));
+          let dep = EntityDepNode::from((AstType2::BindingProperty, property));
           let key = self.exec_property_key(&property.key);
           enumerated.push(key.clone());
           let init = init.get_property(self, dep, &key);

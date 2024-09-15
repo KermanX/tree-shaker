@@ -105,6 +105,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
+    let dep = (self.dep_node(), dep).into();
     let variable_scopes = self.variable_scopes.clone();
     let ret_val = match self.source {
       FunctionEntitySource::Function(node) => {
@@ -178,11 +179,14 @@ impl<'a> FunctionEntity<'a> {
     })
   }
 
-  pub fn dep(&self) -> EntityDep {
+  pub fn dep_node(&self) -> EntityDepNode {
     EntityDepNode::from(match self.source {
       FunctionEntitySource::Function(node) => AstKind::Function(node),
       FunctionEntitySource::ArrowFunctionExpression(node) => AstKind::ArrowFunctionExpression(node),
     })
-    .into()
+  }
+
+  pub fn dep(&self) -> EntityDep {
+    self.dep_node().into()
   }
 }

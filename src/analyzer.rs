@@ -127,9 +127,10 @@ impl<'a> Analyzer<'a> {
     if kind.is_const() {
       // TODO: throw warning
     }
-    let variable_scope_cf_scopes = &variable_scope.borrow().cf_scopes;
+    let mut variable_scope = variable_scope.borrow_mut();
+    let variable_scope_cf_scopes = &variable_scope.cf_scopes;
     let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
-    let (is_consumed_exhaustively, old_val) = variable_scope.borrow().read(symbol);
+    let (is_consumed_exhaustively, old_val) = variable_scope.read(symbol);
     if is_consumed_exhaustively {
       new_val.consume_as_unknown(self);
     } else {
@@ -148,7 +149,7 @@ impl<'a> Analyzer<'a> {
           ),
         )
       };
-      variable_scope.borrow_mut().write(*symbol, entity_to_set);
+      variable_scope.write(*symbol, entity_to_set);
     }
   }
 
