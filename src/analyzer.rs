@@ -6,7 +6,7 @@ use crate::{
     dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, label::LabelEntity,
     operations::EntityOpHost, union::UnionEntity, unknown::UnknownEntity,
   },
-  scope::{variable_scope::VariableScope, ScopeContext},
+  scope::{variable_scope::VariableScopes, ScopeContext},
   TreeShakeConfig,
 };
 use oxc::{
@@ -16,7 +16,7 @@ use oxc::{
   span::GetSpan,
 };
 use rustc_hash::FxHashMap;
-use std::{cell::RefCell, mem, rc::Rc};
+use std::mem;
 
 pub struct Analyzer<'a> {
   pub config: TreeShakeConfig,
@@ -26,8 +26,7 @@ pub struct Analyzer<'a> {
   pub referred_nodes: ReferredNodes<'a>,
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
-  pub symbol_decls:
-    FxHashMap<SymbolId, (DeclarationKind, Rc<RefCell<VariableScope<'a>>>, EntityDep)>,
+  pub symbol_decls: FxHashMap<SymbolId, (DeclarationKind, VariableScopes<'a>, EntityDep)>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
   pub builtins: Builtins<'a>,
@@ -99,24 +98,24 @@ impl<'a> Analyzer<'a> {
     if exporting {
       self.named_exports.push(symbol);
     }
-    let variable_scope = if kind.is_var() {
+    let variable_scopes = if kind.is_var() {
       let index = self.call_scope().variable_scope_index;
-      self.scope_context.variable_scopes[index].clone()
+      self.scope_context.variable_scopes[..index + 1].to_vec()
     } else {
-      self.variable_scope().clone()
+      self.scope_context.variable_scopes.clone()
     };
-    variable_scope.borrow_mut().declare(kind, symbol, value);
-    self.symbol_decls.insert(symbol, (kind, variable_scope, decl_dep.into()));
+    variable_scopes.last().unwrap().borrow_mut().declare(kind, symbol, value);
+    self.symbol_decls.insert(symbol, (kind, variable_scopes, decl_dep.into()));
   }
 
   pub fn init_symbol(&mut self, symbol: SymbolId, value: Entity<'a>) {
-    let variable_scope = &self.symbol_decls.get(&symbol).unwrap().1;
-    variable_scope.borrow_mut().init(symbol, value);
+    let variable_scopes = &self.symbol_decls.get(&symbol).unwrap().1;
+    variable_scopes.last().unwrap().borrow_mut().init(symbol, value);
   }
 
   pub fn read_symbol(&mut self, symbol: &SymbolId) -> Entity<'a> {
-    let (_, variable_scope, _) = self.symbol_decls.get(symbol).unwrap().clone();
-    let variable_scope = variable_scope.borrow();
+    let (_, variable_scopes, _) = self.symbol_decls.get(symbol).unwrap().clone();
+    let variable_scope = variable_scopes.last().unwrap().borrow();
     let target_cf_scope = self.find_first_different_cf_scope(&variable_scope.cf_scopes);
     let val = variable_scope.read(self, symbol).1;
     self.mark_exhaustive_read(&val, *symbol, target_cf_scope);
@@ -124,11 +123,11 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn write_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
-    let (kind, variable_scope, decl_dep) = self.symbol_decls.get(symbol).unwrap().clone();
+    let (kind, variable_scopes, decl_dep) = self.symbol_decls.get(symbol).unwrap().clone();
     if kind.is_const() {
       // TODO: throw warning
     }
-    let variable_scope_ref = variable_scope.borrow();
+    let variable_scope_ref = variable_scopes.last().unwrap().borrow();
     let variable_scope_cf_scopes = &variable_scope_ref.cf_scopes;
     let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
     let (is_consumed_exhaustively, old_val) = variable_scope_ref.read(self, symbol);
@@ -153,7 +152,7 @@ impl<'a> Analyzer<'a> {
           ),
         )
       };
-      variable_scope.borrow_mut().write(*symbol, entity_to_set);
+      variable_scopes.last().unwrap().borrow_mut().write(*symbol, entity_to_set);
     }
   }
 
