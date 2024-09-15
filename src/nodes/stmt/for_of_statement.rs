@@ -16,6 +16,10 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
+  pub fn declare_for_of_statement(&mut self, node: &'a ForOfStatement<'a>) {
+    self.declare_for_statement_left(&node.left);
+  }
+
   pub fn exec_for_of_statement(&mut self, node: &'a ForOfStatement<'a>) {
     let labels = self.take_labels();
 

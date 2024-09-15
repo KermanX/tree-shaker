@@ -36,6 +36,9 @@ impl<'a> Analyzer<'a> {
         let node = node.to_module_declaration();
         self.declare_module_declaration(node);
       }
+      Statement::ForInStatement(node) => self.declare_for_in_statement(node),
+      Statement::ForOfStatement(node) => self.declare_for_of_statement(node),
+      Statement::ForStatement(node) => self.declare_for_statement(node),
       _ => {}
     }
   }

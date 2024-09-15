@@ -21,6 +21,10 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
+  pub fn declare_for_in_statement(&mut self, node: &'a ForInStatement<'a>) {
+    self.declare_for_statement_left(&node.left);
+  }
+
   pub fn exec_for_in_statement(&mut self, node: &'a ForInStatement<'a>) {
     let labels = self.take_labels();
     let right = self.exec_expression(&node.right);
