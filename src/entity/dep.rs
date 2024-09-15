@@ -25,6 +25,7 @@ impl<T: GetSpan> From<(AstType2, &T)> for EntityDepNode {
 #[derive(Debug, Clone)]
 enum EntityDepImpl {
   Single(EntityDepNode),
+  Multiple(Vec<EntityDep>),
   Concat(EntityDepNode, EntityDep),
   Combined(EntityDep, EntityDep),
 }
@@ -35,6 +36,12 @@ pub struct EntityDep(Rc<EntityDepImpl>);
 impl From<EntityDepNode> for EntityDep {
   fn from(node: EntityDepNode) -> Self {
     Self(Rc::new(EntityDepImpl::Single(node)))
+  }
+}
+
+impl From<Vec<EntityDep>> for EntityDep {
+  fn from(deps: Vec<EntityDep>) -> Self {
+    Self(Rc::new(EntityDepImpl::Multiple(deps)))
   }
 }
 
@@ -61,6 +68,11 @@ impl EntityDep {
     match self.0.as_ref() {
       EntityDepImpl::Single(node) => {
         analyzer.referred_nodes.insert(*node);
+      }
+      EntityDepImpl::Multiple(nodes) => {
+        for node in nodes {
+          node.mark_referred(analyzer);
+        }
       }
       EntityDepImpl::Concat(node, dep) => {
         analyzer.referred_nodes.insert(*node);

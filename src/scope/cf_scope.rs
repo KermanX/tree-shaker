@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, entity::label::LabelEntity};
+use crate::entity::label::LabelEntity;
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashSet;
 use std::{cell::RefCell, rc::Rc};
@@ -119,36 +119,5 @@ impl<'a> CfScope<'a> {
     } else {
       unreachable!()
     }
-  }
-}
-
-impl<'a> Analyzer<'a> {
-  pub fn find_first_different_cf_scope(&self, cf_scopes_2: &CfScopes<'a>) -> usize {
-    for (index, this) in self.scope_context.cf_scopes.iter().enumerate() {
-      if let Some(other) = cf_scopes_2.get(index) {
-        if !Rc::ptr_eq(this, other) {
-          return index;
-        }
-      } else {
-        return index;
-      }
-    }
-    self.scope_context.cf_scopes.len()
-  }
-
-  pub fn is_relatively_indeterminate(
-    &self,
-    first_different: usize,
-    cf_scopes_2: &CfScopes<'a>,
-  ) -> bool {
-    self.scope_context.cf_scopes[first_different..]
-      .iter()
-      .chain(cf_scopes_2[first_different..].iter())
-      .any(|s| s.borrow().is_indeterminate())
-  }
-
-  pub fn is_assignment_indeterminate(&self, cf_scopes_2: &CfScopes<'a>) -> bool {
-    let first_different = self.find_first_different_cf_scope(cf_scopes_2);
-    self.is_relatively_indeterminate(first_different, cf_scopes_2)
   }
 }

@@ -2,19 +2,14 @@ use super::{try_scope::TryScope, variable_scope::VariableScopes};
 use crate::{
   analyzer::Analyzer,
   entity::{
-    dep::{EntityDep, EntityDepNode},
-    entity::Entity,
-    literal::LiteralEntity,
-    promise::PromiseEntity,
-    union::UnionEntity,
-    unknown::UnknownEntity,
+    dep::EntityDepNode, entity::Entity, literal::LiteralEntity, promise::PromiseEntity,
+    union::UnionEntity, unknown::UnknownEntity,
   },
 };
 
 #[derive(Debug)]
 pub struct CallScope<'a> {
   pub source: EntityDepNode,
-  pub dep: EntityDep,
   pub old_variable_scopes: VariableScopes<'a>,
   pub cf_scope_index: usize,
   pub variable_scope_index: usize,
@@ -29,7 +24,6 @@ pub struct CallScope<'a> {
 impl<'a> CallScope<'a> {
   pub fn new(
     source: EntityDepNode,
-    dep: EntityDep,
     old_variable_scopes: VariableScopes<'a>,
     cf_scope_index: usize,
     variable_scope_index: usize,
@@ -39,7 +33,6 @@ impl<'a> CallScope<'a> {
   ) -> Self {
     CallScope {
       source,
-      dep,
       old_variable_scopes,
       cf_scope_index,
       variable_scope_index,
@@ -52,7 +45,7 @@ impl<'a> CallScope<'a> {
     }
   }
 
-  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (VariableScopes<'a>, bool, Entity<'a>) {
+  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (VariableScopes<'a>, Entity<'a>) {
     assert_eq!(self.try_scopes.len(), 1);
 
     // Does not track values thrown out of function scope
@@ -68,7 +61,7 @@ impl<'a> CallScope<'a> {
       for value in &self.returned_values {
         value.consume_as_unknown(analyzer);
       }
-      return (self.old_variable_scopes, true, UnknownEntity::new_unknown());
+      return (self.old_variable_scopes, UnknownEntity::new_unknown());
     }
 
     let value = if self.returned_values.is_empty() {
@@ -78,7 +71,6 @@ impl<'a> CallScope<'a> {
     };
     (
       self.old_variable_scopes,
-      may_throw,
       if self.is_async { PromiseEntity::new(self.has_await_effect, value) } else { value },
     )
   }

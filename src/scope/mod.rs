@@ -2,6 +2,7 @@ pub mod call_scope;
 pub mod cf_scope;
 pub mod exhaustive;
 pub mod try_scope;
+mod utils;
 pub mod variable_scope;
 
 use crate::{
@@ -34,7 +35,6 @@ impl<'a> ScopeContext<'a> {
     ScopeContext {
       call_scopes: vec![CallScope::new(
         EntityDepNode::Environment,
-        EntityDepNode::Environment.into(),
         vec![],
         0,
         0,
@@ -43,7 +43,7 @@ impl<'a> ScopeContext<'a> {
         true,
         false,
       )],
-      variable_scopes: vec![Rc::new(RefCell::new(VariableScope::new(cf_scopes.clone())))],
+      variable_scopes: vec![Rc::new(RefCell::new(VariableScope::new(None, cf_scopes.clone())))],
       cf_scopes,
     }
   }
@@ -77,12 +77,14 @@ impl<'a> Analyzer<'a> {
   ) {
     let old_variable_scopes =
       mem::replace(&mut self.scope_context.variable_scopes, variable_scopes.as_ref().clone());
-
-    let variable_scope_index = self.push_variable_scope();
+    let variable_scope_index = self.scope_context.variable_scopes.len();
+    self.scope_context.variable_scopes.push(Rc::new(RefCell::new(VariableScope::new(
+      Some(dep.into()),
+      self.scope_context.cf_scopes.clone(),
+    ))));
     let cf_scope_index = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
     self.scope_context.call_scopes.push(CallScope::new(
       source.into(),
-      dep.into(),
       old_variable_scopes,
       cf_scope_index,
       variable_scope_index,
@@ -94,24 +96,18 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_call_scope(&mut self) -> Entity<'a> {
     let scope = self.scope_context.call_scopes.pop().unwrap();
-    let dep = scope.dep.clone();
-    let (old_variable_scopes, may_throw, ret_val) = scope.finalize(self);
+    let (old_variable_scopes, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
     self.pop_variable_scope();
     self.scope_context.variable_scopes = old_variable_scopes;
-    if may_throw {
-      self.refer_dep(dep);
-    }
     ret_val
   }
 
-  pub fn push_variable_scope(&mut self) -> usize {
-    let index = self.scope_context.variable_scopes.len();
+  pub fn push_variable_scope(&mut self) {
     self
       .scope_context
       .variable_scopes
-      .push(Rc::new(RefCell::new(VariableScope::new(self.scope_context.cf_scopes.clone()))));
-    index
+      .push(Rc::new(RefCell::new(VariableScope::new(None, self.scope_context.cf_scopes.clone()))));
   }
 
   pub fn pop_variable_scope(&mut self) {

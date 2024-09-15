@@ -123,13 +123,21 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn write_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
-    let (kind, variable_scopes, decl_dep) = self.symbol_decls.get(symbol).unwrap().clone();
+    let (kind, variable_scopes, decl_dep) = self.symbol_decls.get(symbol).unwrap();
     if kind.is_const() {
       // TODO: throw warning
     }
-    let variable_scope_ref = variable_scopes.last().unwrap().borrow();
+    let decl_variable_scope = variable_scopes.last().unwrap().clone();
+    let variable_scope_ref = decl_variable_scope.borrow();
     let variable_scope_cf_scopes = &variable_scope_ref.cf_scopes;
     let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
+    let target_variable_scope = self.find_first_different_variable_scope(variable_scopes);
+    let mut deps = self.scope_context.variable_scopes[target_variable_scope..]
+      .iter()
+      .filter_map(|scope| scope.borrow().dep.clone())
+      .collect::<Vec<_>>();
+    deps.push(decl_dep.clone());
+    let dep = EntityDep::from(deps);
     let (is_consumed_exhaustively, old_val) = variable_scope_ref.read(self, symbol);
     if is_consumed_exhaustively {
       drop(variable_scope_ref);
@@ -137,6 +145,7 @@ impl<'a> Analyzer<'a> {
     } else {
       let entity_to_set = if self.mark_exhaustive_write(&old_val, symbol.clone(), target_cf_scope) {
         drop(variable_scope_ref);
+        self.refer_dep(dep);
         old_val.consume_as_unknown(self);
         new_val.consume_as_unknown(self);
         (true, UnknownEntity::new_unknown())
@@ -148,22 +157,24 @@ impl<'a> Analyzer<'a> {
           false,
           ForwardedEntity::new(
             if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },
-            decl_dep,
+            dep,
           ),
         )
       };
-      variable_scopes.last().unwrap().borrow_mut().write(*symbol, entity_to_set);
+      decl_variable_scope.borrow_mut().write(*symbol, entity_to_set);
     }
   }
 
   pub fn refer_global(&mut self) {
     if self.config.unknown_global_side_effects {
       self.may_throw();
-      let deps =
-        self.scope_context.call_scopes.iter().map(|scope| scope.dep.clone()).collect::<Vec<_>>();
-      for dep in deps {
-        dep.mark_referred(self);
-      }
+      let deps = self
+        .scope_context
+        .variable_scopes
+        .iter()
+        .filter_map(|scope| scope.borrow().dep.clone())
+        .collect::<Vec<_>>();
+      self.refer_dep(deps);
     }
   }
 }
