@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstType2, entity::entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{ast::AssignmentTarget, match_assignment_target_pattern, match_simple_assignment_target},
   span::GetSpan,
@@ -22,6 +22,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_assignment_target(
     &self,
     node: &'a AssignmentTarget<'a>,
+    need_binding: bool,
     in_rest: bool,
   ) -> (bool, Option<AssignmentTarget<'a>>) {
     let transformed = match node {
@@ -33,7 +34,7 @@ impl<'a> Transformer<'a> {
         .map(|node| self.ast_builder.assignment_target_assignment_target_pattern(node)),
     };
 
-    if data.has_effect && transformed.is_none() {
+    if need_binding && transformed.is_none() {
       let span = node.span();
       let unused = if in_rest {
         self.build_unused_assignment_target_in_rest(span)

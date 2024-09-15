@@ -2,6 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   data::{get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData},
+  entity::dep::EntityDep,
   TreeShakeConfig,
 };
 use oxc::{
@@ -11,7 +12,7 @@ use oxc::{
       AssignmentTarget, BindingPattern, Expression, ForStatementLeft, IdentifierReference,
       NumberBase, Program, SimpleAssignmentTarget, TSTypeAnnotation, UnaryOperator,
     },
-    AstBuilder, AstKind,
+    AstBuilder,
   },
   span::{GetSpan, Span, SPAN},
 };
@@ -130,7 +131,7 @@ impl<'a> Transformer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn is_referred(&self, node: AstKind<'a>) -> bool {
-    self.referred_nodes.contains(&node.into())
+  pub fn is_referred(&self, dep: impl Into<EntityDep>) -> bool {
+    self.referred_nodes.contains(&dep.into())
   }
 }

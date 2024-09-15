@@ -30,7 +30,7 @@ impl<'a> Transformer<'a> {
 
     for param in items {
       let FormalParameter { span, decorators, pattern, .. } = param;
-      let pattern = self.transform_binding_pattern(pattern);
+      let pattern = self.transform_binding_pattern(pattern, true);
       transformed_items.push(self.ast_builder.formal_parameter(
         *span,
         self.clone_node(decorators),
@@ -42,7 +42,7 @@ impl<'a> Transformer<'a> {
     }
 
     let transformed_rest = match rest {
-      Some(rest) => self.transform_binding_rest_element(rest),
+      Some(rest) => self.transform_binding_rest_element(rest, false),
       None => None,
     };
 

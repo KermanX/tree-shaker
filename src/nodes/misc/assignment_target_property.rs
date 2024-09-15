@@ -5,12 +5,8 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::{
-  ast::{
-    ast::{
-      AssignmentTargetProperty, AssignmentTargetPropertyIdentifier,
-      AssignmentTargetPropertyProperty,
-    },
-    AstKind,
+  ast::ast::{
+    AssignmentTargetProperty, AssignmentTargetPropertyIdentifier, AssignmentTargetPropertyProperty,
   },
   span::{GetSpan, SPAN},
 };
@@ -27,11 +23,12 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
+    let dep = (AstType2::AssignmentTargetProperty, node);
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = LiteralEntity::new_string(node.binding.name.as_str());
 
-        let value = value.get_property(self, AstKind::Ass, &key);
+        let value = value.get_property(self, dep, &key);
 
         let (need_init, value) = if let Some(init) = &node.init {
           self.exec_with_default(init, value)
@@ -63,7 +60,7 @@ impl<'a> Transformer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     has_rest: bool,
   ) -> Option<AssignmentTargetProperty<'a>> {
-    let is_referred = self.is_referred(AstKind::AssignmentTargetProperty(node));
+    let is_referred = self.is_referred((AstType2::AssignmentTargetProperty, node));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let data = self
@@ -111,7 +108,7 @@ impl<'a> Transformer<'a> {
         let AssignmentTargetPropertyProperty { span, name, binding, .. } = node.as_ref();
 
         let name_span = name.span();
-        let binding = self.transform_assignment_target_maybe_default(binding);
+        let binding = self.transform_assignment_target_maybe_default(binding, is_referred);
         if let Some(binding) = binding {
           let (_computed, name) = self.transform_property_key(name, true).unwrap();
           Some(

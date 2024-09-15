@@ -1,7 +1,9 @@
-use crate::ast::DeclarationKind;
-use crate::entity::entity::Entity;
-use crate::entity::literal::LiteralEntity;
-use crate::{transformer::Transformer, Analyzer};
+use crate::{
+  analyzer::Analyzer,
+  ast::DeclarationKind,
+  entity::{entity::Entity, literal::LiteralEntity},
+  transformer::Transformer,
+};
 use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
 
 impl<'a> Analyzer<'a> {
@@ -36,7 +38,7 @@ impl<'a> Transformer<'a> {
     let VariableDeclarator { span, kind, id, init, .. } = node;
 
     let id_span = id.span();
-    let id = self.transform_binding_pattern(id);
+    let id = self.transform_binding_pattern(id, false);
 
     let init = init.as_ref().and_then(|init| self.transform_expression(init, id.is_some()));
 

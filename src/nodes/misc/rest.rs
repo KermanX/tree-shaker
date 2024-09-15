@@ -10,7 +10,7 @@ use oxc::ast::ast::PropertyKind;
 impl<'a> Analyzer<'a> {
   pub fn exec_object_rest(
     &mut self,
-    dep: EntityDep,
+    dep: impl Into<EntityDep>,
     object: Entity<'a>,
     enumerated: Vec<Entity<'a>>,
   ) -> Entity<'a> {

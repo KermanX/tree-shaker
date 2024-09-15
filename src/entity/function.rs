@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  entity::{consumed_object, dep::ENVIRONMENT_DEP},
+  entity::consumed_object,
   scope::variable_scope::{VariableScope, VariableScopes},
   use_consumed_flag,
 };
@@ -48,7 +48,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       analyzer.push_cf_scope_normal(None);
       let ret_val = self.call(
         analyzer,
-        ENVIRONMENT_DEP,
+        EntityDep::Environment,
         &UnknownEntity::new_unknown(),
         &UnknownEntity::new_unknown(),
       );

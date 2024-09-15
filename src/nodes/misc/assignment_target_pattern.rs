@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, entity::entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{ArrayAssignmentTarget, AssignmentTargetPattern, ObjectAssignmentTarget};
 
 impl<'a> Analyzer<'a> {
@@ -12,11 +12,11 @@ impl<'a> Analyzer<'a> {
         let (element_values, rest_value) = value.get_to_array(node.elements.len());
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
-            self.exec_assignment_target_maybe_default(element, (false, value));
+            self.exec_assignment_target_maybe_default(element, value);
           }
         }
         if let Some(rest) = &node.rest {
-          self.exec_assignment_target_rest(rest, (false, rest_value));
+          self.exec_assignment_target_rest(rest, rest_value);
         }
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
@@ -25,7 +25,8 @@ impl<'a> Analyzer<'a> {
           enumerated.push(self.exec_assignment_target_property(property, value.clone()));
         }
         if let Some(rest) = &node.rest {
-          let init = self.exec_object_rest(value, enumerated);
+          let dep = (AstType2::AssignmentTargetRest, node.as_ref());
+          let init = self.exec_object_rest(dep, value, enumerated);
           self.exec_assignment_target_rest(rest, init);
         }
       }
@@ -47,11 +48,12 @@ impl<'a> Transformer<'a> {
           transformed_elements.push(
             element
               .as_ref()
-              .and_then(|element| self.transform_assignment_target_maybe_default(element)),
+              .and_then(|element| self.transform_assignment_target_maybe_default(element, false)),
           );
         }
 
-        let rest = rest.as_ref().and_then(|rest| self.transform_assignment_target_rest(rest));
+        let rest =
+          rest.as_ref().and_then(|rest| self.transform_assignment_target_rest(rest, false));
 
         while transformed_elements.last().is_none() {
           transformed_elements.pop();
@@ -71,7 +73,12 @@ impl<'a> Transformer<'a> {
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
         let ObjectAssignmentTarget { span, properties, rest, .. } = node.as_ref();
 
-        let rest = rest.as_ref().and_then(|rest| self.transform_assignment_target_rest(rest));
+        let rest = rest.as_ref().and_then(|rest| {
+          self.transform_assignment_target_rest(
+            rest,
+            self.is_referred((AstType2::AssignmentTargetRest, node.as_ref())),
+          )
+        });
 
         let mut transformed_properties = self.ast_builder.vec();
         for property in properties {

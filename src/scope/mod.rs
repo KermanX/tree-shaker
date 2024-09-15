@@ -6,12 +6,7 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  entity::{
-    dep::{EntityDep, ENVIRONMENT_DEP},
-    entity::Entity,
-    label::LabelEntity,
-    unknown::UnknownEntity,
-  },
+  entity::{dep::EntityDep, entity::Entity, label::LabelEntity, unknown::UnknownEntity},
 };
 use call_scope::CallScope;
 pub use cf_scope::CfScopeKind;
@@ -34,7 +29,7 @@ impl<'a> ScopeContext<'a> {
       vec![Rc::new(RefCell::new(CfScope::new(CfScopeKind::Function, None, Some(false))))];
     ScopeContext {
       call_scopes: vec![CallScope::new(
-        ENVIRONMENT_DEP,
+        EntityDep::Environment,
         vec![],
         0,
         0,

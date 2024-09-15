@@ -15,10 +15,11 @@ impl<'a> Transformer<'a> {
   pub fn transform_assignment_target_rest(
     &self,
     node: &'a AssignmentTargetRest<'a>,
+    need_binding: bool,
   ) -> Option<AssignmentTargetRest<'a>> {
     let AssignmentTargetRest { span, target } = node;
 
-    let target = self.transform_assignment_target(target, true);
+    let target = self.transform_assignment_target(target, need_binding, true);
 
     target.1.map(|target| self.ast_builder.assignment_target_rest(*span, target))
   }

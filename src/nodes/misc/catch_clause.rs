@@ -30,7 +30,7 @@ impl<'a> Transformer<'a> {
     let param = param.as_ref().and_then(|param| {
       let CatchParameter { span, pattern, .. } = param;
       self
-        .transform_binding_pattern(pattern)
+        .transform_binding_pattern(pattern, false)
         .map(|pattern| self.ast_builder.catch_parameter(*span, pattern))
     });
 

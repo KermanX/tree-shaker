@@ -188,7 +188,10 @@ pub enum AstType2 {
   IdentifierReferenceWrite,
   SimpleAssignmentTargetRead,
   SimpleAssignmentTargetWrite,
+  AssignmentTargetProperty,
   AssignmentTargetPropertyIdentifier,
+  AssignmentTargetRest,
+  BindingProperty,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

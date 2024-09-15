@@ -34,6 +34,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_assignment_target_maybe_default(
     &self,
     node: &'a AssignmentTargetMaybeDefault<'a>,
+    need_binding: bool,
   ) -> Option<AssignmentTargetMaybeDefault<'a>> {
     match node {
       AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(node) => {
@@ -43,7 +44,8 @@ impl<'a> Transformer<'a> {
         let AssignmentTargetWithDefault { span, binding, init, .. } = node.as_ref();
 
         let binding_span = binding.span();
-        let (binding_is_empty, binding) = self.transform_assignment_target(binding, false);
+        let (binding_is_empty, binding) =
+          self.transform_assignment_target(binding, need_binding, false);
         let init =
           data.need_init.then(|| self.transform_expression(init, !binding_is_empty)).flatten();
 
@@ -59,7 +61,7 @@ impl<'a> Transformer<'a> {
         }
       }
       _ => self
-        .transform_assignment_target(node.to_assignment_target(), false)
+        .transform_assignment_target(node.to_assignment_target(), need_binding, false)
         .1
         .map(|inner| self.ast_builder.assignment_target_maybe_default_assignment_target(inner)),
     }

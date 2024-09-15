@@ -1,7 +1,6 @@
 use super::{
   entity::Entity,
   literal::LiteralEntity,
-  union::UnionEntity,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
 
