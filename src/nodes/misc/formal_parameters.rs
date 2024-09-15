@@ -7,8 +7,11 @@ impl<'a> Analyzer<'a> {
   pub fn exec_formal_parameters(&mut self, node: &'a FormalParameters<'a>, args: Entity<'a>) {
     let (elements_init, rest_init) = args.get_to_array(node.items.len());
 
-    for (param, init) in node.items.iter().zip(elements_init) {
+    for (param, _) in node.items.iter().zip(&elements_init) {
       self.declare_binding_pattern(&param.pattern, false, DeclarationKind::Parameter);
+    }
+
+    for (param, init) in node.items.iter().zip(elements_init) {
       self.exec_binding_pattern(&param.pattern, init);
     }
 
