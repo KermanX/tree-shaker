@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   entity::{
-    dep::EntityDep,
+    dep::{EntityDep, EntityDepNode},
     entity::Entity,
     function::{FunctionEntity, FunctionEntitySource},
   },
@@ -27,12 +27,20 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_arrow_function_expression(
     &mut self,
+    source: EntityDepNode,
     dep: EntityDep,
     node: &'a ArrowFunctionExpression<'a>,
     variable_scopes: Rc<VariableScopes<'a>>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    self.push_call_scope(dep, variable_scopes, self.call_scope().this.clone(), node.r#async, false);
+    self.push_call_scope(
+      source,
+      dep,
+      variable_scopes,
+      self.call_scope().this.clone(),
+      node.r#async,
+      false,
+    );
 
     self.exec_formal_parameters(&node.params, args);
     if node.expression {

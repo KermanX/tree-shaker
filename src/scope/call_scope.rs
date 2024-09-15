@@ -2,19 +2,23 @@ use super::{try_scope::TryScope, variable_scope::VariableScopes};
 use crate::{
   analyzer::Analyzer,
   entity::{
-    dep::EntityDep, entity::Entity, literal::LiteralEntity, promise::PromiseEntity,
-    union::UnionEntity, unknown::UnknownEntity,
+    dep::{EntityDep, EntityDepNode},
+    entity::Entity,
+    literal::LiteralEntity,
+    promise::PromiseEntity,
+    union::UnionEntity,
+    unknown::UnknownEntity,
   },
 };
 
 #[derive(Debug)]
 pub struct CallScope<'a> {
+  pub source: EntityDepNode,
   pub dep: EntityDep,
   pub old_variable_scopes: VariableScopes<'a>,
   pub cf_scope_index: usize,
   pub variable_scope_index: usize,
   pub this: Entity<'a>,
-  /// `None` for indeterminate
   pub returned_values: Vec<Entity<'a>>,
   pub is_async: bool,
   pub has_await_effect: bool,
@@ -24,6 +28,7 @@ pub struct CallScope<'a> {
 
 impl<'a> CallScope<'a> {
   pub fn new(
+    source: EntityDepNode,
     dep: EntityDep,
     old_variable_scopes: VariableScopes<'a>,
     cf_scope_index: usize,
@@ -33,6 +38,7 @@ impl<'a> CallScope<'a> {
     is_generator: bool,
   ) -> Self {
     CallScope {
+      source,
       dep,
       old_variable_scopes,
       cf_scope_index,

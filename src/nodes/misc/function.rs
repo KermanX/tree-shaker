@@ -2,17 +2,17 @@ use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
   entity::{
-    dep::EntityDep,
+    dep::{EntityDep, EntityDepNode},
     entity::Entity,
     function::{FunctionEntity, FunctionEntitySource},
   },
   scope::variable_scope::VariableScopes,
   transformer::Transformer,
 };
-use oxc::{ast::{
+use oxc::ast::{
   ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration},
   AstKind,
-}, syntax::symbol};
+};
 use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
@@ -35,13 +35,14 @@ impl<'a> Analyzer<'a> {
     &mut self,
     fn_entity: Entity<'a>,
     decl_dep: EntityDep,
+    source: EntityDepNode,
     call_dep: EntityDep,
     node: &'a Function<'a>,
     variable_scopes: Rc<VariableScopes<'a>>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    self.push_call_scope(call_dep, variable_scopes, this, node.r#async, node.generator);
+    self.push_call_scope(source, call_dep, variable_scopes, this, node.r#async, node.generator);
 
     if let Some(id) = node.id.as_ref() {
       let symbol = id.symbol_id.get().unwrap();

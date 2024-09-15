@@ -107,12 +107,29 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    let dep = (self.dep_node(), dep).into();
+    let source = self.dep_node();
+    let recursions =
+      analyzer.scope_context.call_scopes.iter().filter(|scope| scope.source == source).count();
+
+    if recursions == 1 {
+      // First recursion, call exhaustively
+      self.consume_as_unknown(analyzer);
+      return consumed_object::call(analyzer, dep, this, args);
+    }
+
+    if recursions > 1 {
+      // Second recursion, no call
+      debug_assert!(recursions == 2);
+      return consumed_object::call(analyzer, dep, this, args);
+    }
+
+    let dep = (source, dep).into();
     let variable_scopes = self.variable_scopes.clone();
     let ret_val = match self.source {
       FunctionEntitySource::Function(node) => analyzer.call_function(
         rc.clone(),
         self.dep(),
+        source,
         dep,
         node,
         variable_scopes,
@@ -120,7 +137,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
         args.clone(),
       ),
       FunctionEntitySource::ArrowFunctionExpression(node) => {
-        analyzer.call_arrow_function_expression(dep, node, variable_scopes, args.clone())
+        analyzer.call_arrow_function_expression(source, dep, node, variable_scopes, args.clone())
       }
     };
     ForwardedEntity::new(ret_val, self.dep())

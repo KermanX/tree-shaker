@@ -5,7 +5,7 @@ use crate::{
   entity::{dep::EntityDepNode, unknown::UnknownEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::{ClassElement, StaticBlock};
+use oxc::ast::{ast::{ClassElement, StaticBlock}, AstKind};
 use std::rc::Rc;
 
 const AST_TYPE: AstType2 = AstType2::StaticBlock;
@@ -13,6 +13,7 @@ const AST_TYPE: AstType2 = AstType2::StaticBlock;
 impl<'a> Analyzer<'a> {
   pub fn exec_static_block(&mut self, node: &'a StaticBlock<'a>) {
     self.push_call_scope(
+      AstKind::StaticBlock(node),
       EntityDepNode::Environment,
       Rc::new(self.scope_context.variable_scopes.clone()),
       UnknownEntity::new_unknown(),

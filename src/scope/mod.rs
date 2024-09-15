@@ -34,6 +34,7 @@ impl<'a> ScopeContext<'a> {
       vec![Rc::new(RefCell::new(CfScope::new(CfScopeKind::Function, None, Some(false))))];
     ScopeContext {
       call_scopes: vec![CallScope::new(
+        EntityDepNode::Environment,
         EntityDepNode::Environment.into(),
         vec![],
         0,
@@ -68,6 +69,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_call_scope(
     &mut self,
+    source: impl Into<EntityDepNode>,
     dep: impl Into<EntityDep>,
     variable_scopes: Rc<VariableScopes<'a>>,
     this: Entity<'a>,
@@ -80,6 +82,7 @@ impl<'a> Analyzer<'a> {
     let variable_scope_index = self.push_variable_scope();
     let cf_scope_index = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
     self.scope_context.call_scopes.push(CallScope::new(
+      source.into(),
       dep.into(),
       old_variable_scopes,
       cf_scope_index,
