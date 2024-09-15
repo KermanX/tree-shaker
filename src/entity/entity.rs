@@ -31,6 +31,7 @@ pub trait EntityTrait<'a>: Debug {
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool;
   fn call(
     &self,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
     this: &Entity<'a>,
@@ -128,7 +129,7 @@ impl<'a> Entity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    self.0.call(analyzer, dep.into(), this, args)
+    self.0.call(self, analyzer, dep.into(), this, args)
   }
 
   pub fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {

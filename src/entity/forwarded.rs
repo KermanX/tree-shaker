@@ -66,6 +66,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
 
   fn call(
     &self,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
     this: &Entity<'a>,

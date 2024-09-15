@@ -47,6 +47,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     analyzer.exec_exhaustively(|analyzer| {
       analyzer.push_cf_scope_normal(None);
       let ret_val = self.call(
+        &UnknownEntity::new_unknown(),
         analyzer,
         (EntityDepNode::Environment).into(),
         &UnknownEntity::new_unknown(),
@@ -100,6 +101,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn call(
     &self,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
     this: &Entity<'a>,
@@ -108,9 +110,15 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     let dep = (self.dep_node(), dep).into();
     let variable_scopes = self.variable_scopes.clone();
     let ret_val = match self.source {
-      FunctionEntitySource::Function(node) => {
-        analyzer.call_function(dep, node, variable_scopes, this.clone(), args.clone())
-      }
+      FunctionEntitySource::Function(node) => analyzer.call_function(
+        rc.clone(),
+        self.dep(),
+        dep,
+        node,
+        variable_scopes,
+        this.clone(),
+        args.clone(),
+      ),
       FunctionEntitySource::ArrowFunctionExpression(node) => {
         analyzer.call_arrow_function_expression(dep, node, variable_scopes, args.clone())
       }

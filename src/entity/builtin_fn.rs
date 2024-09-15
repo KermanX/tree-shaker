@@ -62,6 +62,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 
   fn call(
     &self,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
     this: &Entity<'a>,

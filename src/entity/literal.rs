@@ -88,6 +88,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn call(
     &self,
+    _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
     this: &Entity<'a>,

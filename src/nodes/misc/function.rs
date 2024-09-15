@@ -9,10 +9,10 @@ use crate::{
   scope::variable_scope::VariableScopes,
   transformer::Transformer,
 };
-use oxc::ast::{
+use oxc::{ast::{
   ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration},
   AstKind,
-};
+}, syntax::symbol};
 use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
@@ -33,13 +33,20 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_function(
     &mut self,
-    dep: EntityDep,
+    fn_entity: Entity<'a>,
+    decl_dep: EntityDep,
+    call_dep: EntityDep,
     node: &'a Function<'a>,
     variable_scopes: Rc<VariableScopes<'a>>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    self.push_call_scope(dep, variable_scopes, this, node.r#async, node.generator);
+    self.push_call_scope(call_dep, variable_scopes, this, node.r#async, node.generator);
+
+    if let Some(id) = node.id.as_ref() {
+      let symbol = id.symbol_id.get().unwrap();
+      self.declare_symbol(symbol, decl_dep, false, DeclarationKind::Function, Some(fn_entity));
+    }
 
     self.exec_formal_parameters(&node.params, args);
     self.exec_function_body(node.body.as_ref().unwrap());
