@@ -65,6 +65,10 @@ impl<'a> Analyzer<'a> {
       let entity = self.read_symbol(&symbol).clone();
       entity.consume_as_unknown(self);
     }
+    // Consume uncaught thrown values
+    self.call_scope_mut().try_scopes.pop().unwrap().thrown_val().map(|entity| {
+      entity.consume_as_unknown(self);
+    });
   }
 }
 

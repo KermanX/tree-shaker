@@ -20,9 +20,9 @@ impl<'a> TryScope<'a> {
     self.may_throw = true;
   }
 
-  pub fn thrown_val(self) -> Entity<'a> {
+  pub fn thrown_val(self) -> Option<Entity<'a>> {
     // Always unknown here
-    UnknownEntity::new_unknown_with_deps(self.thrown_values)
+    self.may_throw.then(|| UnknownEntity::new_unknown_with_deps(self.thrown_values))
   }
 }
 

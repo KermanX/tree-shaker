@@ -48,13 +48,10 @@ impl<'a> CallScope<'a> {
   pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (VariableScopes<'a>, Entity<'a>) {
     assert_eq!(self.try_scopes.len(), 1);
 
-    // Does not track values thrown out of function scope
+    // Forwards the thrown value to the parent try scope
     let try_scope = self.try_scopes.into_iter().next().unwrap();
-    let may_throw = try_scope.may_throw;
-    try_scope.thrown_val().consume_as_unknown(analyzer);
-
-    if may_throw {
-      analyzer.may_throw();
+    if let Some(thrown_val) = try_scope.thrown_val() {
+      analyzer.try_scope_mut().throw(thrown_val);
     }
 
     if self.is_generator {

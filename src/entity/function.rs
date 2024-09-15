@@ -46,6 +46,8 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
     analyzer.exec_exhaustively(|analyzer| {
       analyzer.push_cf_scope_normal(None);
+      analyzer.push_try_scope();
+
       let ret_val = self.call(
         &UnknownEntity::new_unknown(),
         analyzer,
@@ -53,9 +55,12 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
         &UnknownEntity::new_unknown(),
         &UnknownEntity::new_unknown(),
       );
-      analyzer.pop_cf_scope();
-
       ret_val.consume_as_unknown(analyzer);
+
+      analyzer.pop_try_scope().thrown_val().map(|thrown_val| {
+        thrown_val.consume_as_unknown(analyzer);
+      });
+      analyzer.pop_cf_scope();
     });
   }
 

@@ -1,4 +1,6 @@
-use crate::{analyzer::Analyzer, scope::CfScopeKind, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, entity::unknown::UnknownEntity, scope::CfScopeKind, transformer::Transformer,
+};
 use oxc::ast::ast::{Statement, TryStatement};
 
 impl<'a> Analyzer<'a> {
@@ -11,7 +13,14 @@ impl<'a> Analyzer<'a> {
     let thrown_val = self.pop_try_scope().thrown_val();
 
     if let Some(handler) = &node.handler {
-      self.exec_catch_clause(handler, thrown_val);
+      self.exec_catch_clause(
+        handler,
+        // Theoretically, if `thrown_val` is `None`, it means that the `try` block
+        // does not throw any value, so we should skip the `catch` block.
+        // However, we can guarantee that all possible exceptions tracked.
+        // For example, KeyboardInterrupt, which is not tracked, can be thrown.
+        thrown_val.unwrap_or_else(|| UnknownEntity::new_unknown()),
+      );
     }
 
     if let Some(finalizer) = &node.finalizer {
