@@ -8,13 +8,21 @@ use oxc::ast::ast::{Class, ClassBody, TSTypeParameterDeclaration, TSTypeParamete
 
 impl<'a> Analyzer<'a> {
   pub fn exec_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
+    self.push_variable_scope();
+
+    if node.id.is_some() {
+      self.declare_class(node, false);
+    }
+
     let super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
+
+    super_class.map(|entity| entity.consume_as_unknown(self));
 
     for element in &node.body.body {
       self.exec_class_element(element);
     }
 
-    super_class.map(|entity| entity.consume_as_unknown(self));
+    self.pop_variable_scope();
 
     UnknownEntity::new_unknown()
   }
