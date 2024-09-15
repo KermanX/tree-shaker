@@ -31,8 +31,9 @@ impl<'a> Analyzer<'a> {
           match &specifier.local {
             ModuleExportName::IdentifierReference(node) => {
               let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
-              let symbol = reference.symbol_id();
-              self.named_exports.push(symbol.unwrap());
+              if let Some(symbol) = reference.symbol_id() {
+                self.named_exports.push(symbol);
+              }
             }
             _ => unreachable!(),
           }
