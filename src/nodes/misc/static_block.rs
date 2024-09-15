@@ -5,7 +5,10 @@ use crate::{
   entity::{dep::EntityDepNode, unknown::UnknownEntity},
   transformer::Transformer,
 };
-use oxc::ast::{ast::{ClassElement, StaticBlock}, AstKind};
+use oxc::ast::{
+  ast::{ClassElement, StaticBlock},
+  AstKind,
+};
 use std::rc::Rc;
 
 const AST_TYPE: AstType2 = AstType2::StaticBlock;

@@ -1,21 +1,16 @@
-use std::{
-  cell::RefCell,
-  rc::Rc,
-  sync::atomic::{AtomicU32, Ordering},
-};
-use oxc::semantic::{ScopeId, SymbolId};
-use rustc_hash::FxHashMap;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
   entity::{entity::Entity, literal::LiteralEntity, unknown::UnknownEntity},
 };
+use oxc::semantic::SymbolId;
+use rustc_hash::FxHashMap;
+use std::{cell::RefCell, rc::Rc};
 
 use super::cf_scope::CfScopes;
 
 #[derive(Debug)]
 pub struct VariableScope<'a> {
-  pub id: ScopeId,
   /// Cf scopes when the scope was created
   pub cf_scopes: CfScopes<'a>,
   /// (is_consumed_exhaustively, entity)
@@ -24,15 +19,9 @@ pub struct VariableScope<'a> {
 
 pub type VariableScopes<'a> = Vec<Rc<RefCell<VariableScope<'a>>>>;
 
-static VARIABLE_SCOPE_ID: AtomicU32 = AtomicU32::new(0);
-
 impl<'a> VariableScope<'a> {
   pub fn new(cf_scopes: CfScopes<'a>) -> Self {
-    Self {
-      id: ScopeId::new(VARIABLE_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
-      cf_scopes,
-      variables: FxHashMap::default(),
-    }
+    Self { cf_scopes, variables: FxHashMap::default() }
   }
 
   pub fn declare(&mut self, kind: DeclarationKind, symbol: SymbolId, value: Option<Entity<'a>>) {

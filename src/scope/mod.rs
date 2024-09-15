@@ -16,7 +16,6 @@ use crate::{
 use call_scope::CallScope;
 pub use cf_scope::CfScopeKind;
 use cf_scope::{CfScope, CfScopes};
-use oxc::semantic::ScopeId;
 use std::{cell::RefCell, mem, rc::Rc};
 use try_scope::TryScope;
 use variable_scope::{VariableScope, VariableScopes};
@@ -117,10 +116,6 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_variable_scope(&mut self) {
     self.scope_context.variable_scopes.pop().unwrap();
-  }
-
-  pub fn variable_scope_path(&self) -> Vec<ScopeId> {
-    self.scope_context.variable_scopes.iter().map(|x| x.borrow().id).collect()
   }
 
   pub fn take_labels(&mut self) -> Option<Rc<Vec<LabelEntity<'a>>>> {
