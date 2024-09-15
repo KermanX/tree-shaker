@@ -1,5 +1,5 @@
 use super::{
-  dep::EntityDep,
+  dep::{EntityDep, EntityDepNode},
   entity::{Entity, EntityTrait},
   forwarded::ForwardedEntity,
   literal::LiteralEntity,
@@ -48,7 +48,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       analyzer.push_cf_scope_normal(None);
       let ret_val = self.call(
         analyzer,
-        EntityDep::Environment,
+        (EntityDepNode::Environment).into(),
         &UnknownEntity::new_unknown(),
         &UnknownEntity::new_unknown(),
       );
@@ -179,9 +179,10 @@ impl<'a> FunctionEntity<'a> {
   }
 
   pub fn dep(&self) -> EntityDep {
-    EntityDep::from(match self.source {
+    EntityDepNode::from(match self.source {
       FunctionEntitySource::Function(node) => AstKind::Function(node),
       FunctionEntitySource::ArrowFunctionExpression(node) => AstKind::ArrowFunctionExpression(node),
     })
+    .into()
   }
 }

@@ -1,7 +1,7 @@
 use crate::entity::{
-  dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, unknown::UnknownEntity,
+  dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity, unknown::UnknownEntity,
 };
 
 pub fn create_environment<'a>() -> Entity<'a> {
-  ForwardedEntity::new(UnknownEntity::new_unknown(), EntityDep::Environment)
+  ForwardedEntity::new(UnknownEntity::new_unknown(), EntityDepNode::Environment)
 }

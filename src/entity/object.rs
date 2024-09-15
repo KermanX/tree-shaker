@@ -61,7 +61,7 @@ impl<'a> ObjectProperty<'a> {
     dep: EntityDep,
     this: &Entity<'a>,
   ) -> Vec<Entity<'a>> {
-    self.values.iter().map(|property| property.get_value(analyzer, dep, this)).collect()
+    self.values.iter().map(|property| property.get_value(analyzer, dep.clone(), this)).collect()
   }
 }
 
@@ -101,7 +101,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
     let this = rc.clone();
     if let Some(key_literals) = key.get_to_property_key().get_to_literals() {
-      let mut values = self.unknown_keyed.borrow().get_value(analyzer, dep, &this);
+      let mut values = self.unknown_keyed.borrow().get_value(analyzer, dep.clone(), &this);
       let mut rest_added = false;
       let mut undefined_added = false;
       for key_literal in key_literals {
@@ -109,12 +109,12 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           LiteralEntity::String(key) => {
             let string_keyed = self.string_keyed.borrow();
             let add_undefined = if let Some(property) = string_keyed.get(key) {
-              values.extend(property.get_value(analyzer, dep, &this));
+              values.extend(property.get_value(analyzer, dep.clone(), &this));
               !property.definite
             } else if !rest_added {
               rest_added = true;
               let rest = self.rest.borrow();
-              values.extend(rest.get_value(analyzer, dep, &this));
+              values.extend(rest.get_value(analyzer, dep.clone(), &this));
               true
             } else {
               false
@@ -173,7 +173,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                 if let ObjectPropertyValue::Property(_, Some(setter)) = property_val {
                   setter.call(
                     analyzer,
-                    dep,
+                    dep.clone(),
                     &this,
                     &ArgumentsEntity::new(vec![(false, value.clone())]),
                   );
@@ -192,7 +192,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                   if let ObjectPropertyValue::Property(_, Some(setter)) = property {
                     setter.call(
                       analyzer,
-                      dep,
+                      dep.clone(),
                       &this,
                       &ArgumentsEntity::new(vec![(false, value.clone())]),
                     );
@@ -232,14 +232,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
     let this = rc.clone();
     // unknown_keyed = unknown_keyed + rest
-    let mut unknown_keyed = self.unknown_keyed.borrow().get_value(analyzer, dep, &this);
-    unknown_keyed.extend(self.rest.borrow().get_value(analyzer, dep, &this));
+    let mut unknown_keyed = self.unknown_keyed.borrow().get_value(analyzer, dep.clone(), &this);
+    unknown_keyed.extend(self.rest.borrow().get_value(analyzer, dep.clone(), &this));
     let mut result = Vec::new();
     if unknown_keyed.len() > 0 {
       result.push((false, UnknownEntity::new_unknown(), UnionEntity::new(unknown_keyed)));
     }
     for (key, properties) in self.string_keyed.borrow().iter() {
-      let values = properties.get_value(analyzer, dep, &this);
+      let values = properties.get_value(analyzer, dep.clone(), &this);
       result.push((properties.definite, LiteralEntity::new_string(key), UnionEntity::new(values)));
     }
     result
@@ -422,7 +422,7 @@ impl<'a> ObjectEntity<'a> {
         if let ObjectPropertyValue::Property(_, Some(setter)) = property {
           setter.call(
             analyzer,
-            dep,
+            dep.clone(),
             this,
             &ArgumentsEntity::new(vec![(false, UnknownEntity::new_unknown())]),
           );
@@ -431,15 +431,20 @@ impl<'a> ObjectEntity<'a> {
     }
 
     for property in self.string_keyed.borrow().values() {
-      apply_unknown_to_vec(analyzer, dep, property, &UnknownEntity::new_unknown());
+      apply_unknown_to_vec(analyzer, dep.clone(), property, &UnknownEntity::new_unknown());
     }
     apply_unknown_to_vec(
       analyzer,
-      dep,
+      dep.clone(),
       &mut self.unknown_keyed.borrow(),
       &UnknownEntity::new_unknown(),
     );
-    apply_unknown_to_vec(analyzer, dep, &mut self.rest.borrow(), &UnknownEntity::new_unknown());
+    apply_unknown_to_vec(
+      analyzer,
+      dep.clone(),
+      &mut self.rest.borrow(),
+      &UnknownEntity::new_unknown(),
+    );
   }
 }
 

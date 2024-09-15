@@ -6,7 +6,12 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  entity::{dep::EntityDep, entity::Entity, label::LabelEntity, unknown::UnknownEntity},
+  entity::{
+    dep::{EntityDep, EntityDepNode},
+    entity::Entity,
+    label::LabelEntity,
+    unknown::UnknownEntity,
+  },
 };
 use call_scope::CallScope;
 pub use cf_scope::CfScopeKind;
@@ -29,7 +34,7 @@ impl<'a> ScopeContext<'a> {
       vec![Rc::new(RefCell::new(CfScope::new(CfScopeKind::Function, None, Some(false))))];
     ScopeContext {
       call_scopes: vec![CallScope::new(
-        EntityDep::Environment,
+        EntityDepNode::Environment.into(),
         vec![],
         0,
         0,
@@ -63,7 +68,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_call_scope(
     &mut self,
-    dep: EntityDep,
+    dep: impl Into<EntityDep>,
     variable_scopes: Rc<VariableScopes<'a>>,
     this: Entity<'a>,
     is_async: bool,
@@ -75,7 +80,7 @@ impl<'a> Analyzer<'a> {
     let variable_scope_index = self.push_variable_scope();
     let cf_scope_index = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
     self.scope_context.call_scopes.push(CallScope::new(
-      dep,
+      dep.into(),
       old_variable_scopes,
       cf_scope_index,
       variable_scope_index,
@@ -87,7 +92,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_call_scope(&mut self) -> Entity<'a> {
     let scope = self.scope_context.call_scopes.pop().unwrap();
-    let dep = scope.dep;
+    let dep = scope.dep.clone();
     let (old_variable_scopes, may_throw, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
     self.pop_variable_scope();
@@ -203,7 +208,7 @@ impl<'a> Analyzer<'a> {
       if let Some(label) = label {
         if let Some(label_entity) = cf_scope.matches_label(label) {
           if !is_closest_breakable || !breakable_without_label {
-            self.referred_nodes.insert(label_entity.dep());
+            self.referred_nodes.insert(label_entity.dep_node());
             label_used = true;
           }
           target_index = Some(idx);
@@ -236,7 +241,7 @@ impl<'a> Analyzer<'a> {
         if is_continuable {
           if let Some(label_entity) = cf_scope.matches_label(label) {
             if !is_closest_continuable {
-              self.referred_nodes.insert(label_entity.dep());
+              self.referred_nodes.insert(label_entity.dep_node());
               label_used = true;
             }
             target_index = Some(idx);

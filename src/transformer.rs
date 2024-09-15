@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   data::{get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData},
-  entity::dep::EntityDep,
+  entity::dep::EntityDepNode,
   TreeShakeConfig,
 };
 use oxc::{
@@ -131,7 +131,7 @@ impl<'a> Transformer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn is_referred(&self, dep: impl Into<EntityDep>) -> bool {
+  pub fn is_referred(&self, dep: impl Into<EntityDepNode>) -> bool {
     self.referred_nodes.contains(&dep.into())
   }
 }

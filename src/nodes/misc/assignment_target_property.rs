@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  entity::{entity::Entity, literal::LiteralEntity},
+  entity::{dep::EntityDepNode, entity::Entity, literal::LiteralEntity},
   transformer::Transformer,
 };
 use oxc::{
@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
-    let dep = (AstType2::AssignmentTargetProperty, node);
+    let dep = EntityDepNode::from((AstType2::AssignmentTargetProperty, node));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = LiteralEntity::new_string(node.binding.name.as_str());

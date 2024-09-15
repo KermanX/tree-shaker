@@ -135,6 +135,6 @@ impl<'a> ForwardedEntity<'a> {
   }
 
   fn refer_dep(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.refer_dep(self.dep);
+    analyzer.refer_dep(self.dep.clone());
   }
 }

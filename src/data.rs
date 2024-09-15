@@ -1,4 +1,4 @@
-use crate::{ast::AstType2, entity::dep::EntityDep};
+use crate::{ast::AstType2, entity::dep::EntityDepNode};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 pub struct DataPlaceholder<'a> {
@@ -7,7 +7,7 @@ pub struct DataPlaceholder<'a> {
 
 pub type ExtraData<'a> = FxHashMap<(AstType2, usize), Box<DataPlaceholder<'a>>>;
 
-pub type ReferredNodes<'a> = FxHashSet<EntityDep>;
+pub type ReferredNodes<'a> = FxHashSet<EntityDepNode>;
 
 #[derive(Debug, Default)]
 pub struct StatementVecData {

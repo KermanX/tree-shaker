@@ -152,16 +152,13 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn refer_dep(&mut self, dep: EntityDep) {
-    self.referred_nodes.insert(dep);
-  }
-
-  pub fn refer_global_dep(&mut self) {
+  pub fn refer_global(&mut self) {
     if self.config.unknown_global_side_effects {
       self.may_throw();
-      let deps = self.scope_context.call_scopes.iter().map(|scope| scope.dep).collect::<Vec<_>>();
+      let deps =
+        self.scope_context.call_scopes.iter().map(|scope| scope.dep.clone()).collect::<Vec<_>>();
       for dep in deps {
-        self.refer_dep(dep);
+        dep.mark_referred(self);
       }
     }
   }

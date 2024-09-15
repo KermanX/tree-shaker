@@ -34,7 +34,7 @@ impl<'a> Analyzer<'a> {
       self.read_symbol(&symbol)
     } else {
       // TODO: Handle globals
-      self.refer_global_dep();
+      self.refer_global();
       UnknownEntity::new_unknown()
     }
   }
@@ -62,7 +62,7 @@ impl<'a> Analyzer<'a> {
     } else {
       value.consume_as_unknown(self);
       // TODO: Handle globals
-      self.refer_global_dep();
+      self.refer_global();
     }
   }
 }

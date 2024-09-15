@@ -34,7 +34,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   ) -> Entity<'a> {
     let mut values = Vec::new();
     for entity in &self.0 {
-      values.push(entity.get_property(analyzer, dep, key));
+      values.push(entity.get_property(analyzer, dep.clone(), key));
     }
     UnionEntity::new(values)
   }
@@ -48,7 +48,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     value: Entity<'a>,
   ) {
     for entity in &self.0 {
-      entity.set_property(analyzer, dep, key, value.clone());
+      entity.set_property(analyzer, dep.clone(), key, value.clone());
     }
   }
 
@@ -81,7 +81,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     let mut results = Vec::new();
     analyzer.push_cf_scope(CfScopeKind::Normal, None, None);
     for entity in &self.0 {
-      results.push(entity.call(analyzer, dep, this, args));
+      results.push(entity.call(analyzer, dep.clone(), this, args));
     }
     analyzer.pop_cf_scope();
     UnionEntity::new(results)
