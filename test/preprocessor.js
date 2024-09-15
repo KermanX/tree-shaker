@@ -30,24 +30,20 @@ function printDiff(diff) {
   console.log("NEW", t2);
 }
 
+let index = 0;
 module.exports = function(test) {
   try {
-    console.log('\n\n----------------');
+    console.log('\n>', ++index, '----------------');
     console.log(test.file);
-    const index = test.contents.match(/\/\*---\r?\n(es\d?id: |description: >)/m).index;
-    if (index < 0) {
-      console.error('FATAL ERROR: Could not find the special comment');
-      // @ts-ignore
-      process.exit(1);
-    }
-    let prelude = test.contents.slice(0, index);
-    let main = test.contents.slice(index);
+    let prelude = test.contents.slice(0, test.insertionIndex);
+    let main = test.contents.slice(test.insertionIndex);
     let minified = treeShake(treeShakeEval(main, false), false, do_minify, false);
     let startTime = Date.now();
     let treeShaked = treeShake(treeShakeEval(main, true), true, do_minify, false);
     let endTime = Date.now();
-    console.log(`${main.length.toString().padEnd(6)} -> ${minified.length.toString().padEnd(6)} -> ${treeShaked.length.toString().padEnd(6)} (${endTime - startTime}ms)`);
-    printDiff(Diff.diffChars(minified, treeShaked));
+    console.log(`${pc.gray(main.length)} -> ${pc.red(minified.length)} -> ${pc.green(treeShaked.length)} (${pc.yellow((treeShaked.length * 100 / minified.length).toFixed(2) + '%')}) +${endTime - startTime}ms`);
+    if (minified !== treeShaked)
+      printDiff(Diff.diffChars(minified, treeShaked));
     test.contents = prelude + treeShaked;
   } catch (error) {
     test.result = {
