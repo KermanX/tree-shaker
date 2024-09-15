@@ -115,9 +115,9 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn read_symbol(&mut self, symbol: &SymbolId) -> Entity<'a> {
-    let (_, variable_scope, _) = self.symbol_decls.get(symbol).unwrap();
+    let (_, variable_scope, _) = self.symbol_decls.get(symbol).unwrap().clone();
     let target_cf_scope = self.find_first_different_cf_scope(&variable_scope.borrow().cf_scopes);
-    let val = variable_scope.borrow().read(symbol).1;
+    let val = variable_scope.borrow().read(self, symbol).1;
     self.mark_exhaustive_read(&val, *symbol, target_cf_scope);
     val
   }
@@ -130,7 +130,7 @@ impl<'a> Analyzer<'a> {
     let mut variable_scope = variable_scope.borrow_mut();
     let variable_scope_cf_scopes = &variable_scope.cf_scopes;
     let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
-    let (is_consumed_exhaustively, old_val) = variable_scope.read(symbol);
+    let (is_consumed_exhaustively, old_val) = variable_scope.read(self, symbol);
     if is_consumed_exhaustively {
       new_val.consume_as_unknown(self);
     } else {

@@ -1,13 +1,15 @@
-use crate::ast::DeclarationKind;
-use crate::entity::entity::Entity;
-use crate::entity::literal::LiteralEntity;
-use crate::entity::unknown::UnknownEntity;
-use oxc::semantic::ScopeId;
-use oxc::semantic::SymbolId;
+use std::{
+  cell::RefCell,
+  rc::Rc,
+  sync::atomic::{AtomicU32, Ordering},
+};
+use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashMap;
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::atomic::{AtomicU32, Ordering};
+use crate::{
+  analyzer::Analyzer,
+  ast::DeclarationKind,
+  entity::{entity::Entity, literal::LiteralEntity, unknown::UnknownEntity},
+};
 
 use super::cf_scope::CfScopes;
 
@@ -54,11 +56,12 @@ impl<'a> VariableScope<'a> {
     old.1 = Some(value);
   }
 
-  pub fn read(&self, symbol: &SymbolId) -> (bool, Entity<'a>) {
+  pub fn read(&self, analyzer: &mut Analyzer<'a>, symbol: &SymbolId) -> (bool, Entity<'a>) {
     let (consumed, value) = self.variables.get(symbol).unwrap();
     let value = value.as_ref().map_or_else(
       || {
         // TODO: throw TDZ error
+        analyzer.may_throw();
         UnknownEntity::new_unknown()
       },
       Entity::clone,
