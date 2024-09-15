@@ -116,8 +116,9 @@ impl<'a> Analyzer<'a> {
 
   pub fn read_symbol(&mut self, symbol: &SymbolId) -> Entity<'a> {
     let (_, variable_scope, _) = self.symbol_decls.get(symbol).unwrap().clone();
-    let target_cf_scope = self.find_first_different_cf_scope(&variable_scope.borrow().cf_scopes);
-    let val = variable_scope.borrow().read(self, symbol).1;
+    let variable_scope = variable_scope.borrow();
+    let target_cf_scope = self.find_first_different_cf_scope(&variable_scope.cf_scopes);
+    let val = variable_scope.read(self, symbol).1;
     self.mark_exhaustive_read(&val, *symbol, target_cf_scope);
     val
   }
@@ -127,20 +128,23 @@ impl<'a> Analyzer<'a> {
     if kind.is_const() {
       // TODO: throw warning
     }
-    let mut variable_scope = variable_scope.borrow_mut();
-    let variable_scope_cf_scopes = &variable_scope.cf_scopes;
+    let variable_scope_ref = variable_scope.borrow();
+    let variable_scope_cf_scopes = &variable_scope_ref.cf_scopes;
     let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
-    let (is_consumed_exhaustively, old_val) = variable_scope.read(self, symbol);
+    let (is_consumed_exhaustively, old_val) = variable_scope_ref.read(self, symbol);
     if is_consumed_exhaustively {
+      drop(variable_scope_ref);
       new_val.consume_as_unknown(self);
     } else {
       let entity_to_set = if self.mark_exhaustive_write(&old_val, symbol.clone(), target_cf_scope) {
+        drop(variable_scope_ref);
         old_val.consume_as_unknown(self);
         new_val.consume_as_unknown(self);
         (true, UnknownEntity::new_unknown())
       } else {
         let indeterminate =
           self.is_relatively_indeterminate(target_cf_scope, variable_scope_cf_scopes);
+        drop(variable_scope_ref);
         (
           false,
           ForwardedEntity::new(
@@ -149,7 +153,7 @@ impl<'a> Analyzer<'a> {
           ),
         )
       };
-      variable_scope.write(*symbol, entity_to_set);
+      variable_scope.borrow_mut().write(*symbol, entity_to_set);
     }
   }
 
