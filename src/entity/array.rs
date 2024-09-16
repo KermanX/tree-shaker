@@ -184,9 +184,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         }
       }
       if has_effect {
-        let target_variable_scope =
-          analyzer.find_first_different_variable_scope(&self.variable_scopes);
-        self.deps.borrow_mut().push(analyzer.get_assignment_deps(target_variable_scope, dep));
+        self.add_assignment_dep(analyzer, dep);
       }
     } else {
       self.consume_as_unknown(analyzer);
@@ -204,31 +202,27 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return consumed_object::enumerate_properties(analyzer, dep);
     }
     let mut entries = Vec::new();
+    let self_dep = EntityDep::from(self.deps.borrow().clone());
     for (i, element) in self.elements.borrow().iter().enumerate() {
       entries.push((
         true,
         LiteralEntity::new_string(analyzer.allocator.alloc(i.to_string())),
-        ForwardedEntity::new(element.clone(), self.deps.borrow().clone()),
+        ForwardedEntity::new(element.clone(), self_dep.clone()),
       ));
     }
     if let Some(rest) = self.rest.borrow().as_ref() {
       entries.push((
         true,
         UnknownEntity::new(UnknownEntityKind::String),
-        ForwardedEntity::new(rest.clone(), self.deps.borrow().clone()),
+        ForwardedEntity::new(rest.clone(), self_dep.clone()),
       ));
     }
     entries
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
-    if self.consumed.get() {
-      return consumed_object::delete_property(analyzer, key);
-    }
-    // TODO: delete array element
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
     self.consume_as_unknown(analyzer);
-    key.get_to_property_key().consume_self(analyzer);
-    true
+    consumed_object::delete_property(analyzer, dep, key);
   }
 
   fn call(
@@ -317,6 +311,11 @@ impl<'a> ArrayEntity<'a> {
     } else {
       Some(self.elements.borrow().len())
     }
+  }
+
+  fn add_assignment_dep(&self, analyzer: &Analyzer<'a>, dep: EntityDep) {
+    let target_variable_scope = analyzer.find_first_different_variable_scope(&self.variable_scopes);
+    self.deps.borrow_mut().push(analyzer.get_assignment_deps(target_variable_scope, dep));
   }
 }
 

@@ -36,9 +36,9 @@ pub fn enumerate_properties<'a>(
   vec![(false, UnknownEntity::new_unknown(), UnknownEntity::new_unknown())]
 }
 
-pub fn delete_property<'a>(analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+pub fn delete_property<'a>(analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
+  analyzer.refer_dep(dep);
   key.get_to_property_key().consume_self(analyzer);
-  true
 }
 
 pub fn call<'a>(

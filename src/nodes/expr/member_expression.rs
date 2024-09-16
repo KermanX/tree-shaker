@@ -7,18 +7,22 @@ use crate::{
   },
   transformer::Transformer,
 };
-use oxc::ast::{
+use oxc::{
   ast::{
-    ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
-    StaticMemberExpression,
+    ast::{
+      ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
+      StaticMemberExpression,
+    },
+    AstKind,
   },
-  AstKind,
+  span::{GetSpan, SPAN},
 };
 
 const AST_TYPE_READ: AstType2 = AstType2::MemberExpressionRead;
 
 #[derive(Debug, Default)]
 struct Data {
+  need_access: bool,
   need_optional: bool,
 }
 
@@ -36,6 +40,10 @@ impl<'a> Analyzer<'a> {
       false
     };
 
+    let data = self.load_data::<Data>(AST_TYPE_READ, node);
+    data.need_access = true;
+    data.need_optional |= indeterminate;
+
     if indeterminate {
       self.push_cf_scope_normal(None);
     }
@@ -43,9 +51,6 @@ impl<'a> Analyzer<'a> {
     let key = self.exec_key(node);
     // TODO: handle optional
     let value = object.get_property(self, AstKind::MemberExpression(node), &key);
-
-    let data = self.load_data::<Data>(AST_TYPE_READ, node);
-    data.need_optional |= indeterminate;
 
     if indeterminate {
       self.pop_cf_scope();
@@ -88,6 +93,23 @@ impl<'a> Transformer<'a> {
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let data = self.get_data::<Data>(AST_TYPE_READ, node);
+
+    if !data.need_access {
+      return if need_val {
+        Some(build_effect!(
+          &self.ast_builder,
+          node.span(),
+          self.transform_expression(node.object(), false);
+          self.build_undefined(SPAN)
+        ))
+      } else {
+        build_effect!(
+          &self.ast_builder,
+          node.span(),
+          self.transform_expression(node.object(), false)
+        )
+      };
+    }
 
     let need_read = need_val || self.is_referred(AstKind::MemberExpression(node));
 

@@ -55,9 +55,9 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     consumed_object::enumerate_properties(analyzer, dep)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
     self.consume_as_unknown(analyzer);
-    consumed_object::delete_property(analyzer, key)
+    consumed_object::delete_property(analyzer, dep, key)
   }
 
   fn call(

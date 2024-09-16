@@ -85,13 +85,11 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
     if self.maybe_object() {
-      key.get_to_property_key().consume_self(analyzer);
-      self.consume_as_unknown(analyzer);
-      true
+      consumed_object::delete_property(analyzer, dep, key)
     } else {
-      false
+      // No effect
     }
   }
 

@@ -63,12 +63,10 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     consumed_object::enumerate_properties(analyzer, dep)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
-    let mut deleted = false;
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
     for entity in &self.0 {
-      deleted |= entity.delete_property(analyzer, key);
+      entity.delete_property(analyzer, dep.clone(), key);
     }
-    deleted
   }
 
   fn call(

@@ -24,14 +24,21 @@ impl<T: GetSpan> From<(AstType2, &T)> for EntityDepNode {
 
 #[derive(Debug, Clone)]
 enum EntityDepImpl {
+  Environment,
   Single(EntityDepNode),
-  Multiple(Vec<EntityDep>),
+  Multiple(Rc<Vec<EntityDep>>),
   Concat(EntityDepNode, EntityDep),
   Combined(EntityDep, EntityDep),
 }
 
 #[derive(Debug, Clone)]
 pub struct EntityDep(Rc<EntityDepImpl>);
+
+impl From<()> for EntityDep {
+  fn from(_: ()) -> Self {
+    Self(Rc::new(EntityDepImpl::Environment))
+  }
+}
 
 impl From<EntityDepNode> for EntityDep {
   fn from(node: EntityDepNode) -> Self {
@@ -41,7 +48,7 @@ impl From<EntityDepNode> for EntityDep {
 
 impl From<Vec<EntityDep>> for EntityDep {
   fn from(deps: Vec<EntityDep>) -> Self {
-    Self(Rc::new(EntityDepImpl::Multiple(deps)))
+    Self(Rc::new(EntityDepImpl::Multiple(Rc::new(deps))))
   }
 }
 
@@ -66,11 +73,12 @@ impl<'a> From<AstKind<'a>> for EntityDep {
 impl EntityDep {
   pub fn mark_referred(&self, analyzer: &mut Analyzer) {
     match self.0.as_ref() {
+      EntityDepImpl::Environment => {}
       EntityDepImpl::Single(node) => {
         analyzer.referred_nodes.insert(*node);
       }
       EntityDepImpl::Multiple(nodes) => {
-        for node in nodes {
+        for node in nodes.as_ref() {
           node.mark_referred(analyzer);
         }
       }

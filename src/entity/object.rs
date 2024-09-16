@@ -4,20 +4,30 @@ use super::{
   dep::EntityDep,
   entity::{Entity, EntityTrait},
   entry::EntryEntity,
+  forwarded::ForwardedEntity,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   union::UnionEntity,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
-use crate::{analyzer::Analyzer, scope::cf_scope::CfScopes, use_consumed_flag};
+use crate::{
+  analyzer::Analyzer,
+  scope::{cf_scope::CfScopes, variable_scope::VariableScopes},
+  use_consumed_flag,
+};
 use oxc::ast::ast::PropertyKind;
 use rustc_hash::FxHashMap;
-use std::cell::{Cell, RefCell};
+use std::{
+  cell::{Cell, RefCell},
+  mem,
+};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ObjectEntity<'a> {
-  pub consumed: Cell<bool>,
-  pub cf_scopes: CfScopes<'a>,
+  consumed: Cell<bool>,
+  deps: RefCell<Vec<EntityDep>>,
+  cf_scopes: CfScopes<'a>,
+  variable_scopes: VariableScopes<'a>,
   pub string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
   pub unknown_keyed: RefCell<ObjectProperty<'a>>,
   // TODO: symbol_keyed
@@ -70,6 +80,9 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
+
+    analyzer.refer_dep(mem::take(&mut *self.deps.borrow_mut()));
+
     fn consume_property_as_unknown<'a>(property: &ObjectProperty<'a>, analyzer: &mut Analyzer<'a>) {
       for value in &property.values {
         match value {
@@ -128,7 +141,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           _ => unreachable!(),
         }
       }
-      EntryEntity::new(UnionEntity::new(values), key.clone())
+      ForwardedEntity::new(
+        EntryEntity::new(UnionEntity::new(values), key.clone()),
+        self.deps.borrow().clone(),
+      )
     } else {
       // TODO: like set_property, call getters and collect all possible values
       self.consume_as_unknown(analyzer);
@@ -147,6 +163,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
+    self.add_assignment_dep(analyzer, dep.clone());
     let this = rc.clone();
     let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
     let key = key.get_to_property_key();
@@ -235,19 +252,28 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     let mut unknown_keyed = self.unknown_keyed.borrow().get_value(analyzer, dep.clone(), &this);
     unknown_keyed.extend(self.rest.borrow().get_value(analyzer, dep.clone(), &this));
     let mut result = Vec::new();
+    let self_dep = EntityDep::from(self.deps.borrow().clone());
     if unknown_keyed.len() > 0 {
-      result.push((false, UnknownEntity::new_unknown(), UnionEntity::new(unknown_keyed)));
+      result.push((
+        false,
+        UnknownEntity::new_unknown(),
+        ForwardedEntity::new(UnionEntity::new(unknown_keyed), self_dep.clone()),
+      ));
     }
     for (key, properties) in self.string_keyed.borrow().iter() {
       let values = properties.get_value(analyzer, dep.clone(), &this);
-      result.push((properties.definite, LiteralEntity::new_string(key), UnionEntity::new(values)));
+      result.push((
+        properties.definite,
+        LiteralEntity::new_string(key),
+        ForwardedEntity::new(UnionEntity::new(values), self_dep.clone()),
+      ));
     }
     result
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
     if self.consumed.get() {
-      return consumed_object::delete_property(analyzer, key);
+      return consumed_object::delete_property(analyzer, dep, key);
     }
     self.consume_self(analyzer);
     let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
@@ -270,13 +296,15 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           _ => unreachable!(),
         }
       }
-      deleted
+      if deleted {
+        self.add_assignment_dep(analyzer, dep);
+      }
     } else {
       let mut string_keyed = self.string_keyed.borrow_mut();
       for property in string_keyed.values_mut() {
         property.definite = false;
       }
-      true
+      self.add_assignment_dep(analyzer, dep);
     }
   }
 
@@ -447,13 +475,20 @@ impl<'a> ObjectEntity<'a> {
       &UnknownEntity::new_unknown(),
     );
   }
+
+  fn add_assignment_dep(&self, analyzer: &Analyzer<'a>, dep: EntityDep) {
+    let target_variable_scope = analyzer.find_first_different_variable_scope(&self.variable_scopes);
+    self.deps.borrow_mut().push(analyzer.get_assignment_deps(target_variable_scope, dep));
+  }
 }
 
 impl<'a> Analyzer<'a> {
   pub fn new_empty_object(&self) -> ObjectEntity<'a> {
     ObjectEntity {
       consumed: Cell::new(false),
+      deps: RefCell::new(Vec::new()),
       cf_scopes: self.scope_context.cf_scopes.clone(),
+      variable_scopes: self.scope_context.variable_scopes.clone(),
       string_keyed: RefCell::new(FxHashMap::default()),
       unknown_keyed: RefCell::new(ObjectProperty::default()),
       rest: RefCell::new(ObjectProperty::default()),

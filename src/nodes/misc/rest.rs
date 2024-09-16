@@ -22,7 +22,7 @@ impl<'a> Analyzer<'a> {
     }
 
     for key in enumerated {
-      rest.delete_property(self, &key);
+      rest.delete_property(self, ().into(), &key);
     }
 
     Entity::new(rest)

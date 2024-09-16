@@ -13,7 +13,8 @@ export function f1() {
 }
 export function f2() {
 	let b = { value: 1 };
-	effect(2, 2, 4);
+	b.value++;
+	effect(2, (b.value++, 2), (++b.value, 4));
 	b.value++;
 	effect(5);
 	if (unknown) b.value++;

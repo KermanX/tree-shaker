@@ -28,7 +28,7 @@ pub trait EntityTrait<'a>: Debug {
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)>;
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool;
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>);
   fn call(
     &self,
     rc: &Entity<'a>,
@@ -118,8 +118,13 @@ impl<'a> Entity<'a> {
     self.0.enumerate_properties(self, analyzer, dep.into())
   }
 
-  pub fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
-    self.0.delete_property(analyzer, key)
+  pub fn delete_property(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl Into<EntityDep>,
+    key: &Entity<'a>,
+  ) {
+    self.0.delete_property(analyzer, dep.into(), key)
   }
 
   pub fn call(

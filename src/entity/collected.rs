@@ -66,11 +66,11 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.val.enumerate_properties(analyzer, dep)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
     for entity in self.collected.borrow().iter() {
       entity.consume_self(analyzer);
     }
-    self.val.delete_property(analyzer, key)
+    self.val.delete_property(analyzer, dep, key)
   }
 
   fn call(

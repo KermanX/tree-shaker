@@ -76,13 +76,12 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     vec![]
   }
 
-  fn delete_property(&self, _analyzer: &mut Analyzer<'a>, _key: &Entity<'a>) -> bool {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, _key: &Entity<'a>) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       // TODO: throw warning
-      true
+      analyzer.refer_dep(dep);
     } else {
       // No effect
-      false
     }
   }
 

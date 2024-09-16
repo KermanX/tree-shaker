@@ -4,14 +4,12 @@ use crate::entity::{
   object::{ObjectEntity, ObjectProperty, ObjectPropertyValue},
   unknown::{UnknownEntity, UnknownEntityKind},
 };
-use rustc_hash::FxHashMap;
-use std::cell::{Cell, RefCell};
 
 pub fn create_import_meta<'a>() -> Entity<'a> {
-  let mut string_keyed = FxHashMap::default();
+  let object = ObjectEntity::default();
 
   // import.meta.url
-  string_keyed.insert(
+  object.string_keyed.borrow_mut().insert(
     "url",
     ObjectProperty {
       definite: true,
@@ -22,17 +20,10 @@ pub fn create_import_meta<'a>() -> Entity<'a> {
     },
   );
 
-  Entity::new(ObjectEntity {
-    consumed: Cell::new(false),
-    cf_scopes: vec![],
-    string_keyed: RefCell::new(string_keyed),
-    unknown_keyed: RefCell::new(ObjectProperty::default()),
-    rest: RefCell::new(ObjectProperty {
-      definite: false,
-      values: vec![ObjectPropertyValue::Property(
-        Some(UnknownEntity::new_unknown()),
-        Some(UnknownEntity::new_unknown()),
-      )],
-    }),
-  })
+  object.rest.borrow_mut().values.push(ObjectPropertyValue::Property(
+    Some(UnknownEntity::new_unknown()),
+    Some(UnknownEntity::new_unknown()),
+  ));
+
+  Entity::new(object)
 }

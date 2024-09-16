@@ -60,8 +60,8 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
       .collect()
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
-    self.val.delete_property(analyzer, key)
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
+    self.val.delete_property(analyzer, (self.dep.clone(), dep), key)
   }
 
   fn call(

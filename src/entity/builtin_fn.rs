@@ -46,9 +46,9 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     consumed_object::set_property(analyzer, dep, key, value)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
     // TODO: throw warning
-    consumed_object::delete_property(analyzer, key)
+    consumed_object::delete_property(analyzer, dep, key)
   }
 
   fn enumerate_properties(

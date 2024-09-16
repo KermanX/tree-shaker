@@ -60,8 +60,8 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
       .collect()
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, key: &Entity<'a>) -> bool {
-    self.value.delete_property(analyzer, key)
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
+    self.value.delete_property(analyzer, dep, key)
   }
 
   fn call(

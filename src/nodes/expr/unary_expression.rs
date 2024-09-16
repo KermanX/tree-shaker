@@ -1,6 +1,5 @@
 use crate::{
   analyzer::Analyzer,
-  ast::AstType2,
   entity::{
     entity::Entity,
     literal::LiteralEntity,
@@ -8,36 +7,37 @@ use crate::{
   },
   transformer::Transformer,
 };
-use oxc::ast::ast::{Expression, UnaryExpression, UnaryOperator};
-
-const AST_TYPE: AstType2 = AstType2::UnaryExpression;
-
-#[derive(Debug, Default)]
-pub struct Data {
-  need_delete: bool,
-}
+use oxc::ast::{
+  ast::{Expression, UnaryExpression, UnaryOperator},
+  AstKind,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_unary_expression(&mut self, node: &'a UnaryExpression) -> Entity<'a> {
     if node.operator == UnaryOperator::Delete {
-      let data = self.load_data::<Data>(AST_TYPE, node);
+      let dep = AstKind::UnaryExpression(node);
 
-      data.need_delete |= match &node.argument {
+      match &node.argument {
         Expression::StaticMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
           let property = LiteralEntity::new_string(&node.property.name);
-          object.delete_property(self, &property)
+          object.delete_property(self, dep, &property)
         }
-        Expression::PrivateFieldExpression(_node) => {
+        Expression::PrivateFieldExpression(node) => {
           // TODO: throw warning: SyntaxError: private fields can't be deleted
-          true
+          let _object = self.exec_expression(&node.object);
+          self.refer_dep(dep);
         }
         Expression::ComputedMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
           let property = self.exec_expression(&node.expression);
-          object.delete_property(self, &property)
+          object.delete_property(self, dep, &property)
         }
-        _ => false,
+        Expression::Identifier(_node) => {
+          // TODO: throw warning: SyntaxError: Delete of an unqualified identifier in strict mode.
+          self.refer_dep(dep);
+        }
+        _ => {}
       };
 
       return LiteralEntity::new_boolean(true);
@@ -91,10 +91,44 @@ impl<'a> Transformer<'a> {
     let UnaryExpression { span, operator, argument } = node;
 
     if *operator == UnaryOperator::Delete {
-      let data = self.get_data::<Data>(AST_TYPE, node);
-
-      return if data.need_delete {
-        let argument = self.transform_expression(argument, true).unwrap();
+      return if self.is_referred(AstKind::UnaryExpression(node)) {
+        let argument = match &node.argument {
+          Expression::StaticMemberExpression(node) => {
+            let object = self.transform_expression(&node.object, true).unwrap();
+            self.ast_builder.expression_member(self.ast_builder.member_expression_static(
+              node.span,
+              object,
+              node.property.clone(),
+              node.optional,
+            ))
+          }
+          Expression::PrivateFieldExpression(node) => {
+            // TODO: throw warning: SyntaxError: private fields can't be deleted
+            let object = self.transform_expression(&node.object, true).unwrap();
+            self.ast_builder.expression_member(
+              self.ast_builder.member_expression_private_field_expression(
+                node.span,
+                object,
+                node.field.clone(),
+                node.optional,
+              ),
+            )
+          }
+          Expression::ComputedMemberExpression(node) => {
+            let object = self.transform_expression(&node.object, true).unwrap();
+            let property = self.transform_expression(&node.expression, true).unwrap();
+            self.ast_builder.expression_member(self.ast_builder.member_expression_computed(
+              node.span,
+              object,
+              property,
+              node.optional,
+            ))
+          }
+          Expression::Identifier(node) => {
+            self.ast_builder.expression_from_identifier_reference(self.clone_node(node))
+          }
+          _ => unreachable!(),
+        };
         Some(self.ast_builder.expression_unary(*span, *operator, argument))
       } else {
         self.transform_expression(argument, false)
