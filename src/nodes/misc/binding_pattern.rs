@@ -60,7 +60,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn exec_binding_pattern(&mut self, node: &'a BindingPattern<'a>, init: Entity<'a>) {
+  pub fn init_binding_pattern(&mut self, node: &'a BindingPattern<'a>, init: Entity<'a>) {
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
         self.init_binding_identifier(node, init);
@@ -78,7 +78,7 @@ impl<'a> Analyzer<'a> {
           let key = self.exec_property_key(&property.key);
           enumerated.push(key.clone());
           let init = init.get_property(self, dep, &key);
-          self.exec_binding_pattern(&property.value, init);
+          self.init_binding_pattern(&property.value, init);
         }
         if let Some(rest) = &node.rest {
           let dep = AstKind::BindingRestElement(rest.as_ref());
@@ -91,7 +91,7 @@ impl<'a> Analyzer<'a> {
           init.destruct_as_array(self, AstKind::ArrayPattern(node), node.elements.len());
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
-            self.exec_binding_pattern(element, value);
+            self.init_binding_pattern(element, value);
           }
         }
         if let Some(rest) = &node.rest {
@@ -105,7 +105,7 @@ impl<'a> Analyzer<'a> {
           self.load_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
         data.need_right |= need_right;
 
-        self.exec_binding_pattern(&node.left, binding_val);
+        self.init_binding_pattern(&node.left, binding_val);
       }
     }
   }

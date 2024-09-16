@@ -12,7 +12,7 @@ impl<'a> Analyzer<'a> {
     }
 
     for (param, init) in node.items.iter().zip(elements_init) {
-      self.exec_binding_pattern(&param.pattern, init);
+      self.init_binding_pattern(&param.pattern, init);
     }
 
     if let Some(rest) = &node.rest {
