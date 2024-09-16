@@ -60,7 +60,9 @@ impl<'a> Transformer<'a> {
           rest.as_ref().and_then(|rest| self.transform_assignment_target_rest(rest, false));
 
         while transformed_elements.last().is_none() {
-          transformed_elements.pop();
+          if transformed_elements.pop().is_none() {
+            break;
+          }
         }
 
         if transformed_elements.is_empty() && rest.is_none() {
