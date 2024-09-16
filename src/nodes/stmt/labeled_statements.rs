@@ -5,6 +5,10 @@ use oxc::ast::{
 };
 
 impl<'a> Analyzer<'a> {
+  pub fn declare_labeled_statement(&mut self, node: &'a LabeledStatement<'a>) {
+    self.declare_statement(&node.body);
+  }
+
   pub fn exec_labeled_statement(&mut self, node: &'a LabeledStatement<'a>) {
     self.pending_labels.push(LabelEntity::new(&node.label));
     self.exec_statement(&node.body);

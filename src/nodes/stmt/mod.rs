@@ -39,6 +39,7 @@ impl<'a> Analyzer<'a> {
       Statement::ForInStatement(node) => self.declare_for_in_statement(node),
       Statement::ForOfStatement(node) => self.declare_for_of_statement(node),
       Statement::ForStatement(node) => self.declare_for_statement(node),
+      Statement::LabeledStatement(node) => self.declare_labeled_statement(node),
       _ => {}
     }
   }
