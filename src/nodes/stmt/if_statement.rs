@@ -87,8 +87,12 @@ impl<'a> Transformer<'a> {
 
     let IfStatement { span, test, consequent, alternate, .. } = node;
 
-    let consequent = self.transform_statement(consequent);
-    let alternate = alternate.as_ref().and_then(|alt| self.transform_statement(alt));
+    let consequent = if data.maybe_true { self.transform_statement(consequent) } else { None };
+    let alternate = if data.maybe_false {
+      alternate.as_ref().and_then(|alt| self.transform_statement(alt))
+    } else {
+      None
+    };
 
     let need_test_val =
       data.maybe_true && data.maybe_false && (consequent.is_some() || alternate.is_some());
