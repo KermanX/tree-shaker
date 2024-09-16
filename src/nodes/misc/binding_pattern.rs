@@ -184,7 +184,9 @@ impl<'a> Transformer<'a> {
         let rest = rest.as_ref().and_then(|rest| self.transform_binding_rest_element(rest, false));
 
         while transformed_elements.last().is_none() {
-          transformed_elements.pop();
+          if transformed_elements.pop().is_none() {
+            break;
+          }
         }
 
         if transformed_elements.is_empty() && rest.is_none() {

@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
       runner(self);
       round_counter += 1;
       if round_counter > 1000 {
-        unreachable!("Exhaustive loop is too long");
+        unreachable!("Exhaustive loop is too deep");
       }
     }
     self.pop_cf_scope();
