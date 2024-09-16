@@ -245,12 +245,16 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     (false, rc.clone())
   }
 
-  fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+  fn iterate(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     if self.consumed.get() {
-      return consumed_object::iterate(analyzer);
+      return consumed_object::iterate(analyzer, dep);
     }
-    let elements = self.elements.borrow();
-    (false, if elements.is_empty() { None } else { Some(UnionEntity::new(elements.clone())) })
+    (self.elements.borrow().clone(), self.rest.borrow().clone())
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -266,21 +270,6 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     self.get_to_string(rc)
-  }
-
-  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    if self.consumed.get() {
-      return consumed_object::get_to_array(length);
-    }
-    let elements = self.elements.borrow();
-    let mut result = Vec::new();
-    for i in 0..length.min(elements.len()) {
-      result.push(elements[i].clone());
-    }
-    for _ in 0..length.saturating_sub(elements.len()) {
-      result.push(UnknownEntity::new_unknown());
-    }
-    (result, UnknownEntity::new_unknown())
   }
 
   fn test_typeof(&self) -> TypeofResult {

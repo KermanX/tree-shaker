@@ -1,11 +1,11 @@
-use crate::ast::DeclarationKind;
-use crate::entity::entity::Entity;
-use crate::{transformer::Transformer, Analyzer};
+use crate::{
+  analyzer::Analyzer, ast::DeclarationKind, entity::entity::Entity, transformer::Transformer,
+};
 use oxc::ast::ast::{FormalParameter, FormalParameters};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_formal_parameters(&mut self, node: &'a FormalParameters<'a>, args: Entity<'a>) {
-    let (elements_init, rest_init) = args.get_to_array(node.items.len());
+    let (elements_init, rest_init) = args.destruct_as_array(self, (), node.items.len());
 
     for (param, _) in node.items.iter().zip(&elements_init) {
       self.declare_binding_pattern(&param.pattern, false, DeclarationKind::Parameter);

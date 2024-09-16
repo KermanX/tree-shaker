@@ -116,15 +116,19 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
   }
 
-  fn iterate(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+  fn iterate(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     if self.kind == UnknownEntityKind::Array {
-      return (false, Some(UnknownEntity::new_unknown_with_deps(vec![rc.clone()])));
+      return (vec![], Some(UnknownEntity::new_unknown_with_deps(vec![rc.clone()])));
     }
     if !self.maybe_object() {
       // TODO: throw warning
     }
-    self.consume_as_unknown(analyzer);
-    (true, Some(UnknownEntity::new_unknown()))
+    consumed_object::iterate(analyzer, dep)
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -141,10 +145,6 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::Unknown, self.deps.borrow().clone())
-  }
-
-  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    UnknownEntity::new_unknown_to_array_result(length, self.deps.borrow().clone())
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -199,17 +199,6 @@ impl<'a> UnknownEntity<'a> {
 
   pub fn new_unknown_with_deps(deps: Vec<Entity<'a>>) -> Entity<'a> {
     Self::new_with_deps(UnknownEntityKind::Unknown, deps)
-  }
-
-  pub fn new_unknown_to_array_result(
-    length: usize,
-    deps: Vec<Entity<'a>>,
-  ) -> (Vec<Entity<'a>>, Entity<'a>) {
-    let mut result = Vec::new();
-    for _ in 0..length {
-      result.push(UnknownEntity::new_unknown_with_deps(deps.clone()));
-    }
-    (result, UnknownEntity::new_unknown_with_deps(deps))
   }
 
   pub fn maybe_object(&self) -> bool {

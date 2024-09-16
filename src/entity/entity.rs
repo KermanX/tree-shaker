@@ -1,4 +1,6 @@
-use super::{dep::EntityDep, literal::LiteralEntity, typeof_result::TypeofResult};
+use super::{
+  dep::EntityDep, literal::LiteralEntity, typeof_result::TypeofResult, union::UnionEntity,
+};
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};
@@ -38,12 +40,16 @@ pub trait EntityTrait<'a>: Debug {
     args: &Entity<'a>,
   ) -> Entity<'a>;
   fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>);
-  fn iterate(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>);
+  fn iterate(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>);
 
   fn get_typeof(&self) -> Entity<'a>;
   fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a>;
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a>;
-  fn get_to_array(&self, rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>);
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
     None
   }
@@ -141,8 +147,12 @@ impl<'a> Entity<'a> {
     self.0.r#await(self, analyzer)
   }
 
-  pub fn iterate(&self, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
-    self.0.iterate(self, analyzer)
+  pub fn iterate(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl Into<EntityDep>,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+    self.0.iterate(self, analyzer, dep.into())
   }
 
   pub fn get_typeof(&self) -> Entity<'a> {
@@ -155,10 +165,6 @@ impl<'a> Entity<'a> {
 
   pub fn get_to_property_key(&self) -> Entity<'a> {
     self.0.get_to_property_key(self)
-  }
-
-  pub fn get_to_array(&self, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    self.0.get_to_array(self, length)
   }
 
   pub fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
@@ -187,6 +193,44 @@ impl<'a> Entity<'a> {
 
   pub fn test_is_completely_unknown(&self) -> bool {
     self.0.test_is_completely_unknown()
+  }
+
+  pub fn destruct_as_array(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl Into<EntityDep>,
+    length: usize,
+  ) -> (Vec<Entity<'a>>, Entity<'a>) {
+    let (elements, rest) = self.iterate(analyzer, dep);
+    let mut result = Vec::new();
+    for i in 0..length.min(elements.len()) {
+      result.push(elements[i].clone());
+    }
+    for _ in 0..length.saturating_sub(elements.len()) {
+      if let Some(rest) = rest.clone() {
+        result.push(rest.clone());
+      } else {
+        result.push(LiteralEntity::new_undefined());
+      }
+    }
+    (result, rest.unwrap_or(Entity::new(analyzer.new_empty_array())))
+  }
+
+  pub fn iterate_result_union(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl Into<EntityDep>,
+  ) -> Option<Entity<'a>> {
+    let (elements, rest) = self.iterate(analyzer, dep);
+    if let Some(rest) = rest {
+      let mut result = elements;
+      result.push(rest);
+      Some(UnionEntity::new(result))
+    } else if !elements.is_empty() {
+      Some(UnionEntity::new(elements))
+    } else {
+      None
+    }
   }
 }
 

@@ -93,12 +93,14 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     (has_effect, self.forward(ret_val))
   }
 
-  fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
-    let (has_effect, ret_val) = self.val.iterate(analyzer);
-    if has_effect {
-      self.consume_self(analyzer);
-    }
-    (has_effect, ret_val.map(|ret_val| self.forward(ret_val)))
+  fn iterate(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+    let (elements, rest) = self.val.iterate(analyzer, dep);
+    (elements.into_iter().map(|v| self.forward(v)).collect(), rest.map(|v| self.forward(v)))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -112,11 +114,6 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     self.forward(self.val.get_to_property_key())
-  }
-
-  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    let (elements, rest) = self.val.get_to_array(length);
-    (elements.into_iter().map(|entity| self.forward(entity)).collect(), self.forward(rest))
   }
 
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {

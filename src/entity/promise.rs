@@ -77,9 +77,14 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     (self.has_effect || inner_effect, awaited)
   }
 
-  fn iterate(&self, _rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
-    // TODO: throw warning
-    (true, Some(UnknownEntity::new_unknown()))
+  fn iterate(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+    self.consume_as_unknown(analyzer);
+    consumed_object::iterate(analyzer, dep)
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -92,10 +97,6 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
 
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![self.value.clone()])
-  }
-
-  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    UnknownEntity::new_unknown_to_array_result(length, vec![self.value.clone()])
   }
 
   fn test_typeof(&self) -> TypeofResult {

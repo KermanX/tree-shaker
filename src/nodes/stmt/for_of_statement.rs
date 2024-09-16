@@ -3,7 +3,10 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::{
-  ast::ast::{ForOfStatement, Statement},
+  ast::{
+    ast::{ForOfStatement, Statement},
+    AstKind,
+  },
   span::GetSpan,
 };
 
@@ -12,7 +15,6 @@ const AST_TYPE: AstType2 = AstType2::ForOfStatement;
 #[derive(Debug, Default, Clone)]
 pub struct Data {
   need_loop: bool,
-  iterate_has_effect: bool,
 }
 
 impl<'a> Analyzer<'a> {
@@ -25,15 +27,16 @@ impl<'a> Analyzer<'a> {
 
     let right = self.exec_expression(&node.right);
 
-    let (iter_effect, value) = if node.r#await {
+    let dep = AstKind::ForOfStatement(node);
+    let value = if node.r#await {
       right.consume_as_unknown(self);
-      (true, Some(UnknownEntity::new_unknown()))
+      self.refer_dep(dep);
+      Some(UnknownEntity::new_unknown())
     } else {
-      right.iterate(self)
+      right.iterate_result_union(self, dep)
     };
 
     let data = self.load_data::<Data>(AST_TYPE, node);
-    data.iterate_has_effect |= iter_effect;
     data.need_loop |= value.is_some();
 
     if let Some(value) = value {
@@ -67,7 +70,7 @@ impl<'a> Transformer<'a> {
     let body = self.transform_statement(body);
 
     if !data.need_loop || (left.is_none() && body.is_none()) {
-      return if data.iterate_has_effect {
+      return if self.is_referred(AstKind::ForOfStatement(node)) {
         let right_span = right.span();
         let right = self.transform_expression(right, true).unwrap();
         Some(

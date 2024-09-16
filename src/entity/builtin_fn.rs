@@ -75,9 +75,14 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     (false, rc.clone())
   }
 
-  fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+  fn iterate(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     // TODO: throw warning
-    consumed_object::iterate(analyzer)
+    consumed_object::iterate(analyzer, dep)
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -90,10 +95,6 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     self.get_to_string(rc)
-  }
-
-  fn get_to_array(&self, rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    UnknownEntity::new_unknown_to_array_result(length, vec![rc.clone()])
   }
 
   fn test_typeof(&self) -> TypeofResult {

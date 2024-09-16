@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   build_effect_from_arr,
-  entity::{entity::Entity, unknown::UnknownEntity},
+  entity::{arguments::ArgumentsEntity, entity::Entity, unknown::UnknownEntity},
   transformer::Transformer,
 };
 use oxc::ast::{
@@ -15,17 +15,19 @@ impl<'a> Analyzer<'a> {
     node: &'a TaggedTemplateExpression<'a>,
   ) -> Entity<'a> {
     let tag = self.exec_expression(&node.tag);
+
+    let mut arguments = vec![(false, UnknownEntity::new_unknown())];
+
     for expr in &node.quasi.expressions {
-      self.exec_expression(expr);
+      arguments.push((false, self.exec_expression(expr)));
     }
 
     // TODO: this
-    // TODO: more specific arguments
     tag.call(
       self,
       AstKind::TaggedTemplateExpression(node),
       &UnknownEntity::new_unknown(),
-      &UnknownEntity::new_unknown(),
+      &ArgumentsEntity::new(arguments),
     )
   }
 }

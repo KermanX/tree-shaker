@@ -61,16 +61,16 @@ pub fn r#await<'a>(analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
   (true, UnknownEntity::new_unknown())
 }
 
-pub fn iterate<'a>(analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+pub fn iterate<'a>(
+  analyzer: &mut Analyzer<'a>,
+  dep: EntityDep,
+) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
   analyzer.may_throw();
+  analyzer.refer_dep(dep);
   analyzer.refer_global();
-  (true, Some(UnknownEntity::new_unknown()))
+  (vec![], Some(UnknownEntity::new_unknown()))
 }
 
 pub fn get_to_string<'a>() -> Entity<'a> {
   UnknownEntity::new_unknown()
-}
-
-pub fn get_to_array<'a>(length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-  UnknownEntity::new_unknown_to_array_result(length, vec![])
 }

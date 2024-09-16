@@ -2,7 +2,7 @@ use super::{
   dep::EntityDep,
   entity::{Entity, EntityTrait},
   typeof_result::TypeofResult,
-  unknown::UnknownEntity,
+  union::UnionEntity,
 };
 use crate::analyzer::Analyzer;
 
@@ -71,8 +71,32 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
-  fn iterate(&self, _rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
-    unreachable!()
+  fn iterate(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+    let mut elements = Vec::new();
+    let mut rest: Option<Vec<Entity<'a>>> = None;
+    for (spread, entity) in &self.arguments {
+      if *spread {
+        if let Some(iterated) = entity.iterate_result_union(analyzer, dep.clone()) {
+          if let Some(rest) = &mut rest {
+            rest.push(iterated);
+          } else {
+            rest = Some(vec![iterated]);
+          }
+        }
+      } else {
+        if let Some(rest) = &mut rest {
+          rest.push(entity.clone());
+        } else {
+          elements.push(entity.clone());
+        }
+      }
+    }
+    (elements, rest.map(UnionEntity::new))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -85,19 +109,6 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     unreachable!()
-  }
-
-  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    let mut result = Vec::new();
-    for i in 0..length.min(self.arguments.len()) {
-      let (is_spread, entity) = &self.arguments[i];
-      assert!(!is_spread, "TODO:");
-      result.push(entity.clone());
-    }
-    for _ in 0..length.saturating_sub(self.arguments.len()) {
-      result.push(UnknownEntity::new_unknown());
-    }
-    (result, UnknownEntity::new_unknown())
   }
 
   fn test_typeof(&self) -> TypeofResult {

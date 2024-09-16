@@ -8,7 +8,7 @@ use oxc::{
   ast::{
     ast::{
       ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,
-      ObjectPattern, TSTypeAnnotation,
+      BindingRestElement, ObjectPattern, TSTypeAnnotation,
     },
     AstKind,
   },
@@ -87,7 +87,8 @@ impl<'a> Analyzer<'a> {
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
-        let (element_values, rest_value) = init.get_to_array(node.elements.len());
+        let (element_values, rest_value) =
+          init.destruct_as_array(self, AstKind::ArrayPattern(node), node.elements.len());
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
             self.exec_binding_pattern(element, value);
@@ -187,7 +188,17 @@ impl<'a> Transformer<'a> {
         }
 
         if transformed_elements.is_empty() && rest.is_none() {
-          None
+          self.is_referred(AstKind::ArrayPattern(node)).then(|| {
+            self.ast_builder.binding_pattern(
+              self.ast_builder.binding_pattern_kind_array_pattern(
+                *span,
+                self.ast_builder.vec(),
+                None::<BindingRestElement>,
+              ),
+              None::<TSTypeAnnotation>,
+              false,
+            )
+          })
         } else {
           Some(self.ast_builder.binding_pattern(
             self.ast_builder.binding_pattern_kind_array_pattern(*span, transformed_elements, rest),

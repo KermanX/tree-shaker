@@ -1,5 +1,8 @@
 use crate::{analyzer::Analyzer, ast::AstType2, entity::entity::Entity, transformer::Transformer};
-use oxc::ast::ast::{ArrayAssignmentTarget, AssignmentTargetPattern, ObjectAssignmentTarget};
+use oxc::ast::{
+  ast::{ArrayAssignmentTarget, AssignmentTargetPattern, ObjectAssignmentTarget},
+  AstKind,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_assignment_target_pattern(
@@ -9,7 +12,8 @@ impl<'a> Analyzer<'a> {
   ) {
     match node {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
-        let (element_values, rest_value) = value.get_to_array(node.elements.len());
+        let (element_values, rest_value) =
+          value.destruct_as_array(self, AstKind::ArrayAssignmentTarget(node), node.elements.len());
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
             self.exec_assignment_target_maybe_default(element, value);
@@ -60,7 +64,14 @@ impl<'a> Transformer<'a> {
         }
 
         if transformed_elements.is_empty() && rest.is_none() {
-          None
+          self.is_referred(AstKind::ArrayAssignmentTarget(node)).then(|| {
+            self.ast_builder.assignment_target_pattern_array_assignment_target(
+              *span,
+              self.ast_builder.vec(),
+              None,
+              None,
+            )
+          })
         } else {
           Some(self.ast_builder.assignment_target_pattern_array_assignment_target(
             *span,

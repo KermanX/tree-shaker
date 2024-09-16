@@ -155,11 +155,14 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     (false, rc.clone())
   }
 
-  fn iterate(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
-    if self.consumed.get() {
-      return consumed_object::iterate(analyzer);
-    }
-    (true, Some(UnknownEntity::new_unknown_with_deps(vec![rc.clone()])))
+  fn iterate(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+    self.consume_as_unknown(analyzer);
+    consumed_object::iterate(analyzer, dep)
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -175,13 +178,6 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     self.get_to_string(rc)
-  }
-
-  fn get_to_array(&self, rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    if self.consumed.get() {
-      return consumed_object::get_to_array(length);
-    }
-    UnknownEntity::new_unknown_to_array_result(length, vec![rc.clone()])
   }
 
   fn test_typeof(&self) -> TypeofResult {

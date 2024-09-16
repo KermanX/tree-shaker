@@ -97,17 +97,25 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     (await_effect, UnionEntity::new(values))
   }
 
-  fn iterate(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
-    let mut has_effect = false;
-    let mut results = vec![];
+  fn iterate(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+    let mut results = Vec::new();
+    let mut has_undefined = false;
     for entity in &self.0 {
-      let (effect, result) = entity.iterate(analyzer);
-      has_effect |= effect;
-      if let Some(result) = result {
+      if let Some(result) = entity.iterate_result_union(analyzer, dep.clone()) {
         results.push(result);
+      } else {
+        has_undefined = true;
       }
     }
-    (has_effect, if results.is_empty() { None } else { Some(UnionEntity::new(results)) })
+    if has_undefined {
+      results.push(LiteralEntity::new_undefined());
+    }
+    (vec![], UnionEntity::try_new(results))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -135,23 +143,6 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
       result.push(entity.get_to_property_key());
     }
     UnionEntity::new(result)
-  }
-
-  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    // FIXME: May have the same result
-    let mut elements = Vec::new();
-    for _ in 0..length {
-      elements.push(Vec::new());
-    }
-    let mut rest = Vec::new();
-    for entity in &self.0 {
-      let result = entity.get_to_array(length);
-      for (i, element) in elements.iter_mut().enumerate() {
-        element.push(result.0[i].clone());
-      }
-      rest.push(result.1);
-    }
-    (elements.into_iter().map(UnionEntity::new).collect(), UnionEntity::new(rest))
   }
 
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
@@ -192,17 +183,24 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 }
 
 impl<'a> UnionEntity<'a> {
-  pub fn new(values: Vec<Entity<'a>>) -> Entity<'a> {
-    debug_assert!(!values.is_empty());
-    if values.len() == 1 {
-      values.first().unwrap().clone()
+  pub fn try_new(values: Vec<Entity<'a>>) -> Option<Entity<'a>> {
+    if values.is_empty() {
+      None
     } else {
-      let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
-      if has_unknown {
-        UnknownEntity::new_unknown()
+      Some(if values.len() == 1 {
+        values.first().unwrap().clone()
       } else {
-        Entity::new(UnionEntity(values))
-      }
+        let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
+        if has_unknown {
+          UnknownEntity::new_unknown()
+        } else {
+          Entity::new(UnionEntity(values))
+        }
+      })
     }
+  }
+
+  pub fn new(values: Vec<Entity<'a>>) -> Entity<'a> {
+    Self::try_new(values).unwrap()
   }
 }

@@ -101,10 +101,15 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     (false, rc.clone())
   }
 
-  fn iterate(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
+  fn iterate(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: EntityDep,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     match self {
       LiteralEntity::String(value) => (
-        false,
+        vec![],
         if value.is_empty() {
           None
         } else {
@@ -113,7 +118,8 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       ),
       _ => {
         // TODO: throw warning
-        (true, Some(UnknownEntity::new_unknown()))
+        self.consume_as_unknown(analyzer);
+        consumed_object::iterate(analyzer, dep)
       }
     }
   }
@@ -131,10 +137,6 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::Symbol(_, _) => Entity::new(*self),
       _ => self.get_to_string(rc),
     }
-  }
-
-  fn get_to_array(&self, _rc: &Entity<'a>, length: usize) -> (Vec<Entity<'a>>, Entity<'a>) {
-    UnknownEntity::new_unknown_to_array_result(length, vec![])
   }
 
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
