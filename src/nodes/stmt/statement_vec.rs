@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
       if self.cf_scope().borrow().must_exited() {
         break;
       }
-      self.exec_statement(statement);
+      self.init_statement(statement);
       last_stmt = Some(index);
     }
     if let Some(last_stmt) = last_stmt {

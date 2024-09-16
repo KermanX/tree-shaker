@@ -9,16 +9,14 @@ impl<'a> Analyzer<'a> {
     node: &'a VariableDeclaration<'a>,
     exporting: bool,
   ) {
+    let kind = match &node.kind {
+      VariableDeclarationKind::Var => DeclarationKind::Var,
+      VariableDeclarationKind::Let => DeclarationKind::Let,
+      VariableDeclarationKind::Const => DeclarationKind::Const,
+    };
+
     for declarator in &node.declarations {
-      self.declare_variable_declarator(
-        declarator,
-        exporting,
-        match &node.kind {
-          VariableDeclarationKind::Var => DeclarationKind::Var,
-          VariableDeclarationKind::Let => DeclarationKind::Let,
-          VariableDeclarationKind::Const => DeclarationKind::Const,
-        },
-      );
+      self.declare_variable_declarator(declarator, exporting, kind);
     }
   }
 
@@ -27,6 +25,10 @@ impl<'a> Analyzer<'a> {
     node: &'a VariableDeclaration<'a>,
     init: Option<Entity<'a>>,
   ) {
+    if init.is_some() {
+      debug_assert_eq!(node.declarations.len(), 1);
+    }
+
     for declarator in &node.declarations {
       self.exec_variable_declarator(declarator, init.clone());
     }

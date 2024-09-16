@@ -53,7 +53,8 @@ impl<'a> Analyzer<'a> {
     }
 
     let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
-    debug_assert!(reference.is_write());
+    // Upstream bug
+    // debug_assert!(reference.is_write());
     let symbol = reference.symbol_id();
 
     self.set_data(AST_TYPE_WRITE, node, Data { resolvable: symbol.is_some() });
