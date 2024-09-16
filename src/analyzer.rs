@@ -136,12 +136,7 @@ impl<'a> Analyzer<'a> {
     let variable_scope_cf_scopes = &variable_scope_ref.cf_scopes;
     let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
     let target_variable_scope = self.find_first_different_variable_scope(variable_scopes);
-    let mut deps = self.scope_context.variable_scopes[target_variable_scope..]
-      .iter()
-      .filter_map(|scope| scope.borrow().dep.clone())
-      .collect::<Vec<_>>();
-    deps.push(decl_dep.clone());
-    let dep = EntityDep::from(deps);
+    let dep = self.get_assignment_deps(target_variable_scope, decl_dep.clone());
     let (is_consumed_exhaustively, old_val) = variable_scope_ref.read(self, symbol);
     if is_consumed_exhaustively {
       drop(variable_scope_ref);

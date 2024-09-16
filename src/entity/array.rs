@@ -3,19 +3,29 @@ use super::{
   dep::EntityDep,
   entity::{Entity, EntityTrait},
   entry::EntryEntity,
+  forwarded::ForwardedEntity,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   union::UnionEntity,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
-use crate::{analyzer::Analyzer, scope::cf_scope::CfScopes, use_consumed_flag};
+use crate::{
+  analyzer::Analyzer,
+  scope::{cf_scope::CfScopes, variable_scope::VariableScopes},
+  use_consumed_flag,
+};
 use oxc::syntax::number::ToJsInt32;
-use std::cell::{Cell, RefCell};
+use std::{
+  cell::{Cell, RefCell},
+  mem,
+};
 
 #[derive(Debug)]
 pub struct ArrayEntity<'a> {
   consumed: Cell<bool>,
+  deps: RefCell<Vec<EntityDep>>,
   cf_scopes: CfScopes<'a>,
+  variable_scopes: VariableScopes<'a>,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Option<Entity<'a>>>,
 }
@@ -25,6 +35,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
+    analyzer.refer_dep(mem::take(&mut *self.deps.borrow_mut()));
     for element in self.elements.borrow().iter() {
       element.consume_as_unknown(analyzer);
     }
@@ -90,7 +101,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
           _ => unreachable!(),
         }
       }
-      EntryEntity::new(UnionEntity::new(result), key.clone())
+      ForwardedEntity::new(
+        EntryEntity::new(UnionEntity::new(result), key.clone()),
+        self.deps.borrow().clone(),
+      )
     } else {
       UnknownEntity::new_unknown()
     }
@@ -124,14 +138,15 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 };
               } else if !rest_added {
                 rest_added = true;
-                if let Some(rest) = self.rest.borrow_mut().as_mut() {
+                let mut rest_ref = self.rest.borrow_mut();
+                if let Some(rest) = rest_ref.as_mut() {
                   *rest = if definite {
                     value.clone()
                   } else {
                     UnionEntity::new(vec![rest.clone(), value.clone()])
                   };
                 } else {
-                  *self.rest.borrow_mut() = Some(value.clone());
+                  *rest_ref = Some(value.clone());
                 }
               }
             } else if key == "length" {
@@ -168,7 +183,11 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
           _ => unreachable!(),
         }
       }
-      todo!("{has_effect:?}")
+      if has_effect {
+        let target_variable_scope =
+          analyzer.find_first_different_variable_scope(&self.variable_scopes);
+        self.deps.borrow_mut().push(analyzer.get_assignment_deps(target_variable_scope, dep));
+      }
     } else {
       self.consume_as_unknown(analyzer);
       consumed_object::set_property(analyzer, dep, key, value)
@@ -189,11 +208,15 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       entries.push((
         true,
         LiteralEntity::new_string(analyzer.allocator.alloc(i.to_string())),
-        element.clone(),
+        ForwardedEntity::new(element.clone(), self.deps.borrow().clone()),
       ));
     }
     if let Some(rest) = self.rest.borrow().as_ref() {
-      entries.push((true, UnknownEntity::new(UnknownEntityKind::String), rest.clone()));
+      entries.push((
+        true,
+        UnknownEntity::new(UnknownEntityKind::String),
+        ForwardedEntity::new(rest.clone(), self.deps.borrow().clone()),
+      ));
     }
     entries
   }
@@ -301,7 +324,9 @@ impl<'a> Analyzer<'a> {
   pub fn new_empty_array(&self) -> ArrayEntity<'a> {
     ArrayEntity {
       consumed: Cell::new(false),
+      deps: RefCell::new(Vec::new()),
       cf_scopes: self.scope_context.cf_scopes.clone(),
+      variable_scopes: self.scope_context.variable_scopes.clone(),
       elements: RefCell::new(Vec::new()),
       rest: RefCell::new(None),
     }

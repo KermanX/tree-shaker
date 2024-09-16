@@ -8,6 +8,7 @@ pub fn get_property<'a>(
 ) -> Entity<'a> {
   analyzer.may_throw();
   analyzer.refer_dep(dep);
+  analyzer.refer_global();
   key.get_to_property_key().consume_self(analyzer);
   UnknownEntity::new_unknown()
 }
@@ -20,6 +21,7 @@ pub fn set_property<'a>(
 ) {
   analyzer.may_throw();
   analyzer.refer_dep(dep);
+  analyzer.refer_global();
   key.get_to_property_key().consume_self(analyzer);
   value.consume_as_unknown(analyzer);
 }
@@ -30,6 +32,7 @@ pub fn enumerate_properties<'a>(
 ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
   analyzer.may_throw();
   analyzer.refer_dep(dep);
+  analyzer.refer_global();
   vec![(false, UnknownEntity::new_unknown(), UnknownEntity::new_unknown())]
 }
 
@@ -46,6 +49,7 @@ pub fn call<'a>(
 ) -> Entity<'a> {
   analyzer.may_throw();
   analyzer.refer_dep(dep);
+  analyzer.refer_global();
   this.consume_as_unknown(analyzer);
   args.consume_as_unknown(analyzer);
   UnknownEntity::new_unknown()
@@ -53,11 +57,13 @@ pub fn call<'a>(
 
 pub fn r#await<'a>(analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
   analyzer.may_throw();
+  analyzer.refer_global();
   (true, UnknownEntity::new_unknown())
 }
 
 pub fn iterate<'a>(analyzer: &mut Analyzer<'a>) -> (bool, Option<Entity<'a>>) {
   analyzer.may_throw();
+  analyzer.refer_global();
   (true, Some(UnknownEntity::new_unknown()))
 }
 
