@@ -99,10 +99,13 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
     value: Option<Entity<'a>>,
   ) {
-    if matches!(self.symbol_decls.get(&symbol), Some((kind,_,_)) if kind.is_untracked()) {
+    let old_decl = self.symbol_decls.get(&symbol);
+    if matches!(old_decl, Some((kind,_,_)) if kind.is_untracked()) {
+      self.refer_dep(decl_dep);
       value.map(|val| val.consume_as_unknown(self));
       return;
     }
+    let old_decl_dep = old_decl.map(|(_, _, decl_dep)| decl_dep.clone());
     if exporting {
       self.named_exports.push(symbol);
     }
@@ -112,8 +115,13 @@ impl<'a> Analyzer<'a> {
     } else {
       self.scope_context.variable_scopes.clone()
     };
-    variable_scopes.last().unwrap().borrow_mut().declare(kind, symbol, value);
-    self.symbol_decls.insert(symbol, (kind, variable_scopes, decl_dep.into()));
+    variable_scopes.last().unwrap().borrow_mut().declare(self, kind, symbol, value);
+    let decl_dep = if let Some(old_decl_dep) = old_decl_dep {
+      (old_decl_dep, decl_dep.into()).into()
+    } else {
+      decl_dep.into()
+    };
+    self.symbol_decls.insert(symbol, (kind, variable_scopes, decl_dep));
   }
 
   pub fn init_symbol(&mut self, symbol: SymbolId, value: Entity<'a>) {
@@ -121,7 +129,8 @@ impl<'a> Analyzer<'a> {
     if kind.is_untracked() {
       value.consume_as_unknown(self);
     } else {
-      variable_scopes.last().unwrap().borrow_mut().init(symbol, value);
+      let variable_scope = variable_scopes.last().unwrap().clone();
+      variable_scope.borrow_mut().init(self, symbol, value);
     }
   }
 
@@ -133,7 +142,7 @@ impl<'a> Analyzer<'a> {
       let variable_scope = variable_scopes.last().unwrap().clone();
       let variable_scope_ref = variable_scope.borrow();
       let target_cf_scope = self.find_first_different_cf_scope(&variable_scope_ref.cf_scopes);
-      let val = variable_scope_ref.read(self, symbol).1;
+      let (_, val) = variable_scope_ref.read(self, symbol);
       self.mark_exhaustive_read(&val, *symbol, target_cf_scope);
       val
     } else {
@@ -160,6 +169,7 @@ impl<'a> Analyzer<'a> {
       let (is_consumed_exhaustively, old_val) = variable_scope_ref.read(self, symbol);
       if is_consumed_exhaustively {
         drop(variable_scope_ref);
+        self.refer_dep(dep);
         new_val.consume_as_unknown(self);
       } else {
         let entity_to_set = if self.mark_exhaustive_write(&old_val, symbol.clone(), target_cf_scope)
@@ -188,6 +198,7 @@ impl<'a> Analyzer<'a> {
         decl_variable_scope.borrow_mut().write(*symbol, entity_to_set);
       }
     } else {
+      new_val.consume_as_unknown(self);
       self.insert_untracked_var(*symbol);
     }
   }

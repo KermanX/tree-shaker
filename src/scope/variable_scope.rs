@@ -13,7 +13,7 @@ pub struct VariableScope<'a> {
   pub dep: Option<EntityDep>,
   /// Cf scopes when the scope was created
   pub cf_scopes: CfScopes<'a>,
-  /// (is_consumed_exhaustively, entity)
+  /// (is_consumed_exhaustively, entity_or_TDZ)
   pub variables: FxHashMap<SymbolId, (bool, Option<Entity<'a>>)>,
 }
 
@@ -24,11 +24,20 @@ impl<'a> VariableScope<'a> {
     Self { dep, cf_scopes, variables: FxHashMap::default() }
   }
 
-  pub fn declare(&mut self, kind: DeclarationKind, symbol: SymbolId, value: Option<Entity<'a>>) {
+  pub fn declare(
+    &mut self,
+    analyzer: &mut Analyzer<'a>,
+    kind: DeclarationKind,
+    symbol: SymbolId,
+    value: Option<Entity<'a>>,
+  ) {
     if kind.is_var() {
       let old = self.variables.get(&symbol);
       let new = match old {
-        Some(old @ (true, _)) => old.clone(),
+        Some(old @ (true, _)) => {
+          value.map(|val| val.consume_as_unknown(analyzer));
+          old.clone()
+        }
         _ => (false, Some(value.unwrap_or_else(LiteralEntity::new_undefined))),
       };
       self.variables.insert(symbol, new);
@@ -40,9 +49,13 @@ impl<'a> VariableScope<'a> {
     }
   }
 
-  pub fn init(&mut self, symbol: SymbolId, value: Entity<'a>) {
-    let old = self.variables.get_mut(&symbol).unwrap();
-    old.1 = Some(value);
+  pub fn init(&mut self, analyzer: &mut Analyzer<'a>, symbol: SymbolId, value: Entity<'a>) {
+    let (consumed, val) = self.variables.get_mut(&symbol).unwrap();
+    if *consumed {
+      value.consume_as_unknown(analyzer);
+    } else {
+      *val = Some(value);
+    }
   }
 
   pub fn read(&self, analyzer: &mut Analyzer<'a>, symbol: &SymbolId) -> (bool, Entity<'a>) {
