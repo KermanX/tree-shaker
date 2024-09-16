@@ -99,6 +99,10 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
     value: Option<Entity<'a>>,
   ) {
+    if matches!(self.symbol_decls.get(&symbol), Some((kind,_,_)) if kind.is_untracked()) {
+      value.map(|val| val.consume_as_unknown(self));
+      return;
+    }
     if exporting {
       self.named_exports.push(symbol);
     }
@@ -108,25 +112,17 @@ impl<'a> Analyzer<'a> {
     } else {
       self.scope_context.variable_scopes.clone()
     };
-    let variable_scope = variable_scopes.last().unwrap().clone();
-    if let Some((kind, _, _)) =
-      self.symbol_decls.insert(symbol, (kind, variable_scopes, decl_dep.into()))
-    {
-      if kind.is_untracked() {
-        value.map(|value| value.consume_as_unknown(self));
-        return;
-      }
-    }
-    variable_scope.borrow_mut().declare(kind, symbol, value);
+    variable_scopes.last().unwrap().borrow_mut().declare(kind, symbol, value);
+    self.symbol_decls.insert(symbol, (kind, variable_scopes, decl_dep.into()));
   }
 
   pub fn init_symbol(&mut self, symbol: SymbolId, value: Entity<'a>) {
     let (kind, variable_scopes, _) = &self.symbol_decls.get(&symbol).unwrap();
     if kind.is_untracked() {
       value.consume_as_unknown(self);
-      return;
+    } else {
+      variable_scopes.last().unwrap().borrow_mut().init(symbol, value);
     }
-    variable_scopes.last().unwrap().borrow_mut().init(symbol, value);
   }
 
   pub fn read_symbol(&mut self, symbol: &SymbolId) -> Entity<'a> {
