@@ -12,22 +12,6 @@ pub struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn declare_for_statement(&mut self, node: &'a ForStatement<'a>) {
-    if let Some(init) = &node.init {
-      match init {
-        ForStatementInit::VariableDeclaration(node) => {
-          self.push_variable_scope();
-          self.declare_variable_declaration(node, false);
-          self.pop_variable_scope();
-        }
-        ForStatementInit::UsingDeclaration(_node) => {
-          unreachable!();
-        }
-        _ => {}
-      }
-    }
-  }
-
   pub fn exec_for_statement(&mut self, node: &'a ForStatement<'a>) {
     let labels = self.take_labels();
 

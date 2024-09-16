@@ -197,6 +197,7 @@ pub enum AstType2 {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DeclarationKind {
   Var,
+  UntrackedVar,
   Let,
   Const,
   Function,
@@ -208,7 +209,11 @@ pub enum DeclarationKind {
 
 impl DeclarationKind {
   pub fn is_var(self) -> bool {
-    matches!(self, DeclarationKind::Var)
+    matches!(self, DeclarationKind::Var | DeclarationKind::UntrackedVar)
+  }
+
+  pub fn is_untracked(self) -> bool {
+    matches!(self, DeclarationKind::UntrackedVar)
   }
 
   pub fn is_const(self) -> bool {

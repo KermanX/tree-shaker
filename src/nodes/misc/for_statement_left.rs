@@ -2,18 +2,6 @@ use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer
 use oxc::ast::ast::ForStatementLeft;
 
 impl<'a> Analyzer<'a> {
-  pub fn declare_for_statement_left(&mut self, node: &'a ForStatementLeft<'a>) {
-    match node {
-      ForStatementLeft::VariableDeclaration(node) => {
-        self.push_variable_scope();
-        self.declare_variable_declaration(node, false);
-        self.pop_variable_scope();
-      }
-      ForStatementLeft::UsingDeclaration(_node) => unreachable!(),
-      _ => {}
-    }
-  }
-
   pub fn exec_for_statement_left(&mut self, node: &'a ForStatementLeft<'a>, init: Entity<'a>) {
     match node {
       ForStatementLeft::VariableDeclaration(node) => {

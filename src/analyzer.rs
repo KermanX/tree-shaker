@@ -62,7 +62,7 @@ impl<'a> Analyzer<'a> {
     // Consume exports
     self.default_export.take().map(|entity| entity.consume_as_unknown(self));
     for symbol in self.named_exports.clone() {
-      let entity = self.read_symbol(&symbol).clone();
+      let entity = self.read_symbol(&symbol);
       entity.consume_as_unknown(self);
     }
     // Consume uncaught thrown values
@@ -108,60 +108,96 @@ impl<'a> Analyzer<'a> {
     } else {
       self.scope_context.variable_scopes.clone()
     };
-    variable_scopes.last().unwrap().borrow_mut().declare(kind, symbol, value);
-    self.symbol_decls.insert(symbol, (kind, variable_scopes, decl_dep.into()));
+    let variable_scope = variable_scopes.last().unwrap().clone();
+    if let Some((kind, _, _)) =
+      self.symbol_decls.insert(symbol, (kind, variable_scopes, decl_dep.into()))
+    {
+      if kind.is_untracked() {
+        value.map(|value| value.consume_as_unknown(self));
+        return;
+      }
+    }
+    variable_scope.borrow_mut().declare(kind, symbol, value);
   }
 
   pub fn init_symbol(&mut self, symbol: SymbolId, value: Entity<'a>) {
-    let variable_scopes = &self.symbol_decls.get(&symbol).unwrap().1;
+    let (kind, variable_scopes, _) = &self.symbol_decls.get(&symbol).unwrap();
+    if kind.is_untracked() {
+      value.consume_as_unknown(self);
+      return;
+    }
     variable_scopes.last().unwrap().borrow_mut().init(symbol, value);
   }
 
   pub fn read_symbol(&mut self, symbol: &SymbolId) -> Entity<'a> {
-    let (_, variable_scopes, _) = self.symbol_decls.get(symbol).unwrap().clone();
-    let variable_scope = variable_scopes.last().unwrap().borrow();
-    let target_cf_scope = self.find_first_different_cf_scope(&variable_scope.cf_scopes);
-    let val = variable_scope.read(self, symbol).1;
-    self.mark_exhaustive_read(&val, *symbol, target_cf_scope);
-    val
+    if let Some((kind, variable_scopes, _)) = self.symbol_decls.get(symbol) {
+      if kind.is_untracked() {
+        return UnknownEntity::new_unknown();
+      }
+      let variable_scope = variable_scopes.last().unwrap().clone();
+      let variable_scope_ref = variable_scope.borrow();
+      let target_cf_scope = self.find_first_different_cf_scope(&variable_scope_ref.cf_scopes);
+      let val = variable_scope_ref.read(self, symbol).1;
+      self.mark_exhaustive_read(&val, *symbol, target_cf_scope);
+      val
+    } else {
+      self.insert_untracked_var(*symbol);
+      UnknownEntity::new_unknown()
+    }
   }
 
   pub fn write_symbol(&mut self, symbol: &SymbolId, new_val: Entity<'a>) {
-    let (kind, variable_scopes, decl_dep) = self.symbol_decls.get(symbol).unwrap();
-    if kind.is_const() {
-      // TODO: throw warning
-    }
-    let decl_variable_scope = variable_scopes.last().unwrap().clone();
-    let variable_scope_ref = decl_variable_scope.borrow();
-    let variable_scope_cf_scopes = &variable_scope_ref.cf_scopes;
-    let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
-    let target_variable_scope = self.find_first_different_variable_scope(variable_scopes);
-    let dep = self.get_assignment_deps(target_variable_scope, decl_dep.clone());
-    let (is_consumed_exhaustively, old_val) = variable_scope_ref.read(self, symbol);
-    if is_consumed_exhaustively {
-      drop(variable_scope_ref);
-      new_val.consume_as_unknown(self);
-    } else {
-      let entity_to_set = if self.mark_exhaustive_write(&old_val, symbol.clone(), target_cf_scope) {
-        drop(variable_scope_ref);
-        self.refer_dep(dep);
-        old_val.consume_as_unknown(self);
+    if let Some((kind, variable_scopes, decl_dep)) = self.symbol_decls.get(symbol) {
+      if kind.is_untracked() {
         new_val.consume_as_unknown(self);
-        (true, UnknownEntity::new_unknown())
-      } else {
-        let indeterminate =
-          self.is_relatively_indeterminate(target_cf_scope, variable_scope_cf_scopes);
+        return;
+      }
+      if kind.is_const() {
+        // TODO: throw warning
+      }
+      let decl_variable_scope = variable_scopes.last().unwrap().clone();
+      let variable_scope_ref = decl_variable_scope.borrow();
+      let variable_scope_cf_scopes = &variable_scope_ref.cf_scopes;
+      let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
+      let target_variable_scope = self.find_first_different_variable_scope(variable_scopes);
+      let dep = self.get_assignment_deps(target_variable_scope, decl_dep.clone());
+      let (is_consumed_exhaustively, old_val) = variable_scope_ref.read(self, symbol);
+      if is_consumed_exhaustively {
         drop(variable_scope_ref);
-        (
-          false,
-          ForwardedEntity::new(
-            if indeterminate { UnionEntity::new(vec![old_val.clone(), new_val]) } else { new_val },
-            dep,
-          ),
-        )
-      };
-      decl_variable_scope.borrow_mut().write(*symbol, entity_to_set);
+        new_val.consume_as_unknown(self);
+      } else {
+        let entity_to_set = if self.mark_exhaustive_write(&old_val, symbol.clone(), target_cf_scope)
+        {
+          drop(variable_scope_ref);
+          self.refer_dep(dep);
+          old_val.consume_as_unknown(self);
+          new_val.consume_as_unknown(self);
+          (true, UnknownEntity::new_unknown())
+        } else {
+          let indeterminate =
+            self.is_relatively_indeterminate(target_cf_scope, variable_scope_cf_scopes);
+          drop(variable_scope_ref);
+          (
+            false,
+            ForwardedEntity::new(
+              if indeterminate {
+                UnionEntity::new(vec![old_val.clone(), new_val])
+              } else {
+                new_val
+              },
+              dep,
+            ),
+          )
+        };
+        decl_variable_scope.borrow_mut().write(*symbol, entity_to_set);
+      }
+    } else {
+      self.insert_untracked_var(*symbol);
     }
+  }
+
+  fn insert_untracked_var(&mut self, symbol: SymbolId) {
+    self.symbol_decls.insert(symbol, (DeclarationKind::UntrackedVar, vec![], ().into()));
   }
 
   pub fn refer_global(&mut self) {
