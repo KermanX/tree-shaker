@@ -3,6 +3,8 @@
 const { treeShake } = require('@kermanx/tree-shaker')
 const pc = require("picocolors");
 const Diff = require('diff')
+const process = require('process');
+const path = require('path');
 
 const do_minify = false;
 
@@ -30,36 +32,38 @@ function printDiff(diff) {
   console.log("NEW", t2);
 }
 
-let index = 0;
+const total = 51617;
+let executed = 0;
 let skipped = 0;
+let minifiedTotal = 0;
+let treeShakedTotal = 0;
 module.exports = function(test) {
   try {
     let prelude = test.contents.slice(0, test.insertionIndex);
     let main = test.contents.slice(test.insertionIndex);
 
-    if (main.includes('eval(')) {
-      console.log('\n> Skipping eval', ++skipped, '----------------');
-      console.log(test.file);
+    if (main.includes('eval(') || main.includes('$DONOTEVALUATE') || /with\s*\(/.test(main)) {
+      skipped++;
       return test;
     }
-    if (main.includes('$DONOTEVALUATE')) {
-      console.log('\n> Skipping $DONOTEVALUATE', ++skipped, '----------------');
-      console.log(test.file);
-      return test;
-    }
-    if (/with\s*\(/.test(main)) {
-      console.log('\n> Skipping with', ++skipped, '----------------');
-      console.log(test.file);
-      return test;
-    }
+    executed++;
 
-    console.log('\n> Testing', ++index, '----------------');
-    console.log(test.file);
+    let progress = ((executed + skipped) * 100 / total).toFixed(2) + '%';
+    let rate = (treeShakedTotal * 100 / minifiedTotal).toFixed(2) + '%';
+    
+    process.stdout.clearLine(0);
+    process.stdout.cursorTo(0);
+    process.stdout.write(`${pc.green(executed)}/${pc.white(total)} ${pc.yellow(progress)} ${pc.blue(rate)}`.padEnd(70, ' ')+path.basename(test.file));
+
     let minified = treeShake(treeShakeEval(main, false), false, do_minify, false);
     let startTime = Date.now();
     let treeShaked = treeShake(treeShakeEval(main, true), true, do_minify, false);
     let endTime = Date.now();
-    console.log(`${pc.gray(main.length)} -> ${pc.red(minified.length)} -> ${pc.green(treeShaked.length)} (${pc.yellow((treeShaked.length * 100 / minified.length).toFixed(2) + '%')}) +${endTime - startTime}ms`);
+
+    minifiedTotal += minified.length;
+    treeShakedTotal += treeShaked.length;
+
+    // console.log(`${pc.gray(main.length)} -> ${pc.red(minified.length)} -> ${pc.green(treeShaked.length)} (${pc.yellow((treeShaked.length * 100 / minified.length).toFixed(2) + '%')}) +${endTime - startTime}ms`);
     // if (minified !== treeShaked && !test.file.includes('unicode'))
     //   printDiff(Diff.diffChars(minified.slice(0, 500), treeShaked.slice(0, 500)));
     test.contents = prelude + treeShaked;

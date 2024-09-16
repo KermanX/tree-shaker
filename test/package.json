@@ -7,6 +7,6 @@
 	},
 	"packageManager": "pnpm@9.7.1",
 	"scripts": {
-		"test": "test262-harness --preprocessor ./preprocessor.js ./test262/test/language/**/*.js"
+		"test": "test262-harness --preprocessor ./preprocessor.js ./test262/test/language/**/*.js --threads 8"
 	}
 }
