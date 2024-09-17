@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstType2, entity::entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, entity::{entity::Entity, literal::LiteralEntity}, transformer::Transformer};
 use oxc::ast::{
   ast::{ArrayAssignmentTarget, AssignmentTargetPattern, ObjectAssignmentTarget},
   AstKind,
@@ -14,6 +14,15 @@ impl<'a> Analyzer<'a> {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
         let (element_values, rest_value) =
           value.destruct_as_array(self, AstKind::ArrayAssignmentTarget(node), node.elements.len());
+          println!(
+            "value.length1: {:?}",
+            value.get_property(self, (), &LiteralEntity::new_string("length")).get_literal()
+          );
+          println!(
+            "rest.length1: {:?}",
+            rest_value.get_property(self, (), &LiteralEntity::new_string("length")).get_literal()
+          );
+        println!("elements_len: {}", node.elements.len());
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
             self.exec_assignment_target_maybe_default(element, value);
