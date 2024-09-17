@@ -192,7 +192,7 @@ impl<'a> UnionEntity<'a> {
       } else {
         let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
         if has_unknown {
-          UnknownEntity::new_unknown()
+          UnknownEntity::new_unknown_with_deps(values)
         } else {
           Entity::new(UnionEntity(values))
         }
