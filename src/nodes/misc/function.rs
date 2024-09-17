@@ -47,7 +47,7 @@ impl<'a> Analyzer<'a> {
       call_dep,
       variable_scopes,
       this,
-      args.clone(),
+      (args.clone(), vec![ /* later filled by formal parameters */]),
       node.r#async,
       node.generator,
     );
@@ -57,7 +57,7 @@ impl<'a> Analyzer<'a> {
       self.declare_symbol(symbol, decl_dep, false, DeclarationKind::Function, Some(fn_entity));
     }
 
-    self.exec_formal_parameters(&node.params, args);
+    self.exec_formal_parameters(&node.params, args, DeclarationKind::FunctionParameter);
     self.exec_function_body(node.body.as_ref().unwrap());
 
     self.pop_call_scope()

@@ -109,6 +109,9 @@ impl<'a> Analyzer<'a> {
     if exporting {
       self.named_exports.push(symbol);
     }
+    if kind == DeclarationKind::FunctionParameter {
+      self.call_scope_mut().args.1.push(symbol);
+    }
     let variable_scopes = if kind.is_var() {
       let index = self.call_scope().variable_scope_index;
       self.scope_context.variable_scopes[..index + 1].to_vec()

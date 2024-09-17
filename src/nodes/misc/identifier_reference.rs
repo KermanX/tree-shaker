@@ -33,7 +33,12 @@ impl<'a> Analyzer<'a> {
     if let Some(symbol) = symbol {
       self.read_symbol(&symbol)
     } else if node.name == "arguments" {
-      self.call_scope().args.clone().consume_as_unknown(self);
+      let (args_entity, args_symbols) = self.call_scope().args.clone();
+      args_entity.consume_as_unknown(self);
+      for symbol in args_symbols {
+        let old = self.read_symbol(&symbol);
+        self.write_symbol(&symbol, UnknownEntity::new_unknown_with_deps(vec![old]));
+      }
       UnknownEntity::new_unknown()
     } else {
       // TODO: Handle globals

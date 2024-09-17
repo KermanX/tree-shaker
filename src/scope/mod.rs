@@ -17,6 +17,7 @@ use crate::{
 use call_scope::CallScope;
 pub use cf_scope::CfScopeKind;
 use cf_scope::{CfScope, CfScopes};
+use oxc::semantic::SymbolId;
 use std::{borrow::Borrow, cell::RefCell, mem, rc::Rc};
 use try_scope::TryScope;
 use variable_scope::{VariableScope, VariableScopes};
@@ -41,7 +42,7 @@ impl<'a> ScopeContext<'a> {
         0,
         // TODO: global this
         UnknownEntity::new_unknown(),
-        UnknownEntity::new_unknown(),
+        (UnknownEntity::new_unknown(), vec![]),
         true,
         false,
       )],
@@ -74,7 +75,7 @@ impl<'a> Analyzer<'a> {
     call_dep: impl Into<EntityDep>,
     variable_scopes: Rc<VariableScopes<'a>>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
     is_generator: bool,
   ) {

@@ -4,11 +4,16 @@ use crate::{
 use oxc::ast::ast::{FormalParameter, FormalParameters};
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_formal_parameters(&mut self, node: &'a FormalParameters<'a>, args: Entity<'a>) {
+  pub fn exec_formal_parameters(
+    &mut self,
+    node: &'a FormalParameters<'a>,
+    args: Entity<'a>,
+    kind: DeclarationKind,
+  ) {
     let (elements_init, rest_init) = args.destruct_as_array(self, (), node.items.len());
 
     for (param, _) in node.items.iter().zip(&elements_init) {
-      self.declare_binding_pattern(&param.pattern, false, DeclarationKind::Parameter);
+      self.declare_binding_pattern(&param.pattern, false, kind);
     }
 
     for (param, init) in node.items.iter().zip(elements_init) {
@@ -16,7 +21,7 @@ impl<'a> Analyzer<'a> {
     }
 
     if let Some(rest) = &node.rest {
-      self.declare_binding_rest_element(rest, false, DeclarationKind::Parameter);
+      self.declare_binding_rest_element(rest, false, kind);
       self.init_binding_rest_element(rest, rest_init);
     }
   }

@@ -204,7 +204,8 @@ pub enum DeclarationKind {
   Class,
   Import,
   Caught,
-  Parameter,
+  FunctionParameter,
+  ArrowFunctionParameter,
 }
 
 impl DeclarationKind {

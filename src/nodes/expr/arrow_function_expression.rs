@@ -1,5 +1,6 @@
 use crate::{
   analyzer::Analyzer,
+  ast::DeclarationKind,
   entity::{
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
@@ -44,7 +45,7 @@ impl<'a> Analyzer<'a> {
       false,
     );
 
-    self.exec_formal_parameters(&node.params, args);
+    self.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
     if node.expression {
       self.exec_function_expression_body(&node.body);
     } else {
