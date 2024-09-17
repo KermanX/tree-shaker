@@ -35,6 +35,7 @@ function printDiff(diff) {
 const total = 51617;
 let executed = 0;
 let skipped = 0;
+let unimplemented = 0;
 let minifiedTotal = 0;
 let treeShakedTotal = 0;
 module.exports = function(test) {
@@ -42,13 +43,31 @@ module.exports = function(test) {
     let prelude = test.contents.slice(0, test.insertionIndex);
     let main = test.contents.slice(test.insertionIndex);
 
-    if (main.includes('eval(') || main.includes('$DONOTEVALUATE') || /with\s*\(/.test(main)) {
+    if (
+         main.includes('eval(')
+      || main.includes('new Function(')
+      || main.includes('$DONOTEVALUATE')
+      || /with\s*\(/.test(main)
+      || main.includes('noStrict')
+    ) {
       skipped++;
       if (!process.stdout.isTTY) {
         console.log(`\n[SKIP] ${test.file}\n`)
       }
       return test;
     }
+
+    if (
+      main.includes('.call(')
+    ) {
+      skipped++;
+      unimplemented++;
+      if (!process.stdout.isTTY) {
+        console.log(`\n[SKIP] ${test.file}\n`)
+      }
+      return test;
+    }
+
     executed++;
 
     let progress = ((executed + skipped) * 100 / total).toFixed(2) + '%';
@@ -86,4 +105,5 @@ module.exports = function(test) {
 process.addListener('beforeExit', () => {
   let rate = (treeShakedTotal * 100 / minifiedTotal).toFixed(2) + '%';
   process.stdout.write(`\nTreeshake rate: ${rate}\n`);
+  process.stdout.write(`Transformed: ${executed}, Skipped: ${skipped}, Unimplemented: ${unimplemented}\n`);
 })
