@@ -1,13 +1,32 @@
 use crate::{analyzer::Analyzer, ast::AstType2, data::get_node_ptr};
 use core::hash::Hash;
 use oxc::{ast::AstKind, span::GetSpan};
-use std::rc::Rc;
+use std::{fmt::Debug, rc::Rc};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EntityDepNode {
   Environment,
   AstKind(u128),
-  Span(AstType2, usize),
+  Ptr(AstType2, usize),
+}
+
+impl Debug for EntityDepNode {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      EntityDepNode::Environment => {
+        f.write_str("Environment")?;
+      }
+      EntityDepNode::AstKind(node) => {
+        let node = unsafe { std::mem::transmute::<_, AstKind<'static>>(*node) };
+        node.span().fmt(f)?;
+      }
+      EntityDepNode::Ptr(t, s) => {
+        (*t).fmt(f)?;
+        s.fmt(f)?;
+      }
+    }
+    Ok(())
+  }
 }
 
 impl<'a> From<AstKind<'a>> for EntityDepNode {
@@ -18,7 +37,7 @@ impl<'a> From<AstKind<'a>> for EntityDepNode {
 
 impl<T: GetSpan> From<(AstType2, &T)> for EntityDepNode {
   fn from((ty, node): (AstType2, &T)) -> Self {
-    EntityDepNode::Span(ty, get_node_ptr(node))
+    EntityDepNode::Ptr(ty, get_node_ptr(node))
   }
 }
 
