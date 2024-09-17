@@ -82,7 +82,11 @@ impl<'a> Analyzer<'a> {
       Some(dep.into()),
       self.scope_context.cf_scopes.clone(),
     ))));
-    let cf_scope_index = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
+    let cf_scope_index = self.push_cf_scope(
+      CfScopeKind::Function,
+      None,
+      if is_generator { None } else { Some(false) },
+    );
     self.scope_context.call_scopes.push(CallScope::new(
       source.into(),
       old_variable_scopes,
