@@ -166,7 +166,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn test_truthy(&self) -> Option<bool> {
     Some(match self {
       LiteralEntity::String(value) => !value.is_empty(),
-      LiteralEntity::Number(value, _) => *value != 0.0.into(),
+      LiteralEntity::Number(value, _) => *value != 0.0.into() && *value != (-0.0).into(),
       LiteralEntity::BigInt(value) => !value.is_empty(),
       LiteralEntity::Boolean(value) => *value,
       LiteralEntity::Symbol(_, _) => true,

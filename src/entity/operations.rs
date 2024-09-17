@@ -50,6 +50,14 @@ impl<'a> EntityOpHost<'a> {
       if lhs_lit.len() == 1 && rhs_lit.len() == 1 {
         let lhs_lit = lhs_lit.iter().next().unwrap();
         let rhs_lit = rhs_lit.iter().next().unwrap();
+
+        // 0.0 === -0.0
+        if let (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) = (lhs_lit, rhs_lit) {
+          if *l == 0.0.into() || *l == (-0.0).into() {
+            return Some(*r == 0.0.into() || *r == (-0.0).into());
+          }
+        }
+
         return Some(lhs_lit == rhs_lit);
       }
 
