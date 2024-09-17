@@ -44,6 +44,9 @@ module.exports = function(test) {
 
     if (main.includes('eval(') || main.includes('$DONOTEVALUATE') || /with\s*\(/.test(main)) {
       skipped++;
+      if (!process.stdout.isTTY) {
+        console.log(`\n[SKIP] ${test.file}\n`)
+      }
       return test;
     }
     executed++;
@@ -51,9 +54,11 @@ module.exports = function(test) {
     let progress = ((executed + skipped) * 100 / total).toFixed(2) + '%';
     let rate = (treeShakedTotal * 100 / minifiedTotal).toFixed(2) + '%';
     
-    process.stdout.clearLine(0);
-    process.stdout.cursorTo(0);
-    process.stdout.write(`${pc.green(executed)}/${pc.white(total)} ${pc.yellow(progress)} ${pc.blue(rate)}`.padEnd(70, ' ')+path.basename(test.file));
+    if (process.stdout.isTTY) {
+      process.stdout.clearLine(0);
+      process.stdout.cursorTo(0);
+      process.stdout.write(`${pc.green(executed)}/${pc.white(total)} ${pc.yellow(progress)} ${pc.blue(rate)}`.padEnd(70, ' ')+path.basename(test.file));
+    }
 
     let minified = treeShake(treeShakeEval(main, false), false, do_minify, false);
     let startTime = Date.now();
@@ -77,3 +82,8 @@ module.exports = function(test) {
 
   return test;
 };
+
+process.addListener('beforeExit', () => {
+  let rate = (treeShakedTotal * 100 / minifiedTotal).toFixed(2) + '%';
+  process.stdout.write(`\nTreeshake rate: ${rate}\n`);
+})
