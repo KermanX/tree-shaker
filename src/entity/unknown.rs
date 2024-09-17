@@ -50,6 +50,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     key: &Entity<'a>,
   ) -> Entity<'a> {
     if matches!(self.kind, UnknownEntityKind::Unknown) {
+      self.consume_as_unknown(analyzer);
       consumed_object::get_property(analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
@@ -66,6 +67,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     value: Entity<'a>,
   ) {
     if self.maybe_object() {
+      self.consume_as_unknown(analyzer);
       consumed_object::set_property(analyzer, dep, key, value)
     } else {
       // Primitives. No effect
@@ -79,6 +81,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     dep: EntityDep,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     if self.maybe_object() {
+      self.consume_as_unknown(analyzer);
       consumed_object::enumerate_properties(analyzer, dep)
     } else {
       vec![]
@@ -104,6 +107,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     if !self.maybe_object() {
       // TODO: throw warning
     }
+    self.consume_as_unknown(analyzer);
     consumed_object::call(analyzer, dep, this, args)
   }
 
@@ -128,6 +132,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     if !self.maybe_object() {
       // TODO: throw warning
     }
+    self.consume_as_unknown(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
 
