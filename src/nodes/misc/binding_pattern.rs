@@ -181,7 +181,9 @@ impl<'a> Transformer<'a> {
           );
         }
 
-        let rest = rest.as_ref().and_then(|rest| self.transform_binding_rest_element(rest, false));
+        let rest = rest.as_ref().and_then(|rest| {
+          self.transform_binding_rest_element(rest, self.config.iterate_side_effects)
+        });
 
         while transformed_elements.last().is_none() {
           if transformed_elements.pop().is_none() {

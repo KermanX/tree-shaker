@@ -4,6 +4,7 @@ use regex::Regex;
 pub struct TreeShakeConfig {
   pub unknown_global_side_effects: bool,
   pub preserve_function_name: bool,
+  pub iterate_side_effects: bool,
 
   pub min_simple_number_value: i64,
   pub max_simple_number_value: i64,
@@ -16,6 +17,7 @@ impl Default for TreeShakeConfig {
     Self {
       unknown_global_side_effects: true,
       preserve_function_name: true,
+      iterate_side_effects: true,
 
       min_simple_number_value: -999,
       max_simple_number_value: 999,
