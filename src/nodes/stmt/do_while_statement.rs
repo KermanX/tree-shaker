@@ -65,29 +65,32 @@ impl<'a> Transformer<'a> {
 
     let body = self.transform_statement(body);
 
-    if !data.need_test {
-      body
+    // if !data.need_test {
+    //   body
+    // } else {
+    // FIXME: Temporarily added `body.is_some()` because can't handle break/continue
+    let need_loop = data.need_loop || body.is_some();
+    let test = self.transform_expression(test, need_loop);
+    if !need_loop {
+      // match (body, test) {
+      //   (Some(body), Some(test)) => {
+      //     let mut statements = self.ast_builder.vec();
+      //     statements.push(body);
+      //     statements.push(self.ast_builder.statement_expression(*span, test));
+      //     Some(self.ast_builder.statement_block(*span, statements))
+      //   }
+      //   (None, Some(test)) => Some(self.ast_builder.statement_expression(*span, test)),
+      //   (Some(body), None) => Some(body),
+      //   (None, None) => None,
+      // }
+      test.map(|test| self.ast_builder.statement_expression(*span, test))
     } else {
-      let test = self.transform_expression(test, data.need_loop);
-      if !data.need_loop {
-        match (body, test) {
-          (Some(body), Some(test)) => {
-            let mut statements = self.ast_builder.vec();
-            statements.push(body);
-            statements.push(self.ast_builder.statement_expression(*span, test));
-            Some(self.ast_builder.statement_block(*span, statements))
-          }
-          (None, Some(test)) => Some(self.ast_builder.statement_expression(*span, test)),
-          (Some(body), None) => Some(body),
-          (None, None) => None,
-        }
-      } else {
-        Some(self.ast_builder.statement_do_while(
-          *span,
-          body.unwrap_or_else(|| self.ast_builder.statement_empty(body_span)),
-          test.unwrap(),
-        ))
-      }
+      Some(self.ast_builder.statement_do_while(
+        *span,
+        body.unwrap_or_else(|| self.ast_builder.statement_empty(body_span)),
+        test.unwrap(),
+      ))
     }
+    // }
   }
 }

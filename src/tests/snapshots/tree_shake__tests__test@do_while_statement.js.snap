@@ -4,12 +4,9 @@ expression: tree_shake(input)
 input_file: src/tests/fixtures/do_while_statement.js
 ---
 export function main() {
-	{
-		{
-			effect(1);
-		}
-		effect(2);
-	}
+	do {
+		effect(1);
+	} while (effect(2), 0);
 	let a = 1;
 	do {
 		a++;
