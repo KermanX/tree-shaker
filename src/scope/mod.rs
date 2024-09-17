@@ -17,7 +17,7 @@ use crate::{
 use call_scope::CallScope;
 pub use cf_scope::CfScopeKind;
 use cf_scope::{CfScope, CfScopes};
-use std::{cell::RefCell, mem, rc::Rc};
+use std::{borrow::Borrow, cell::RefCell, mem, rc::Rc};
 use try_scope::TryScope;
 use variable_scope::{VariableScope, VariableScopes};
 
@@ -35,6 +35,7 @@ impl<'a> ScopeContext<'a> {
     ScopeContext {
       call_scopes: vec![CallScope::new(
         EntityDepNode::Environment,
+        ().into(),
         vec![],
         0,
         0,
@@ -70,18 +71,23 @@ impl<'a> Analyzer<'a> {
   pub fn push_call_scope(
     &mut self,
     source: impl Into<EntityDepNode>,
-    dep: impl Into<EntityDep>,
+    call_dep: impl Into<EntityDep>,
     variable_scopes: Rc<VariableScopes<'a>>,
     this: Entity<'a>,
     args: Entity<'a>,
     is_async: bool,
     is_generator: bool,
   ) {
+    let call_dep: EntityDep = call_dep.into();
+    let mut call_stack_deps: Vec<_> =
+      self.scope_context.call_scopes.iter().map(|scope| scope.borrow().call_dep.clone()).collect();
+    call_stack_deps.push(call_dep.clone());
+
     let old_variable_scopes =
       mem::replace(&mut self.scope_context.variable_scopes, variable_scopes.as_ref().clone());
     let variable_scope_index = self.scope_context.variable_scopes.len();
     self.scope_context.variable_scopes.push(Rc::new(RefCell::new(VariableScope::new(
-      Some(dep.into()),
+      Some(call_stack_deps.into()),
       self.scope_context.cf_scopes.clone(),
     ))));
     let cf_scope_index = self.push_cf_scope(
@@ -91,6 +97,7 @@ impl<'a> Analyzer<'a> {
     );
     self.scope_context.call_scopes.push(CallScope::new(
       source.into(),
+      call_dep,
       old_variable_scopes,
       cf_scope_index,
       variable_scope_index,
@@ -201,7 +208,7 @@ impl<'a> Analyzer<'a> {
     let mut target_index = None;
     let mut label_used = false;
     for (idx, cf_scope) in self.scope_context.cf_scopes.iter().enumerate().rev() {
-      let cf_scope = cf_scope.borrow();
+      let cf_scope = cf_scope.as_ref().borrow();
       if cf_scope.is_function() {
         break;
       }
@@ -233,7 +240,7 @@ impl<'a> Analyzer<'a> {
     let mut target_index = None;
     let mut label_used = false;
     for (idx, cf_scope) in self.scope_context.cf_scopes.iter().enumerate().rev() {
-      let cf_scope = cf_scope.borrow();
+      let cf_scope = cf_scope.as_ref().borrow();
       if cf_scope.is_function() {
         break;
       }
