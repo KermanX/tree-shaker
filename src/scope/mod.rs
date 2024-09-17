@@ -40,6 +40,7 @@ impl<'a> ScopeContext<'a> {
         0,
         // TODO: global this
         UnknownEntity::new_unknown(),
+        UnknownEntity::new_unknown(),
         true,
         false,
       )],
@@ -72,6 +73,7 @@ impl<'a> Analyzer<'a> {
     dep: impl Into<EntityDep>,
     variable_scopes: Rc<VariableScopes<'a>>,
     this: Entity<'a>,
+    args: Entity<'a>,
     is_async: bool,
     is_generator: bool,
   ) {
@@ -93,6 +95,7 @@ impl<'a> Analyzer<'a> {
       cf_scope_index,
       variable_scope_index,
       this,
+      args,
       is_async,
       is_generator,
     ));

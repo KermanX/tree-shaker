@@ -32,6 +32,9 @@ impl<'a> Analyzer<'a> {
 
     if let Some(symbol) = symbol {
       self.read_symbol(&symbol)
+    } else if node.name == "arguments" {
+      self.call_scope().args.clone().consume_as_unknown(self);
+      UnknownEntity::new_unknown()
     } else {
       // TODO: Handle globals
       self.refer_global();

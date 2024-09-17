@@ -33,11 +33,13 @@ impl<'a> Analyzer<'a> {
     variable_scopes: Rc<VariableScopes<'a>>,
     args: Entity<'a>,
   ) -> Entity<'a> {
+    let parent_call_scope = self.call_scope();
     self.push_call_scope(
       source,
       dep,
       variable_scopes,
-      self.call_scope().this.clone(),
+      parent_call_scope.this.clone(),
+      parent_call_scope.args.clone(),
       node.r#async,
       false,
     );

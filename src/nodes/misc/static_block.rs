@@ -20,6 +20,7 @@ impl<'a> Analyzer<'a> {
       EntityDepNode::Environment,
       Rc::new(self.scope_context.variable_scopes.clone()),
       UnknownEntity::new_unknown(),
+      UnknownEntity::new_unknown(),
       false,
       false,
     );

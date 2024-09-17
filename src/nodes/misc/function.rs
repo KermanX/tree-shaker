@@ -42,7 +42,15 @@ impl<'a> Analyzer<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    self.push_call_scope(source, call_dep, variable_scopes, this, node.r#async, node.generator);
+    self.push_call_scope(
+      source,
+      call_dep,
+      variable_scopes,
+      this,
+      args.clone(),
+      node.r#async,
+      node.generator,
+    );
 
     if let Some(id) = node.id.as_ref() {
       let symbol = id.symbol_id.get().unwrap();

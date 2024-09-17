@@ -14,6 +14,7 @@ pub struct CallScope<'a> {
   pub cf_scope_index: usize,
   pub variable_scope_index: usize,
   pub this: Entity<'a>,
+  pub args: Entity<'a>,
   pub returned_values: Vec<Entity<'a>>,
   pub is_async: bool,
   pub has_await_effect: bool,
@@ -28,6 +29,7 @@ impl<'a> CallScope<'a> {
     cf_scope_index: usize,
     variable_scope_index: usize,
     this: Entity<'a>,
+    args: Entity<'a>,
     is_async: bool,
     is_generator: bool,
   ) -> Self {
@@ -37,6 +39,7 @@ impl<'a> CallScope<'a> {
       cf_scope_index,
       variable_scope_index,
       this,
+      args,
       returned_values: Vec::new(),
       is_async,
       has_await_effect: false,
