@@ -90,7 +90,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    let (elements, rest) = self.val.iterate(analyzer, dep);
+    let (elements, rest) = self.val.iterate(analyzer, (self.dep.clone(), dep));
     (elements.into_iter().map(|v| self.forward(v)).collect(), rest.map(|v| self.forward(v)))
   }
 
