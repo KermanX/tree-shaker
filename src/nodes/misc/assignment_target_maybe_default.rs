@@ -23,9 +23,9 @@ impl<'a> Analyzer<'a> {
           self.load_data::<WithDefaultData>(AstType2::AssignmentTargetWithDefault, node.as_ref());
         data.need_init |= need_init;
 
-        self.exec_assignment_target(&node.binding, value);
+        self.exec_assignment_target_write(&node.binding, value);
       }
-      _ => self.exec_assignment_target(node.to_assignment_target(), value),
+      _ => self.exec_assignment_target_write(node.to_assignment_target(), value),
     }
   }
 }
@@ -45,7 +45,7 @@ impl<'a> Transformer<'a> {
 
         let binding_span = binding.span();
         let (binding_is_empty, binding) =
-          self.transform_assignment_target(binding, need_binding, false);
+          self.transform_assignment_target_write(binding, need_binding, false);
         let init =
           data.need_init.then(|| self.transform_expression(init, !binding_is_empty)).flatten();
 
@@ -61,7 +61,7 @@ impl<'a> Transformer<'a> {
         }
       }
       _ => self
-        .transform_assignment_target(node.to_assignment_target(), need_binding, false)
+        .transform_assignment_target_write(node.to_assignment_target(), need_binding, false)
         .1
         .map(|inner| self.ast_builder.assignment_target_maybe_default_assignment_target(inner)),
     }

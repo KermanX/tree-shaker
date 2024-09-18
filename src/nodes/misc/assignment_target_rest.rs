@@ -7,7 +7,7 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetRest<'a>,
     value: Entity<'a>,
   ) {
-    self.exec_assignment_target(&node.target, value)
+    self.exec_assignment_target_write(&node.target, value)
   }
 }
 
@@ -19,7 +19,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<AssignmentTargetRest<'a>> {
     let AssignmentTargetRest { span, target } = node;
 
-    let target = self.transform_assignment_target(target, need_binding, true);
+    let target = self.transform_assignment_target_write(target, need_binding, true);
 
     target.1.map(|target| self.ast_builder.assignment_target_rest(*span, target))
   }

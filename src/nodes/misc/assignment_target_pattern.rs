@@ -5,7 +5,7 @@ use oxc::ast::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_assignment_target_pattern(
+  pub fn exec_assignment_target_pattern_write(
     &mut self,
     node: &'a AssignmentTargetPattern<'a>,
     value: Entity<'a>,

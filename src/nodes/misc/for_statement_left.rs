@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
         self.init_variable_declaration(node, Some(init));
       }
       ForStatementLeft::UsingDeclaration(_node) => unreachable!(),
-      _ => self.exec_assignment_target(node.to_assignment_target(), init),
+      _ => self.exec_assignment_target_write(node.to_assignment_target(), init),
     }
   }
 }
@@ -25,7 +25,7 @@ impl<'a> Transformer<'a> {
         .map(|decl| self.ast_builder.for_statement_left_from_variable_declaration(decl)),
       ForStatementLeft::UsingDeclaration(_node) => unreachable!(),
       _ => self
-        .transform_assignment_target(node.to_assignment_target(), false, false)
+        .transform_assignment_target_write(node.to_assignment_target(), false, false)
         .1
         .map(|target| self.ast_builder.for_statement_left_assignment_target(target)),
     }

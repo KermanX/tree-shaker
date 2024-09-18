@@ -5,13 +5,28 @@ use oxc::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_assignment_target(&mut self, node: &'a AssignmentTarget<'a>, value: Entity<'a>) {
+  pub fn exec_assignment_target_read(&mut self, node: &'a AssignmentTarget<'a>) -> Entity<'a> {
+    match node {
+      match_simple_assignment_target!(AssignmentTarget) => {
+        self.exec_simple_assignment_target_read(node.to_simple_assignment_target())
+      }
+      match_assignment_target_pattern!(AssignmentTarget) => {
+        unreachable!()
+      }
+    }
+  }
+
+  pub fn exec_assignment_target_write(
+    &mut self,
+    node: &'a AssignmentTarget<'a>,
+    value: Entity<'a>,
+  ) {
     match node {
       match_simple_assignment_target!(AssignmentTarget) => {
         self.exec_simple_assignment_target_write(node.to_simple_assignment_target(), value);
       }
       match_assignment_target_pattern!(AssignmentTarget) => {
-        self.exec_assignment_target_pattern(node.to_assignment_target_pattern(), value);
+        self.exec_assignment_target_pattern_write(node.to_assignment_target_pattern(), value);
       }
     }
   }
@@ -19,7 +34,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   // (is_empty, node)
-  pub fn transform_assignment_target(
+  pub fn transform_assignment_target_write(
     &self,
     node: &'a AssignmentTarget<'a>,
     need_binding: bool,
