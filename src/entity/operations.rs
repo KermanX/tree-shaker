@@ -3,9 +3,13 @@ use super::{
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
+  utils::boolean_from_test_result,
 };
 use crate::entity::union::UnionEntity;
-use oxc::{allocator::Allocator, ast::ast::UpdateOperator};
+use oxc::{
+  allocator::Allocator,
+  ast::ast::{BinaryOperator, UpdateOperator},
+};
 use std::rc::Rc;
 
 pub struct EntityOpHost<'a> {
@@ -195,6 +199,45 @@ impl<'a> EntityOpHost<'a> {
       UnknownEntity::new_unknown_with_deps(vec![input.clone()])
     } else {
       UnionEntity::new(values)
+    }
+  }
+
+  pub fn binary_op(
+    &self,
+    operator: BinaryOperator,
+    lhs: &Entity<'a>,
+    rhs: &Entity<'a>,
+  ) -> Entity<'a> {
+    let to_result =
+      |result: Option<bool>| boolean_from_test_result(result, || vec![lhs.clone(), rhs.clone()]);
+
+    match operator {
+      BinaryOperator::Equality => to_result(self.eq(lhs, rhs)),
+      BinaryOperator::Inequality => to_result(self.neq(lhs, rhs)),
+      BinaryOperator::StrictEquality => to_result(self.strict_eq(lhs, rhs)),
+      BinaryOperator::StrictInequality => to_result(self.strict_neq(lhs, rhs)),
+      BinaryOperator::LessThan => to_result(self.lt(lhs, rhs, false)),
+      BinaryOperator::LessEqualThan => to_result(self.lt(lhs, rhs, true)),
+      BinaryOperator::GreaterThan => to_result(self.gt(lhs, rhs, false)),
+      BinaryOperator::GreaterEqualThan => to_result(self.gt(lhs, rhs, true)),
+      BinaryOperator::Addition => self.add(lhs, rhs),
+      BinaryOperator::Subtraction
+      | BinaryOperator::ShiftLeft
+      | BinaryOperator::ShiftRight
+      | BinaryOperator::ShiftRightZeroFill
+      | BinaryOperator::Multiplication
+      | BinaryOperator::Division
+      | BinaryOperator::Remainder
+      | BinaryOperator::BitwiseOR
+      | BinaryOperator::BitwiseXOR
+      | BinaryOperator::BitwiseAnd
+      | BinaryOperator::Exponential => {
+        // Can be number or bigint
+        UnknownEntity::new_unknown_with_deps(vec![lhs.clone(), rhs.clone()])
+      }
+      BinaryOperator::In | BinaryOperator::Instanceof => {
+        UnknownEntity::new_with_deps(UnknownEntityKind::Boolean, vec![lhs.clone(), rhs.clone()])
+      }
     }
   }
 }
