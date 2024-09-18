@@ -66,8 +66,10 @@ pub fn iterate<'a>(
   dep: EntityDep,
 ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
   analyzer.may_throw();
-  analyzer.refer_dep(dep);
-  analyzer.refer_global();
+  if analyzer.config.iterate_side_effects {
+    analyzer.refer_dep(dep);
+    analyzer.refer_global();
+  }
   (vec![], Some(UnknownEntity::new_unknown()))
 }
 

@@ -8,7 +8,7 @@ use oxc::{
   ast::{
     ast::{
       ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,
-      BindingRestElement, ObjectPattern, TSTypeAnnotation,
+      ObjectPattern, TSTypeAnnotation,
     },
     AstKind,
   },
@@ -174,6 +174,8 @@ impl<'a> Transformer<'a> {
       BindingPatternKind::ArrayPattern(node) => {
         let ArrayPattern { span, elements, rest, .. } = node.as_ref();
 
+        let is_referred = self.is_referred(AstKind::ArrayPattern(node));
+
         let mut transformed_elements = self.ast_builder.vec();
         for element in elements {
           transformed_elements.push(
@@ -181,28 +183,19 @@ impl<'a> Transformer<'a> {
           );
         }
 
-        let rest = rest.as_ref().and_then(|rest| {
-          self.transform_binding_rest_element(rest, self.config.iterate_side_effects)
-        });
+        let rest =
+          rest.as_ref().and_then(|rest| self.transform_binding_rest_element(rest, is_referred));
 
-        while transformed_elements.last().is_none() {
-          if transformed_elements.pop().is_none() {
-            break;
+        if !is_referred && rest.is_none() {
+          while transformed_elements.last().is_none() {
+            if transformed_elements.pop().is_none() {
+              break;
+            }
           }
         }
 
         if transformed_elements.is_empty() && rest.is_none() {
-          self.is_referred(AstKind::ArrayPattern(node)).then(|| {
-            self.ast_builder.binding_pattern(
-              self.ast_builder.binding_pattern_kind_array_pattern(
-                *span,
-                self.ast_builder.vec(),
-                None::<BindingRestElement>,
-              ),
-              None::<TSTypeAnnotation>,
-              false,
-            )
-          })
+          None
         } else {
           Some(self.ast_builder.binding_pattern(
             self.ast_builder.binding_pattern_kind_array_pattern(*span, transformed_elements, rest),
