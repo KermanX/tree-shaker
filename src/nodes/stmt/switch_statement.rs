@@ -47,6 +47,8 @@ impl<'a> Analyzer<'a> {
           }
           Some(false) => {}
           None => {
+            discriminant.consume_as_unknown(self);
+            test_val.consume_as_unknown(self);
             // data.need_test.insert(index);
             maybe_default_case = None;
             if !indeterminate {
