@@ -28,7 +28,7 @@ pub struct ArrayEntity<'a> {
   cf_scopes: CfScopes<'a>,
   variable_scopes: VariableScopes<'a>,
   pub elements: RefCell<Vec<Entity<'a>>>,
-  pub rest: RefCell<Option<Entity<'a>>>,
+  pub rest: RefCell<Vec<Entity<'a>>>,
 }
 
 impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
@@ -44,7 +44,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       element.consume_as_unknown(analyzer);
     }
 
-    if let Some(rest) = self.rest.borrow().as_ref() {
+    for rest in self.rest.borrow().iter() {
       rest.consume_as_unknown(analyzer);
     }
   }
@@ -72,9 +72,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 result.push(element.clone());
               } else if !rest_added {
                 rest_added = true;
-                if let Some(rest) = self.rest.borrow().as_ref() {
-                  result.push(rest.clone());
-                }
+                result.extend(self.rest.borrow().iter().cloned());
                 if !undefined_added {
                   undefined_added = true;
                   result.push(LiteralEntity::new_undefined());
@@ -85,7 +83,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 || {
                   UnknownEntity::new_with_deps(
                     UnknownEntityKind::Number,
-                    vec![self.rest.borrow().as_ref().unwrap().clone()],
+                    self.rest.borrow().iter().cloned().collect(),
                   )
                 },
                 |length| {
@@ -111,7 +109,21 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         self.deps.borrow().clone(),
       )
     } else {
-      UnknownEntity::new_unknown()
+      let mut deps = self.deps.borrow().clone();
+      deps.push(dep);
+      deps.push(self.iterable_dep.clone());
+      ForwardedEntity::new(
+        UnknownEntity::new_unknown_with_deps(
+          self
+            .elements
+            .borrow()
+            .iter()
+            .chain(self.rest.borrow().iter())
+            .map(|v| v.clone())
+            .collect(),
+        ),
+        deps,
+      )
     }
   }
 
@@ -131,6 +143,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if let Some(key_literals) = key.get_to_property_key().get_to_literals() {
       let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_added = false;
+      let mut rest_ref = self.rest.borrow_mut();
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
@@ -143,16 +156,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 };
               } else if !rest_added {
                 rest_added = true;
-                let mut rest_ref = self.rest.borrow_mut();
-                if let Some(rest) = rest_ref.as_mut() {
-                  *rest = if definite {
-                    value.clone()
-                  } else {
-                    UnionEntity::new(vec![rest.clone(), value.clone()])
-                  };
-                } else {
-                  *rest_ref = Some(value.clone());
-                }
+                rest_ref.push(value.clone());
               }
             } else if key == "length" {
               if let Some(length) = value.get_literal().and_then(|lit| lit.to_number()) {
@@ -163,10 +167,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                   if elements.len() > length {
                     has_effect = true;
                     elements.truncate(length);
-                    *rest = None;
-                  } else if let Some(rest) = rest.as_mut() {
+                    rest.clear();
+                  } else if !rest.is_empty() {
                     has_effect = true;
-                    *rest = UnionEntity::new(vec![rest.clone(), LiteralEntity::new_undefined()]);
+                    rest.push(LiteralEntity::new_undefined());
                   } else if elements.len() < length {
                     has_effect = true;
                     for _ in elements.len()..length {
@@ -215,11 +219,12 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         ForwardedEntity::new(element.clone(), self_dep.clone()),
       ));
     }
-    if let Some(rest) = self.rest.borrow().as_ref() {
+    let rest = self.rest.borrow();
+    if !rest.is_empty() {
       entries.push((
         true,
         UnknownEntity::new(UnknownEntityKind::String),
-        ForwardedEntity::new(rest.clone(), self_dep.clone()),
+        ForwardedEntity::new(UnionEntity::new(rest.iter().cloned().collect()), self_dep.clone()),
       ));
     }
     entries
@@ -260,7 +265,15 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return consumed_object::iterate(analyzer, dep);
     }
     analyzer.refer_dep(self.iterable_dep.clone());
-    (self.elements.borrow().clone(), self.rest.borrow().clone())
+    let rest = self.rest.borrow();
+    (
+      self.elements.borrow().clone(),
+      if rest.is_empty() {
+        None
+      } else {
+        Some(UnionEntity::new(self.rest.borrow().iter().cloned().collect()))
+      },
+    )
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -297,14 +310,14 @@ impl<'a> ArrayEntity<'a> {
   }
 
   pub fn init_rest(&self, rest: Entity<'a>) {
-    *self.rest.borrow_mut() = Some(rest);
+    self.rest.borrow_mut().push(rest);
   }
 
   pub fn get_length(&self) -> Option<usize> {
-    if self.rest.borrow().is_some() {
-      None
-    } else {
+    if self.rest.borrow().is_empty() {
       Some(self.elements.borrow().len())
+    } else {
+      None
     }
   }
 
@@ -323,7 +336,7 @@ impl<'a> Analyzer<'a> {
       cf_scopes: self.scope_context.cf_scopes.clone(),
       variable_scopes: self.scope_context.variable_scopes.clone(),
       elements: RefCell::new(Vec::new()),
-      rest: RefCell::new(None),
+      rest: RefCell::new(Vec::new()),
     }
   }
 }
