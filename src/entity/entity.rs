@@ -216,7 +216,14 @@ impl<'a> Entity<'a> {
         result.push(LiteralEntity::new_undefined());
       }
     }
-    (result, rest.unwrap_or(Entity::new(analyzer.new_empty_array(EntityDepNode::Environment))))
+    let rest_arr = analyzer.new_empty_array(EntityDepNode::Environment);
+    for element in &elements[length..elements.len()] {
+      rest_arr.push_element(element.clone());
+    }
+    if let Some(rest) = rest {
+      rest_arr.init_rest(rest);
+    }
+    (result, Entity::new(rest_arr))
   }
 
   pub fn iterate_result_union(
