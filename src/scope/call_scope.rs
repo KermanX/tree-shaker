@@ -4,6 +4,7 @@ use crate::{
   entity::{
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
+    forwarded::ForwardedEntity,
     literal::LiteralEntity,
     promise::PromiseEntity,
     union::UnionEntity,
@@ -62,7 +63,7 @@ impl<'a> CallScope<'a> {
     // Forwards the thrown value to the parent try scope
     let try_scope = self.try_scopes.into_iter().next().unwrap();
     if let Some(thrown_val) = try_scope.thrown_val() {
-      analyzer.try_scope_mut().throw(thrown_val);
+      analyzer.try_scope_mut().throw(ForwardedEntity::new(thrown_val, self.call_dep));
     }
 
     if self.is_generator {
