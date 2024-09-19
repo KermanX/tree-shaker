@@ -197,10 +197,8 @@ impl<'a> Transformer<'a> {
           rest.as_ref().and_then(|rest| self.transform_binding_rest_element(rest, is_referred));
 
         if !is_referred && rest.is_none() {
-          while transformed_elements.last().is_none() {
-            if transformed_elements.pop().is_none() {
-              break;
-            }
+          while transformed_elements.last().is_some_and(Option::is_none) {
+            transformed_elements.pop();
           }
         }
 
