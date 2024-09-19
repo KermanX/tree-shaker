@@ -3,14 +3,11 @@ use crate::{
   entity::{entity::Entity, literal::LiteralEntity, union::UnionEntity},
   transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{ArrayExpression, ArrayExpressionElement, Expression, SpreadElement},
-  AstKind,
-};
+use oxc::ast::ast::{ArrayExpression, ArrayExpressionElement, Expression, SpreadElement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_array_expression(&mut self, node: &'a ArrayExpression<'a>) -> Entity<'a> {
-    let array = self.new_empty_array(AstKind::ArrayExpression(node));
+    let array = self.new_empty_array();
 
     let mut rest = vec![];
 
@@ -54,8 +51,6 @@ impl<'a> Transformer<'a> {
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let ArrayExpression { span, elements, .. } = node;
-
-    let need_val = need_val || self.is_referred(AstKind::ArrayExpression(node));
 
     let mut transformed_elements = self.ast_builder.vec();
 

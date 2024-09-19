@@ -1,8 +1,5 @@
 use super::{
-  dep::{EntityDep, EntityDepNode},
-  literal::LiteralEntity,
-  typeof_result::TypeofResult,
-  union::UnionEntity,
+  dep::EntityDep, literal::LiteralEntity, typeof_result::TypeofResult, union::UnionEntity,
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
@@ -216,9 +213,11 @@ impl<'a> Entity<'a> {
         result.push(LiteralEntity::new_undefined());
       }
     }
-    let rest_arr = analyzer.new_empty_array(EntityDepNode::Environment);
-    for element in &elements[length..elements.len()] {
-      rest_arr.push_element(element.clone());
+    let rest_arr = analyzer.new_empty_array();
+    if length < elements.len() {
+      for element in &elements[length..elements.len()] {
+        rest_arr.push_element(element.clone());
+      }
     }
     if let Some(rest) = rest {
       rest_arr.init_rest(rest);
