@@ -1,5 +1,8 @@
 use super::{
-  dep::EntityDep, literal::LiteralEntity, typeof_result::TypeofResult, union::UnionEntity,
+  dep::{EntityDep, EntityDepNode},
+  literal::LiteralEntity,
+  typeof_result::TypeofResult,
+  union::UnionEntity,
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
@@ -213,7 +216,7 @@ impl<'a> Entity<'a> {
         result.push(LiteralEntity::new_undefined());
       }
     }
-    (result, rest.unwrap_or(Entity::new(analyzer.new_empty_array())))
+    (result, rest.unwrap_or(Entity::new(analyzer.new_empty_array(EntityDepNode::Environment))))
   }
 
   pub fn iterate_result_union(

@@ -23,6 +23,7 @@ use std::{
 #[derive(Debug)]
 pub struct ArrayEntity<'a> {
   consumed: Cell<bool>,
+  iterable_dep: EntityDep,
   deps: RefCell<Vec<EntityDep>>,
   cf_scopes: CfScopes<'a>,
   variable_scopes: VariableScopes<'a>,
@@ -35,10 +36,14 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
+
+    analyzer.refer_dep(self.iterable_dep.clone());
     analyzer.refer_dep(mem::take(&mut *self.deps.borrow_mut()));
+
     for element in self.elements.borrow().iter() {
       element.consume_as_unknown(analyzer);
     }
+
     if let Some(rest) = self.rest.borrow().as_ref() {
       rest.consume_as_unknown(analyzer);
     }
@@ -254,6 +259,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::iterate(analyzer, dep);
     }
+    analyzer.refer_dep(self.iterable_dep.clone());
     (self.elements.borrow().clone(), self.rest.borrow().clone())
   }
 
@@ -309,9 +315,10 @@ impl<'a> ArrayEntity<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new_empty_array(&self) -> ArrayEntity<'a> {
+  pub fn new_empty_array(&self, iterable_dep: impl Into<EntityDep>) -> ArrayEntity<'a> {
     ArrayEntity {
       consumed: Cell::new(false),
+      iterable_dep: iterable_dep.into(),
       deps: RefCell::new(Vec::new()),
       cf_scopes: self.scope_context.cf_scopes.clone(),
       variable_scopes: self.scope_context.variable_scopes.clone(),
