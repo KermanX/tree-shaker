@@ -5,6 +5,7 @@ const pc = require("picocolors");
 const Diff = require('diff')
 const process = require('process');
 const path = require('path');
+const { readFileSync } = require('fs');
 
 const do_minify = false;
 
@@ -44,10 +45,11 @@ module.exports = function(test) {
     let main = test.contents.slice(test.insertionIndex);
 
     if (
-         main.includes('eval(')
-      || main.includes('new Function(')
+      /\beval\(/.test(main)
+      || /\bFunction\(/.test(main)
+      || /\bevalScript\(/.test(main)
       || main.includes('$DONOTEVALUATE')
-      || /with\s*\(/.test(main)
+      || /\bwith\s*\(/.test(main)
       || main.includes('noStrict')
     ) {
       skipped++;
@@ -58,7 +60,8 @@ module.exports = function(test) {
     }
 
     if (
-      main.includes('.call(')
+         main.includes('.call(')
+      || main.includes('.apply(')
     ) {
       skipped++;
       unimplemented++;
