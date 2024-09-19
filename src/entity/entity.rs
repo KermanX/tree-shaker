@@ -1,13 +1,17 @@
 use super::{
   dep::EntityDep, literal::LiteralEntity, typeof_result::TypeofResult, union::UnionEntity,
 };
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};
 
 pub trait EntityTrait<'a>: Debug {
   fn consume_self(&self, analyzer: &mut Analyzer<'a>);
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>);
+
+  /// FIXME: Not a good idea
+  /// Only implemented by `ForwardedEntity`
+  fn refer_dep_shallow(&self, _transformer: &Transformer<'a>) {}
 
   fn get_property(
     &self,
@@ -95,6 +99,10 @@ impl<'a> Entity<'a> {
 
   pub fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     self.0.consume_as_unknown(analyzer)
+  }
+
+  pub fn refer_dep_shallow(&self, transformer: &Transformer<'a>) {
+    self.0.refer_dep_shallow(transformer)
   }
 
   pub fn get_property(

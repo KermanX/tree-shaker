@@ -8,7 +8,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_simple_assignment_target_read(
     &mut self,
     node: &'a SimpleAssignmentTarget<'a>,
-  ) -> (Entity<'a>,Option<(Entity<'a>, Entity<'a>)>)  {
+  ) -> (Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
     match node {
       match_member_expression!(SimpleAssignmentTarget) => {
         self.exec_member_expression_read(node.to_member_expression())

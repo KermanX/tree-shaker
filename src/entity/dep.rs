@@ -1,4 +1,9 @@
-use crate::{analyzer::Analyzer, ast::AstType2, data::get_node_ptr};
+use crate::{
+  analyzer::Analyzer,
+  ast::AstType2,
+  data::{get_node_ptr, ReferredNodes},
+  transformer::Transformer,
+};
 use core::hash::Hash;
 use oxc::{ast::AstKind, span::GetSpan};
 use std::{fmt::Debug, rc::Rc};
@@ -90,31 +95,42 @@ impl<'a> From<AstKind<'a>> for EntityDep {
 }
 
 impl EntityDep {
-  pub fn mark_referred(&self, analyzer: &mut Analyzer) {
+  pub fn mark_referred<'a>(&self, host: &mut ReferredNodes<'a>) {
     match self.0.as_ref() {
       EntityDepImpl::Environment => {}
       EntityDepImpl::Single(node) => {
-        analyzer.referred_nodes.insert(*node);
+        host.insert(*node);
       }
       EntityDepImpl::Multiple(nodes) => {
         for node in nodes.as_ref() {
-          node.mark_referred(analyzer);
+          node.mark_referred(host);
         }
       }
       EntityDepImpl::Concat(node, dep) => {
-        analyzer.referred_nodes.insert(*node);
-        dep.mark_referred(analyzer);
+        host.insert(*node);
+        dep.mark_referred(host);
       }
       EntityDepImpl::Combined(dep1, dep2) => {
-        dep1.mark_referred(analyzer);
-        dep2.mark_referred(analyzer);
+        dep1.mark_referred(host);
+        dep2.mark_referred(host);
       }
     }
   }
 }
 
-impl Analyzer<'_> {
+impl<'a> Analyzer<'a> {
   pub fn refer_dep(&mut self, dep: impl Into<EntityDep>) {
-    dep.into().mark_referred(self);
+    dep.into().mark_referred(&mut self.referred_nodes);
+  }
+}
+
+impl<'a> Transformer<'a> {
+  pub fn refer_dep(&self, dep: impl Into<EntityDep>) {
+    let mut referred_nodes = self.referred_nodes.borrow_mut();
+    dep.into().mark_referred(&mut referred_nodes);
+  }
+
+  pub fn is_referred(&self, dep: impl Into<EntityDepNode>) -> bool {
+    self.referred_nodes.borrow().contains(&dep.into())
   }
 }

@@ -1,8 +1,7 @@
 use crate::{
   analyzer::Analyzer,
-  ast::AstType2,
+  ast::{Arguments, AstType2},
   data::{get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData},
-  entity::dep::EntityDepNode,
   TreeShakeConfig,
 };
 use oxc::{
@@ -17,6 +16,7 @@ use oxc::{
   span::{GetSpan, Span, SPAN},
 };
 use std::{
+  cell::RefCell,
   hash::{DefaultHasher, Hasher},
   mem,
 };
@@ -26,13 +26,22 @@ pub struct Transformer<'a> {
   pub allocator: &'a Allocator,
   pub ast_builder: AstBuilder<'a>,
   pub data: ExtraData<'a>,
-  pub referred_nodes: ReferredNodes<'a>,
+  pub referred_nodes: RefCell<ReferredNodes<'a>>,
+
+  pub deferred_arguments: RefCell<Vec<(&'a Arguments<'a>, *const Arguments<'a>)>>,
 }
 
 impl<'a> Transformer<'a> {
   pub fn new(analyzer: Analyzer<'a>) -> Self {
     let Analyzer { config, allocator, data, referred_nodes, .. } = analyzer;
-    Transformer { config, allocator, ast_builder: AstBuilder::new(allocator), data, referred_nodes }
+    Transformer {
+      config,
+      allocator,
+      ast_builder: AstBuilder::new(allocator),
+      data,
+      referred_nodes: RefCell::new(referred_nodes),
+      deferred_arguments: Default::default(),
+    }
   }
 
   pub fn transform_program(&self, node: &'a Program<'a>) -> Program<'a> {
@@ -40,6 +49,20 @@ impl<'a> Transformer<'a> {
 
     let data = self.get_data::<StatementVecData>(AstType2::Program, node);
     let body = self.transform_statement_vec(data, body);
+
+    loop {
+      let mut deferred_arguments = self.deferred_arguments.borrow_mut();
+      if let Some((source, target)) = deferred_arguments.pop() {
+        drop(deferred_arguments);
+        let mut_ptr: *mut Arguments<'a> = unsafe { mem::transmute(target) };
+        let mut_ref = unsafe { &mut *mut_ptr };
+        // let transformed = self.transform_arguments_need_call(const_ref);
+        // println!("{:#?}", const_ref);
+        *mut_ref = self.transform_arguments_need_call(source);
+      } else {
+        break;
+      }
+    }
 
     self.ast_builder.program(
       *span,
@@ -127,11 +150,5 @@ impl<'a> Transformer<'a> {
       Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },
       None => self.allocator.alloc(D::default()),
     }
-  }
-}
-
-impl<'a> Transformer<'a> {
-  pub fn is_referred(&self, dep: impl Into<EntityDepNode>) -> bool {
-    self.referred_nodes.contains(&dep.into())
   }
 }

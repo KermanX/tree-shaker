@@ -4,7 +4,7 @@ use super::{
   literal::LiteralEntity,
   typeof_result::TypeofResult,
 };
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use rustc_hash::FxHashSet;
 
 #[derive(Debug)]
@@ -22,6 +22,10 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     self.refer_dep(analyzer);
     self.val.consume_as_unknown(analyzer)
+  }
+
+  fn refer_dep_shallow(&self, transformer: &Transformer<'a>) {
+    transformer.refer_dep(self.dep.clone());
   }
 
   fn get_property(

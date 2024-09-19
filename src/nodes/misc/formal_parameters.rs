@@ -1,7 +1,18 @@
 use crate::{
-  analyzer::Analyzer, ast::DeclarationKind, entity::entity::Entity, transformer::Transformer,
+  analyzer::Analyzer,
+  ast::{AstType2, DeclarationKind},
+  entity::entity::Entity,
+  transformer::Transformer,
 };
 use oxc::ast::ast::{FormalParameter, FormalParameters};
+
+const AST_TYPE: AstType2 = AstType2::FormalParameter;
+
+#[derive(Debug, Default)]
+pub struct Data<'a> {
+  elements_init: Vec<Vec<Entity<'a>>>,
+  rest_init: Vec<Entity<'a>>,
+}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_formal_parameters(
@@ -11,6 +22,10 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
   ) {
     let (elements_init, rest_init) = args.destruct_as_array(self, (), node.items.len());
+
+    let data = self.load_data::<Data>(AST_TYPE, node);
+    data.elements_init.push(elements_init.clone());
+    data.rest_init.push(rest_init.clone());
 
     for (param, _) in node.items.iter().zip(&elements_init) {
       self.declare_binding_pattern(&param.pattern, false, kind);
@@ -32,13 +47,23 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a FormalParameters<'a>,
   ) -> FormalParameters<'a> {
+    let data = self.get_data::<Data>(AST_TYPE, node);
+
     let FormalParameters { span, items, rest, kind, .. } = node;
 
     let mut transformed_items = self.ast_builder.vec();
 
-    for param in items {
+    for (index, param) in items.iter().enumerate() {
       let FormalParameter { span, decorators, pattern, .. } = param;
-      let pattern = self.transform_binding_pattern(pattern, true);
+
+      let pattern = self.transform_binding_pattern(pattern, false);
+
+      if pattern.is_some() {
+        for dep in &data.elements_init {
+          dep[index].refer_dep_shallow(self);
+        }
+      }
+
       transformed_items.push(self.ast_builder.formal_parameter(
         *span,
         self.clone_node(decorators),
