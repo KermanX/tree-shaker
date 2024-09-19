@@ -34,7 +34,7 @@ impl<'a> Analyzer<'a> {
   pub fn init_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
     let value = self.exec_class(node);
 
-    self.init_binding_identifier(node.id.as_ref().unwrap(), value.clone());
+    self.init_binding_identifier(node.id.as_ref().unwrap(), Some(value.clone()));
 
     value
   }

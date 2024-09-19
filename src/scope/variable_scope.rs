@@ -13,8 +13,8 @@ pub struct VariableScope<'a> {
   pub dep: Option<EntityDep>,
   /// Cf scopes when the scope was created
   pub cf_scopes: CfScopes<'a>,
-  /// (is_consumed_exhaustively, entity_or_TDZ)
-  pub variables: FxHashMap<SymbolId, (bool, Option<Entity<'a>>)>,
+  /// (kind, is_consumed_exhaustively, entity_or_TDZ)
+  pub variables: FxHashMap<SymbolId, (DeclarationKind, bool, Option<Entity<'a>>)>,
 }
 
 pub type VariableScopes<'a> = Vec<Rc<RefCell<VariableScope<'a>>>>;
@@ -31,26 +31,34 @@ impl<'a> VariableScope<'a> {
     symbol: SymbolId,
     value: Option<Entity<'a>>,
   ) {
-    if kind.is_var() {
-      let old = self.variables.get(&symbol);
-      let new = match old {
-        Some(old @ (true, _)) => {
-          value.map(|val| val.consume_as_unknown(analyzer));
-          old.clone()
+    if kind.is_redeclarable() {
+      if let Some((old_kind, old_consumed, old_val)) = self.variables.get(&symbol) {
+        if !old_kind.is_redeclarable() {
+          // TODO: ERROR: "Variable already declared"
+          analyzer.may_throw();
+          value.map(|value| value.consume_as_unknown(analyzer));
+          self.variables.insert(symbol, (kind, true, Some(UnknownEntity::new_unknown())));
+        } else {
+          if *old_consumed {
+            value.map(|value| value.consume_as_unknown(analyzer));
+          } else {
+            self.variables.insert(symbol, (kind, false, value.or(old_val.clone())));
+          }
         }
-        _ => (false, Some(value.unwrap_or_else(LiteralEntity::new_undefined))),
-      };
-      self.variables.insert(symbol, new);
+      } else {
+        self.variables.insert(symbol, (kind, false, value));
+      }
     } else {
-      let old = self.variables.insert(symbol, (false, value));
-      if old.is_some() && !kind.allow_override_var() {
+      let old = self.variables.insert(symbol, (kind, false, value));
+      if old.is_some() {
         // TODO: error "Variable already declared"
+        analyzer.may_throw();
       }
     }
   }
 
   pub fn init(&mut self, analyzer: &mut Analyzer<'a>, symbol: SymbolId, value: Entity<'a>) {
-    let (consumed, val) = self.variables.get_mut(&symbol).unwrap();
+    let (_, consumed, val) = self.variables.get_mut(&symbol).unwrap();
     if *consumed {
       value.consume_as_unknown(analyzer);
     } else {
@@ -59,23 +67,36 @@ impl<'a> VariableScope<'a> {
   }
 
   pub fn read(&self, analyzer: &mut Analyzer<'a>, symbol: &SymbolId) -> (bool, Entity<'a>) {
-    let (consumed, value) = self.variables.get(symbol).unwrap();
+    let (kind, consumed, value) = self.variables.get(symbol).unwrap();
     let value = value.as_ref().map_or_else(
       || {
-        // TODO: throw TDZ error
-        analyzer.may_throw();
-        UnknownEntity::new_unknown()
+        if kind.is_var() {
+          LiteralEntity::new_undefined()
+        } else {
+          // TODO: throw TDZ error
+          analyzer.may_throw();
+          UnknownEntity::new_unknown()
+        }
       },
       Entity::clone,
     );
     (*consumed, value)
   }
 
-  pub fn write(&mut self, symbol: SymbolId, (consumed, value): (bool, Entity<'a>)) {
+  pub fn write(
+    &mut self,
+    analyzer: &mut Analyzer<'a>,
+    symbol: SymbolId,
+    (consumed, value): (bool, Entity<'a>),
+  ) {
     let old = self.variables.get_mut(&symbol).unwrap();
-    if old.1.is_none() {
+    if !old.0.is_var() && old.2.is_none() {
       // TODO: throw TDZ error
+      analyzer.may_throw();
     }
-    *old = (consumed, Some(value));
+    if old.1 {
+      value.consume_as_unknown(analyzer);
+    }
+    *old = (old.0, consumed || old.1, Some(value));
   }
 }

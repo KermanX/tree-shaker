@@ -4,7 +4,7 @@ use crate::{
   data::{get_node_ptr, ExtraData, ReferredNodes, StatementVecData},
   entity::{
     dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, label::LabelEntity,
-    operations::EntityOpHost, union::UnionEntity, unknown::UnknownEntity,
+    literal::LiteralEntity, operations::EntityOpHost, union::UnionEntity, unknown::UnknownEntity,
   },
   scope::{variable_scope::VariableScopes, ScopeContext},
   TreeShakeConfig,
@@ -106,12 +106,14 @@ impl<'a> Analyzer<'a> {
       return;
     }
     let old_decl_dep = old_decl.map(|(_, _, decl_dep)| decl_dep.clone());
+
     if exporting {
       self.named_exports.push(symbol);
     }
     if kind == DeclarationKind::FunctionParameter {
       self.call_scope_mut().args.1.push(symbol);
     }
+
     let variable_scopes = if kind.is_var() {
       let index = self.call_scope().variable_scope_index;
       self.scope_context.variable_scopes[..index + 1].to_vec()
@@ -127,13 +129,21 @@ impl<'a> Analyzer<'a> {
     self.symbol_decls.insert(symbol, (kind, variable_scopes, decl_dep));
   }
 
-  pub fn init_symbol(&mut self, symbol: SymbolId, value: Entity<'a>) {
+  pub fn init_symbol(&mut self, symbol: SymbolId, init: Option<Entity<'a>>, dep: EntityDep) {
     let (kind, variable_scopes, _) = &self.symbol_decls.get(&symbol).unwrap();
-    if kind.is_untracked() {
-      value.consume_as_unknown(self);
+    let init = if kind.is_redeclarable() {
+      init
     } else {
-      let variable_scope = variable_scopes.last().unwrap().clone();
-      variable_scope.borrow_mut().init(self, symbol, value);
+      Some(init.unwrap_or_else(LiteralEntity::new_undefined))
+    };
+    if let Some(init) = init {
+      let value = ForwardedEntity::new(init, dep);
+      if kind.is_untracked() {
+        value.consume_as_unknown(self);
+      } else {
+        let variable_scope = variable_scopes.last().unwrap().clone();
+        variable_scope.borrow_mut().init(self, symbol, value);
+      }
     }
   }
 
@@ -198,7 +208,7 @@ impl<'a> Analyzer<'a> {
             ),
           )
         };
-        decl_variable_scope.borrow_mut().write(*symbol, entity_to_set);
+        decl_variable_scope.borrow_mut().write(self, *symbol, entity_to_set);
       }
     } else {
       new_val.consume_as_unknown(self);

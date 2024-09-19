@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn init_binding_rest_element(&mut self, node: &'a BindingRestElement<'a>, init: Entity<'a>) {
-    self.init_binding_pattern(&node.argument, init);
+    self.init_binding_pattern(&node.argument, Some(init));
   }
 }
 

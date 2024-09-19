@@ -221,7 +221,7 @@ impl DeclarationKind {
     matches!(self, DeclarationKind::Const)
   }
 
-  pub fn allow_override_var(self) -> bool {
-    matches!(self, DeclarationKind::Function | DeclarationKind::Class)
+  pub fn is_redeclarable(self) -> bool {
+    matches!(self, DeclarationKind::Var | DeclarationKind::Function)
   }
 }

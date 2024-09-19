@@ -1,8 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::DeclarationKind,
-  entity::{entity::Entity, literal::LiteralEntity},
-  transformer::Transformer,
+  analyzer::Analyzer, ast::DeclarationKind, entity::entity::Entity, transformer::Transformer,
 };
 use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
 
@@ -21,10 +18,15 @@ impl<'a> Analyzer<'a> {
     node: &'a VariableDeclarator,
     init: Option<Entity<'a>>,
   ) {
-    let init = init.unwrap_or_else(|| match &node.init {
-      Some(init) => self.exec_expression(init),
-      None => LiteralEntity::new_undefined(),
-    });
+    let init = match init {
+      Some(init) => {
+        if node.init.is_some() {
+          // TODO: error: for-in/for-of loop variable declaration may not have an initializer.
+        }
+        Some(init)
+      }
+      None => node.init.as_ref().map(|init| self.exec_expression(init)),
+    };
 
     self.init_binding_pattern(&node.id, init);
   }

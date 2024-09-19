@@ -55,10 +55,17 @@ impl<'a> Analyzer<'a> {
     if let Some(id) = node.id.as_ref() {
       let symbol = id.symbol_id.get().unwrap();
       self.declare_symbol(symbol, decl_dep, false, DeclarationKind::Function, Some(fn_entity));
+
+      self.push_variable_scope();
+      self.call_scope_mut().variable_scope_index += 1;
     }
 
     self.exec_formal_parameters(&node.params, args, DeclarationKind::FunctionParameter);
     self.exec_function_body(node.body.as_ref().unwrap());
+
+    if node.id.is_some() {
+      self.pop_variable_scope();
+    }
 
     self.pop_call_scope()
   }
