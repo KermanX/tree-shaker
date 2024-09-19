@@ -222,6 +222,13 @@ impl DeclarationKind {
   }
 
   pub fn is_redeclarable(self) -> bool {
-    matches!(self, DeclarationKind::Var | DeclarationKind::Function)
+    matches!(
+      self,
+      DeclarationKind::Var
+        | DeclarationKind::UntrackedVar
+        | DeclarationKind::Function
+        | DeclarationKind::FunctionParameter
+        | DeclarationKind::Caught
+    )
   }
 }
