@@ -27,12 +27,15 @@ struct Data {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_member_expression_read(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {
+  pub fn exec_member_expression_read(
+    &mut self,
+    node: &'a MemberExpression<'a>,
+  ) -> (Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
     let object = self.exec_expression(node.object());
 
     let indeterminate = if node.optional() {
       match object.test_nullish() {
-        Some(true) => return LiteralEntity::new_undefined(),
+        Some(true) => return (LiteralEntity::new_undefined(), None),
         Some(false) => false,
         None => true,
       }
@@ -49,14 +52,14 @@ impl<'a> Analyzer<'a> {
     }
 
     let key = self.exec_key(node);
-    // TODO: handle optional
     let value = object.get_property(self, AstKind::MemberExpression(node), &key);
+    let cache = Some((object, key));
 
     if indeterminate {
       self.pop_cf_scope();
-      UnionEntity::new(vec![value, LiteralEntity::new_undefined()])
+      (UnionEntity::new(vec![value, LiteralEntity::new_undefined()]), cache)
     } else {
-      value
+      (value, cache)
     }
   }
 
@@ -64,12 +67,17 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a MemberExpression<'a>,
     value: Entity<'a>,
+    cache: Option<(Entity<'a>, Entity<'a>)>,
   ) {
     let dep = AstKind::MemberExpression(node);
     let value = ForwardedEntity::new(value, dep);
 
-    let object = self.exec_expression(node.object());
-    let key = self.exec_key(node);
+    let (object, key) = cache.unwrap_or_else(|| {
+      let object = self.exec_expression(node.object());
+      let key = self.exec_key(node);
+      (object, key)
+    });
+
     object.set_property(self, dep, &key, value);
   }
 

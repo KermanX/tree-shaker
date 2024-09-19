@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
         self.init_variable_declaration(node, Some(init));
       }
       ForStatementLeft::UsingDeclaration(_node) => unreachable!(),
-      _ => self.exec_assignment_target_write(node.to_assignment_target(), init),
+      _ => self.exec_assignment_target_write(node.to_assignment_target(), init, None),
     }
   }
 }

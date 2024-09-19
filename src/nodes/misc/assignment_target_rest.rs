@@ -7,7 +7,7 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetRest<'a>,
     value: Entity<'a>,
   ) {
-    self.exec_assignment_target_write(&node.target, value)
+    self.exec_assignment_target_write(&node.target, value,None)
   }
 }
 

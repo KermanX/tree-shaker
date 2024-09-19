@@ -8,7 +8,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_chain_expression(&mut self, node: &'a ChainExpression<'a>) -> Entity<'a> {
     match &node.expression {
       ChainElement::CallExpression(node) => self.exec_call_expression(node),
-      node => self.exec_member_expression_read(node.to_member_expression()),
+      node => self.exec_member_expression_read(node.to_member_expression()).0,
     }
   }
 }

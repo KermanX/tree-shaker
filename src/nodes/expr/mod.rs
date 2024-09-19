@@ -46,7 +46,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
     let entity = match node {
       match_member_expression!(Expression) => {
-        self.exec_member_expression_read(node.to_member_expression())
+        self.exec_member_expression_read(node.to_member_expression()).0
       }
       Expression::StringLiteral(node) => self.exec_string_literal(node),
       Expression::NumericLiteral(node) => self.exc_numeric_literal(node),
