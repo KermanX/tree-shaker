@@ -1,3 +1,4 @@
 /target
 node_modules
 .VSCodeCounter
+/test/*.txt
