@@ -25,6 +25,7 @@ jobs:
       run: cargo test --verbose
 
   test262:
+    permissions: write-all
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -67,9 +68,18 @@ jobs:
           const path = require('path');
           const stat = fs.readFileSync('./test/stat.txt', 'utf-8');
           const body = `## Test262 result: \n\n${stat}`;
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body
-          });
+          if (context.issue.number) {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+          } else {
+            github.rest.commits.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+          }
