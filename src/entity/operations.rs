@@ -110,6 +110,8 @@ impl<'a> EntityOpHost<'a> {
 
     let may_convert_to_num =
       TypeofResult::Number | TypeofResult::Boolean | TypeofResult::Undefined | TypeofResult::Object;
+    let must_not_convert_to_str =
+      TypeofResult::Number | TypeofResult::Boolean | TypeofResult::Undefined | TypeofResult::BigInt;
 
     if lhs_t.intersects(may_convert_to_num) && rhs_t.intersects(may_convert_to_num) {
       // Possibly number
@@ -139,8 +141,8 @@ impl<'a> EntityOpHost<'a> {
         vec![lhs.clone(), rhs.clone()],
       ));
     }
-    if !lhs_t.difference(may_convert_to_num | TypeofResult::BigInt).is_empty()
-      || !rhs_t.difference(may_convert_to_num | TypeofResult::BigInt).is_empty()
+    if !lhs_t.difference(must_not_convert_to_str).is_empty()
+      || !rhs_t.difference(must_not_convert_to_str).is_empty()
     {
       let lhs_str = lhs.get_to_string();
       let rhs_str = rhs.get_to_string();
