@@ -180,7 +180,75 @@ impl<'a> Transformer<'a> {
   ) -> Option<MemberExpression<'a>> {
     let need_write = self.is_referred(AstKind::MemberExpression(node));
 
-    // TODO: side effect
-    need_write.then(|| self.clone_node(node))
+    match node {
+      MemberExpression::ComputedMemberExpression(node) => {
+        let ComputedMemberExpression { span, object, expression, .. } = node.as_ref();
+
+        let transformed_object = self.transform_expression(object, need_write);
+        let transformed_key = self.transform_expression(expression, need_write);
+        if need_write {
+          Some(self.ast_builder.member_expression_computed(
+            *span,
+            transformed_object.unwrap(),
+            transformed_key.unwrap(),
+            false,
+          ))
+        } else if transformed_object.is_some() || transformed_key.is_some() {
+          Some(self.ast_builder.member_expression_computed(
+            *span,
+            self.transform_expression(object, true).unwrap(),
+            self.transform_expression(expression, true).unwrap(),
+            false,
+          ))
+        } else {
+          None
+        }
+      }
+      MemberExpression::StaticMemberExpression(node) => {
+        let StaticMemberExpression { span, object, property, .. } = node.as_ref();
+
+        let transformed_object = self.transform_expression(object, need_write);
+        if need_write {
+          Some(self.ast_builder.member_expression_static(
+            *span,
+            transformed_object.unwrap(),
+            property.clone(),
+            false,
+          ))
+        } else if transformed_object.is_some() {
+          Some(self.ast_builder.member_expression_static(
+            *span,
+            self.transform_expression(object, true).unwrap(),
+            property.clone(),
+            false,
+          ))
+        } else {
+          None
+        }
+      }
+      MemberExpression::PrivateFieldExpression(node) => {
+        let PrivateFieldExpression { span, object, field, .. } = node.as_ref();
+
+        let transformed_object = self.transform_expression(object, need_write);
+
+        if need_write {
+          Some(self.ast_builder.member_expression_private_field_expression(
+            *span,
+            transformed_object.unwrap(),
+            field.clone(),
+            false,
+          ))
+        } else if transformed_object.is_some() {
+          Some(self.ast_builder.member_expression_private_field_expression(
+            *span,
+            self.transform_expression(object, true).unwrap(),
+            field.clone(),
+            false,
+          ))
+        } else {
+          None
+        }
+      }
+    }
   }
 }
