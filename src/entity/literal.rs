@@ -36,7 +36,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn get_property(
     &self,
-    _rc: &Entity<'a>,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
     key: &Entity<'a>,
@@ -46,7 +46,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       consumed_object::get_property(analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
-      prototype.get_property(key, dep)
+      prototype.get_property(rc, key, dep)
     }
   }
 

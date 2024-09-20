@@ -26,12 +26,12 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 
   fn get_property(
     &self,
-    _rc: &Entity<'a>,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
     key: &Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.builtins.prototypes.function.get_property(key, dep)
+    analyzer.builtins.prototypes.function.get_property(rc, key, dep)
   }
 
   fn set_property(

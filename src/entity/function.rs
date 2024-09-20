@@ -66,7 +66,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn get_property(
     &self,
-    _rc: &Entity<'a>,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
     key: &Entity<'a>,
@@ -74,7 +74,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_property(analyzer, dep, key);
     }
-    analyzer.builtins.prototypes.function.get_property(key, dep)
+    analyzer.builtins.prototypes.function.get_property(rc, key, dep)
   }
 
   fn set_property(

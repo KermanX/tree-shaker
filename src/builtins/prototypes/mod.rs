@@ -31,7 +31,7 @@ impl<'a> Prototype<'a> {
     self.0.get(key)
   }
 
-  pub fn get_property(&self, key: &Entity<'a>, _dep: EntityDep) -> Entity<'a> {
+  pub fn get_property(&self, rc: &Entity<'a>, key: &Entity<'a>, _dep: EntityDep) -> Entity<'a> {
     let key = key.get_to_property_key();
     'known: {
       if let Some(key_literals) = key.get_to_literals() {
@@ -52,7 +52,7 @@ impl<'a> Prototype<'a> {
         return EntryEntity::new(UnionEntity::new(values), key.clone());
       }
     }
-    EntryEntity::new(UnknownEntity::new_unknown(), key.clone())
+    EntryEntity::new(UnknownEntity::new_unknown_with_deps(vec![rc.clone()]), key.clone())
   }
 }
 
