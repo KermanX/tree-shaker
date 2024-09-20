@@ -1,5 +1,8 @@
 use crate::{analyzer::Analyzer, data::StatementVecData, transformer::Transformer};
-use oxc::{allocator::Vec, ast::ast::Statement};
+use oxc::{
+  allocator::Vec,
+  ast::{ast::Statement, match_declaration, match_module_declaration},
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_statement_vec(
@@ -40,16 +43,28 @@ impl<'a> Transformer<'a> {
       return result;
     }
 
+    let mut exited = false;
     for (index, statement) in statements.iter().enumerate() {
-      if let Some(statement) = self.transform_statement(statement) {
-        result.push(statement);
+      if !exited || self.is_declaration(statement) {
+        if let Some(statement) = self.transform_statement(statement) {
+          result.push(statement);
+        }
       }
 
       if data.last_stmt == Some(index) {
-        break;
+        exited = true;
       }
     }
 
     result
+  }
+
+  fn is_declaration(&self, statement: &'a Statement<'a>) -> bool {
+    match statement {
+      match_declaration!(Statement) => true,
+      match_module_declaration!(Statement) => true,
+      Statement::LabeledStatement(node) => self.is_declaration(&node.body),
+      _ => false,
+    }
   }
 }
