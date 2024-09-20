@@ -33,7 +33,9 @@ jobs:
         git submodule init
         git submodule update
     - name: Build NAPI
-      run: npm run build
+      run: |
+        npm i
+        npm run build
       working-directory: ./napi
     - name: Run Test262
       run: npm run test
