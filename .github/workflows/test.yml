@@ -38,7 +38,9 @@ jobs:
         npm run build
       working-directory: ./napi
     - name: Run Test262
-      run: npm run test
+      run: |
+        npm i
+        npm run test
       working-directory: ./test
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.2.1-node20
