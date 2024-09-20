@@ -8,7 +8,7 @@ process.stdin.on('data', chunk => {
 });
 
 process.stdin.on('end', () => {
-  const output = 'FAILED TESTS\n' +
+  const failedTests = 'FAILED TESTS\n' +
     input
     .replace(/^PASS.*$/gm, '')
     .replace(/^\[SKIP\].*$/gm, '')
@@ -16,11 +16,8 @@ process.stdin.on('end', () => {
     .replace(/ \(strict mode\)$/gm, '')
     .replace(/^.*\(default\)\n.*\n/gm, '')
     .replace(/\n{3,}/gm, '\n\n');
-  const resultPath = path.join(__dirname, 'result.txt');
-  try {
-    fs.writeFileSync(resultPath, output);
-    console.log(`Processed output written to ${resultPath}`);
-  } catch (err) {
-    console.error(`Error writing to file: ${err.message}`);
-  }
+  fs.writeFileSync(path.join(__dirname, 'failed.txt'), failedTests);
+
+  const stat = input.match(/^Ran \d+ tests[\s\S]+/m)[0];
+  fs.writeFileSync(path.join(__dirname, 'stat.txt'), stat);
 });
