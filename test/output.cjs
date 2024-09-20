@@ -17,8 +17,8 @@ process.stdin.on('end', () => {
     .replace(/^FAIL /gm, '')
     .replace(/ \(strict mode\)$/gm, '')
     .replace(/^.*\(default\)\n.*\n/gm, '')
-    .replace(/\n{2,}/gm, '\n')
-    .split('\n');
+    .split('\n')
+    .filter(Boolean);
   console.log(JSON.stringify(lines));
   const failedTests = {}
   let expectedFailedNum = 0;
@@ -50,11 +50,12 @@ process.stdin.on('end', () => {
 - New Failed: ${failedNum}
 ${restMessage.split('\n').filter(Boolean).map(s => `- ${s.trim()}`).join('\n')}
 
+${failedTests.length ? `
 <details>
 <summary> New Failed Tests </summary>
 
 ${failedList}
 
 </details>
-`);
+` : ''}`);
 });
