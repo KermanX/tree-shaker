@@ -76,8 +76,8 @@ jobs:
               body
             });
           } else {
-            github.rest.commits.createComment({
-              issue_number: context.issue.number,
+            github.rest.repos.createCommitComment({
+              commit_sha: context.sha,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body

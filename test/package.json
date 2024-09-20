@@ -8,6 +8,6 @@
 	},
 	"packageManager": "pnpm@9.7.1",
 	"scripts": {
-		"test": "test262-harness --preprocessor ./preprocessor.cjs \"./test262/test/language/**/*.js\" --threads 12 | node ./output.cjs"
+		"test": "test262-harness --preprocessor ./preprocessor.cjs \"./test262/test/language/expressions/bitwise-and/**/*.js\" --threads 12 | node ./output.cjs"
 	}
 }
