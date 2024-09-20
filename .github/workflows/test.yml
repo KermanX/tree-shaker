@@ -25,6 +25,7 @@ jobs:
       run: cargo test --verbose
 
   test262:
+    permissions: write-all
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -32,6 +33,10 @@ jobs:
       run: |
         git submodule init
         git submodule update
+    - name: Use Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
     - name: Setup PNPM
       uses: pnpm/action-setup@v4
       with:
@@ -50,4 +55,31 @@ jobs:
       uses: actions/upload-artifact@v3.2.1-node20
       with:
         name: Test262 result
-        path: ./test/result.txt
+        path: |
+          ./test/failed.txt
+          ./test/stat.txt
+    # Comment stat.txt to the commit or PR
+    - name: Send comment
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          const stat = fs.readFileSync('./test/stat.txt', 'utf-8');
+          const body = `## Test262 result: \n\n${stat}`;
+          if (context.issue.number) {
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+          } else {
+            github.rest.commits.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+          }
