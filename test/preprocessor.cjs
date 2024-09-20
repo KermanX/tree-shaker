@@ -7,7 +7,7 @@ const process = require('process');
 const path = require('path');
 const { readFileSync } = require('fs');
 
-const do_minify = false;
+const do_minify = true;
 
 function treeShakeEval(input, tree_shake) {
   return input.replace(/eval\('(.*)'\)/, (_, content) => {treeShake(content, tree_shake, do_minify, true)});
@@ -61,6 +61,7 @@ module.exports = function(test) {
 
     if (
          main.includes('.call(')
+      || main.includes('.bind(')
       || main.includes('.apply(')
     ) {
       skipped++;
@@ -82,6 +83,9 @@ module.exports = function(test) {
       process.stdout.write(`${pc.green(executed)}/${pc.white(total)} ${pc.yellow(progress)} ${pc.blue(rate)}`.padEnd(70, ' ')+path.basename(test.file));
     }
 
+    if (process.env.CI) {
+      process.stderr.write(`[EXEC] ${test.file}\n`)
+    }
     let minified = treeShake(treeShakeEval(main, false), false, do_minify, false);
     let startTime = Date.now();
     let treeShaked = treeShake(treeShakeEval(main, true), true, do_minify, false);

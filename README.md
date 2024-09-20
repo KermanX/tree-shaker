@@ -33,16 +33,16 @@ May not be very fast, but should generates the least code possible.
 
 ## Todo
 
-- Implement all AST nodes
-  - Assignment pattern / Update expression
-  - Array
-  - Class
-  - Tons of operators
-  - Tons of other nodes
+**Short term**:
+
+- Track `this`
+
+**Long term**:
+
+- Pass all reasonable test262 tests
+- Test against fixtures from other tree shakers like Rollup
 - Implement built-in objects and properties
 - Type narrowing
-- Test against fixtures from other tree shakers like Rollup
-- Test against test262 (is this possible?)
 
 ## Approach
 
