@@ -31,8 +31,7 @@ process.stdin.on('end', () => {
   }
 
   const failedList = Object.entries(failedTests).map(([name, message]) => {
-    const basename = path.basename(name);
-    return `[${basename}](https://github.com/tc39/test262/tree/main/test/${name}): \`${message.trim()}\``;
+    return `[${name}](https://github.com/tc39/test262/tree/main/test/${name}): \`${message.trim()}\``;
   }).join('\n');
   fs.writeFileSync(path.join(__dirname, 'failed.txt'), failedList);
 
