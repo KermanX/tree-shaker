@@ -56,8 +56,6 @@ impl<'a> Transformer<'a> {
         drop(deferred_arguments);
         let mut_ptr: *mut Arguments<'a> = unsafe { mem::transmute(target) };
         let mut_ref = unsafe { &mut *mut_ptr };
-        // let transformed = self.transform_arguments_need_call(const_ref);
-        // println!("{:#?}", const_ref);
         *mut_ref = self.transform_arguments_need_call(source);
       } else {
         break;

@@ -35,7 +35,9 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
   fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
+
     analyzer.refer_dep(mem::take(&mut *self.deps.borrow_mut()));
+
     for element in self.elements.borrow().iter() {
       element.consume_as_unknown(analyzer);
     }
@@ -138,7 +140,6 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if let Some(key_literals) = key.get_to_property_key().get_to_literals() {
       let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_added = false;
-      let mut rest_ref = self.rest.borrow_mut();
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
@@ -151,7 +152,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 };
               } else if !rest_added {
                 rest_added = true;
-                rest_ref.push(value.clone());
+                self.rest.borrow_mut().push(value.clone());
               }
             } else if key == "length" {
               if let Some(length) = value.get_literal().and_then(|lit| lit.to_number()) {
@@ -181,6 +182,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               }
             } else {
               self.consume_as_unknown(analyzer);
+              has_effect = true;
+              break;
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
