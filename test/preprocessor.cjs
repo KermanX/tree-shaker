@@ -111,6 +111,6 @@ module.exports = function(test) {
 
 process.addListener('beforeExit', () => {
   let rate = (treeShakedTotal * 100 / minifiedTotal).toFixed(2) + '%';
+  process.stdout.write(`Treeshaked: ${executed}, Skipped: ${skipped}, Unimplemented: ${unimplemented}\n`);
   process.stdout.write(`\nTreeshake rate: ${rate}\n`);
-  process.stdout.write(`Transformed: ${executed}, Skipped: ${skipped}, Unimplemented: ${unimplemented}\n`);
 })

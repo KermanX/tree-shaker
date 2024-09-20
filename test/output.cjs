@@ -19,10 +19,14 @@ process.stdin.on('end', () => {
     .replace(/^.*\(default\)\n.*\n/gm, '')
     .replace(/\n{2,}/gm, '\n')
     .split('\n');
+  console.log(JSON.stringify(lines));
   const failedTests = {}
+  let expectedFailedNum = 0;
   for (let i = 0; i < lines.length; i+=2) {
     let name = lines[i].slice('test262/test/'.length);
-    if (!ignored.includes(name)) {
+    if (ignored.includes(name)) {
+      expectedFailedNum++;
+    } else {
       failedTests[name] = lines[i+1];
     }
   }
@@ -36,14 +40,13 @@ process.stdin.on('end', () => {
   const stat = input.match(/^Ran \d+ tests[\s\S]+/m)[0];
   const total = +stat.match(/^Ran (\d+) tests$/m)[1];
   const passedNum = +stat.match(/^(\d+) passed$/m)[1];
-  const ignoredNum = ignored.length;
   const failedNum = Object.keys(failedTests).length;
   const restMessage = stat.match(/^Treeshake[\s\S]+/m)[0];
   fs.writeFileSync(path.join(__dirname, 'stat.txt'), `## Test262 Result
 
 - Total: ${total}
 - Passed: ${passedNum}
-- Expected Failed: ${ignoredNum}
+- Expected Failed: ${expectedFailedNum}
 - New Failed: ${failedNum}
 ${restMessage.split('\n').filter(Boolean).map(s => `- ${s.trim()}`).join('\n')}
 
