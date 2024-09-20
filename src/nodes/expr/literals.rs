@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exc_big_int_literal(&mut self, node: &'a BigIntLiteral) -> Entity<'a> {
-    LiteralEntity::new_big_int(node.raw.as_str())
+    LiteralEntity::new_big_int(&node.raw.as_str()[..node.raw.len() - 1])
   }
 
   pub fn exec_boolean_literal(&mut self, node: &'a BooleanLiteral) -> Entity<'a> {
