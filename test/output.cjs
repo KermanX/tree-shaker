@@ -8,7 +8,9 @@ process.stdin.on('data', chunk => {
 });
 
 process.stdin.on('end', () => {
-  const output = input.replace(/^PASS.*$/gm, '')
+  const output = 'FAILED TESTS\n' +
+    input
+    .replace(/^PASS.*$/gm, '')
     .replace(/^\[SKIP\].*$/gm, '')
     .replace(/^FAIL /gm, 'test\\')
     .replace(/ \(strict mode\)$/gm, '')

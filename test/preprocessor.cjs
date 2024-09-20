@@ -84,7 +84,7 @@ module.exports = function(test) {
     }
 
     if (process.env.CI) {
-      process.stderr.write(`[EXEC] ${test.file}\n`)
+      process.stderr.write(`[TREESHAKE] ${test.file}\n`)
     }
     let minified = treeShake(treeShakeEval(main, false), false, do_minify, false);
     let startTime = Date.now();
