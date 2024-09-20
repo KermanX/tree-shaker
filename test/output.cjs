@@ -12,7 +12,7 @@ process.stdin.on('end', () => {
     input
     .replace(/^PASS.*$/gm, '')
     .replace(/^\[SKIP\].*$/gm, '')
-    .replace(/^FAIL /gm, 'test\\')
+    .replace(/^FAIL /gm, 'test' + path.sep)
     .replace(/ \(strict mode\)$/gm, '')
     .replace(/^.*\(default\)\n.*\n/gm, '')
     .replace(/\n{3,}/gm, '\n\n');

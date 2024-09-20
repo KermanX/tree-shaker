@@ -45,7 +45,7 @@ module.exports = function(test) {
     let main = test.contents.slice(test.insertionIndex);
 
     if (
-      /\beval\(/.test(main)
+      /\beval\b/.test(main)
       || /\bFunction\(/.test(main)
       || /\bevalScript\(/.test(main)
       || main.includes('$DONOTEVALUATE')
