@@ -19,7 +19,6 @@ process.stdin.on('end', () => {
     .replace(/^.*\(default\)\n.*\n/gm, '')
     .split('\n')
     .filter(Boolean);
-  console.log(JSON.stringify(lines));
   const failedTests = {}
   let expectedFailedNum = 0;
   for (let i = 0; i < lines.length; i+=2) {
@@ -33,7 +32,7 @@ process.stdin.on('end', () => {
 
   const failedList = Object.entries(failedTests).map(([name, message]) => {
     const basename = path.basename(name);
-    return `[${basename}](https://github.com/tc39/test262/tree/main/test/${name}): ${message.trim()}\n`;
+    return `[${basename}](https://github.com/tc39/test262/tree/main/test/${name}): \`${message.trim()}\``;
   }).join('\n');
   fs.writeFileSync(path.join(__dirname, 'failed.txt'), failedList);
 
