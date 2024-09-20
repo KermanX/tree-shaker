@@ -1,4 +1,4 @@
-name: Rust
+name: Test
 
 on:
   push:
@@ -32,15 +32,19 @@ jobs:
       run: |
         git submodule init
         git submodule update
+    - name: Setup PNPM
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
     - name: Build NAPI
       run: |
-        npm i
-        npm run build
+        pnpm i
+        pnpm build
       working-directory: ./napi
     - name: Run Test262
       run: |
-        npm i
-        npm run test
+        pnpm i
+        pnpm test
       working-directory: ./test
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.2.1-node20
