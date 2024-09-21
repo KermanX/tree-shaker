@@ -36,7 +36,6 @@ function printDiff(diff) {
 const total = 51617;
 let executed = 0;
 let skipped = 0;
-let unimplemented = 0;
 let minifiedTotal = 0;
 let treeShakedTotal = 0;
 module.exports = function(test) {
@@ -53,19 +52,6 @@ module.exports = function(test) {
       || main.includes('noStrict')
     ) {
       skipped++;
-      if (!process.stdout.isTTY) {
-        console.log(`\n[SKIP] ${test.file}\n`)
-      }
-      return test;
-    }
-
-    if (
-         main.includes('.call(')
-      || main.includes('.bind(')
-      || main.includes('.apply(')
-    ) {
-      skipped++;
-      unimplemented++;
       if (!process.stdout.isTTY) {
         console.log(`\n[SKIP] ${test.file}\n`)
       }
@@ -111,6 +97,6 @@ module.exports = function(test) {
 
 process.addListener('beforeExit', () => {
   let rate = (treeShakedTotal * 100 / minifiedTotal).toFixed(2) + '%';
-  process.stdout.write(`Treeshaked: ${executed}, Skipped: ${skipped}, Unimplemented: ${unimplemented}\n`);
+  process.stdout.write(`Treeshaked: ${executed}, Skipped: ${skipped}\n`);
   process.stdout.write(`\nTreeshake rate: ${rate}\n`);
 })
