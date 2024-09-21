@@ -14,7 +14,6 @@ pub fn create_function_prototype<'a>() -> Prototype<'a> {
     "apply",
     ImplementedBuiltinFnEntity::new(|analyzer, dep, this, args| {
       let mut args = args.destruct_as_array(analyzer, dep.clone(), 2).0;
-      let this_arg = args.pop().unwrap();
       let args_arg = {
         let arg = args.pop().unwrap();
         match arg.test_is_undefined() {
@@ -23,6 +22,7 @@ pub fn create_function_prototype<'a>() -> Prototype<'a> {
           None => UnionEntity::new(vec![arg, Entity::new(ArrayEntity::new(vec![], vec![]))]),
         }
       };
+      let this_arg = args.pop().unwrap();
       this.call(analyzer, dep, &this_arg, &args_arg)
     }),
   );
