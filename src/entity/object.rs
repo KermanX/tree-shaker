@@ -124,13 +124,18 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
             let add_undefined = if let Some(property) = string_keyed.get(key) {
               values.extend(property.get_value(analyzer, dep.clone(), &this));
               !property.definite
-            } else if !rest_added {
-              rest_added = true;
-              let rest = self.rest.borrow();
-              values.extend(rest.get_value(analyzer, dep.clone(), &this));
-              true
             } else {
-              false
+              if let Some(from_prototype) = analyzer.builtins.prototypes.object.get(key) {
+                values.push(from_prototype.clone());
+              }
+              if !rest_added {
+                rest_added = true;
+                let rest = self.rest.borrow();
+                values.extend(rest.get_value(analyzer, dep.clone(), &this));
+                true
+              } else {
+                false
+              }
             };
             if add_undefined && !undefined_added {
               undefined_added = true;
