@@ -82,8 +82,18 @@ impl<'a> Transformer<'a> {
       if transformed_elements.len() == 1 {
         return Some(match transformed_elements.pop().unwrap() {
           ArrayExpressionElement::SpreadElement(inner) => {
-            let SpreadElement { argument, .. } = inner.unbox();
-            argument
+            if self.config.iterate_side_effects {
+              self.ast_builder.expression_array(
+                *span,
+                self
+                  .ast_builder
+                  .vec1(self.ast_builder.array_expression_element_from_spread_element(inner)),
+                None,
+              )
+            } else {
+              let SpreadElement { argument, .. } = inner.unbox();
+              argument
+            }
           }
           node => node.try_into().unwrap(),
         });
