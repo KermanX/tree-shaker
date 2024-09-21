@@ -4,6 +4,7 @@ const path = require('path');
 let input = '';
 
 let ignored = JSON.parse(fs.readFileSync(path.join(__dirname, 'ignored.json'), 'utf8'));
+let v8Failed = fs.readFileSync(path.join(__dirname, 'v8_test262.status'), 'utf8').split('\n').filter(Boolean).map(s => s + '.js');
 
 process.stdin.on('data', chunk => {
   input += chunk;
@@ -23,7 +24,7 @@ process.stdin.on('end', () => {
   let expectedFailedNum = 0;
   for (let i = 0; i < lines.length; i+=2) {
     let name = lines[i].slice('test262/test/'.length);
-    if (ignored.includes(name)) {
+    if (ignored.includes(name) || v8Failed.includes(name)) {
       expectedFailedNum++;
     } else {
       failedTests[name] = lines[i+1];
