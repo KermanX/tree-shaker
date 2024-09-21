@@ -201,6 +201,7 @@ pub enum DeclarationKind {
   Let,
   Const,
   Function,
+  NamedFunctionInBody,
   Class,
   Import,
   Caught,
@@ -218,7 +219,7 @@ impl DeclarationKind {
   }
 
   pub fn is_const(self) -> bool {
-    matches!(self, DeclarationKind::Const)
+    matches!(self, DeclarationKind::Const | DeclarationKind::NamedFunctionInBody)
   }
 
   pub fn is_redeclarable(self) -> bool {

@@ -23,6 +23,7 @@ impl<'a> Analyzer<'a> {
     FunctionEntity::new(
       FunctionEntitySource::ArrowFunctionExpression(node),
       self.scope_context.variable_scopes.clone(),
+      true,
     )
   }
 

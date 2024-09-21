@@ -32,6 +32,7 @@ pub struct FunctionEntity<'a> {
   consumed: Rc<Cell<bool>>,
   pub source: FunctionEntitySource<'a>,
   pub variable_scopes: Rc<VariableScopes<'a>>,
+  pub is_expression: bool,
 }
 
 impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
@@ -171,11 +172,13 @@ impl<'a> FunctionEntity<'a> {
   pub fn new(
     source: FunctionEntitySource<'a>,
     variable_scopes: Vec<Rc<RefCell<VariableScope<'a>>>>,
+    is_expression: bool,
   ) -> Entity<'a> {
     Entity::new(Self {
       consumed: Rc::new(Cell::new(false)),
       source,
       variable_scopes: Rc::new(variable_scopes),
+      is_expression,
     })
   }
 
@@ -206,6 +209,7 @@ impl<'a> FunctionEntity<'a> {
         rc.clone(),
         self.dep(),
         source,
+        self.is_expression,
         dep,
         node,
         variable_scopes,

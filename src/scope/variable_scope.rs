@@ -93,8 +93,12 @@ impl<'a> VariableScope<'a> {
     if !old.0.is_var() && old.2.is_none() {
       // TODO: throw TDZ error
       analyzer.may_throw();
-    }
-    if old.1 {
+      value.consume_as_unknown(analyzer);
+    } else if old.0.is_const() {
+      // TODO: throw error
+      analyzer.may_throw();
+      value.consume_as_unknown(analyzer);
+    } else if old.1 {
       value.consume_as_unknown(analyzer);
     }
     *old = (old.0, consumed || old.1, Some(value));

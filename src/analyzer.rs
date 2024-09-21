@@ -172,9 +172,6 @@ impl<'a> Analyzer<'a> {
         new_val.consume_as_unknown(self);
         return;
       }
-      if kind.is_const() {
-        // TODO: throw warning
-      }
       let decl_variable_scope = variable_scopes.last().unwrap().clone();
       let variable_scope_ref = decl_variable_scope.borrow();
       let variable_scope_cf_scopes = &variable_scope_ref.cf_scopes;
