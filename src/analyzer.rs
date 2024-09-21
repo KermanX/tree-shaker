@@ -16,7 +16,7 @@ use oxc::{
   span::GetSpan,
 };
 use rustc_hash::FxHashMap;
-use std::mem;
+use std::{mem, rc::Rc};
 
 pub struct Analyzer<'a> {
   pub config: TreeShakeConfig,
@@ -27,6 +27,7 @@ pub struct Analyzer<'a> {
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
   pub symbol_decls: FxHashMap<SymbolId, (DeclarationKind, VariableScopes<'a>, EntityDep)>,
+  pub exhaustive_deps: FxHashMap<SymbolId, Vec<Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>>>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
   pub builtins: Builtins<'a>,
@@ -44,6 +45,7 @@ impl<'a> Analyzer<'a> {
       named_exports: Vec::new(),
       default_export: None,
       symbol_decls: Default::default(),
+      exhaustive_deps: Default::default(),
       scope_context: ScopeContext::new(),
       pending_labels: Vec::new(),
       builtins: Builtins::new(),

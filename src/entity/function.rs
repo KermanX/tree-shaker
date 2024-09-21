@@ -29,7 +29,7 @@ pub enum FunctionEntitySource<'a> {
 
 #[derive(Debug, Clone)]
 pub struct FunctionEntity<'a> {
-  consumed: Cell<bool>,
+  consumed: Rc<Cell<bool>>,
   pub source: FunctionEntitySource<'a>,
   pub variable_scopes: Rc<VariableScopes<'a>>,
 }
@@ -44,11 +44,12 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
     self.consume_self(analyzer);
 
-    analyzer.exec_exhaustively(|analyzer| {
+    let self_cloned = self.clone();
+    analyzer.exec_exhaustively(move |analyzer| {
       analyzer.push_cf_scope_normal(None);
       analyzer.push_try_scope();
 
-      let ret_val = self.call_impl(
+      let ret_val = self_cloned.call_impl(
         &UnknownEntity::new_unknown(),
         analyzer,
         (EntityDepNode::Environment).into(),
@@ -172,7 +173,7 @@ impl<'a> FunctionEntity<'a> {
     variable_scopes: Vec<Rc<RefCell<VariableScope<'a>>>>,
   ) -> Entity<'a> {
     Entity::new(Self {
-      consumed: Cell::new(false),
+      consumed: Rc::new(Cell::new(false)),
       source,
       variable_scopes: Rc::new(variable_scopes),
     })

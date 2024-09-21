@@ -1,8 +1,9 @@
 use crate::{analyzer::Analyzer, entity::entity::Entity, scope::CfScopeKind};
 use oxc::semantic::SymbolId;
+use std::{mem, rc::Rc};
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_exhaustively(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> ()) {
+  pub fn exec_exhaustively(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
     self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
     let mut round_counter = 0;
     while self.cf_scope().borrow_mut().iterate_exhaustively() {
@@ -12,7 +13,14 @@ impl<'a> Analyzer<'a> {
         unreachable!("Exhaustive loop is too deep");
       }
     }
-    self.pop_cf_scope();
+    let scope = self.pop_cf_scope();
+    let mut scope_ref = scope.borrow_mut();
+    let exhaustive_data = scope_ref.exhaustive_data.as_mut().unwrap();
+    let deps = mem::take(&mut exhaustive_data.deps);
+    let runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a> = Rc::new(runner);
+    for symbol in deps {
+      self.exhaustive_deps.entry(symbol).or_insert_with(Vec::new).push(runner.clone());
+    }
   }
 
   pub fn mark_exhaustive_read(&mut self, val: &Entity<'a>, symbol: SymbolId, target: usize) {
@@ -36,6 +44,15 @@ impl<'a> Analyzer<'a> {
       for scope in &mut self.scope_context.cf_scopes[target..] {
         should_consume |= scope.borrow_mut().mark_exhaustive_write(symbol)
       }
+
+      if let Some(runners) = self.exhaustive_deps.get_mut(&symbol) {
+        let runners = if should_consume { mem::take(runners) } else { runners.clone() };
+        for runner in runners {
+          let runner = runner.clone();
+          (*runner)(self);
+        }
+      }
+
       should_consume
     }
   }

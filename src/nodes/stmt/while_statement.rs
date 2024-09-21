@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
     data.need_loop = true;
 
     self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
-    self.exec_exhaustively(|analyzer| {
+    self.exec_exhaustively(move |analyzer| {
       analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
 
       analyzer.exec_statement(&node.body);
