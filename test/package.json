@@ -6,8 +6,8 @@
 		"picocolors": "^1.1.0",
 		"test262-harness": "^10.0.0"
 	},
-	"packageManager": "pnpm@9.11.0",
+	"packageManager": "pnpm@9.7.1",
 	"scripts": {
-		"test": "test262-harness --preprocessor ./preprocessor.cjs \"./test262/test/language/**/*.js\" --threads 12 "
+		"test": "test262-harness --preprocessor ./preprocessor.cjs \"./test262/test/language/**/*.js\" --threads 12 | node ./output.cjs"
 	}
 }
