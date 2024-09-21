@@ -1,9 +1,11 @@
 use super::{null::create_null_prototype, Prototype};
-use crate::entity::builtin_fn::PureBuiltinFnEntity;
+use crate::entity::{builtin_fn::PureBuiltinFnEntity, unknown::UnknownEntityKind};
 
 pub fn create_object_prototype<'a>() -> Prototype<'a> {
   let mut prototype = create_null_prototype();
 
+  prototype
+    .insert("constructor", PureBuiltinFnEntity::returns_unknown_entity(UnknownEntityKind::Object));
   prototype.insert("hasOwnProperty", PureBuiltinFnEntity::returns_boolean());
   prototype.insert("isPrototypeOf", PureBuiltinFnEntity::returns_boolean());
   prototype.insert("propertyIsEnumerable", PureBuiltinFnEntity::returns_boolean());
