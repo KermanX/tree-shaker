@@ -1,3 +1,6 @@
+[workspace]
+members = ["./napi", "./wasm"]
+
 [package]
 name = "tree-shake"
 version = "0.1.0"

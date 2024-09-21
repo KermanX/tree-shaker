@@ -1,6 +1,6 @@
 [package]
 edition = "2021"
-name = "kermanx_tree-shaker"
+name = "kermanx_tree-shaker_napi"
 version = "0.0.0"
 
 [lib]
