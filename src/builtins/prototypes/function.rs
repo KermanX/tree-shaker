@@ -3,6 +3,7 @@ use crate::entity::{
   array::ArrayEntity,
   builtin_fn::{ImplementedBuiltinFnEntity, PureBuiltinFnEntity},
   entity::Entity,
+  union::UnionEntity,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
 
@@ -12,18 +13,24 @@ pub fn create_function_prototype<'a>() -> Prototype<'a> {
   prototype.insert(
     "apply",
     ImplementedBuiltinFnEntity::new(|analyzer, dep, this, args| {
-      let args = args
-        .destruct_as_array(analyzer, dep.clone(), 1)
-        .0
-        .pop()
-        .unwrap_or_else(|| Entity::new(ArrayEntity::new(vec![], vec![])));
-      this.call(analyzer, dep, this, &args)
+      let mut args = args.destruct_as_array(analyzer, dep.clone(), 2).0;
+      let this_arg = args.pop().unwrap();
+      let args_arg = {
+        let arg = args.pop().unwrap();
+        match arg.test_is_undefined() {
+          Some(true) => Entity::new(ArrayEntity::new(vec![], vec![])),
+          Some(false) => arg,
+          None => UnionEntity::new(vec![arg, Entity::new(ArrayEntity::new(vec![], vec![]))]),
+        }
+      };
+      this.call(analyzer, dep, &this_arg, &args_arg)
     }),
   );
   prototype.insert(
     "call",
     ImplementedBuiltinFnEntity::new(|analyzer, dep, this, args| {
-      this.call(analyzer, dep, this, args)
+      let (this_arg, args_arg) = args.destruct_as_array(analyzer, dep.clone(), 1);
+      this.call(analyzer, dep, &this_arg[0], &args_arg)
     }),
   );
   prototype.insert("bind", PureBuiltinFnEntity::returns_unknown());
