@@ -4,7 +4,13 @@ use crate::{
   entity::entity::Entity,
   transformer::Transformer,
 };
-use oxc::ast::ast::{FormalParameter, FormalParameters};
+use oxc::{
+  ast::{
+    ast::{BindingPatternKind, FormalParameter, FormalParameters},
+    NONE,
+  },
+  span::{GetSpan, SPAN},
+};
 
 const AST_TYPE: AstType2 = AstType2::FormalParameter;
 
@@ -56,18 +62,34 @@ impl<'a> Transformer<'a> {
     for (index, param) in items.iter().enumerate() {
       let FormalParameter { span, decorators, pattern, .. } = param;
 
-      let pattern = self.transform_binding_pattern(pattern, false);
-
-      if pattern.is_some() {
+      let pattern_was_assignment = matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_));
+      let pattern = if let Some(pattern) = self.transform_binding_pattern(pattern, false) {
         for dep in &data.elements_init {
           dep[index].refer_dep_shallow(self);
         }
-      }
+        pattern
+      } else {
+        self.build_unused_binding_pattern(*span)
+      };
+      let pattern_is_assignment = matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_));
 
       transformed_items.push(self.ast_builder.formal_parameter(
         *span,
         self.clone_node(decorators),
-        pattern.unwrap_or_else(|| self.build_unused_binding_pattern(*span)),
+        if self.config.preserve_function_length && pattern_was_assignment && !pattern_is_assignment
+        {
+          self.ast_builder.binding_pattern(
+            self.ast_builder.binding_pattern_kind_assignment_pattern(
+              pattern.span(),
+              pattern,
+              self.build_unused_expression(SPAN),
+            ),
+            NONE,
+            false,
+          )
+        } else {
+          pattern
+        },
         None,
         false,
         false,
