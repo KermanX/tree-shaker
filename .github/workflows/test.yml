@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event.pull_request.number && true || false }}
-
 env:
   CARGO_TERM_COLOR: always
 
@@ -31,6 +27,9 @@ jobs:
   test262:
     permissions: write-all
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: ${{ github.event.pull_request.number && true || false }}
     steps:
     - uses: actions/checkout@v4
     - name: Init submodule
