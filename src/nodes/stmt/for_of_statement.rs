@@ -41,7 +41,7 @@ impl<'a> Analyzer<'a> {
       self.exec_for_statement_left(&node.left, value);
 
       self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
-      self.exec_exhaustively(move |analyzer| {
+      self.exec_loop(move |analyzer| {
         analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
         analyzer.exec_statement(&node.body);
         analyzer.pop_cf_scope();
