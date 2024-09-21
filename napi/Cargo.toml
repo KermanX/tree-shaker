@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 napi = { version = "2.12.2", default-features = false, features = ["napi4"] }
 napi-derive = "2.12.2"
 tree-shake = { path = "../" }
-oxc = { version = "0.25.0", features = ["codegen", "semantic", "minifier"] }
+oxc = { version = "0.29.0", features = ["codegen", "semantic", "minifier"] }
 
 [build-dependencies]
 napi-build = "2.0.1"
