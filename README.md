@@ -4,6 +4,9 @@
 
 > If this project goes well, I personally hope it can become part of the Oxc or the Rolldown project.
 
+- **Try it online**: https://kermanx.github.io/tree-shaker/
+- **View Test262 Result**: Goto https://github.com/KermanX/tree-shaker/commits/main/ and click the latest comment to commit
+
 ## Goal
 
 Tree shake the following code (this already works!):
@@ -32,12 +35,6 @@ export function f() {
 May not be very fast, but should generates the least code possible.
 
 ## Todo
-
-**Short term**:
-
-- Track `this`
-
-**Long term**:
 
 - Pass all reasonable test262 tests
 - Test against fixtures from other tree shakers like Rollup
