@@ -27,7 +27,7 @@ process.stdin.on('end', () => {
     if (ignored.includes(name) || v8Failed.includes(name)) {
       expectedFailedNum++;
     } else {
-      failedTests[name] = lines[i+1].replaceAll('\`', '\\\`') || '<NO OUTPUT>';
+      failedTests[name] = lines[i+1]?.replaceAll('\`', '\\\`') || '<NO OUTPUT>';
     }
   }
 
