@@ -1,5 +1,8 @@
 use crate::{analyzer::Analyzer, entity::literal::LiteralEntity, transformer::Transformer};
-use oxc::ast::ast::{AccessorProperty, ClassElement};
+use oxc::ast::{
+  ast::{AccessorProperty, ClassElement},
+  NONE,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_accessor_property(&mut self, node: &'a AccessorProperty<'a>) {
@@ -16,7 +19,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_accessor_property(&self, node: &'a AccessorProperty<'a>) -> ClassElement<'a> {
-    let AccessorProperty { r#type, span, decorators, key, value, r#static, .. } = node;
+    let AccessorProperty { r#type, span, decorators, key, value, r#static, definite, .. } = node;
 
     let (computed, key) = self.transform_property_key(key, true).unwrap();
     let value = value.as_ref().map(|node| self.transform_expression(node, true).unwrap());
@@ -29,6 +32,9 @@ impl<'a> Transformer<'a> {
       value,
       computed,
       *r#static,
+      *definite,
+      NONE,
+      None,
     )
   }
 }

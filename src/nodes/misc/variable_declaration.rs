@@ -13,6 +13,7 @@ impl<'a> Analyzer<'a> {
       VariableDeclarationKind::Var => DeclarationKind::Var,
       VariableDeclarationKind::Let => DeclarationKind::Let,
       VariableDeclarationKind::Const => DeclarationKind::Const,
+      _ => unreachable!("using"),
     };
 
     for declarator in &node.declarations {

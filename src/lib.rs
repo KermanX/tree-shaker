@@ -64,7 +64,7 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
     transform_eval_mode_encode(&ast_builder, ast);
   }
 
-  let sematic_builder = SemanticBuilder::new(source_text.as_str(), source_type);
+  let sematic_builder = SemanticBuilder::new(source_text.as_str());
   let sematic = sematic_builder.build(ast).semantic;
 
   if tree_shake {

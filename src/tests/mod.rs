@@ -11,7 +11,7 @@ fn tree_shake(input: String) -> String {
   let result = crate::tree_shake(TreeShakeOptions {
     config: TreeShakeConfig::default(),
     allocator: &Allocator::default(),
-    source_type: SourceType::default().with_module(true).with_always_strict(true),
+    source_type: SourceType::default(),
     source_text: input,
     tree_shake: true,
     minify: do_minify.then(|| MinifierOptions::default()),
