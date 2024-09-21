@@ -1,6 +1,7 @@
 {
-  "type": "module",
+	"type": "module",
 	"devDependencies": {
+		"@engine262/engine262": "0.0.1-dd05c163162914b12baca4fbabb6e9ce99a217bc",
 		"@kermanx/tree-shaker": "link:..\\napi",
 		"diff": "^6.0.0",
 		"picocolors": "^1.1.0",
@@ -8,6 +9,6 @@
 	},
 	"packageManager": "pnpm@9.7.1",
 	"scripts": {
-		"test": "test262-harness --preprocessor ./preprocessor.cjs \"./test262/test/language/**/*.js\" --threads 12 | node ./output.cjs"
+		"test": "test262-harness --host-type=engine262 --host-path ./node_modules/.bin/engine262 --preprocessor ./preprocessor.cjs \"./test262/test/language/**/*.js\" --threads 12 | node ./output.cjs"
 	}
 }

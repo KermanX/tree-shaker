@@ -25,8 +25,6 @@ process.stdin.on('end', () => {
     .split('\n')
     .filter(Boolean);
 
-  console.log(skipped);
-
   const failedTests = {}
   let expectedFailedNum = 0;
   for (let i = 0; i < lines.length; i+=2) {
