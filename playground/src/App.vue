@@ -63,13 +63,13 @@ const result = computed(() =>
       <div flex-grow />
       <div flex w-fit md:flex-col h-min md:h-0 z-10 gap-x-2 gap-y-1 font-mono items-end mr-2>
         <label flex align-center gap-1 select-none>
-          <span hidden sm:important:inline-block op-80>
+          <span op-80>
             Do tree shake:
           </span>
           <input v-model="doTreeShake" type="checkbox" placeholder="ast_builder">
         </label>
         <label flex align-center gap-1 select-none>
-          <span hidden sm:important:inline-block op-80>
+          <span op-80>
             Do minify:
           </span>
           <input v-model="doMinify" type="checkbox">
