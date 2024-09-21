@@ -121,10 +121,13 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         match key_literal {
           LiteralEntity::String(key) => {
             let string_keyed = self.string_keyed.borrow();
-            let add_undefined = if let Some(property) = string_keyed.get(key) {
+            let lookup_rest = if let Some(property) = string_keyed.get(key) {
               values.extend(property.get_value(analyzer, dep.clone(), &this));
               !property.definite
             } else {
+              true
+            };
+            let add_undefined = if lookup_rest {
               if let Some(from_prototype) = analyzer.builtins.prototypes.object.get(key) {
                 values.push(from_prototype.clone());
               }
@@ -136,6 +139,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               } else {
                 false
               }
+            } else {
+              false
             };
             if add_undefined && !undefined_added {
               undefined_added = true;
