@@ -1,6 +1,8 @@
 #![deny(clippy::all)]
 
-use oxc::{allocator::Allocator, codegen::CodegenOptions, minifier::MinifierOptions, span::SourceType};
+use oxc::{
+  allocator::Allocator, codegen::CodegenOptions, minifier::MinifierOptions, span::SourceType,
+};
 
 #[macro_use]
 extern crate napi_derive;
@@ -14,10 +16,7 @@ pub fn tree_shake(input: String, do_tree_shake: bool, do_minify: bool, eval_mode
     source_text: input,
     tree_shake: do_tree_shake,
     minify: do_minify.then(|| MinifierOptions::default()),
-    code_gen: CodegenOptions {
-      single_quote: true,
-      minify: true,
-    },
+    code_gen: CodegenOptions { single_quote: true, minify: true },
     eval_mode,
   });
   result.codegen_return.source_text
