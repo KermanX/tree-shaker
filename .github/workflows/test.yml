@@ -26,9 +26,7 @@ jobs:
 
   test262:
     permissions: write-all
-    runs-on:
-      group: ubuntu-runners
-      labels: ubuntu-20.04-16core
+    runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
       cancel-in-progress: ${{ github.event.pull_request.number && true || false }}
