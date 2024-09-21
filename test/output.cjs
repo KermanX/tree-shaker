@@ -4,7 +4,7 @@ const path = require('path');
 let input = '';
 
 let ignored = JSON.parse(fs.readFileSync(path.join(__dirname, 'ignored.json'), 'utf8'));
-let v8Failed = fs.readFileSync(path.join(__dirname, 'v8_test262.status'), 'utf8').split('\n').filter(Boolean).map(s => s + '.js');
+let v8Failed = fs.readFileSync(path.join(__dirname, 'v8_test262.status'), 'utf8').split(/\r?\n/).filter(Boolean).map(s => s + '.js');
 
 process.stdin.on('data', chunk => {
   input += chunk;
