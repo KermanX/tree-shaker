@@ -1,3 +1,14 @@
 [
-  "language/expressions/bitwise-and/bigint-and-number.js"
+  "// Errors thrown by add operator",
+  "language/expressions/bitwise-and/bigint-and-number.js",
+  "language/expressions/addition/bigint-errors.js",
+  "language/expressions/addition/bigint-toprimitive.js",
+
+  "// Errors thrown by Symbol.toPrimitive",
+  "language/expressions/addition/coerce-symbol-to-prim-err.js",
+  "language/expressions/addition/coerce-symbol-to-prim-return-obj.js",
+  "language/expressions/addition/get-symbol-to-prim-err.js",
+  
+  "// Errors thrown by value getter in iterated object",
+  "language/expressions/array/spread-err-mult-err-itr-value.js"
 ]
