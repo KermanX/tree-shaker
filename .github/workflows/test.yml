@@ -28,7 +28,7 @@ jobs:
     permissions: write-all
     runs-on: ubuntu-latest
     concurrency:
-      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
       cancel-in-progress: ${{ github.event.pull_request.number && true || false }}
     steps:
     - uses: actions/checkout@v4
