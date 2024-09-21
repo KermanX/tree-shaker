@@ -11,7 +11,7 @@ use std::{fmt::Debug, rc::Rc};
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EntityDepNode {
   Environment,
-  AstKind(u128),
+  AstKind((usize, usize)),
   Ptr(AstType2, usize),
 }
 

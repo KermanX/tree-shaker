@@ -1,0 +1,12 @@
+[package]
+edition = "2021"
+name = "kermanx_tree-shaker_wasm"
+version = "0.0.1"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+tree-shake = { path = "../" }
+oxc = { version = "0.29.0", features = ["codegen", "semantic", "minifier"] }
+wasm-bindgen = "0.2.93"
