@@ -302,6 +302,17 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 }
 
 impl<'a> ArrayEntity<'a> {
+  pub fn new(cf_scopes: CfScopes<'a>, variable_scopes: VariableScopes<'a>) -> Self {
+    ArrayEntity {
+      consumed: Cell::new(false),
+      deps: RefCell::new(Vec::new()),
+      cf_scopes,
+      variable_scopes,
+      elements: RefCell::new(Vec::new()),
+      rest: RefCell::new(Vec::new()),
+    }
+  }
+
   pub fn push_element(&self, element: Entity<'a>) {
     self.elements.borrow_mut().push(element);
   }
@@ -326,13 +337,9 @@ impl<'a> ArrayEntity<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn new_empty_array(&self) -> ArrayEntity<'a> {
-    ArrayEntity {
-      consumed: Cell::new(false),
-      deps: RefCell::new(Vec::new()),
-      cf_scopes: self.scope_context.cf_scopes.clone(),
-      variable_scopes: self.scope_context.variable_scopes.clone(),
-      elements: RefCell::new(Vec::new()),
-      rest: RefCell::new(Vec::new()),
-    }
+    ArrayEntity::new(
+      self.scope_context.cf_scopes.clone(),
+      self.scope_context.variable_scopes.clone(),
+    )
   }
 }

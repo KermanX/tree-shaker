@@ -111,7 +111,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 }
 
 pub type BuiltinFnImplementation<'a> =
-  fn(&mut Analyzer<'a>, &Entity<'a>, &Entity<'a>) -> Entity<'a>;
+  fn(&mut Analyzer<'a>, EntityDep, &Entity<'a>, &Entity<'a>) -> Entity<'a>;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ImplementedBuiltinFnEntity<'a> {
@@ -122,11 +122,11 @@ impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
-    _dep: EntityDep,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    (self.implementation)(analyzer, this, args)
+    (self.implementation)(analyzer, dep, this, args)
   }
 }
 
