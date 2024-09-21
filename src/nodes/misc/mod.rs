@@ -8,6 +8,7 @@ mod assignment_target_rest;
 mod binding_identifier;
 mod binding_pattern;
 mod binding_rest_element;
+mod callee;
 mod catch_clause;
 mod class;
 mod class_element;

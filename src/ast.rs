@@ -192,6 +192,7 @@ pub enum AstType2 {
   AssignmentTargetPropertyIdentifier,
   AssignmentTargetRest,
   BindingProperty,
+  Callee,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

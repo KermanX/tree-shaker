@@ -1,7 +1,9 @@
 use crate::{
   analyzer::Analyzer,
   build_effect_from_arr,
-  entity::{arguments::ArgumentsEntity, entity::Entity, unknown::UnknownEntity},
+  entity::{
+    arguments::ArgumentsEntity, entity::Entity, literal::LiteralEntity, unknown::UnknownEntity,
+  },
   transformer::Transformer,
 };
 use oxc::ast::{
@@ -14,21 +16,22 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a TaggedTemplateExpression<'a>,
   ) -> Entity<'a> {
-    let tag = self.exec_expression(&node.tag);
+    if let Some((tag, this)) = self.exec_callee(&node.tag) {
+      let mut arguments = vec![(false, UnknownEntity::new_unknown())];
 
-    let mut arguments = vec![(false, UnknownEntity::new_unknown())];
+      for expr in &node.quasi.expressions {
+        arguments.push((false, self.exec_expression(expr)));
+      }
 
-    for expr in &node.quasi.expressions {
-      arguments.push((false, self.exec_expression(expr)));
+      tag.call(
+        self,
+        AstKind::TaggedTemplateExpression(node),
+        &this,
+        &ArgumentsEntity::new(arguments),
+      )
+    } else {
+      LiteralEntity::new_undefined()
     }
-
-    // TODO: this
-    tag.call(
-      self,
-      AstKind::TaggedTemplateExpression(node),
-      &UnknownEntity::new_unknown(),
-      &ArgumentsEntity::new(arguments),
-    )
   }
 }
 
@@ -43,7 +46,7 @@ impl<'a> Transformer<'a> {
     let need_call = need_val || self.is_referred(AstKind::TaggedTemplateExpression(node));
 
     if need_call {
-      let tag = self.transform_expression(tag, true).unwrap();
+      let tag = self.transform_callee(tag, true).unwrap();
 
       Some(self.ast_builder.expression_tagged_template(
         *span,
@@ -55,7 +58,7 @@ impl<'a> Transformer<'a> {
       build_effect_from_arr!(
         &self.ast_builder,
         *span,
-        vec![self.transform_expression(tag, false)],
+        vec![self.transform_callee(tag, false)],
         quasi.expressions.iter().map(|x| self.transform_expression(x, false))
       )
     }
