@@ -1,5 +1,6 @@
 use crate::{
   analyzer::Analyzer,
+  build_effect,
   entity::{
     entity::Entity,
     literal::LiteralEntity,
@@ -7,9 +8,12 @@ use crate::{
   },
   transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{Expression, UnaryExpression, UnaryOperator},
-  AstKind,
+use oxc::{
+  ast::{
+    ast::{Expression, UnaryExpression, UnaryOperator},
+    AstKind,
+  },
+  span::SPAN,
 };
 
 impl<'a> Analyzer<'a> {
@@ -37,7 +41,9 @@ impl<'a> Analyzer<'a> {
           // TODO: throw warning: SyntaxError: Delete of an unqualified identifier in strict mode.
           self.refer_dep(dep);
         }
-        _ => {}
+        expr => {
+          self.exec_expression(expr);
+        }
       };
 
       return LiteralEntity::new_boolean(true);
@@ -131,7 +137,17 @@ impl<'a> Transformer<'a> {
         };
         Some(self.ast_builder.expression_unary(*span, *operator, argument))
       } else {
-        self.transform_expression(argument, false)
+        let expr = self.transform_expression(argument, false);
+        if need_val {
+          Some(build_effect!(
+            &self.ast_builder,
+            *span,
+            self.transform_expression(argument, false);
+            self.ast_builder.expression_boolean_literal(SPAN, true)
+          ))
+        } else {
+          expr
+        }
       };
     }
 
