@@ -131,8 +131,8 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 }
 
 impl<'a> CollectedEntity<'a> {
-  pub fn new(val: Entity<'a>, collected: Rc<RefCell<Vec<Entity<'a>>>>) -> Entity<'a> {
-    Entity::new(Self { val, collected })
+  pub fn new(val: Entity<'a>, collected: impl Into<Rc<RefCell<Vec<Entity<'a>>>>>) -> Entity<'a> {
+    Entity::new(Self { val, collected: collected.into() })
   }
 
   fn forward(&self, val: Entity<'a>) -> Entity<'a> {

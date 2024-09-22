@@ -1,4 +1,5 @@
 use super::{
+  collected::CollectedEntity,
   consumed_object,
   dep::EntityDep,
   entity::{Entity, EntityTrait},
@@ -8,6 +9,7 @@ use super::{
 };
 use crate::{analyzer::Analyzer, scope::CfScopeKind};
 use rustc_hash::FxHashSet;
+use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct UnionEntity<'a> {
@@ -199,7 +201,12 @@ impl<'a> UnionEntity<'a> {
       None
     } else {
       Some(if values.len() == 1 {
-        values.first().unwrap().clone()
+        let value = values.first().unwrap().clone();
+        if deps.is_empty() {
+          value
+        } else {
+          CollectedEntity::new(value, RefCell::new(deps))
+        }
       } else {
         let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
         if has_unknown {

@@ -1,4 +1,5 @@
 use super::{
+  collected::CollectedEntity,
   entity::Entity,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
@@ -10,7 +11,7 @@ use oxc::{
   allocator::Allocator,
   ast::ast::{BinaryOperator, UpdateOperator},
 };
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 pub struct EntityOpHost<'a> {
   allocator: &'a Allocator,
@@ -245,10 +246,13 @@ impl<'a> EntityOpHost<'a> {
     };
 
     if let Some(num) = input.get_literal().and_then(|lit| lit.to_number()) {
-      return match num {
-        Some(num) => apply_update(num.0),
-        None => LiteralEntity::new_nan(),
-      };
+      return CollectedEntity::new(
+        match num {
+          Some(num) => apply_update(num.0),
+          None => LiteralEntity::new_nan(),
+        },
+        RefCell::new(vec![input.clone()]),
+      );
     }
 
     let input_t = input.test_typeof();
