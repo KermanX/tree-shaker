@@ -108,8 +108,11 @@ impl<'a> EntityOpHost<'a> {
 
     let mut values = vec![];
 
-    let may_convert_to_num =
-      TypeofResult::Number | TypeofResult::Boolean | TypeofResult::Undefined | TypeofResult::Object;
+    let may_convert_to_num = TypeofResult::Number
+      | TypeofResult::Boolean
+      | TypeofResult::Undefined
+      | TypeofResult::Object
+      | TypeofResult::Function;
     let must_not_convert_to_str =
       TypeofResult::Number | TypeofResult::Boolean | TypeofResult::Undefined | TypeofResult::BigInt;
 
