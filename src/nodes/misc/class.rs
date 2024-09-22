@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
 
     let super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
 
-    super_class.map(|entity| entity.consume_as_unknown(self));
+    super_class.map(|entity| entity.consume(self));
 
     for element in &node.body.body {
       self.exec_class_element(element);

@@ -14,14 +14,9 @@ pub struct ForwardedEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
-  fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.refer_dep(analyzer);
-    self.val.consume_self(analyzer)
-  }
-
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    self.refer_dep(analyzer);
-    self.val.consume_as_unknown(analyzer)
+    self.val.consume(analyzer)
   }
 
   fn refer_dep_shallow(&self, transformer: &Transformer<'a>) {
@@ -83,7 +78,7 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     let (has_effect, ret_val) = self.val.r#await(analyzer);
     if has_effect {
-      self.consume_self(analyzer);
+      self.consume(analyzer);
     }
     (has_effect, self.forward(ret_val))
   }

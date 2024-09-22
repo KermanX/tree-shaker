@@ -36,11 +36,11 @@ impl<'a> VariableScope<'a> {
         if !old_kind.is_redeclarable() {
           // TODO: ERROR: "Variable already declared"
           analyzer.may_throw();
-          value.map(|value| value.consume_as_unknown(analyzer));
+          value.map(|value| value.consume(analyzer));
           self.variables.insert(symbol, (kind, true, Some(UnknownEntity::new_unknown())));
         } else {
           if *old_consumed {
-            value.map(|value| value.consume_as_unknown(analyzer));
+            value.map(|value| value.consume(analyzer));
           } else {
             self.variables.insert(symbol, (kind, false, value.or(old_val.clone())));
           }
@@ -60,7 +60,7 @@ impl<'a> VariableScope<'a> {
   pub fn init(&mut self, analyzer: &mut Analyzer<'a>, symbol: SymbolId, value: Entity<'a>) {
     let (_, consumed, val) = self.variables.get_mut(&symbol).unwrap();
     if *consumed {
-      value.consume_as_unknown(analyzer);
+      value.consume(analyzer);
     } else {
       *val = Some(value);
     }
@@ -93,13 +93,13 @@ impl<'a> VariableScope<'a> {
     if !old.0.is_var() && old.2.is_none() {
       // TODO: throw TDZ error
       analyzer.may_throw();
-      value.consume_as_unknown(analyzer);
+      value.consume(analyzer);
     } else if old.0.is_const() {
       // TODO: throw error
       analyzer.may_throw();
-      value.consume_as_unknown(analyzer);
+      value.consume(analyzer);
     } else if old.1 {
-      value.consume_as_unknown(analyzer);
+      value.consume(analyzer);
     }
     *old = (old.0, consumed || old.1, Some(value));
   }

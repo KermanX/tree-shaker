@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
     let indeterminate = maybe_true && maybe_false;
 
     if indeterminate {
-      test.consume_self(self);
+      test.consume(self);
     }
 
     let branch_exited = if indeterminate { None } else { Some(false) };

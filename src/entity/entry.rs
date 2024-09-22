@@ -14,14 +14,9 @@ pub struct EntryEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for EntryEntity<'a> {
-  fn consume_self(&self, analyzer: &mut crate::analyzer::Analyzer<'a>) {
-    self.key.consume_self(analyzer);
-    self.value.consume_self(analyzer);
-  }
-
-  fn consume_as_unknown(&self, analyzer: &mut crate::analyzer::Analyzer<'a>) {
-    self.key.consume_self(analyzer);
-    self.value.consume_as_unknown(analyzer);
+  fn consume(&self, analyzer: &mut crate::analyzer::Analyzer<'a>) {
+    self.key.consume(analyzer);
+    self.value.consume(analyzer);
   }
 
   fn get_property(
@@ -79,7 +74,7 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     let (has_effect, ret_val) = self.value.r#await(analyzer);
     if has_effect {
-      self.consume_self(analyzer);
+      self.consume(analyzer);
     }
     (has_effect, self.forward(ret_val))
   }

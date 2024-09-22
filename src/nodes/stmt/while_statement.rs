@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
     if test.test_truthy() == Some(false) {
       return;
     }
-    test.consume_self(self);
+    test.consume(self);
 
     let data = self.load_data::<Data>(AST_TYPE, node);
     data.need_loop = true;
@@ -33,7 +33,7 @@ impl<'a> Analyzer<'a> {
       analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
 
       analyzer.exec_statement(&node.body);
-      analyzer.exec_expression(&node.test).consume_self(analyzer);
+      analyzer.exec_expression(&node.test).consume(analyzer);
 
       analyzer.pop_cf_scope();
     });

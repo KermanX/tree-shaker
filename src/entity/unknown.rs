@@ -30,14 +30,10 @@ pub struct UnknownEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
-  fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
-    self.consume_as_unknown(analyzer);
-  }
-
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let mut deps = self.deps.borrow_mut();
     for dep in deps.iter() {
-      dep.consume_as_unknown(analyzer);
+      dep.consume(analyzer);
     }
     deps.clear();
   }
@@ -50,7 +46,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     key: &Entity<'a>,
   ) -> Entity<'a> {
     if matches!(self.kind, UnknownEntityKind::Unknown) {
-      self.consume_as_unknown(analyzer);
+      self.consume(analyzer);
       consumed_object::get_property(analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
@@ -67,7 +63,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     value: Entity<'a>,
   ) {
     if self.maybe_object() {
-      self.consume_as_unknown(analyzer);
+      self.consume(analyzer);
       consumed_object::set_property(analyzer, dep, key, value)
     } else {
       // Primitives. No effect
@@ -81,7 +77,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     dep: EntityDep,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     if self.maybe_object() {
-      self.consume_as_unknown(analyzer);
+      self.consume(analyzer);
       consumed_object::enumerate_properties(analyzer, dep)
     } else {
       vec![]
@@ -107,13 +103,13 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     if !self.maybe_object() {
       // TODO: throw warning
     }
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::call(analyzer, dep, this, args)
   }
 
   fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     if self.maybe_object() {
-      self.consume_as_unknown(analyzer);
+      self.consume(analyzer);
       (true, UnknownEntity::new_unknown())
     } else {
       (false, rc.clone())
@@ -132,7 +128,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     if !self.maybe_object() {
       // TODO: throw warning
     }
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
 

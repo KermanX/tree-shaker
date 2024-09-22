@@ -6,8 +6,8 @@ impl<'a> Analyzer<'a> {
     let key = self.exec_property_key(&node.key);
     let value = self.exec_function(&node.value, true);
 
-    key.consume_self(self);
-    value.consume_as_unknown(self);
+    key.consume(self);
+    value.consume(self);
   }
 }
 

@@ -20,9 +20,7 @@ pub trait BuiltinFnEntity<'a>: Debug {
 }
 
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
-  fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
-
-  fn consume_as_unknown(&self, _analyzer: &mut Analyzer<'a>) {}
+  fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
   fn get_property(
     &self,
@@ -152,9 +150,9 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
   ) -> Entity<'a> {
     if self.mutates_this {
       analyzer.refer_dep(dep);
-      this.consume_as_unknown(analyzer);
+      this.consume(analyzer);
     }
-    args.consume_as_unknown(analyzer);
+    args.consume(analyzer);
     self.return_value.clone()
   }
 }

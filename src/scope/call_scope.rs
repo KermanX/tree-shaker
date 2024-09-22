@@ -68,7 +68,7 @@ impl<'a> CallScope<'a> {
 
     if self.is_generator {
       for value in &self.returned_values {
-        value.consume_as_unknown(analyzer);
+        value.consume(analyzer);
       }
       return (self.old_variable_scopes, UnknownEntity::new_unknown());
     }

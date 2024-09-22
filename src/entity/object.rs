@@ -76,30 +76,28 @@ impl<'a> ObjectProperty<'a> {
 }
 
 impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
-  fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
-
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     analyzer.refer_dep(mem::take(&mut *self.deps.borrow_mut()));
 
-    fn consume_property_as_unknown<'a>(property: &ObjectProperty<'a>, analyzer: &mut Analyzer<'a>) {
+    fn consume_property<'a>(property: &ObjectProperty<'a>, analyzer: &mut Analyzer<'a>) {
       for value in &property.values {
         match value {
-          ObjectPropertyValue::Field(value) => value.consume_as_unknown(analyzer),
+          ObjectPropertyValue::Field(value) => value.consume(analyzer),
           ObjectPropertyValue::Property(getter, setter) => {
-            getter.as_ref().map(|f| f.consume_as_unknown(analyzer));
-            setter.as_ref().map(|f| f.consume_as_unknown(analyzer));
+            getter.as_ref().map(|f| f.consume(analyzer));
+            setter.as_ref().map(|f| f.consume(analyzer));
           }
         }
       }
     }
 
     for property in self.string_keyed.borrow().values() {
-      consume_property_as_unknown(property, analyzer);
+      consume_property(property, analyzer);
     }
-    consume_property_as_unknown(&self.rest.borrow(), analyzer);
-    consume_property_as_unknown(&self.unknown_keyed.borrow(), analyzer);
+    consume_property(&self.rest.borrow(), analyzer);
+    consume_property(&self.unknown_keyed.borrow(), analyzer);
   }
 
   fn get_property(
@@ -157,7 +155,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       )
     } else {
       // TODO: like set_property, call getters and collect all possible values
-      self.consume_as_unknown(analyzer);
+      self.consume(analyzer);
       consumed_object::get_property(analyzer, dep, key)
     }
   }
@@ -285,7 +283,6 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::delete_property(analyzer, dep, key);
     }
-    self.consume_self(analyzer);
     let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
@@ -326,12 +323,12 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::call(analyzer, dep, this, args)
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::r#await(analyzer)
   }
 
@@ -341,7 +338,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
 

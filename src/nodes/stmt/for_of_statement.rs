@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
 
     let dep = AstKind::ForOfStatement(node);
     let value = if node.r#await {
-      right.consume_as_unknown(self);
+      right.consume(self);
       self.refer_dep(dep);
       Some(UnknownEntity::new_unknown())
     } else {

@@ -31,19 +31,17 @@ pub struct ArrayEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
-  fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
-
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     analyzer.refer_dep(mem::take(&mut *self.deps.borrow_mut()));
 
     for element in self.elements.borrow().iter() {
-      element.consume_as_unknown(analyzer);
+      element.consume(analyzer);
     }
 
     for rest in self.rest.borrow().iter() {
-      rest.consume_as_unknown(analyzer);
+      rest.consume(analyzer);
     }
   }
 
@@ -181,7 +179,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 has_effect = true;
               }
             } else {
-              self.consume_as_unknown(analyzer);
+              self.consume(analyzer);
               has_effect = true;
               break;
             }
@@ -194,7 +192,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         self.add_assignment_dep(analyzer, dep);
       }
     } else {
-      self.consume_as_unknown(analyzer);
+      self.consume(analyzer);
       consumed_object::set_property(analyzer, dep, key, value)
     }
   }
@@ -229,7 +227,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::delete_property(analyzer, dep, key);
   }
 
@@ -241,7 +239,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::call(analyzer, dep, this, args)
   }
 

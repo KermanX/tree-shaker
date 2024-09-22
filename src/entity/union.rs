@@ -13,15 +13,9 @@ use rustc_hash::FxHashSet;
 pub struct UnionEntity<'a>(pub Vec<Entity<'a>>);
 
 impl<'a> EntityTrait<'a> for UnionEntity<'a> {
-  fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     for entity in &self.0 {
-      entity.consume_self(analyzer);
-    }
-  }
-
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    for entity in &self.0 {
-      entity.consume_as_unknown(analyzer);
+      entity.consume(analyzer);
     }
   }
 
@@ -59,7 +53,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     dep: EntityDep,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     // FIXME:
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::enumerate_properties(analyzer, dep)
   }
 

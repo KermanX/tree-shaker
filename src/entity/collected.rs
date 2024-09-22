@@ -15,18 +15,11 @@ pub struct CollectedEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
-  fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     for entity in self.collected.borrow().iter() {
-      entity.consume_self(analyzer);
+      entity.consume(analyzer);
     }
-    self.val.consume_self(analyzer)
-  }
-
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    for entity in self.collected.borrow().iter() {
-      entity.consume_as_unknown(analyzer);
-    }
-    self.val.consume_as_unknown(analyzer)
+    self.val.consume(analyzer)
   }
 
   fn get_property(
@@ -49,7 +42,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     value: Entity<'a>,
   ) {
     for entity in self.collected.borrow().iter() {
-      entity.consume_self(analyzer);
+      entity.consume(analyzer);
     }
     self.val.set_property(analyzer, dep, key, value)
   }
@@ -61,14 +54,14 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     dep: EntityDep,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     for entity in self.collected.borrow().iter() {
-      entity.consume_self(analyzer);
+      entity.consume(analyzer);
     }
     self.val.enumerate_properties(analyzer, dep)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
     for entity in self.collected.borrow().iter() {
-      entity.consume_self(analyzer);
+      entity.consume(analyzer);
     }
     self.val.delete_property(analyzer, dep, key)
   }
@@ -88,7 +81,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     let (has_effect, ret_val) = self.val.r#await(analyzer);
     if has_effect {
-      self.consume_self(analyzer);
+      self.consume(analyzer);
     }
     (has_effect, self.forward(ret_val))
   }

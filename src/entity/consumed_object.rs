@@ -9,7 +9,7 @@ pub fn get_property<'a>(
   analyzer.may_throw();
   analyzer.refer_dep(dep);
   analyzer.refer_global();
-  key.get_to_property_key().consume_self(analyzer);
+  key.get_to_property_key().consume(analyzer);
   UnknownEntity::new_unknown()
 }
 
@@ -22,8 +22,8 @@ pub fn set_property<'a>(
   analyzer.may_throw();
   analyzer.refer_dep(dep);
   analyzer.refer_global();
-  key.get_to_property_key().consume_self(analyzer);
-  value.consume_as_unknown(analyzer);
+  key.get_to_property_key().consume(analyzer);
+  value.consume(analyzer);
 }
 
 pub fn enumerate_properties<'a>(
@@ -38,7 +38,7 @@ pub fn enumerate_properties<'a>(
 
 pub fn delete_property<'a>(analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
   analyzer.refer_dep(dep);
-  key.get_to_property_key().consume_self(analyzer);
+  key.get_to_property_key().consume(analyzer);
 }
 
 pub fn call<'a>(
@@ -50,8 +50,8 @@ pub fn call<'a>(
   analyzer.may_throw();
   analyzer.refer_dep(dep);
   analyzer.refer_global();
-  this.consume_as_unknown(analyzer);
-  args.consume_as_unknown(analyzer);
+  this.consume(analyzer);
+  args.consume(analyzer);
   UnknownEntity::new_unknown()
 }
 

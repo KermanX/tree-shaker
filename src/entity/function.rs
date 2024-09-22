@@ -36,14 +36,10 @@ pub struct FunctionEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
-  fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.refer_dep(self.dep());
-  }
-
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    self.consume_self(analyzer);
+    analyzer.refer_dep(self.dep());
 
     let self_cloned = self.clone();
     analyzer.exec_exhaustively(move |analyzer| {
@@ -57,10 +53,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
         &UnknownEntity::new_unknown(),
         &UnknownEntity::new_unknown(),
       );
-      ret_val.consume_as_unknown(analyzer);
+      ret_val.consume(analyzer);
 
       analyzer.pop_try_scope().thrown_val().map(|thrown_val| {
-        thrown_val.consume_as_unknown(analyzer);
+        thrown_val.consume(analyzer);
       });
       analyzer.pop_cf_scope();
     });
@@ -87,12 +83,12 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::set_property(analyzer, dep, key, value)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::delete_property(analyzer, dep, key)
   }
 
@@ -102,7 +98,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::enumerate_properties(analyzer, dep)
   }
 
@@ -117,7 +113,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     let source = self.dep_node();
     let recursed = analyzer.scope_context.call_scopes.iter().any(|scope| scope.source == source);
     if recursed {
-      self.consume_as_unknown(analyzer);
+      self.consume(analyzer);
       return consumed_object::call(analyzer, dep, this, args);
     }
     self.call_impl(rc, analyzer, dep, this, args)
@@ -136,7 +132,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
 

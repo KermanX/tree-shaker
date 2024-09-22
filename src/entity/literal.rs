@@ -31,8 +31,7 @@ pub enum LiteralEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
-  fn consume_self(&self, _analyzer: &mut Analyzer<'a>) {}
-  fn consume_as_unknown(&self, _analyzer: &mut Analyzer<'a>) {}
+  fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
   fn get_property(
     &self,
@@ -118,7 +117,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       ),
       _ => {
         // TODO: throw warning
-        self.consume_as_unknown(analyzer);
+        self.consume(analyzer);
         consumed_object::iterate(analyzer, dep)
       }
     }

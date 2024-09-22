@@ -13,8 +13,8 @@ impl<'a> Analyzer<'a> {
     let callee = self.exec_expression(&node.callee);
     let arguments = self.exec_arguments(&node.arguments);
 
-    callee.consume_as_unknown(self);
-    arguments.consume_as_unknown(self);
+    callee.consume(self);
+    arguments.consume(self);
 
     UnknownEntity::new(UnknownEntityKind::Object)
   }

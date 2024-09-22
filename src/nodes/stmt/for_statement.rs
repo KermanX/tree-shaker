@@ -37,7 +37,7 @@ impl<'a> Analyzer<'a> {
         self.pop_variable_scope();
         return;
       }
-      test.consume_self(self);
+      test.consume(self);
     }
 
     data.need_loop = true;
@@ -51,7 +51,7 @@ impl<'a> Analyzer<'a> {
         analyzer.exec_expression(update);
       }
       if let Some(test) = &node.test {
-        analyzer.exec_expression(test).consume_self(analyzer);
+        analyzer.exec_expression(test).consume(analyzer);
       }
 
       analyzer.pop_cf_scope();

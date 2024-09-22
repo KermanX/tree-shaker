@@ -15,12 +15,8 @@ pub struct PromiseEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
-  fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
-    self.value.consume_as_unknown(analyzer);
-  }
-
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    self.value.consume_as_unknown(analyzer);
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    self.value.consume(analyzer);
   }
 
   fn get_property(
@@ -41,7 +37,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::set_property(analyzer, dep, key, value)
   }
 
@@ -51,12 +47,12 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::enumerate_properties(analyzer, dep)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::delete_property(analyzer, dep, key)
   }
 
@@ -68,7 +64,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::call(analyzer, dep, this, args)
   }
 
@@ -83,7 +79,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: EntityDep,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    self.consume_as_unknown(analyzer);
+    self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
 

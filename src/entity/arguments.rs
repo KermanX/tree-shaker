@@ -12,13 +12,9 @@ pub struct ArgumentsEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
-  fn consume_self(&self, _analyzer: &mut crate::analyzer::Analyzer<'a>) {
-    unreachable!()
-  }
-
-  fn consume_as_unknown(&self, analyzer: &mut crate::analyzer::Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut crate::analyzer::Analyzer<'a>) {
     for (_, entity) in &self.arguments {
-      entity.consume_as_unknown(analyzer);
+      entity.consume(analyzer);
     }
   }
 

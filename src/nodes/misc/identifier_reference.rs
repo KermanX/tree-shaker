@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
       self.read_symbol(&symbol)
     } else if node.name == "arguments" {
       let (args_entity, args_symbols) = self.call_scope().args.clone();
-      args_entity.consume_as_unknown(self);
+      args_entity.consume(self);
       for symbol in args_symbols {
         let old = self.read_symbol(&symbol);
         self.write_symbol(&symbol, UnknownEntity::new_unknown_with_deps(vec![old]));
@@ -61,7 +61,7 @@ impl<'a> Analyzer<'a> {
       // TODO: Throw warning
     } else {
       self.set_data(AST_TYPE, node, Data { unknown: true });
-      value.consume_as_unknown(self);
+      value.consume(self);
       self.may_throw();
       self.refer_global();
     }

@@ -10,8 +10,8 @@ impl<'a> Analyzer<'a> {
       .as_ref()
       .map_or_else(|| LiteralEntity::new_undefined(), |node| self.exec_expression(node));
 
-    key.consume_self(self);
-    value.consume_as_unknown(self);
+    key.consume(self);
+    value.consume(self);
   }
 }
 

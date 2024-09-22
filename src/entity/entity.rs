@@ -6,8 +6,7 @@ use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};
 
 pub trait EntityTrait<'a>: Debug {
-  fn consume_self(&self, analyzer: &mut Analyzer<'a>);
-  fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>);
+  fn consume(&self, analyzer: &mut Analyzer<'a>);
 
   /// FIXME: Not a good idea
   /// Only implemented by `ForwardedEntity`
@@ -93,12 +92,8 @@ impl<'a> Entity<'a> {
     Self(Rc::new(entity))
   }
 
-  pub fn consume_self(&self, analyzer: &mut Analyzer<'a>) {
-    self.0.consume_self(analyzer)
-  }
-
-  pub fn consume_as_unknown(&self, analyzer: &mut Analyzer<'a>) {
-    self.0.consume_as_unknown(analyzer)
+  pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    self.0.consume(analyzer)
   }
 
   pub fn refer_dep_shallow(&self, transformer: &Transformer<'a>) {
