@@ -145,11 +145,15 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
         }
       }
       LiteralEntity::String(str) => {
-        let value = str.parse::<f64>();
-        if let Ok(value) = value {
-          Self::new_number(value, str)
+        let str = str.trim();
+        if str.is_empty() {
+          Self::new_number(0.0, "0")
         } else {
-          Self::new_nan()
+          if let Ok(value) = str.parse::<f64>() {
+            Self::new_number(value, str)
+          } else {
+            Self::new_nan()
+          }
         }
       }
       LiteralEntity::Null => Self::new_number(0.0, "0"),
@@ -369,12 +373,16 @@ impl<'a> LiteralEntity<'a> {
       }
       LiteralEntity::Boolean(value) => Some(Some(if *value { 1.0 } else { 0.0 }.into())),
       LiteralEntity::String(value) => {
-        let value = value.parse::<f64>();
-        if let Ok(value) = value {
-          Some(Some(value.into()))
+        let value = value.trim();
+        Some(if value.is_empty() {
+          Some(0.0.into())
         } else {
-          Some(None)
-        }
+          if let Ok(value) = value.parse::<f64>() {
+            Some(value.into())
+          } else {
+            None
+          }
+        })
       }
       LiteralEntity::Null => Some(Some(0.0.into())),
       LiteralEntity::Symbol(_, _) => {
