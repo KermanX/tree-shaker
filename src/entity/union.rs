@@ -10,12 +10,20 @@ use crate::{analyzer::Analyzer, scope::CfScopeKind};
 use rustc_hash::FxHashSet;
 
 #[derive(Debug)]
-pub struct UnionEntity<'a>(pub Vec<Entity<'a>>);
+pub struct UnionEntity<'a> {
+  /// Possible values
+  pub values: Vec<Entity<'a>>,
+  /// Which is the actual value depends on these
+  pub deps: Vec<Entity<'a>>,
+}
 
 impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    for entity in &self.0 {
-      entity.consume(analyzer);
+    for value in &self.values {
+      value.consume(analyzer);
+    }
+    for dep in &self.deps {
+      dep.consume(analyzer);
     }
   }
 
@@ -27,7 +35,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     key: &Entity<'a>,
   ) -> Entity<'a> {
     let mut values = Vec::new();
-    for entity in &self.0 {
+    for entity in &self.values {
       values.push(entity.get_property(analyzer, dep.clone(), key));
     }
     UnionEntity::new(values)
@@ -41,7 +49,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
-    for entity in &self.0 {
+    for entity in &self.values {
       entity.set_property(analyzer, dep.clone(), key, value.clone());
     }
   }
@@ -58,7 +66,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
-    for entity in &self.0 {
+    for entity in &self.values {
       entity.delete_property(analyzer, dep.clone(), key);
     }
   }
@@ -73,7 +81,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   ) -> Entity<'a> {
     let mut results = Vec::new();
     analyzer.push_cf_scope(CfScopeKind::Normal, None, None);
-    for entity in &self.0 {
+    for entity in &self.values {
       results.push(entity.call(analyzer, dep.clone(), this, args));
     }
     analyzer.pop_cf_scope();
@@ -83,7 +91,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
     let mut await_effect = false;
     let mut values = Vec::new();
-    for entity in &self.0 {
+    for entity in &self.values {
       let (effect, value) = entity.r#await(analyzer);
       await_effect |= effect;
       values.push(value);
@@ -99,7 +107,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     let mut results = Vec::new();
     let mut has_undefined = false;
-    for entity in &self.0 {
+    for entity in &self.values {
       if let Some(result) = entity.iterate_result_union(analyzer, dep.clone()) {
         results.push(result);
       } else {
@@ -109,13 +117,13 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     if has_undefined {
       results.push(LiteralEntity::new_undefined());
     }
-    (vec![], UnionEntity::try_new(results))
+    (vec![], UnionEntity::try_new_with_deps(results, vec![]))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
     let mut result = Vec::new();
     // TODO: collect literals
-    for entity in &self.0 {
+    for entity in &self.values {
       result.push(entity.get_typeof());
     }
     UnionEntity::new(result)
@@ -124,7 +132,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
     let mut result = Vec::new();
     // TODO: dedupe
-    for entity in &self.0 {
+    for entity in &self.values {
       result.push(entity.get_to_string());
     }
     UnionEntity::new(result)
@@ -133,15 +141,15 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     let mut result = Vec::new();
     // TODO: dedupe
-    for entity in &self.0 {
+    for entity in &self.values {
       result.push(entity.get_to_property_key());
     }
     UnionEntity::new(result)
   }
 
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
-    let mut result = self.0.first().unwrap().get_to_literals()?;
-    for entity in &self.0[1..] {
+    let mut result = self.values.first().unwrap().get_to_literals()?;
+    for entity in &self.values[1..] {
       result.extend(entity.get_to_literals()?);
     }
     Some(result)
@@ -149,15 +157,15 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 
   fn test_typeof(&self) -> TypeofResult {
     let mut result = TypeofResult::_None;
-    for entity in &self.0 {
+    for entity in &self.values {
       result |= entity.test_typeof();
     }
     result
   }
 
   fn test_truthy(&self) -> Option<bool> {
-    let result = self.0.first().unwrap().test_truthy()?;
-    for entity in &self.0[1..] {
+    let result = self.values.first().unwrap().test_truthy()?;
+    for entity in &self.values[1..] {
       if entity.test_truthy()? != result {
         return None;
       }
@@ -166,8 +174,8 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   }
 
   fn test_nullish(&self) -> Option<bool> {
-    let result = self.0.first().unwrap().test_nullish()?;
-    for entity in &self.0[1..] {
+    let result = self.values.first().unwrap().test_nullish()?;
+    for entity in &self.values[1..] {
       if entity.test_nullish()? != result {
         return None;
       }
@@ -177,7 +185,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 }
 
 impl<'a> UnionEntity<'a> {
-  pub fn try_new(values: Vec<Entity<'a>>) -> Option<Entity<'a>> {
+  pub fn try_new_with_deps(values: Vec<Entity<'a>>, deps: Vec<Entity<'a>>) -> Option<Entity<'a>> {
     if values.is_empty() {
       None
     } else {
@@ -188,13 +196,17 @@ impl<'a> UnionEntity<'a> {
         if has_unknown {
           UnknownEntity::new_unknown_with_deps(values)
         } else {
-          Entity::new(UnionEntity(values))
+          Entity::new(UnionEntity { values, deps })
         }
       })
     }
   }
 
+  pub fn new_with_deps(values: Vec<Entity<'a>>, deps: Vec<Entity<'a>>) -> Entity<'a> {
+    Self::try_new_with_deps(values, deps).unwrap()
+  }
+
   pub fn new(values: Vec<Entity<'a>>) -> Entity<'a> {
-    Self::try_new(values).unwrap()
+    Self::new_with_deps(values, vec![])
   }
 }

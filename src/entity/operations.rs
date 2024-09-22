@@ -169,7 +169,7 @@ impl<'a> EntityOpHost<'a> {
       // TODO: throw warning
       UnknownEntity::new_unknown_with_deps(vec![lhs.clone(), rhs.clone()])
     } else {
-      UnionEntity::new(values)
+      UnionEntity::new_with_deps(values, vec![lhs.clone(), rhs.clone()])
     }
   }
 
@@ -203,7 +203,7 @@ impl<'a> EntityOpHost<'a> {
       // TODO: throw warning
       UnknownEntity::new_unknown_with_deps(vec![input.clone()])
     } else {
-      UnionEntity::new(values)
+      UnionEntity::new_with_deps(values, vec![input.clone()])
     }
   }
 
