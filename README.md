@@ -1,11 +1,11 @@
 # Tree Shaker Prototype
 
-\[WIP\] This is a JavaScript tree-shaker based on [Oxc](https://oxc.rs).
+\[WIP\] This is an experimental tree shaker for JS based on [Oxc](https://oxc.rs).
 
 > If this project goes well, I personally hope it can become part of the Oxc or the Rolldown project.
 
 - **Try it online**: https://kermanx.github.io/tree-shaker/
-- **View Test262 Result**: Goto https://github.com/KermanX/tree-shaker/commits/main/ and click the latest comment to commit
+- **Test262 Result**: Goto [commits](https://github.com/KermanX/tree-shaker/commits/main/) and view the latest comment
 
 ## Goal
 
@@ -32,8 +32,6 @@ export function f() {
 }
 ```
 
-May not be very fast, but should generates the least code possible.
-
 ## Todo
 
 - Pass all reasonable test262 tests
@@ -49,8 +47,9 @@ May not be very fast, but should generates the least code possible.
     - Emulate the runtime behavior of the code. (Control flow, Side effects, ...)
     - Analyze the possible runtime values of the variables.
     - Remove the dead code.
-4. Minify the code via `oxc_minifier`.
+4. Minify the code via `oxc_minifier`. (Optional)
 
-> Tree shake v.s. Minify:
->
-> In this project, tree shake is to remove the dead code, while minify is to reduce the code size. They are different steps in the process.
+### Concepts
+
+- `Entity`: Represents the analyzed information of a JS value.
+- `EntityDep`: Nodes or some other things that the runtime value of `Entity` depends on.
