@@ -152,7 +152,7 @@ impl<'a> Transformer<'a> {
       };
     }
 
-    let argument =
+    let transformed_argument =
       self.transform_expression(argument, need_val && *operator != UnaryOperator::Void);
 
     match operator {
@@ -162,18 +162,29 @@ impl<'a> Transformer<'a> {
       | UnaryOperator::LogicalNot
       | UnaryOperator::BitwiseNot
       | UnaryOperator::Typeof => {
-        if need_val {
-          Some(self.ast_builder.expression_unary(*span, *operator, argument.unwrap()))
+        // `typeof unBoundIdentifier` does not throw a ReferenceError, but directly accessing `unBoundIdentifier` does. Thus we need to preserve the typeof operator.
+        let should_preserve_typeof = transformed_argument.is_some() && *operator == UnaryOperator::Typeof && is_wrapped_identifier_reference(argument);
+
+        if need_val || should_preserve_typeof {
+          Some(self.ast_builder.expression_unary(*span, *operator, transformed_argument.unwrap()))
         } else {
-          argument
+          transformed_argument
         }
       }
-      UnaryOperator::Void => match (need_val, argument) {
+      UnaryOperator::Void => match (need_val, transformed_argument) {
         (true, Some(argument)) => Some(self.ast_builder.expression_unary(*span, *operator, argument)),
         (true, None) => Some(self.build_undefined(*span)),
         (false, argument) => argument,
       },
       UnaryOperator::Delete => unreachable!(),
     }
+  }
+}
+
+fn is_wrapped_identifier_reference<'a>(node: &'a Expression<'a>) -> bool {
+  match node {
+    Expression::Identifier(_) => true,
+    Expression::ParenthesizedExpression(node) => is_wrapped_identifier_reference(&node.expression),
+    _ => false,
   }
 }
