@@ -1,15 +1,26 @@
 [
   "// Errors thrown by bigint operations",
   "language/expressions/bitwise-and/bigint-and-number.js",
+  "language/expressions/bitwise-and/bigint-errors.js",
+  "language/expressions/bitwise-or/bigint-and-number.js",
+  "language/expressions/bitwise-or/bigint-errors.js",
   "language/expressions/addition/bigint-errors.js",
   "language/expressions/addition/bigint-toprimitive.js",
   "language/expressions/addition/bigint-and-number.js",
+  "language/expressions/division/bigint-and-number.js",
+  "language/expressions/division/bigint-complex-infinity.js",
+  "language/expressions/division/bigint-errors.js",
 
-  "// Errors thrown by Symbol.toPrimitive",
+  "// Side-effect in valueOf or Symbol.toPrimitive",
+  "language/expressions/division/order-of-evaluation.js",
+  "language/expressions/does-not-equals/S11.9.2_A7.8.js",
+  "language/expressions/equals/coerce-symbol-to-prim-err.js",
+  "language/expressions/equals/coerce-symbol-to-prim-return-obj.js",
+  "language/expressions/equals/coerce-symbol-to-prim-invocation.js",
   "language/expressions/addition/coerce-symbol-to-prim-err.js",
   "language/expressions/addition/coerce-symbol-to-prim-return-obj.js",
   "language/expressions/addition/get-symbol-to-prim-err.js",
-  
+
   "// Errors thrown by value getter in iterated object",
   "language/expressions/array/spread-err-mult-err-itr-value.js",
 
