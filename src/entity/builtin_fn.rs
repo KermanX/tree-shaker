@@ -152,10 +152,8 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    if self.mutates_this {
-      analyzer.refer_dep(dep);
-      this.consume(analyzer);
-    }
+    analyzer.refer_dep(dep);
+    this.consume(analyzer);
     args.consume(analyzer);
     self.return_value.clone()
   }
