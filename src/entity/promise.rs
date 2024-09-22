@@ -91,6 +91,10 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![self.value.clone()])
   }
 
+  fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
+    UnknownEntity::new_unknown_with_deps(vec![rc.clone()])
+  }
+
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![self.value.clone()])
   }

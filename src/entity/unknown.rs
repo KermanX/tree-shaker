@@ -144,6 +144,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::String, self.deps.borrow().clone())
   }
 
+  fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
+    UnknownEntity::new_unknown_with_deps(self.deps.borrow().clone())
+  }
+
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::Unknown, self.deps.borrow().clone())
   }

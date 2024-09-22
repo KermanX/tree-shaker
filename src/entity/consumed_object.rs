@@ -1,4 +1,8 @@
-use super::{dep::EntityDep, entity::Entity, unknown::UnknownEntity};
+use super::{
+  dep::EntityDep,
+  entity::Entity,
+  unknown::{UnknownEntity, UnknownEntityKind},
+};
 use crate::analyzer::Analyzer;
 
 pub fn get_property<'a>(
@@ -74,5 +78,10 @@ pub fn iterate<'a>(
 }
 
 pub fn get_to_string<'a>() -> Entity<'a> {
+  UnknownEntity::new(UnknownEntityKind::String)
+}
+
+pub fn get_to_numeric<'a>() -> Entity<'a> {
+  // Possibly number or bigint
   UnknownEntity::new_unknown()
 }

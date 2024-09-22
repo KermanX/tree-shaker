@@ -97,6 +97,10 @@ impl<'a> EntityTrait<'a> for EntryEntity<'a> {
     self.forward(self.value.get_to_string())
   }
 
+  fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
+    self.forward(self.value.get_to_numeric())
+  }
+
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     self.forward(self.value.get_to_property_key())
   }

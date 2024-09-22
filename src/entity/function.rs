@@ -147,6 +147,13 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
   }
 
+  fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
+    if self.consumed.get() {
+      return consumed_object::get_to_numeric();
+    }
+    LiteralEntity::new_nan()
+  }
+
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     self.get_to_string(rc)
   }

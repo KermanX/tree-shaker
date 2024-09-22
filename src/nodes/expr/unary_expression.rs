@@ -56,7 +56,7 @@ impl<'a> Analyzer<'a> {
         if let Some(num) = argument.get_literal().and_then(|lit| lit.to_number()) {
           if let Some(num) = num {
             let num = -num.0;
-            LiteralEntity::new_number(num.into(), self.allocator.alloc(num.to_string()))
+            LiteralEntity::new_number(num, self.allocator.alloc(num.to_string()))
           } else {
             LiteralEntity::new_nan()
           }

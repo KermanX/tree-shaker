@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exc_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity<'a> {
-    LiteralEntity::new_number(node.value.into(), node.raw)
+    LiteralEntity::new_number(node.value, node.raw)
   }
 
   pub fn exc_big_int_literal(&mut self, node: &'a BigIntLiteral) -> Entity<'a> {

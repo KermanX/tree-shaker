@@ -91,6 +91,10 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
   }
 
+  fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
+    LiteralEntity::new_nan()
+  }
+
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     self.get_to_string(rc)
   }

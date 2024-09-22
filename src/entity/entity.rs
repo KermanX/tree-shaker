@@ -52,6 +52,7 @@ pub trait EntityTrait<'a>: Debug {
 
   fn get_typeof(&self) -> Entity<'a>;
   fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a>;
+  fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a>;
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a>;
   fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
     None
@@ -164,6 +165,10 @@ impl<'a> Entity<'a> {
 
   pub fn get_to_string(&self) -> Entity<'a> {
     self.0.get_to_string(self)
+  }
+
+  pub fn get_to_numeric(&self) -> Entity<'a> {
+    self.0.get_to_numeric(self)
   }
 
   pub fn get_to_property_key(&self) -> Entity<'a> {

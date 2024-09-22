@@ -122,8 +122,7 @@ impl<'a> EntityOpHost<'a> {
         (Some(l), Some(r)) => match (l, r) {
           (Some(l), Some(r)) => {
             let val = l.0 + r.0;
-            values
-              .push(LiteralEntity::new_number(val.into(), self.allocator.alloc(val.to_string())));
+            values.push(LiteralEntity::new_number(val, self.allocator.alloc(val.to_string())));
           }
           _ => {
             values.push(LiteralEntity::new_nan());
@@ -179,7 +178,7 @@ impl<'a> EntityOpHost<'a> {
         UpdateOperator::Increment => v + 1.0,
         UpdateOperator::Decrement => v - 1.0,
       };
-      LiteralEntity::new_number(val.into(), self.allocator.alloc(val.to_string()))
+      LiteralEntity::new_number(val, self.allocator.alloc(val.to_string()))
     };
 
     if let Some(num) = input.get_literal().and_then(|lit| lit.to_number()) {

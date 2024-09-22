@@ -103,6 +103,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
+  fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
+    unreachable!()
+  }
+
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     unreachable!()
   }

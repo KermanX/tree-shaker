@@ -7,12 +7,13 @@ use oxc::{
 impl<'a> Analyzer<'a> {
   pub fn exec_update_expression(&mut self, node: &'a UpdateExpression<'a>) -> Entity<'a> {
     let (value, cache) = self.exec_simple_assignment_target_read(&node.argument);
-    let updated_value = self.entity_op.update(&value, &node.operator);
+    let numeric_value = value.get_to_numeric();
+    let updated_value = self.entity_op.update(&numeric_value, &node.operator);
     self.exec_simple_assignment_target_write(&node.argument, updated_value.clone(), cache);
     if node.prefix {
       updated_value
     } else {
-      value
+      numeric_value
     }
   }
 }

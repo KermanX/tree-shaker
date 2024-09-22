@@ -131,6 +131,36 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     LiteralEntity::new_string(self.to_string())
   }
 
+  fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
+    match self {
+      LiteralEntity::Number(_, _)
+      | LiteralEntity::BigInt(_)
+      | LiteralEntity::NaN
+      | LiteralEntity::Infinity(_) => rc.clone(),
+      LiteralEntity::Boolean(value) => {
+        if *value {
+          Self::new_number(1.0, "1")
+        } else {
+          Self::new_number(0.0, "0")
+        }
+      }
+      LiteralEntity::String(str) => {
+        let value = str.parse::<f64>();
+        if let Ok(value) = value {
+          Self::new_number(value, str)
+        } else {
+          Self::new_nan()
+        }
+      }
+      LiteralEntity::Null => Self::new_number(0.0, "0"),
+      LiteralEntity::Symbol(_, _) => {
+        // TODO: warn: TypeError: Cannot convert a Symbol value to a number
+        UnknownEntity::new_unknown()
+      }
+      LiteralEntity::Undefined => Self::new_nan(),
+    }
+  }
+
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     match self {
       LiteralEntity::Symbol(_, _) => Entity::new(*self),
@@ -224,8 +254,8 @@ impl<'a> LiteralEntity<'a> {
     Entity::new(LiteralEntity::String(value))
   }
 
-  pub fn new_number(value: F64WithEq, raw: &'a str) -> Entity<'a> {
-    Entity::new(LiteralEntity::Number(value, raw))
+  pub fn new_number(value: impl Into<F64WithEq>, raw: &'a str) -> Entity<'a> {
+    Entity::new(LiteralEntity::Number(value.into(), raw))
   }
 
   pub fn new_big_int(value: &'a str) -> Entity<'a> {

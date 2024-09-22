@@ -138,6 +138,15 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     UnionEntity::new(result)
   }
 
+  fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
+    let mut result = Vec::new();
+    // TODO: dedupe
+    for entity in &self.values {
+      result.push(entity.get_to_numeric());
+    }
+    UnionEntity::new(result)
+  }
+
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     let mut result = Vec::new();
     // TODO: dedupe

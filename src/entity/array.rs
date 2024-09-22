@@ -84,7 +84,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 },
                 |length| {
                   LiteralEntity::new_number(
-                    (length as f64).into(),
+                    length as f64,
                     analyzer.allocator.alloc(length.to_string()),
                   )
                 },
@@ -280,6 +280,13 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return consumed_object::get_to_string();
     }
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
+  }
+
+  fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
+    if self.consumed.get() {
+      return consumed_object::get_to_numeric();
+    }
+    UnknownEntity::new_with_deps(UnknownEntityKind::Number, vec![rc.clone()])
   }
 
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {

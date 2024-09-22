@@ -347,10 +347,19 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   }
 
   fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a> {
+    // FIXME: Special methods
     if self.consumed.get() {
       return consumed_object::get_to_string();
     }
     UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
+  }
+
+  fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
+    // FIXME: Special methods
+    if self.consumed.get() {
+      return consumed_object::get_to_numeric();
+    }
+    UnknownEntity::new_unknown_with_deps(vec![rc.clone()])
   }
 
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
