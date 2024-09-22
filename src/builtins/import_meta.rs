@@ -1,5 +1,5 @@
 use crate::entity::{
-  builtin_fn::PureBuiltinFnEntity,
+  builtin_fn::ImplementedBuiltinFnEntity,
   entity::Entity,
   object::{ObjectEntity, ObjectProperty, ObjectPropertyValue},
   unknown::{UnknownEntity, UnknownEntityKind},
@@ -14,7 +14,12 @@ pub fn create_import_meta<'a>() -> Entity<'a> {
     ObjectProperty {
       definite: true,
       values: vec![ObjectPropertyValue::Property(
-        Some(PureBuiltinFnEntity::returns_unknown_entity(UnknownEntityKind::String).into()),
+        Some(
+          ImplementedBuiltinFnEntity::new(|_, _, _, _| {
+            UnknownEntity::new(UnknownEntityKind::String)
+          })
+          .into(),
+        ),
         None,
       )],
     },
