@@ -61,7 +61,8 @@ impl<'a> Analyzer<'a> {
             LiteralEntity::new_nan()
           }
         } else {
-          UnknownEntity::new_with_deps(UnknownEntityKind::Number, vec![argument])
+          // Maybe number or bigint
+          UnknownEntity::new_unknown_with_deps(vec![argument])
         }
       }
       UnaryOperator::UnaryPlus => {
