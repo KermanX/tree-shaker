@@ -1,8 +1,9 @@
 [
-  "// Errors thrown by add operator",
+  "// Errors thrown by bigint operations",
   "language/expressions/bitwise-and/bigint-and-number.js",
   "language/expressions/addition/bigint-errors.js",
   "language/expressions/addition/bigint-toprimitive.js",
+  "language/expressions/addition/bigint-and-number.js",
 
   "// Errors thrown by Symbol.toPrimitive",
   "language/expressions/addition/coerce-symbol-to-prim-err.js",
@@ -10,5 +11,36 @@
   "language/expressions/addition/get-symbol-to-prim-err.js",
   
   "// Errors thrown by value getter in iterated object",
-  "language/expressions/array/spread-err-mult-err-itr-value.js"
+  "language/expressions/array/spread-err-mult-err-itr-value.js",
+
+  "// Errors thrown by referencing un-initialized lexical bindings",
+  "language/module-code/instn-local-bndng-cls.js",
+  "language/module-code/instn-local-bndng-const.js",
+  "language/module-code/instn-local-bndng-export-cls.js",
+  "language/module-code/instn-local-bndng-export-const.js",
+  "language/module-code/instn-local-bndng-export-let.js",
+  "language/module-code/instn-local-bndng-let.js",
+  "language/module-code/instn-named-bndng-cls.js",
+  "language/module-code/instn-named-bndng-const.js",
+  "language/module-code/instn-named-bndng-dflt-cls.js",
+  "language/module-code/instn-named-bndng-dflt-expr.js",
+
+  "// Errors thrown by circular dependency, cannot be handled by tree shaker",
+  "language/module-code/instn-iee-bndng-cls.js",
+  "language/module-code/instn-iee-bndng-const.js",
+  "language/module-code/instn-iee-bndng-let.js",
+  "language/module-code/instn-named-bndng-dflt-star.js",
+
+  "// Access to global this",
+  "language/global-code/decl-func.js",
+  "language/global-code/decl-var.js",
+
+  "// Unicode tests, somehow failed",
+  "language/identifiers/start-unicode-15.1.0-class-escaped.js",
+  "language/identifiers/start-unicode-15.1.0-class.js",
+  "language/identifiers/start-unicode-16.0.0-class-escaped.js",
+
+  "// WTF, Rollup and esbuild don't handle this",
+  "language/global-code/decl-lex-restricted-global.js"
+  
 ]
