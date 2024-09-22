@@ -184,8 +184,8 @@ impl<'a> Analyzer<'a> {
         self.refer_dep(dep);
         new_val.consume(self);
       } else {
-        let entity_to_set = if self.mark_exhaustive_write(&old_val, symbol.clone(), target_cf_scope)
-        {
+        let should_consume = self.mark_exhaustive_write(&old_val, symbol.clone(), target_cf_scope);
+        let entity_to_set = if should_consume {
           drop(variable_scope_ref);
           self.refer_dep(dep);
           old_val.consume(self);
@@ -208,6 +208,7 @@ impl<'a> Analyzer<'a> {
           )
         };
         decl_variable_scope.borrow_mut().write(self, *symbol, entity_to_set);
+        self.exec_exhaustive_deps(should_consume, *symbol);
       }
     } else {
       new_val.consume(self);

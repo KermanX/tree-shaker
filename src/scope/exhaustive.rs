@@ -58,16 +58,17 @@ impl<'a> Analyzer<'a> {
       for scope in &mut self.scope_context.cf_scopes[target..] {
         should_consume |= scope.borrow_mut().mark_exhaustive_write(symbol)
       }
-
-      if let Some(runners) = self.exhaustive_deps.get_mut(&symbol) {
-        let runners = if should_consume { mem::take(runners) } else { runners.clone() };
-        for runner in runners {
-          let runner = runner.clone();
-          (*runner)(self);
-        }
-      }
-
       should_consume
+    }
+  }
+
+  pub fn exec_exhaustive_deps(&mut self, should_consume: bool, symbol: SymbolId) {
+    if let Some(runners) = self.exhaustive_deps.get_mut(&symbol) {
+      let runners = if should_consume { mem::take(runners) } else { runners.clone() };
+      for runner in runners {
+        let runner = runner.clone();
+        (*runner)(self);
+      }
     }
   }
 }
