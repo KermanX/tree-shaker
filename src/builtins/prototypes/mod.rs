@@ -49,7 +49,10 @@ impl<'a> Prototype<'a> {
             _ => unreachable!(),
           }
         }
-        return EntryEntity::new(EntryEntity::new(UnionEntity::new(values), key.clone()), rc.clone());
+        return EntryEntity::new(
+          EntryEntity::new(UnionEntity::new(values), key.clone()),
+          rc.clone(),
+        );
       }
     }
     EntryEntity::new(UnknownEntity::new_unknown_with_deps(vec![rc.clone()]), key.clone())
