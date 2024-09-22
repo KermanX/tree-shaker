@@ -22,7 +22,7 @@ impl<'a> Analyzer<'a> {
       Some(false) => (false, true),
       None => (true, true),
     };
-    
+
     let indeterminate = maybe_true && maybe_false;
 
     if indeterminate {
