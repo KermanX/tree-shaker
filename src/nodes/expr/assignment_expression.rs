@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
+  build_effect,
   entity::{entity::Entity, union::UnionEntity},
   transformer::Transformer,
 };
@@ -11,7 +12,7 @@ use oxc::ast::ast::{
 const AST_TYPE: AstType2 = AstType2::AssignmentExpression;
 
 #[derive(Debug, Default, Clone)]
-pub struct Data {
+pub struct DataForLogical {
   need_left_val: bool,
   need_right: bool,
 }
@@ -53,7 +54,7 @@ impl<'a> Analyzer<'a> {
         _ => unreachable!(),
       };
 
-      let data = self.load_data::<Data>(AST_TYPE, node);
+      let data = self.load_data::<DataForLogical>(AST_TYPE, node);
 
       data.need_left_val |= need_left_val;
       data.need_right |= need_right;
@@ -90,10 +91,31 @@ impl<'a> Transformer<'a> {
         Some(self.ast_builder.expression_assignment(*span, *operator, left, right))
       }
       (None, Some(right)) => Some(if need_val && *operator != AssignmentOperator::Assign {
-        let left = self.transform_assignment_target_read(left, true).unwrap();
         if operator.is_logical() {
-          self.ast_builder.expression_logical(*span, left, to_logical_operator(*operator), right)
+          let data = self.get_data::<DataForLogical>(AST_TYPE, node);
+
+          let left = self.transform_assignment_target_read(left, data.need_left_val);
+          let right = data.need_right.then_some(right);
+
+          match (left, right) {
+            (Some(left), Some(right)) => {
+              if need_val && data.need_left_val {
+                self.ast_builder.expression_logical(
+                  *span,
+                  left,
+                  to_logical_operator(*operator),
+                  right,
+                )
+              } else {
+                build_effect!(self.ast_builder, *span, Some(left); right)
+              }
+            }
+            (Some(left), None) => left,
+            (None, Some(right)) => right,
+            (None, None) => unreachable!(),
+          }
         } else {
+          let left = self.transform_assignment_target_read(left, true).unwrap();
           self.ast_builder.expression_binary(*span, left, to_binary_operator(*operator), right)
         }
       } else {
