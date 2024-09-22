@@ -184,8 +184,6 @@ pub enum AstType2 {
   CaseConsequent,
   MemberExpressionRead,
   MemberExpressionWrite,
-  IdentifierReferenceRead,
-  IdentifierReferenceWrite,
   SimpleAssignmentTargetRead,
   SimpleAssignmentTargetWrite,
   AssignmentTargetProperty,
