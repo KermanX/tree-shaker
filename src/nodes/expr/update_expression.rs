@@ -1,6 +1,8 @@
 use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
 use oxc::{
-  ast::ast::{BinaryOperator, Expression, NumberBase, UpdateExpression, UpdateOperator},
+  ast::ast::{
+    BinaryOperator, Expression, NumberBase, UnaryOperator, UpdateExpression, UpdateOperator,
+  },
   span::SPAN,
 };
 
@@ -33,12 +35,17 @@ impl<'a> Transformer<'a> {
     } else {
       if need_val {
         let argument = self.transform_simple_assignment_target_read(argument, true).unwrap();
-        let operator = match operator {
-          UpdateOperator::Increment => BinaryOperator::Addition,
-          UpdateOperator::Decrement => BinaryOperator::Subtraction,
-        };
-        let rhs = self.ast_builder.expression_numeric_literal(SPAN, 1f64, "1", NumberBase::Decimal);
-        Some(self.ast_builder.expression_binary(*span, argument, operator, rhs))
+        Some(if *prefix {
+          let operator = match operator {
+            UpdateOperator::Increment => BinaryOperator::Addition,
+            UpdateOperator::Decrement => BinaryOperator::Subtraction,
+          };
+          let rhs =
+            self.ast_builder.expression_numeric_literal(SPAN, 1f64, "1", NumberBase::Decimal);
+          self.ast_builder.expression_binary(*span, argument, operator, rhs)
+        } else {
+          self.ast_builder.expression_unary(*span, UnaryOperator::UnaryPlus, argument)
+        })
       } else {
         self.transform_simple_assignment_target_read(argument, false)
       }
