@@ -78,17 +78,80 @@ impl<'a> EntityOpHost<'a> {
   }
 
   pub fn lt(&self, lhs: &Entity<'a>, rhs: &Entity<'a>, eq: bool) -> Option<bool> {
-    let lhs_lit = lhs.get_literal().and_then(|v| v.to_number());
-    let rhs_lit = rhs.get_literal().and_then(|v| v.to_number());
+    let lhs_t = lhs.test_typeof();
+    let rhs_t = rhs.test_typeof();
+    let lhs_lit = lhs.get_literal();
+    let rhs_lit = rhs.get_literal();
 
-    match (lhs_lit, rhs_lit) {
-      (Some(lhs_lit), Some(rhs_lit)) => match (lhs_lit, rhs_lit) {
-        (Some(lhs_lit), Some(rhs_lit)) => {
-          Some(if eq { lhs_lit.0 <= rhs_lit.0 } else { lhs_lit.0 < rhs_lit.0 })
+    let mut maybe_true = false;
+    let mut maybe_false = false;
+
+    let may_convert_to_num = TypeofResult::Number
+      | TypeofResult::Boolean
+      | TypeofResult::Undefined
+      | TypeofResult::Object
+      | TypeofResult::Function;
+    let must_not_convert_to_str =
+      TypeofResult::Number | TypeofResult::Boolean | TypeofResult::Undefined | TypeofResult::BigInt;
+
+    if lhs_t.intersects(may_convert_to_num) && rhs_t.intersects(may_convert_to_num) {
+      // Possibly number
+      match (lhs_lit.and_then(|v| v.to_number()), rhs_lit.and_then(|v| v.to_number())) {
+        (Some(l), Some(r)) => match (l, r) {
+          (Some(l), Some(r)) => {
+            if if eq { l.0 <= r.0 } else { l.0 < r.0 } {
+              maybe_true = true;
+            } else {
+              maybe_false = true;
+            }
+          }
+          _ => {
+            maybe_false = true;
+          }
+        },
+        _ => {
+          maybe_true = true;
+          maybe_false = true;
         }
-        _ => Some(false),
-      },
-      _ => None,
+      }
+    }
+    if lhs_t.contains(TypeofResult::BigInt) && rhs_t.contains(TypeofResult::BigInt) {
+      // Possibly bigint
+      maybe_true = true;
+      maybe_false = true;
+    }
+    if !lhs_t.difference(must_not_convert_to_str).is_empty()
+      || !rhs_t.difference(must_not_convert_to_str).is_empty()
+    {
+      let lhs_str = lhs.get_to_string();
+      let rhs_str = rhs.get_to_string();
+
+      let lhs_str_lit = lhs_str.get_literal();
+      let rhs_str_lit = rhs_str.get_literal();
+
+      match (lhs_str_lit, rhs_str_lit) {
+        (Some(LiteralEntity::String(l)), Some(LiteralEntity::String(r))) => {
+          if if eq { l <= r } else { l < r } {
+            maybe_true = true;
+          } else {
+            maybe_false = true;
+          }
+        }
+        _ => {
+          maybe_true = true;
+          maybe_false = true;
+        }
+      }
+    }
+
+    match (maybe_true, maybe_false) {
+      (true, true) => None,
+      (true, false) => Some(true),
+      (false, true) => Some(false),
+      (false, false) => {
+        // TODO: warn
+        None
+      }
     }
   }
 
