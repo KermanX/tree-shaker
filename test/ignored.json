@@ -39,7 +39,10 @@
   "language/expressions/multiplication/bigint-errors.js",
   "language/expressions/multiplication/bigint-toprimitive.js",
 
-  "// Side-effect in valueOf or Symbol.toPrimitive",
+  "// Errors thrown by symbol operations",
+  "language/expressions/addition/symbol-to-string.js",
+
+  "// Side-effect in valueOf or toString or Symbol.toPrimitive",
   "language/expressions/division/order-of-evaluation.js",
   "language/expressions/does-not-equals/S11.9.2_A7.8.js",
   "language/expressions/equals/coerce-symbol-to-prim-err.js",
@@ -49,6 +52,12 @@
   "language/expressions/addition/coerce-symbol-to-prim-return-obj.js",
   "language/expressions/addition/get-symbol-to-prim-err.js",
   "language/expressions/postfix-decrement/S11.3.2_A2.2_T1.js",
+  "language/computed-property-names/to-name-side-effects/numbers-object.js",
+  "language/computed-property-names/to-name-side-effects/object.js",
+  "language/expressions/addition/order-of-evaluation.js",
+
+  "// Invalid Symbol.toPrimitive method",
+  "language/expressions/addition/coerce-symbol-to-prim-return-prim.js",
 
   "// Errors thrown by value getter in iterated object",
   "language/expressions/array/spread-err-mult-err-itr-value.js",
@@ -70,6 +79,7 @@
   "language/module-code/instn-iee-bndng-const.js",
   "language/module-code/instn-iee-bndng-let.js",
   "language/module-code/instn-named-bndng-dflt-star.js",
+  "language/module-code/instn-named-bndng-let.js",
 
   "// Access to global this",
   "language/global-code/decl-func.js",
