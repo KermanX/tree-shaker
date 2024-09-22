@@ -1,6 +1,9 @@
 use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
 use oxc::{
-  ast::{ast::AssignmentTarget, match_assignment_target_pattern, match_simple_assignment_target},
+  ast::{
+    ast::{AssignmentTarget, Expression},
+    match_assignment_target_pattern, match_simple_assignment_target,
+  },
   span::GetSpan,
 };
 
@@ -37,6 +40,19 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
+  pub fn transform_assignment_target_read(
+    &self,
+    node: &'a AssignmentTarget<'a>,
+    need_val: bool,
+  ) -> Option<Expression<'a>> {
+    match node {
+      match_simple_assignment_target!(AssignmentTarget) => {
+        self.transform_simple_assignment_target_read(node.to_simple_assignment_target(), need_val)
+      }
+      match_assignment_target_pattern!(AssignmentTarget) => unreachable!(),
+    }
+  }
+
   // (is_empty, node)
   pub fn transform_assignment_target_write(
     &self,
