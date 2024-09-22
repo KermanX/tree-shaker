@@ -59,11 +59,15 @@ impl<'a> Transformer<'a> {
 
     let mut transformed_items = self.ast_builder.vec();
 
+    let mut counting_length = self.config.preserve_function_length;
+    let mut used_length = 0;
+
     for (index, param) in items.iter().enumerate() {
       let FormalParameter { span, decorators, pattern, .. } = param;
 
       let pattern_was_assignment = matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_));
       let pattern = if let Some(pattern) = self.transform_binding_pattern(pattern, false) {
+        used_length = index + 1;
         for dep in &data.elements_init {
           dep[index].refer_dep_shallow(self);
         }
@@ -76,8 +80,7 @@ impl<'a> Transformer<'a> {
       transformed_items.push(self.ast_builder.formal_parameter(
         *span,
         self.clone_node(decorators),
-        if self.config.preserve_function_length && pattern_was_assignment && !pattern_is_assignment
-        {
+        if counting_length && pattern_was_assignment && !pattern_is_assignment {
           self.ast_builder.binding_pattern(
             self.ast_builder.binding_pattern_kind_assignment_pattern(
               pattern.span(),
@@ -94,12 +97,21 @@ impl<'a> Transformer<'a> {
         false,
         false,
       ));
+
+      if pattern_was_assignment {
+        counting_length = false;
+      }
+      if counting_length {
+        used_length = index + 1;
+      }
     }
 
     let transformed_rest = match rest {
       Some(rest) => self.transform_binding_rest_element(rest, false),
       None => None,
     };
+
+    transformed_items.truncate(used_length);
 
     self.ast_builder.formal_parameters(*span, *kind, transformed_items, transformed_rest)
   }
