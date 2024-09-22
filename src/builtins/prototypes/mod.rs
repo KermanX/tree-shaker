@@ -23,8 +23,8 @@ impl<'a> Prototype<'a> {
     Self(FxHashMap::default())
   }
 
-  pub fn insert(&mut self, key: &'static str, value: Entity<'a>) {
-    self.0.insert(key, value);
+  pub fn insert(&mut self, key: &'static str, value: impl Into<Entity<'a>>) {
+    self.0.insert(key, value.into());
   }
 
   pub fn get(&self, key: &str) -> Option<&Entity<'a>> {

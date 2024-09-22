@@ -139,60 +139,69 @@ impl<'a> ImplementedBuiltinFnEntity<'a> {
 #[derive(Debug, Clone)]
 pub struct PureBuiltinFnEntity<'a> {
   return_value: Entity<'a>,
+  mutates_this: bool,
 }
 
 impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
-    _dep: EntityDep,
+    dep: EntityDep,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    this.consume_as_unknown(analyzer);
+    if self.mutates_this {
+      analyzer.refer_dep(dep);
+      this.consume_as_unknown(analyzer);
+    }
     args.consume_as_unknown(analyzer);
     self.return_value.clone()
   }
 }
 
 impl<'a> PureBuiltinFnEntity<'a> {
-  pub fn new(return_value: Entity<'a>) -> Entity<'a> {
-    Entity::new(Self { return_value })
+  pub fn new(return_value: Entity<'a>) -> Self {
+    Self { return_value, mutates_this: false }
   }
 
-  pub fn returns_unknown_entity(kind: UnknownEntityKind) -> Entity<'a> {
-    Entity::new(Self { return_value: UnknownEntity::new(kind) })
+  pub fn mutates_this(mut self) -> Self {
+    self.mutates_this = true;
+    self
   }
 
-  pub fn returns_unknown() -> Entity<'a> {
+  pub fn returns_unknown_entity(kind: UnknownEntityKind) -> Self {
+    Self::new(UnknownEntity::new(kind))
+  }
+
+  pub fn returns_unknown() -> Self {
     Self::returns_unknown_entity(UnknownEntityKind::Unknown)
   }
 
-  pub fn returns_string() -> Entity<'a> {
+  pub fn returns_string() -> Self {
     Self::returns_unknown_entity(UnknownEntityKind::String)
   }
 
-  pub fn returns_number() -> Entity<'a> {
+  pub fn returns_number() -> Self {
     Self::returns_unknown_entity(UnknownEntityKind::Number)
   }
 
-  pub fn returns_boolean() -> Entity<'a> {
+  pub fn returns_boolean() -> Self {
     Self::returns_unknown_entity(UnknownEntityKind::Boolean)
   }
 
-  pub fn returns_array() -> Entity<'a> {
+  pub fn returns_array() -> Self {
     Self::returns_unknown_entity(UnknownEntityKind::Object)
   }
 
-  pub fn returns_null() -> Entity<'a> {
+  pub fn returns_null() -> Self {
     Self::new(LiteralEntity::new_null())
   }
 
-  pub fn returns_undefined() -> Entity<'a> {
+  pub fn returns_undefined() -> Self {
     Self::new(LiteralEntity::new_undefined())
   }
 
-  pub fn returns_object() -> Entity<'a> {
+  pub fn returns_object() -> Self {
     Self::returns_unknown_entity(UnknownEntityKind::Object)
   }
 }

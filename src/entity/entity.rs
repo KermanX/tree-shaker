@@ -256,3 +256,9 @@ impl<'a> Clone for Entity<'a> {
     Self(self.0.clone())
   }
 }
+
+impl<'a, T: EntityTrait<'a> + 'a> From<T> for Entity<'a> {
+  fn from(entity: T) -> Self {
+    Self::new(entity)
+  }
+}

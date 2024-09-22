@@ -14,7 +14,7 @@ pub fn create_import_meta<'a>() -> Entity<'a> {
     ObjectProperty {
       definite: true,
       values: vec![ObjectPropertyValue::Property(
-        Some(PureBuiltinFnEntity::returns_unknown_entity(UnknownEntityKind::String)),
+        Some(PureBuiltinFnEntity::returns_unknown_entity(UnknownEntityKind::String).into()),
         None,
       )],
     },
