@@ -258,8 +258,8 @@ impl<'a> LiteralEntity<'a> {
     Entity::new(LiteralEntity::String(value))
   }
 
-  pub fn new_number(value: impl Into<F64WithEq>, raw: &'a str) -> Entity<'a> {
-    Entity::new(LiteralEntity::Number(value.into(), raw))
+  pub fn new_number(value: impl Into<F64WithEq>, str_rep: &'a str) -> Entity<'a> {
+    Entity::new(LiteralEntity::Number(value.into(), str_rep))
   }
 
   pub fn new_big_int(value: &'a str) -> Entity<'a> {
@@ -340,7 +340,7 @@ impl<'a> LiteralEntity<'a> {
   pub fn to_string(&self) -> &'a str {
     match self {
       LiteralEntity::String(value) => *value,
-      LiteralEntity::Number(_, raw) => *raw,
+      LiteralEntity::Number(_, str_rep) => *str_rep,
       LiteralEntity::BigInt(value) => *value,
       LiteralEntity::Boolean(value) => {
         if *value {

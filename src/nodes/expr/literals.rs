@@ -7,7 +7,8 @@ use crate::{
   Analyzer,
 };
 use oxc::ast::ast::{
-  BigIntLiteral, BooleanLiteral, NullLiteral, NumericLiteral, RegExpLiteral, StringLiteral,
+  BigIntLiteral, BooleanLiteral, NullLiteral, NumberBase, NumericLiteral, RegExpLiteral,
+  StringLiteral,
 };
 
 impl<'a> Analyzer<'a> {
@@ -16,7 +17,11 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exc_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity<'a> {
-    LiteralEntity::new_number(node.value, node.raw)
+    if node.base == NumberBase::Float {
+      UnknownEntity::new(UnknownEntityKind::Number)
+    } else {
+      LiteralEntity::new_number(node.value, self.allocator.alloc(node.value.to_string()))
+    }
   }
 
   pub fn exc_big_int_literal(&mut self, node: &'a BigIntLiteral) -> Entity<'a> {
