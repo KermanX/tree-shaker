@@ -5,7 +5,8 @@ input_file: src/tests/fixtures/update_expression.js
 ---
 export function f1() {
 	let a = 1;
-	effect(2, 2, 4);
+	a++;
+	effect(2, (a++, 2), (++a, 4));
 	a++;
 	effect(5);
 	if (unknown) a++;
