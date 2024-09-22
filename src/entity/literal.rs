@@ -200,7 +200,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     Some(match self {
       LiteralEntity::String(value) => !value.is_empty(),
       LiteralEntity::Number(value, _) => *value != 0.0.into() && *value != (-0.0).into(),
-      LiteralEntity::BigInt(value) => !value.is_empty(),
+      LiteralEntity::BigInt(value) => !value.chars().all(|c| c == '0'),
       LiteralEntity::Boolean(value) => *value,
       LiteralEntity::Symbol(_, _) => true,
       LiteralEntity::Infinity(_) => true,
