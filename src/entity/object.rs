@@ -179,13 +179,15 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
+    let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
     analyzer.exec_indeterminately(move |analyzer| {
       self.add_assignment_dep(analyzer, dep.clone());
       let this = rc.clone();
-      let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
       let key = key.get_to_property_key();
       if let Some(key_literals) = key.get_to_literals() {
-        let indeterminate = indeterminate || self.unknown_keyed.borrow().values.len() > 0;
+        let indeterminate = indeterminate
+          || self.unknown_keyed.borrow().values.len() > 0
+          || self.rest.borrow().values.len() > 0;
         let definite = !indeterminate && key_literals.len() == 1;
         let mut rest_set = false;
         for key_literal in key_literals {
