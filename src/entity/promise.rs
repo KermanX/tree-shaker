@@ -81,7 +81,10 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
       analyzer.try_scope_mut().throw(error.clone());
     }
     let (inner_effect, awaited) = self.value.r#await(analyzer);
-    (self.has_effect || inner_effect || self.error.is_some(), awaited)
+    (
+      self.has_effect || inner_effect || self.error.is_some() || analyzer.call_scope().is_generator,
+      awaited,
+    )
   }
 
   fn iterate(
