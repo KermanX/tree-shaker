@@ -48,7 +48,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
   fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
     if kind == InteractionKind::ArrayOp {
-      self.deps.borrow_mut().push(dep);
+      self.add_dep(analyzer, dep);
     } else {
       self.consume(analyzer);
       consumed_object::interact(analyzer, dep, kind);
@@ -199,7 +199,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         }
       }
       if has_effect {
-        self.add_assignment_dep(analyzer, dep);
+        self.add_dep(analyzer, dep);
       }
     } else {
       self.consume(analyzer);
@@ -344,7 +344,7 @@ impl<'a> ArrayEntity<'a> {
     }
   }
 
-  fn add_assignment_dep(&self, analyzer: &Analyzer<'a>, dep: EntityDep) {
+  fn add_dep(&self, analyzer: &Analyzer<'a>, dep: EntityDep) {
     let target_variable_scope = analyzer.find_first_different_variable_scope(&self.variable_scopes);
     self.deps.borrow_mut().push(analyzer.get_assignment_deps(target_variable_scope, dep));
   }

@@ -146,7 +146,7 @@ impl<'a> ImplementedBuiltinFnEntity<'a> {
 #[derive(Debug, Clone)]
 pub struct PureBuiltinFnEntity<'a> {
   return_value: Entity<'a>,
-  mutates_this: bool,
+  interaction_kind: InteractionKind,
 }
 
 impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
@@ -157,7 +157,7 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    this.interact(analyzer, dep, InteractionKind::Unknown);
+    this.interact(analyzer, dep, self.interaction_kind);
     args.consume(analyzer);
     self.return_value.clone()
   }
@@ -165,11 +165,11 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
 
 impl<'a> PureBuiltinFnEntity<'a> {
   pub fn new(return_value: Entity<'a>) -> Self {
-    Self { return_value, mutates_this: false }
+    Self { return_value, interaction_kind: InteractionKind::Unknown }
   }
 
-  pub fn mutates_this(mut self) -> Self {
-    self.mutates_this = true;
+  pub fn interaction_kind(mut self, interaction_kind: InteractionKind) -> Self {
+    self.interaction_kind = interaction_kind;
     self
   }
 
