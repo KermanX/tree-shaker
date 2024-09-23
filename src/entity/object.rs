@@ -13,7 +13,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  scope::{cf_scope::CfScopes, variable_scope::VariableScopes, CfScopeKind},
+  scope::{cf_scope::CfScopes, variable_scope::VariableScopes},
   use_consumed_flag,
 };
 use oxc::ast::ast::PropertyKind;
