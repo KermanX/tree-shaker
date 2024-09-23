@@ -3,27 +3,28 @@ source: src/tests/mod.rs
 expression: tree_shake(input)
 input_file: src/tests/fixtures/class.js
 ---
-class A extends 2 {
+class A extends (1 + 1) {
 	constructor(a, b) {
 		super(a);
 		b();
 	}
-	fn(__unused_8EEF) {
-		1();
+	fn(a) {
+		a = 1;
+		a();
 	}
-	[2] = 2;
-	get [6]() {
-		return 6;
+	[1 + 1] = 1 + 1;
+	get [3 + 3]() {
+		return 3 + 3;
 	}
 	set x(v) {
 		this._x = v;
 	}
 }
 const __unused_DA20 = class X {
-	[2] = 2;
+	[1 + 1] = 1 + 1;
 };
-const __unused_EC09 = class extends 2 {
-	[2] = 2;
+const __unused_EC09 = class extends (1 + 1) {
+	[1 + 1] = 1 + 1;
 };
 export default class {
 	a = 1;

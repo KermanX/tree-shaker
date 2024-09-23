@@ -1,10 +1,11 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/member_expression.js
 ---
 export function main(unknown) {
-	effect(1);
+	let a = { b: 1 };
+	effect(a.b);
 	effect(unknown.a);
 	let c = { d: unknown };
 	effect();

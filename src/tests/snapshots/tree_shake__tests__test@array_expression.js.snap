@@ -4,8 +4,9 @@ expression: tree_shake(input)
 input_file: src/tests/fixtures/array_expression.js
 ---
 export function main(unknown) {
-	effect(2, "ab");
-	const arr2 = [4, ...[6], , ...unknown, unknown, ...[...[1, 4]]];
+	const arr1 = [1 + 1, "a" + "b"];
+	effect(arr1[0], arr1[1]);
+	const arr2 = [2 + 2, ...[3 + 3], , ...unknown, unknown, ...[...[1, 2 + 2]]];
 	effect(arr2);
 	const __unused_2782 = effect();
 	const __unused_F2EA = effect();

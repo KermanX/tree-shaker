@@ -4,10 +4,14 @@ expression: tree_shake(input)
 input_file: src/tests/fixtures/binding_pattern.js
 ---
 export function simple(unknown) {
-	effect(1);
-	effect(2);
-	effect(3);
-	effect(4);
+	let { a } = { a: 1 };
+	effect(a);
+	let { b: c } = { b: 2 };
+	effect(c);
+	let { d = 3 } = { d: undefined };
+	effect(d);
+	let { [0 + 1]: e } = { [1]: 4 };
+	effect(e);
 	let { g: { h: __unused_83AC, i: { j: __unused_C4E6 } } } = unknown;
 }
 export function with_rest(unknown) {
@@ -16,7 +20,7 @@ export function with_rest(unknown) {
 		b: unknown,
 		c: 2
 	};
-	effect(undefined, rest.b, 2);
+	effect(rest.a, rest.b, rest.c);
 	let { b: __unused_4486,...__unused_2075 } = unknown;
 	let { d } = {
 		d: unknown,

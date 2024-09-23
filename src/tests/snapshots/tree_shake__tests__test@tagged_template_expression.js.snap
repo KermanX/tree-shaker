@@ -1,11 +1,12 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/tagged_template_expression.js
 ---
 export function main(__unused_4982) {
+	let pure = (__unused_BB8D) => 1;
 	effect(2);
-	effect(1);
+	effect(pure`a${3}`);
 	let impure = (x) => effect(x);
 	impure`a`;
 	impure`b${effect()}c`;

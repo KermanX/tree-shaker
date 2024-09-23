@@ -90,8 +90,12 @@ impl<'a> Analyzer<'a> {
       | Expression::TSSatisfiesExpression(_) => unreachable!(),
     };
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
-    data.collector.collect(self, entity)
+    if self.config.expr_collect_literal {
+      let data = self.load_data::<Data>(AST_TYPE, node);
+      data.collector.collect(self, entity)
+    } else {
+      entity
+    }
   }
 }
 
@@ -101,10 +105,13 @@ impl<'a> Transformer<'a> {
     node: &'a Expression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
-
     let span = node.span();
-    let literal = need_val.then(|| data.collector.build_expr(&self.ast_builder, span)).flatten();
+    let literal = (need_val && self.config.expr_collect_literal)
+      .then(|| {
+        let data = self.get_data::<Data>(AST_TYPE, node);
+        data.collector.build_expr(&self.ast_builder, span)
+      })
+      .flatten();
     let need_val = need_val && literal.is_none();
 
     let inner = match node {

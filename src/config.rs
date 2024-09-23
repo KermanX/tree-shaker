@@ -7,6 +7,7 @@ pub struct TreeShakeConfig {
   pub preserve_function_length: bool,
   pub iterate_side_effects: bool,
 
+  pub expr_collect_literal: bool,
   pub min_simple_number_value: i64,
   pub max_simple_number_value: i64,
   pub max_simple_string_length: usize,
@@ -21,6 +22,7 @@ impl Default for TreeShakeConfig {
       preserve_function_length: true,
       iterate_side_effects: true,
 
+      expr_collect_literal: false,
       min_simple_number_value: -999,
       max_simple_number_value: 999,
       max_simple_string_length: 12,

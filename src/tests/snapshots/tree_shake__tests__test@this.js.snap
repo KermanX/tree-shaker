@@ -10,7 +10,10 @@ test1(obj1.getThis());
 test1(obj1.getThis());
 test1((0, obj1.getThis)());
 test1(obj1.getThis());
-test2(1);
-test2(1);
-test2(2);
-test2(1);
+const obj2 = { getThis() {
+	return this ? 1 : 2;
+} };
+test2(obj2.getThis());
+test2(obj2.getThis());
+test2(obj2.getThis());
+test2(obj2.getThis());

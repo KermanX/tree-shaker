@@ -4,7 +4,7 @@ expression: tree_shake(input)
 input_file: src/tests/fixtures/generator.js
 ---
 export function* f1(a) {
-	yield 2;
+	yield 1 + 1;
 	let __unused_FA65 = yield* a;
 	let t = yield 2;
 	if (t) {

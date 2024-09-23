@@ -13,7 +13,7 @@ export const result = {
 	s7: "object",
 	s9: typeof f1,
 	s11: typeof unknown,
-	s12: (unknown, "string"),
+	s12: typeof (unknown ? "a" : "b"),
 	s13: typeof (unknown ? "a" : 1)
 };
 export function deletion() {
@@ -26,5 +26,5 @@ export function deletion() {
 	delete obj1.a;
 	delete obj1["b"];
 	if (unknown) delete obj1.c;
-	effect(void 0, void 0, obj1.c, 4);
+	effect(obj1.a, obj1.b, obj1.c, obj1.d);
 }

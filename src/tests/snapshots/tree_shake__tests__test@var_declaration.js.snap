@@ -5,8 +5,9 @@ input_file: src/tests/fixtures/var_declaration.js
 ---
 export function main() {
 	{
-		effect(1);
+		var x = 1;
+		effect(x);
 	}
-	effect(1);
+	effect(x);
 }
 effect(x);

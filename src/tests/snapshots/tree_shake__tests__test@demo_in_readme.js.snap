@@ -1,8 +1,9 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/demo_in_readme.js
 ---
 export function f() {
-	return 1;
+	let { ["x"]: y = 1 } = { x: void 0 };
+	return y;
 }

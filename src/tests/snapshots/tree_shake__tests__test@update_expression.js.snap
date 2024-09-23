@@ -6,18 +6,18 @@ input_file: src/tests/fixtures/update_expression.js
 export function f1() {
 	let a = 1;
 	a++;
-	effect(2, (a++, 2), (++a, 4));
+	effect(a, a++, ++a);
 	a++;
-	effect(5);
+	effect(a);
 	if (unknown) a++;
 	effect(a);
 }
 export function f2() {
 	let b = { value: 1 };
 	b.value++;
-	effect(2, (b.value++, 2), (++b.value, 4));
+	effect(b.value, b.value++, ++b.value);
 	b.value++;
-	effect(5);
+	effect(b.value);
 	if (unknown) b.value++;
 	effect(b.value);
 }
