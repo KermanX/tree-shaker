@@ -1,4 +1,4 @@
-use crate::entity::label::LabelEntity;
+use crate::{analyzer::Analyzer, entity::label::LabelEntity};
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashSet;
 use std::{cell::RefCell, rc::Rc};
@@ -121,5 +121,14 @@ impl<'a> CfScope<'a> {
     } else {
       false
     }
+  }
+}
+
+impl<'a> Analyzer<'a> {
+  pub fn exec_indeterminately<T>(&mut self, runner: impl FnOnce(&mut Analyzer<'a>) -> T) -> T {
+    self.push_cf_scope(CfScopeKind::Normal, None, None);
+    let result = runner(self);
+    self.pop_cf_scope();
+    result
   }
 }
