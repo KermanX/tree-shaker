@@ -113,12 +113,12 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     consumed_object::call(analyzer, dep, this, args)
   }
 
-  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     if self.maybe_object() {
       self.consume(analyzer);
-      (true, UnknownEntity::new_unknown())
+      UnknownEntity::new_unknown()
     } else {
-      (false, rc.clone())
+      rc.clone()
     }
   }
 

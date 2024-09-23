@@ -11,7 +11,6 @@ use crate::analyzer::Analyzer;
 
 #[derive(Debug, Clone)]
 pub struct PromiseEntity<'a> {
-  pub has_effect: bool,
   pub value: Entity<'a>,
   pub error: Option<Entity<'a>>,
 }
@@ -76,15 +75,11 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     consumed_object::call(analyzer, dep, this, args)
   }
 
-  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     if let Some(error) = &self.error {
       analyzer.try_scope_mut().throw(error.clone());
     }
-    let (inner_effect, awaited) = self.value.r#await(analyzer);
-    (
-      self.has_effect || inner_effect || self.error.is_some() || analyzer.call_scope().is_generator,
-      awaited,
-    )
+    self.value.r#await(analyzer)
   }
 
   fn iterate(
@@ -127,7 +122,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
 }
 
 impl<'a> PromiseEntity<'a> {
-  pub fn new(has_effect: bool, value: Entity<'a>, error: Option<Entity<'a>>) -> Entity<'a> {
-    Entity::new(Self { has_effect, value, error })
+  pub fn new(value: Entity<'a>, error: Option<Entity<'a>>) -> Entity<'a> {
+    Entity::new(Self { value, error })
   }
 }

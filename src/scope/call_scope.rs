@@ -24,9 +24,8 @@ pub struct CallScope<'a> {
   pub args: (Entity<'a>, Vec<SymbolId>),
   pub returned_values: Vec<Entity<'a>>,
   pub is_async: bool,
-  pub await_has_effect: bool,
-  pub try_scopes: Vec<TryScope<'a>>,
   pub is_generator: bool,
+  pub try_scopes: Vec<TryScope<'a>>,
   pub need_consume_arguments: bool,
 }
 
@@ -52,9 +51,8 @@ impl<'a> CallScope<'a> {
       args,
       returned_values: Vec::new(),
       is_async,
-      await_has_effect: false,
-      try_scopes: vec![TryScope::new(cf_scope_index)],
       is_generator,
+      try_scopes: vec![TryScope::new(cf_scope_index)],
       need_consume_arguments: false,
     }
   }
@@ -88,11 +86,7 @@ impl<'a> CallScope<'a> {
     };
     (
       self.old_variable_scopes,
-      if self.is_async {
-        PromiseEntity::new(self.await_has_effect, value, promise_error)
-      } else {
-        value
-      },
+      if self.is_async { PromiseEntity::new(value, promise_error) } else { value },
     )
   }
 }

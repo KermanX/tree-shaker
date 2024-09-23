@@ -86,12 +86,8 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.forward(ret_cal)
   }
 
-  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
-    let (has_effect, ret_val) = self.val.r#await(analyzer);
-    if has_effect {
-      self.consume(analyzer);
-    }
-    (has_effect, self.forward(ret_val))
+  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+    self.forward(self.val.r#await(analyzer))
   }
 
   fn iterate(

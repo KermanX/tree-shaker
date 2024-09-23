@@ -125,11 +125,11 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     self.call_impl(rc, analyzer, dep, this, args)
   }
 
-  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer);
     }
-    (false, rc.clone())
+    rc.clone()
   }
 
   fn iterate(

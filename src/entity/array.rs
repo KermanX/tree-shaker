@@ -253,12 +253,11 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     consumed_object::call(analyzer, dep, this, args)
   }
 
-  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer);
     }
-    // FIXME: additional `then` method?
-    (false, rc.clone())
+    rc.clone()
   }
 
   fn iterate(

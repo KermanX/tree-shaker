@@ -99,8 +99,8 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     consumed_object::call(analyzer, dep, this, args)
   }
 
-  fn r#await(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
-    (false, rc.clone())
+  fn r#await(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+    rc.clone()
   }
 
   fn iterate(

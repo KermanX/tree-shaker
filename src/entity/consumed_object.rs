@@ -66,10 +66,10 @@ pub fn call<'a>(
   UnknownEntity::new_unknown()
 }
 
-pub fn r#await<'a>(analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+pub fn r#await<'a>(analyzer: &mut Analyzer<'a>) -> Entity<'a> {
   analyzer.may_throw();
   analyzer.refer_global();
-  (true, UnknownEntity::new_unknown())
+  UnknownEntity::new_unknown()
 }
 
 pub fn iterate<'a>(

@@ -44,7 +44,7 @@ pub trait EntityTrait<'a>: Debug {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a>;
-  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>);
+  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a>;
   fn iterate(
     &self,
     rc: &Entity<'a>,
@@ -158,7 +158,7 @@ impl<'a> Entity<'a> {
     self.0.call(self, analyzer, dep.into(), this, args)
   }
 
-  pub fn r#await(&self, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
+  pub fn r#await(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.0.r#await(self, analyzer)
   }
 
