@@ -1,6 +1,7 @@
 use super::{
   dep::EntityDep,
   entity::{Entity, EntityTrait},
+  interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
 };
@@ -17,6 +18,10 @@ impl<'a> EntityTrait<'a> for ForwardedEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.refer_dep(analyzer);
     self.val.consume(analyzer)
+  }
+
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+    self.val.interact(analyzer, (self.dep.clone(), dep), kind);
   }
 
   fn refer_dep_shallow(&self, transformer: &Transformer<'a>) {

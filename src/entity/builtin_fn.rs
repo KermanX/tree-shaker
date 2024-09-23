@@ -2,6 +2,7 @@ use super::{
   consumed_object,
   dep::EntityDep,
   entity::{Entity, EntityTrait},
+  interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
@@ -21,6 +22,10 @@ pub trait BuiltinFnEntity<'a>: Debug {
 
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
+
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+    consumed_object::interact(analyzer, dep, kind)
+  }
 
   fn get_property(
     &self,
@@ -152,8 +157,7 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.refer_dep(dep);
-    this.consume(analyzer);
+    this.interact(analyzer, dep, InteractionKind::Unknown);
     args.consume(analyzer);
     self.return_value.clone()
   }

@@ -1,6 +1,7 @@
 use super::{
   dep::EntityDep,
   entity::{Entity, EntityTrait},
+  interactions::InteractionKind,
   typeof_result::TypeofResult,
   union::UnionEntity,
 };
@@ -16,6 +17,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     for (_, entity) in &self.arguments {
       entity.consume(analyzer);
     }
+  }
+
+  fn interact(&self, _analyzer: &mut Analyzer<'a>, _dep: EntityDep, _kind: InteractionKind) {
+    unreachable!()
   }
 
   fn get_property(

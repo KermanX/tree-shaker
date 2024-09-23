@@ -2,6 +2,7 @@ use super::{
   dep::{EntityDep, EntityDepNode},
   entity::{Entity, EntityTrait},
   forwarded::ForwardedEntity,
+  interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
@@ -60,6 +61,11 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       });
       analyzer.pop_cf_scope();
     });
+  }
+
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+    self.consume(analyzer);
+    consumed_object::interact(analyzer, dep, kind);
   }
 
   fn get_property(

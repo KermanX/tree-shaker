@@ -2,6 +2,7 @@ use super::{
   consumed_object,
   dep::EntityDep,
   entity::{Entity, EntityTrait},
+  interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
@@ -19,6 +20,11 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.value.consume(analyzer);
     self.error.as_ref().map(|e| e.consume(analyzer));
+  }
+
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+    self.consume(analyzer);
+    consumed_object::interact(analyzer, dep, kind)
   }
 
   fn get_property(

@@ -4,6 +4,7 @@ use super::{
   entity::{Entity, EntityTrait},
   entry::EntryEntity,
   forwarded::ForwardedEntity,
+  interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   union::UnionEntity,
@@ -42,6 +43,15 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
     for rest in self.rest.borrow().iter() {
       rest.consume(analyzer);
+    }
+  }
+
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+    if kind == InteractionKind::ArrayOp {
+      self.deps.borrow_mut().push(dep);
+    } else {
+      self.consume(analyzer);
+      consumed_object::interact(analyzer, dep, kind);
     }
   }
 

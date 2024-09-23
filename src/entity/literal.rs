@@ -2,6 +2,7 @@ use super::{
   consumed_object,
   dep::EntityDep,
   entity::{Entity, EntityTrait},
+  interactions::InteractionKind,
   typeof_result::TypeofResult,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
@@ -32,6 +33,8 @@ pub enum LiteralEntity<'a> {
 
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
+
+  fn interact(&self, _analyzer: &mut Analyzer<'a>, _dep: EntityDep, _kind: InteractionKind) {}
 
   fn get_property(
     &self,

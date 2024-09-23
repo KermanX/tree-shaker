@@ -1,5 +1,6 @@
 use super::{
-  dep::EntityDep, literal::LiteralEntity, typeof_result::TypeofResult, union::UnionEntity,
+  dep::EntityDep, interactions::InteractionKind, literal::LiteralEntity,
+  typeof_result::TypeofResult, union::UnionEntity,
 };
 use crate::{analyzer::Analyzer, transformer::Transformer};
 use rustc_hash::FxHashSet;
@@ -7,6 +8,7 @@ use std::{fmt::Debug, rc::Rc};
 
 pub trait EntityTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind);
 
   /// FIXME: Not a good idea
   /// Only implemented by `ForwardedEntity`
@@ -95,6 +97,15 @@ impl<'a> Entity<'a> {
 
   pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.0.consume(analyzer)
+  }
+
+  pub fn interact(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl Into<EntityDep>,
+    kind: InteractionKind,
+  ) {
+    self.0.interact(analyzer, dep.into(), kind)
   }
 
   pub fn refer_dep_shallow(&self, transformer: &Transformer<'a>) {

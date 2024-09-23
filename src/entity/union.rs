@@ -3,20 +3,21 @@ use super::{
   consumed_object,
   dep::EntityDep,
   entity::{Entity, EntityTrait},
+  interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   unknown::UnknownEntity,
 };
 use crate::{analyzer::Analyzer, scope::CfScopeKind};
 use rustc_hash::FxHashSet;
-use std::cell::RefCell;
+use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug)]
 pub struct UnionEntity<'a> {
   /// Possible values
   pub values: Vec<Entity<'a>>,
   /// Which is the actual value depends on these
-  pub deps: Vec<Entity<'a>>,
+  pub deps: Rc<Vec<Entity<'a>>>,
 }
 
 impl<'a> EntityTrait<'a> for UnionEntity<'a> {
@@ -24,8 +25,14 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for value in &self.values {
       value.consume(analyzer);
     }
-    for dep in &self.deps {
+    for dep in self.deps.iter() {
       dep.consume(analyzer);
+    }
+  }
+
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+    for value in &self.values {
+      value.interact(analyzer, dep.clone(), kind);
     }
   }
 
@@ -40,7 +47,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.values {
       values.push(entity.get_property(analyzer, dep.clone(), key));
     }
-    UnionEntity::new(values)
+    UnionEntity::new_with_deps(values, self.deps.clone())
   }
 
   fn set_property(
@@ -87,7 +94,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
       results.push(entity.call(analyzer, dep.clone(), this, args));
     }
     analyzer.pop_cf_scope();
-    UnionEntity::new(results)
+    UnionEntity::new_with_deps(results, self.deps.clone())
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> (bool, Entity<'a>) {
@@ -98,7 +105,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
       await_effect |= effect;
       values.push(value);
     }
-    (await_effect, UnionEntity::new(values))
+    (await_effect, UnionEntity::new_with_deps(values, self.deps.clone()))
   }
 
   fn iterate(
@@ -119,7 +126,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     if has_undefined {
       results.push(LiteralEntity::new_undefined());
     }
-    (vec![], UnionEntity::try_new_with_deps(results, vec![]))
+    (vec![], UnionEntity::try_new_with_deps(results, self.deps.clone()))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -196,7 +203,10 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 }
 
 impl<'a> UnionEntity<'a> {
-  pub fn try_new_with_deps(values: Vec<Entity<'a>>, deps: Vec<Entity<'a>>) -> Option<Entity<'a>> {
+  pub fn try_new_with_deps(
+    values: Vec<Entity<'a>>,
+    deps: Rc<Vec<Entity<'a>>>,
+  ) -> Option<Entity<'a>> {
     if values.is_empty() {
       None
     } else {
@@ -205,7 +215,7 @@ impl<'a> UnionEntity<'a> {
         if deps.is_empty() {
           value
         } else {
-          CollectedEntity::new(value, RefCell::new(deps))
+          CollectedEntity::new(value, RefCell::new((*deps).clone()))
         }
       } else {
         let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
@@ -218,11 +228,14 @@ impl<'a> UnionEntity<'a> {
     }
   }
 
-  pub fn new_with_deps(values: Vec<Entity<'a>>, deps: Vec<Entity<'a>>) -> Entity<'a> {
-    Self::try_new_with_deps(values, deps).unwrap()
+  pub fn new_with_deps(
+    values: Vec<Entity<'a>>,
+    deps: impl Into<Rc<Vec<Entity<'a>>>>,
+  ) -> Entity<'a> {
+    Self::try_new_with_deps(values, deps.into()).unwrap()
   }
 
   pub fn new(values: Vec<Entity<'a>>) -> Entity<'a> {
-    Self::new_with_deps(values, vec![])
+    Self::new_with_deps(values, Rc::new(vec![]))
   }
 }

@@ -1,9 +1,16 @@
 use super::{
   dep::EntityDep,
   entity::Entity,
+  interactions::InteractionKind,
   unknown::{UnknownEntity, UnknownEntityKind},
 };
 use crate::analyzer::Analyzer;
+
+pub fn interact(analyzer: &mut Analyzer, dep: EntityDep, _kind: InteractionKind) {
+  analyzer.may_throw();
+  analyzer.refer_dep(dep);
+  analyzer.refer_global();
+}
 
 pub fn get_property<'a>(
   analyzer: &mut Analyzer<'a>,

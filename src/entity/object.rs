@@ -5,6 +5,7 @@ use super::{
   entity::{Entity, EntityTrait},
   entry::EntryEntity,
   forwarded::ForwardedEntity,
+  interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
   union::UnionEntity,
@@ -98,6 +99,11 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
     consume_property(&self.rest.borrow(), analyzer);
     consume_property(&self.unknown_keyed.borrow(), analyzer);
+  }
+
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+    self.consume(analyzer);
+    consumed_object::interact(analyzer, dep, kind)
   }
 
   fn get_property(

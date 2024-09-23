@@ -2,6 +2,7 @@ use super::{
   consumed_object,
   dep::EntityDep,
   entity::{Entity, EntityTrait},
+  interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
 };
@@ -36,6 +37,11 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
       dep.consume(analyzer);
     }
     deps.clear();
+  }
+
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+    self.consume(analyzer);
+    consumed_object::interact(analyzer, dep, kind)
   }
 
   fn get_property(

@@ -1,6 +1,7 @@
 use super::{
   dep::EntityDep,
   entity::{Entity, EntityTrait},
+  interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
 };
@@ -20,6 +21,13 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
       entity.consume(analyzer);
     }
     self.val.consume(analyzer)
+  }
+
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+    for entity in self.collected.borrow().iter() {
+      entity.interact(analyzer, dep.clone(), kind);
+    }
+    self.val.interact(analyzer, dep, kind)
   }
 
   fn get_property(

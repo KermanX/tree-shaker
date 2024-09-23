@@ -1,6 +1,7 @@
 use super::{
   dep::EntityDep,
   entity::{Entity, EntityTrait},
+  interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
 };
@@ -14,9 +15,14 @@ pub struct EntryEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for EntryEntity<'a> {
-  fn consume(&self, analyzer: &mut crate::analyzer::Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.key.consume(analyzer);
     self.value.consume(analyzer);
+  }
+
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+    self.key.interact(analyzer, dep.clone(), kind);
+    self.value.interact(analyzer, dep, kind);
   }
 
   fn get_property(
