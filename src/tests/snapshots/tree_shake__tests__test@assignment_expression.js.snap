@@ -30,3 +30,4 @@ export function f7(a) {
 	({x: {}, a: {}, b: {c: {}},...__unused__} = a);
 	effect("a");
 }
+var __unused__;

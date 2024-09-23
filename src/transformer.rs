@@ -10,13 +10,14 @@ use oxc::{
     ast::{
       AssignmentTarget, BindingPattern, Expression, ForStatementLeft, IdentifierReference,
       NumberBase, Program, SimpleAssignmentTarget, TSTypeAnnotation, UnaryOperator,
+      VariableDeclarationKind,
     },
-    AstBuilder,
+    AstBuilder, NONE,
   },
   span::{GetSpan, Span, SPAN},
 };
 use std::{
-  cell::RefCell,
+  cell::{Cell, RefCell},
   hash::{DefaultHasher, Hasher},
   mem,
 };
@@ -29,6 +30,7 @@ pub struct Transformer<'a> {
   pub referred_nodes: RefCell<ReferredNodes<'a>>,
 
   pub deferred_arguments: RefCell<Vec<(&'a Arguments<'a>, *const Arguments<'a>)>>,
+  pub need_unused_assignment_target: Cell<bool>,
 }
 
 impl<'a> Transformer<'a> {
@@ -41,6 +43,7 @@ impl<'a> Transformer<'a> {
       data,
       referred_nodes: RefCell::new(referred_nodes),
       deferred_arguments: Default::default(),
+      need_unused_assignment_target: Cell::new(false),
     }
   }
 
@@ -48,7 +51,7 @@ impl<'a> Transformer<'a> {
     let Program { span, source_type, hashbang, directives, body, .. } = node;
 
     let data = self.get_data::<StatementVecData>(AstType2::Program, node);
-    let body = self.transform_statement_vec(data, body);
+    let mut body = self.transform_statement_vec(data, body);
 
     loop {
       let mut deferred_arguments = self.deferred_arguments.borrow_mut();
@@ -60,6 +63,25 @@ impl<'a> Transformer<'a> {
       } else {
         break;
       }
+    }
+
+    if self.need_unused_assignment_target.get() {
+      body.push(self.ast_builder.statement_declaration(self.ast_builder.declaration_variable(
+        SPAN,
+        VariableDeclarationKind::Var,
+        self.ast_builder.vec1(self.ast_builder.variable_declarator(
+          SPAN,
+          VariableDeclarationKind::Var,
+          self.ast_builder.binding_pattern(
+            self.ast_builder.binding_pattern_kind_binding_identifier(SPAN, "__unused__"),
+            NONE,
+            false,
+          ),
+          None,
+          false,
+        )),
+        false,
+      )));
     }
 
     self.ast_builder.program(
@@ -90,6 +112,7 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn build_unused_identifier_reference_write(&self, span: Span) -> IdentifierReference<'a> {
+    self.need_unused_assignment_target.set(true);
     self.ast_builder.identifier_reference(span, "__unused__")
   }
 

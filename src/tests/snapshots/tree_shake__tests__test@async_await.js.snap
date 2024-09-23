@@ -1,21 +1,21 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/async_await.js
 ---
-export const l1 = 1;
-export const l2 = "1a";
+export const l1 = (await 1, 1);
+export const l2 = (await 1, "1a");
 export const l3 = await unknown;
-export const l4 = unknown + "a";
+export const l4 = await (unknown + "a");
 async function pure() {
 	return 1;
 }
-export const r1 = 1;
+export const r1 = (await pure(), 1);
 export const r2 = pure();
-export const r3 = 1;
+export const r3 = (await nested_pure(), 1);
 async function effect() {
 	await something;
-	return 1;
+	return;
 }
 export const r4 = (await effect(), 1);
 function effect2() {
