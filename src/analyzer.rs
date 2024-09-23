@@ -65,7 +65,7 @@ impl<'a> Analyzer<'a> {
     self.default_export.take().map(|entity| entity.consume(self));
     for symbol in self.named_exports.clone() {
       let entity = self.read_symbol(&symbol);
-      entity.consume(self);
+      entity.unwrap().consume(self);
     }
     // Consume uncaught thrown values
     self.call_scope_mut().try_scopes.pop().unwrap().thrown_val().map(|entity| {
@@ -149,20 +149,26 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn read_symbol(&mut self, symbol: &SymbolId) -> Entity<'a> {
-    if let Some((kind, variable_scopes, _)) = self.symbol_decls.get(symbol) {
+  /// `None` for TDZ
+  pub fn read_symbol(&mut self, symbol: &SymbolId) -> Option<Entity<'a>> {
+    if let Some((kind, variable_scopes, decl_dep)) = self.symbol_decls.get(symbol) {
       if kind.is_untracked() {
-        return UnknownEntity::new_unknown();
+        return Some(UnknownEntity::new_unknown());
       }
+      let decl_dep = decl_dep.clone();
       let variable_scope = variable_scopes.last().unwrap().clone();
       let variable_scope_ref = variable_scope.borrow();
       let target_cf_scope = self.find_first_different_cf_scope(&variable_scope_ref.cf_scopes);
       let (_, val) = variable_scope_ref.read(self, symbol);
-      self.mark_exhaustive_read(&val, *symbol, target_cf_scope);
+      if let Some(val) = &val {
+        self.mark_exhaustive_read(val, *symbol, target_cf_scope);
+      } else {
+        self.refer_dep(decl_dep);
+      }
       val
     } else {
       self.insert_untracked_var(*symbol);
-      UnknownEntity::new_unknown()
+      Some(UnknownEntity::new_unknown())
     }
   }
 
@@ -184,11 +190,16 @@ impl<'a> Analyzer<'a> {
         self.refer_dep(dep);
         new_val.consume(self);
       } else {
-        let should_consume = self.mark_exhaustive_write(&old_val, symbol.clone(), target_cf_scope);
+        let should_consume = if let Some(old_val) = &old_val {
+          self.mark_exhaustive_write(old_val, symbol.clone(), target_cf_scope)
+        } else {
+          // TDZ
+          true
+        };
         let entity_to_set = if should_consume {
           drop(variable_scope_ref);
           self.refer_dep(dep);
-          old_val.consume(self);
+          old_val.map(|v| v.consume(self));
           new_val.consume(self);
           (true, UnknownEntity::new_unknown())
         } else {
@@ -199,7 +210,7 @@ impl<'a> Analyzer<'a> {
             false,
             ForwardedEntity::new(
               if indeterminate {
-                UnionEntity::new(vec![old_val.clone(), new_val])
+                UnionEntity::new(vec![old_val.unwrap(), new_val])
               } else {
                 new_val
               },

@@ -10,7 +10,7 @@ const AST_TYPE: AstType2 = AstType2::IdentifierReference;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
-  unknown: bool,
+  has_effect: bool,
 }
 
 impl<'a> Analyzer<'a> {
@@ -22,20 +22,25 @@ impl<'a> Analyzer<'a> {
     let symbol = reference.symbol_id();
 
     if let Some(symbol) = symbol {
-      self.read_symbol(&symbol)
+      if let Some(value) = self.read_symbol(&symbol) {
+        value
+      } else {
+        self.set_data(AST_TYPE, node, Data { has_effect: true });
+        UnknownEntity::new_unknown()
+      }
     } else if node.name == "arguments" {
       let (args_entity, args_symbols) = self.call_scope().args.clone();
       args_entity.consume(self);
       for symbol in args_symbols {
-        let old = self.read_symbol(&symbol);
+        // FIXME: Accessing `arguments` in formal parameters
+        let old = self.read_symbol(&symbol).unwrap();
         self.write_symbol(&symbol, UnknownEntity::new_unknown_with_deps(vec![old]));
       }
       UnknownEntity::new_unknown()
     } else if let Some(global) = self.builtins.globals.get(node.name.as_str()).cloned() {
-      self.may_throw();
-      return global;
+      global
     } else {
-      self.set_data(AST_TYPE, node, Data { unknown: true });
+      self.set_data(AST_TYPE, node, Data { has_effect: true });
       self.refer_global();
       self.may_throw();
       UnknownEntity::new_unknown()
@@ -60,7 +65,7 @@ impl<'a> Analyzer<'a> {
     } else if self.builtins.globals.contains_key(node.name.as_str()) {
       // TODO: Throw warning
     } else {
-      self.set_data(AST_TYPE, node, Data { unknown: true });
+      self.set_data(AST_TYPE, node, Data { has_effect: true });
       value.consume(self);
       self.may_throw();
       self.refer_global();
@@ -76,7 +81,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<IdentifierReference<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, node);
 
-    (data.unknown || need_val).then(|| self.clone_node(node))
+    (data.has_effect || need_val).then(|| self.clone_node(node))
   }
 
   pub fn transform_identifier_reference_write(
@@ -87,6 +92,6 @@ impl<'a> Transformer<'a> {
 
     let referred = self.is_referred(AstKind::IdentifierReference(node));
 
-    (data.unknown || referred).then(|| self.clone_node(node))
+    (data.has_effect || referred).then(|| self.clone_node(node))
   }
 }
