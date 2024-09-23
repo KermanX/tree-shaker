@@ -112,6 +112,5 @@
   "language/import/import-attributes/json-value-object.js",
   "language/import/import-attributes/json-value-string.js",
   "language/import/import-attributes/json-via-namespace.js",
-  "language/module-code/import-attributes/import-attribute-empty.js",
-  
+  "language/module-code/import-attributes/import-attribute-empty.js"
 ]
