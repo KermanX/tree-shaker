@@ -38,6 +38,13 @@
   "language/expressions/multiplication/bigint-and-number.js",
   "language/expressions/multiplication/bigint-errors.js",
   "language/expressions/multiplication/bigint-toprimitive.js",
+  "language/expressions/unary-plus/bigint-throws.js",
+  "language/expressions/unsigned-right-shift/bigint-and-number.js",
+  "language/expressions/unsigned-right-shift/bigint-errors.js",
+  "language/expressions/unsigned-right-shift/bigint-non-primitive.js",
+  "language/expressions/unsigned-right-shift/bigint-toprimitive.js",
+  "language/expressions/unsigned-right-shift/bigint-wrapped-values.js",
+  "language/expressions/unsigned-right-shift/bigint.js",
 
   "// Errors thrown by symbol operations",
   "language/expressions/addition/symbol-to-string.js",
@@ -55,6 +62,7 @@
   "language/computed-property-names/to-name-side-effects/numbers-object.js",
   "language/computed-property-names/to-name-side-effects/object.js",
   "language/expressions/addition/order-of-evaluation.js",
+  "language/expressions/unsigned-right-shift/order-of-evaluation.js",
 
   "// Invalid Symbol.toPrimitive method",
   "language/expressions/addition/coerce-symbol-to-prim-return-prim.js",
@@ -91,6 +99,19 @@
   "language/identifiers/start-unicode-16.0.0-class-escaped.js",
 
   "// WTF, Rollup and esbuild don't handle this",
-  "language/global-code/decl-lex-restricted-global.js"
+  "language/global-code/decl-lex-restricted-global.js",
+  
+  "// Import attributes, not caused by tree shaker",
+  "language/import/import-attributes/json-extensibility-array.js",
+  "language/import/import-attributes/json-extensibility-object.js",
+  "language/import/import-attributes/json-idempotency.js",
+  "language/import/import-attributes/json-value-array.js",
+  "language/import/import-attributes/json-value-boolean.js",
+  "language/import/import-attributes/json-value-null.js",
+  "language/import/import-attributes/json-value-number.js",
+  "language/import/import-attributes/json-value-object.js",
+  "language/import/import-attributes/json-value-string.js",
+  "language/import/import-attributes/json-via-namespace.js",
+  "language/module-code/import-attributes/import-attribute-empty.js",
   
 ]
