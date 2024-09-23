@@ -51,7 +51,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     dep: EntityDep,
     key: &Entity<'a>,
   ) -> Entity<'a> {
-    if matches!(self.kind, UnknownEntityKind::Unknown) {
+    if self.maybe_object() {
       self.consume(analyzer);
       consumed_object::get_property(analyzer, dep, key)
     } else {
