@@ -29,13 +29,8 @@ impl<'a> Analyzer<'a> {
         UnknownEntity::new_unknown()
       }
     } else if node.name == "arguments" {
-      let (args_entity, args_symbols) = self.call_scope().args.clone();
-      args_entity.consume(self);
-      for symbol in args_symbols {
-        // FIXME: Accessing `arguments` in formal parameters
-        let old = self.read_symbol(&symbol).unwrap();
-        self.write_symbol(&symbol, UnknownEntity::new_unknown_with_deps(vec![old]));
-      }
+      let arguments_consumed = self.consume_arguments();
+      self.call_scope_mut().need_consume_arguments = !arguments_consumed;
       UnknownEntity::new_unknown()
     } else if let Some(global) = self.builtins.globals.get(node.name.as_str()).cloned() {
       global

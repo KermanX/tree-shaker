@@ -27,6 +27,7 @@ pub struct CallScope<'a> {
   pub await_has_effect: bool,
   pub try_scopes: Vec<TryScope<'a>>,
   pub is_generator: bool,
+  pub need_consume_arguments: bool,
 }
 
 impl<'a> CallScope<'a> {
@@ -54,6 +55,7 @@ impl<'a> CallScope<'a> {
       await_has_effect: false,
       try_scopes: vec![TryScope::new(cf_scope_index)],
       is_generator,
+      need_consume_arguments: false,
     }
   }
 
@@ -92,5 +94,23 @@ impl<'a> CallScope<'a> {
         value
       },
     )
+  }
+}
+
+impl<'a> Analyzer<'a> {
+  pub fn consume_arguments(&mut self) -> bool {
+    let mut arguments_consumed = true;
+    let (args_entity, args_symbols) = self.call_scope().args.clone();
+    args_entity.consume(self);
+    for symbol in args_symbols {
+      // FIXME: Accessing `arguments` in formal parameters
+      if let Some(old) = self.read_symbol(&symbol) {
+        self.write_symbol(&symbol, UnknownEntity::new_unknown_with_deps(vec![old]));
+      } else {
+        // TDZ
+        arguments_consumed = false
+      }
+    }
+    arguments_consumed
   }
 }
