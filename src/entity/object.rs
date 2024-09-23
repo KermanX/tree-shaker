@@ -440,11 +440,13 @@ impl<'a> ObjectEntity<'a> {
         }
       }
     } else {
-      self
-        .unknown_keyed
-        .borrow_mut()
-        .values
-        .push(ObjectPropertyValue::Field(EntryEntity::new(value, key)));
+      let value = EntryEntity::new(value, key);
+      let property_val = match kind {
+        PropertyKind::Init => ObjectPropertyValue::Field(value.clone()),
+        PropertyKind::Get => ObjectPropertyValue::Property(Some(value.clone()), None),
+        PropertyKind::Set => ObjectPropertyValue::Property(None, Some(value.clone())),
+      };
+      self.unknown_keyed.borrow_mut().values.push(property_val);
     }
   }
 
