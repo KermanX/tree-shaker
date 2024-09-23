@@ -297,7 +297,18 @@ impl<'a> LiteralEntity<'a> {
     match self {
       LiteralEntity::String(value) => ast_builder.expression_string_literal(span, *value),
       LiteralEntity::Number(value, raw) => {
-        ast_builder.expression_numeric_literal(span, value.0, *raw, NumberBase::Decimal)
+        let negated = raw.chars().nth(0).unwrap() == '-';
+        let absolute = ast_builder.expression_numeric_literal(
+          span,
+          value.0.abs(),
+          if negated { &raw[1..] } else { raw },
+          NumberBase::Decimal,
+        );
+        if negated {
+          ast_builder.expression_unary(span, UnaryOperator::UnaryNegation, absolute)
+        } else {
+          absolute
+        }
       }
       LiteralEntity::BigInt(value) => {
         ast_builder.expression_big_int_literal(span, *value, BigintBase::Decimal)
