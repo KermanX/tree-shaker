@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
     if !call_scope.is_async {
       // TODO: throw warning
     }
-    call_scope.has_await_effect |= has_effect;
+    call_scope.await_has_effect |= has_effect;
 
     awaited
   }

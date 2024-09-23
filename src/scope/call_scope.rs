@@ -24,7 +24,7 @@ pub struct CallScope<'a> {
   pub args: (Entity<'a>, Vec<SymbolId>),
   pub returned_values: Vec<Entity<'a>>,
   pub is_async: bool,
-  pub has_await_effect: bool,
+  pub await_has_effect: bool,
   pub try_scopes: Vec<TryScope<'a>>,
   pub is_generator: bool,
 }
@@ -51,7 +51,7 @@ impl<'a> CallScope<'a> {
       args,
       returned_values: Vec::new(),
       is_async,
-      has_await_effect: false,
+      await_has_effect: false,
       try_scopes: vec![TryScope::new(cf_scope_index)],
       is_generator,
     }
@@ -62,9 +62,14 @@ impl<'a> CallScope<'a> {
 
     // Forwards the thrown value to the parent try scope
     let try_scope = self.try_scopes.into_iter().next().unwrap();
-    if let Some(thrown_val) = try_scope.thrown_val() {
-      analyzer.try_scope_mut().throw(ForwardedEntity::new(thrown_val, self.call_dep));
-    }
+    let promise_error = try_scope.thrown_val().and_then(|thrown_val| {
+      if self.is_async {
+        Some(thrown_val)
+      } else {
+        analyzer.try_scope_mut().throw(ForwardedEntity::new(thrown_val, self.call_dep));
+        None
+      }
+    });
 
     if self.is_generator {
       for value in &self.returned_values {
@@ -80,7 +85,11 @@ impl<'a> CallScope<'a> {
     };
     (
       self.old_variable_scopes,
-      if self.is_async { PromiseEntity::new(self.has_await_effect, value) } else { value },
+      if self.is_async {
+        PromiseEntity::new(self.await_has_effect, value, promise_error)
+      } else {
+        value
+      },
     )
   }
 }
