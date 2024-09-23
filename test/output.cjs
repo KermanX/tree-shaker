@@ -5,7 +5,8 @@ let input = '';
 
 let ignored = JSON.parse(fs.readFileSync(path.join(__dirname, 'ignored.json'), 'utf8'));
 let v8Failed = fs.readFileSync(path.join(__dirname, 'v8_test262.status'), 'utf8').split(/\r?\n/).filter(Boolean).map(s => s + '.js');
-let skipped = [];
+let engine262Skip = fs.readFileSync(path.join(__dirname, 'engine262.skiplist'), 'utf8').split(/\r?\n/).filter(s => /^\w/.test(s));
+let treeShakeSkipped = [];
 
 process.stdin.on('data', chunk => {
   input += chunk;
@@ -16,7 +17,7 @@ process.stdin.on('end', () => {
     .replace(/^Ran \d+ tests[\s\S]+/m, '')
     .replace(/^PASS.*$/gm, '')
     .replace(/^\[SKIP\](.*)$/gm, (_, p) => {
-      skipped.push(p.trim().slice('test262/test/'.length))
+      treeShakeSkipped.push(p.trim().slice('test262/test/'.length))
       return ''
     })
     .replace(/^FAIL /gm, '')
@@ -29,7 +30,7 @@ process.stdin.on('end', () => {
   let expectedFailedNum = 0;
   for (let i = 0; i < lines.length; i+=2) {
     let name = lines[i].slice('test262/test/'.length);
-    if (ignored.includes(name) || v8Failed.includes(name) || skipped.includes(name)) {
+    if (ignored.includes(name) || v8Failed.includes(name) || engine262Skip.includes(name) || treeShakeSkipped.includes(name)) {
       expectedFailedNum++;
     } else {
       failedTests[name] = lines[i+1]?.replaceAll("`", "'") || '<NO OUTPUT>';
