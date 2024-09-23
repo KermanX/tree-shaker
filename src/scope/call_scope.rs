@@ -63,10 +63,11 @@ impl<'a> CallScope<'a> {
     // Forwards the thrown value to the parent try scope
     let try_scope = self.try_scopes.into_iter().next().unwrap();
     let promise_error = try_scope.thrown_val().and_then(|thrown_val| {
+      let thrown_val = ForwardedEntity::new(thrown_val, self.call_dep);
       if self.is_async {
         Some(thrown_val)
       } else {
-        analyzer.try_scope_mut().throw(ForwardedEntity::new(thrown_val, self.call_dep));
+        analyzer.try_scope_mut().throw(thrown_val);
         None
       }
     });
