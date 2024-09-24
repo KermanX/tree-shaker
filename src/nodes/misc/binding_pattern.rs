@@ -168,7 +168,7 @@ impl<'a> Transformer<'a> {
           let BindingProperty { span, key, value, shorthand, .. } = property;
 
           if *shorthand && matches!(value.kind, BindingPatternKind::BindingIdentifier(_)) {
-            if need_property {
+            if need_property || self.transform_property_key(key, false).is_some() {
               transformed_properties.push(self.clone_node(property));
             }
           } else {
