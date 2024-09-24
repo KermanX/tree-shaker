@@ -24,8 +24,13 @@ impl<'a> Analyzer<'a> {
         }
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
-        if value.test_nullish() != Some(false) {
-          self.may_throw();
+        let is_nullish = value.test_nullish();
+        if is_nullish != Some(false) {
+          if is_nullish == Some(true) {
+            self.explicit_throw_unknown();
+          } else {
+            self.may_throw();
+          }
           value.consume(self);
           self.refer_dep(AstKind::ObjectAssignmentTarget(node));
         }

@@ -108,6 +108,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   ) -> Entity<'a> {
     if !self.maybe_object() {
       // TODO: throw warning
+      analyzer.explicit_throw_unknown();
     }
     self.consume(analyzer);
     consumed_object::call(analyzer, dep, this, args)
@@ -133,6 +134,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
     if !self.maybe_object() {
       // TODO: throw warning
+      analyzer.explicit_throw_unknown();
     }
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)

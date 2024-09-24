@@ -68,11 +68,17 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         let init = init.unwrap_or_else(|| {
           // TODO: Error: Missing initializer in destructuring declaration
+          self.explicit_throw_unknown();
           UnknownEntity::new_unknown()
         });
 
-        if init.test_nullish() != Some(false) {
-          self.may_throw();
+        let is_nullish = init.test_nullish();
+        if is_nullish != Some(false) {
+          if is_nullish == Some(true) {
+            self.explicit_throw_unknown();
+          } else {
+            self.may_throw();
+          }
           init.consume(self);
           let data = self.load_data::<ObjectPatternData>(AstType2::ObjectPattern, node.as_ref());
           data.need_destruct = true;
@@ -95,6 +101,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ArrayPattern(node) => {
         let init = init.unwrap_or_else(|| {
           // TODO: Error: Missing initializer in destructuring declaration
+          self.explicit_throw_unknown();
           UnknownEntity::new_unknown()
         });
 

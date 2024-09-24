@@ -29,8 +29,20 @@ impl<'a> Analyzer<'a> {
   pub fn explicit_throw(&mut self, value: Entity<'a>) {
     let try_scope = self.try_scope_mut();
 
-    try_scope.thrown_values.push(value);
     try_scope.may_throw = true;
+    try_scope.thrown_values.push(value);
+
+    let cf_scope_index = try_scope.cf_scope_index;
+    self.exit_to(cf_scope_index);
+  }
+
+  pub fn explicit_throw_unknown(&mut self) {
+    let try_scope = self.try_scope_mut();
+
+    try_scope.may_throw = true;
+    if try_scope.thrown_values.is_empty() {
+      try_scope.thrown_values.push(UnknownEntity::new_unknown());
+    }
 
     let cf_scope_index = try_scope.cf_scope_index;
     self.exit_to(cf_scope_index);

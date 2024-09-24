@@ -22,6 +22,7 @@ impl<'a> Analyzer<'a> {
       Some(init) => {
         if node.init.is_some() {
           // TODO: error: for-in/for-of loop variable declaration may not have an initializer.
+          self.explicit_throw_unknown();
         }
         Some(init)
       }

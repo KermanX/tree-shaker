@@ -85,6 +85,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     dep: EntityDep,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     // TODO: throw warning
+    analyzer.explicit_throw_unknown();
     consumed_object::iterate(analyzer, dep)
   }
 

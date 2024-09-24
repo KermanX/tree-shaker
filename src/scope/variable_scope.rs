@@ -35,7 +35,7 @@ impl<'a> VariableScope<'a> {
       if let Some((old_kind, old_consumed, old_val)) = self.variables.get(&symbol) {
         if !old_kind.is_redeclarable() {
           // TODO: ERROR: "Variable already declared"
-          analyzer.may_throw();
+          analyzer.explicit_throw_unknown();
           value.map(|value| value.consume(analyzer));
           self.variables.insert(symbol, (kind, true, Some(UnknownEntity::new_unknown())));
         } else {
@@ -52,7 +52,7 @@ impl<'a> VariableScope<'a> {
       let old = self.variables.insert(symbol, (kind, false, value));
       if old.is_some() {
         // TODO: error "Variable already declared"
-        analyzer.may_throw();
+        analyzer.explicit_throw_unknown();
       }
     }
   }
@@ -75,7 +75,7 @@ impl<'a> VariableScope<'a> {
           Some(LiteralEntity::new_undefined())
         } else {
           // TODO: throw TDZ error
-          analyzer.may_throw();
+          analyzer.explicit_throw_unknown();
           analyzer.refer_global();
           None
         }
@@ -98,7 +98,7 @@ impl<'a> VariableScope<'a> {
       value.consume(analyzer);
     } else if old.0.is_const() {
       // TODO: throw error
-      analyzer.may_throw();
+      analyzer.explicit_throw_unknown();
       value.consume(analyzer);
     } else if old.1 {
       value.consume(analyzer);

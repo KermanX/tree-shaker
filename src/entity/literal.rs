@@ -45,6 +45,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   ) -> Entity<'a> {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       // TODO: throw warning
+      analyzer.explicit_throw_unknown();
       consumed_object::get_property(analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
@@ -96,6 +97,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     args: &Entity<'a>,
   ) -> Entity<'a> {
     // TODO: throw warning
+    analyzer.explicit_throw_unknown();
     consumed_object::call(analyzer, dep, this, args)
   }
 
@@ -121,6 +123,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       _ => {
         // TODO: throw warning
         self.consume(analyzer);
+        analyzer.explicit_throw_unknown();
         consumed_object::iterate(analyzer, dep)
       }
     }
