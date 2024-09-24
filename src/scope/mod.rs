@@ -44,7 +44,6 @@ impl<'a> ScopeContext<'a> {
         UnknownEntity::new_unknown(),
         (UnknownEntity::new_unknown(), vec![]),
         true,
-        false,
       )],
       variable_scopes: vec![Rc::new(RefCell::new(VariableScope::new(None, cf_scopes.clone())))],
       cf_scopes,
@@ -77,7 +76,6 @@ impl<'a> Analyzer<'a> {
     this: Entity<'a>,
     args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
-    is_generator: bool,
   ) {
     let call_dep: EntityDep = call_dep.into();
     let mut call_stack_deps: Vec<_> =
@@ -91,11 +89,7 @@ impl<'a> Analyzer<'a> {
       Some(call_stack_deps.into()),
       self.scope_context.cf_scopes.clone(),
     ))));
-    let cf_scope_index = self.push_cf_scope(
-      CfScopeKind::Function,
-      None,
-      if is_generator { None } else { Some(false) },
-    );
+    let cf_scope_index = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
     self.scope_context.call_scopes.push(CallScope::new(
       source.into(),
       call_dep,
@@ -105,7 +99,6 @@ impl<'a> Analyzer<'a> {
       this,
       args,
       is_async,
-      is_generator,
     ));
   }
 

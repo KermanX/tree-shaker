@@ -5,6 +5,7 @@ use crate::{
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
     function::{FunctionEntity, FunctionEntitySource},
+    unknown::UnknownEntity,
   },
   scope::variable_scope::VariableScopes,
   transformer::Transformer,
@@ -44,39 +45,55 @@ impl<'a> Analyzer<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    self.push_call_scope(
-      source,
-      call_dep,
-      variable_scopes,
-      this,
-      (args.clone(), vec![ /* later filled by formal parameters */]),
-      node.r#async,
-      node.generator,
-    );
+    let runner: Box<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a> =
+      Box::new(move |analyzer: &mut Analyzer<'a>| {
+        analyzer.push_call_scope(
+          source,
+          call_dep.clone(),
+          variable_scopes.clone(),
+          this.clone(),
+          (args.clone(), vec![ /* later filled by formal parameters */]),
+          node.r#async,
+        );
 
-    let declare_in_body = is_expression && node.id.is_some();
-    if declare_in_body {
-      let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
-      self.declare_symbol(
-        symbol,
-        decl_dep,
-        false,
-        DeclarationKind::NamedFunctionInBody,
-        Some(fn_entity),
-      );
+        let declare_in_body = is_expression && node.id.is_some();
+        if declare_in_body {
+          let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
+          analyzer.declare_symbol(
+            symbol,
+            decl_dep.clone(),
+            false,
+            DeclarationKind::NamedFunctionInBody,
+            Some(fn_entity.clone()),
+          );
 
-      self.push_variable_scope();
-      self.call_scope_mut().variable_scope_index += 1;
+          analyzer.push_variable_scope();
+          analyzer.call_scope_mut().variable_scope_index += 1;
+        }
+
+        analyzer.exec_formal_parameters(
+          &node.params,
+          args.clone(),
+          DeclarationKind::FunctionParameter,
+        );
+        analyzer.exec_function_body(node.body.as_ref().unwrap());
+
+        if declare_in_body {
+          analyzer.pop_variable_scope();
+        }
+
+        analyzer.pop_call_scope()
+      });
+
+    if node.generator {
+      // Too complex to analyze the control flow, thus run exhaustively
+      self.exec_exhaustively(move |analyzer| {
+        runner(analyzer).consume(analyzer);
+      });
+      UnknownEntity::new_unknown()
+    } else {
+      runner(self)
     }
-
-    self.exec_formal_parameters(&node.params, args, DeclarationKind::FunctionParameter);
-    self.exec_function_body(node.body.as_ref().unwrap());
-
-    if declare_in_body {
-      self.pop_variable_scope();
-    }
-
-    self.pop_call_scope()
   }
 }
 

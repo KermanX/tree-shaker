@@ -43,7 +43,6 @@ impl<'a> Analyzer<'a> {
       parent_call_scope.this.clone(),
       parent_call_scope.args.clone(),
       node.r#async,
-      false,
     );
 
     self.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
