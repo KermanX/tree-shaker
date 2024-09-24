@@ -78,7 +78,7 @@ impl<'a> Transformer<'a> {
           }
         }
 
-        if transformed_elements.is_empty() && rest.is_none() {
+        if !self.config.iterate_side_effects && transformed_elements.is_empty() && rest.is_none() {
           None
         } else {
           Some(self.ast_builder.assignment_target_pattern_array_assignment_target(
