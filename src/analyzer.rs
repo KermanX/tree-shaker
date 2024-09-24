@@ -64,8 +64,11 @@ impl<'a> Analyzer<'a> {
     // Consume exports
     self.default_export.take().map(|entity| entity.consume(self));
     for symbol in self.named_exports.clone() {
-      let entity = self.read_symbol(&symbol);
-      entity.unwrap().consume(self);
+      let entity = self.read_symbol(&symbol).unwrap();
+      entity.consume(self);
+
+      let (_, _, decl_dep) = self.symbol_decls.get(&symbol).unwrap();
+      self.refer_dep(decl_dep.clone());
     }
     // Consume uncaught thrown values
     self.call_scope_mut().try_scopes.pop().unwrap().thrown_val().map(|entity| {
