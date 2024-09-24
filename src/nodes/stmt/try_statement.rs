@@ -1,7 +1,10 @@
 use crate::{
   analyzer::Analyzer, entity::unknown::UnknownEntity, scope::CfScopeKind, transformer::Transformer,
 };
-use oxc::ast::ast::{Statement, TryStatement};
+use oxc::{
+  ast::ast::{Statement, TryStatement},
+  span::SPAN,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_try_statement(&mut self, node: &'a TryStatement<'a>) {
@@ -37,6 +40,7 @@ impl<'a> Transformer<'a> {
 
     let block = self.transform_block_statement(block);
 
+    let handler_span = handler.as_ref().map_or_else(|| SPAN, |handler| handler.span);
     let handler = if block.is_some() {
       handler.as_ref().map(|handler| self.transform_catch_clause(handler))
     } else {
@@ -49,9 +53,22 @@ impl<'a> Transformer<'a> {
     match (block, finalizer) {
       (None, None) => None,
       (None, Some(finalizer)) => Some(self.ast_builder.statement_from_block(finalizer)),
-      (Some(block), finalizer) => {
-        Some(self.ast_builder.statement_try(*span, block, handler, finalizer))
-      }
+      (Some(block), finalizer) => Some(self.ast_builder.statement_try(
+        *span,
+        block,
+        if finalizer.is_some() {
+          handler
+        } else {
+          Some(handler.unwrap_or_else(|| {
+            self.ast_builder.catch_clause(
+              handler_span,
+              None,
+              self.ast_builder.block_statement(handler_span, self.ast_builder.vec()),
+            )
+          }))
+        },
+        finalizer,
+      )),
     }
   }
 }
