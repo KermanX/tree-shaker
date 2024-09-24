@@ -27,7 +27,7 @@ export function f6(a, b) {
 	return a;
 }
 export function f7(a) {
-	({x: {}, a: {}, b: {c: {}},...__unused__} = a);
+	({x: __unused__, a: __unused__, b: {c: __unused__},...__unused__} = a);
 	effect("a");
 }
 var __unused__;

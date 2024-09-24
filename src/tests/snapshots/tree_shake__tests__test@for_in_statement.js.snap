@@ -6,7 +6,7 @@ input_file: src/tests/fixtures/for_in_statement.js
 export function main(a) {
 	g;
 	for (g in a);
-	for ({} in a) {
+	for (__unused__ in a) {
 		effect();
 	}
 	for (let k in a) {
@@ -20,3 +20,4 @@ export function main(a) {
 		effect(k);
 	}
 }
+var __unused__;

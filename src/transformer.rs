@@ -123,13 +123,15 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn build_unused_assignment_target(&self, span: Span) -> AssignmentTarget<'a> {
-    self.ast_builder.assignment_target_assignment_target_pattern(
-      self.ast_builder.assignment_target_pattern_object_assignment_target(
-        span,
-        self.ast_builder.vec(),
-        None,
-      ),
-    )
+    // The commented doesn't work because nullish value can't be destructured
+    // self.ast_builder.assignment_target_assignment_target_pattern(
+    //   self.ast_builder.assignment_target_pattern_object_assignment_target(
+    //     span,
+    //     self.ast_builder.vec(),
+    //     None,
+    //   ),
+    // )
+    self.ast_builder.assignment_target_simple(self.build_unused_simple_assignment_target(span))
   }
 
   pub fn build_unused_assignment_target_in_rest(&self, span: Span) -> AssignmentTarget<'a> {
