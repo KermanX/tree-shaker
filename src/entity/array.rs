@@ -45,14 +45,9 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       rest.consume(analyzer);
     }
   }
-
   fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
-    if kind == InteractionKind::ArrayOp {
-      self.add_dep(analyzer, dep);
-    } else {
-      self.consume(analyzer);
-      consumed_object::interact(analyzer, dep, kind);
-    }
+    self.consume(analyzer);
+    consumed_object::interact(analyzer, dep, kind);
   }
 
   fn get_property(
