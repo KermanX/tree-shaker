@@ -4,7 +4,6 @@ use crate::{
   entity::{
     dep::{EntityDep, EntityDepNode},
     entity::Entity,
-    forwarded::ForwardedEntity,
     literal::LiteralEntity,
     promise::PromiseEntity,
     union::UnionEntity,
@@ -59,15 +58,14 @@ impl<'a> CallScope<'a> {
 
     // Forwards the thrown value to the parent try scope
     let try_scope = self.try_scopes.into_iter().next().unwrap();
-    let promise_error = try_scope.thrown_val().and_then(|thrown_val| {
-      let thrown_val = ForwardedEntity::new(thrown_val, self.call_dep);
+    let mut promise_error = None;
+    if try_scope.may_throw {
       if self.is_async {
-        Some(thrown_val)
+        promise_error = Some(try_scope.thrown_values);
       } else {
-        analyzer.try_scope_mut().throw(thrown_val);
-        None
+        analyzer.forward_throw(try_scope.thrown_values, self.call_dep.clone());
       }
-    });
+    }
 
     let value = if self.returned_values.is_empty() {
       LiteralEntity::new_undefined()
@@ -76,7 +74,7 @@ impl<'a> CallScope<'a> {
     };
     (
       self.old_variable_scopes,
-      if self.is_async { PromiseEntity::new(value, promise_error) } else { value },
+      if self.is_async { PromiseEntity::new(value, promise_error, self.call_dep) } else { value },
     )
   }
 }

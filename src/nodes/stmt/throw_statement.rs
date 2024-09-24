@@ -13,10 +13,7 @@ impl<'a> Analyzer<'a> {
 
     let dep = AstKind::ThrowStatement(node);
 
-    let try_scope = self.try_scope_mut();
-    try_scope.throw(ForwardedEntity::new(value, dep));
-    let cf_scope_index = try_scope.cf_scope_index;
-    self.exit_to(cf_scope_index);
+    self.explicit_throw(ForwardedEntity::new(value, dep));
   }
 }
 

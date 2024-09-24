@@ -12,13 +12,19 @@ use crate::analyzer::Analyzer;
 #[derive(Debug, Clone)]
 pub struct PromiseEntity<'a> {
   pub value: Entity<'a>,
-  pub error: Option<Entity<'a>>,
+  pub errors: Option<Vec<Entity<'a>>>,
+  pub call_dep: EntityDep,
 }
 
 impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.value.consume(analyzer);
-    self.error.as_ref().map(|e| e.consume(analyzer));
+    if let Some(errors) = &self.errors {
+      for error in errors {
+        error.consume(analyzer);
+      }
+    }
+    analyzer.refer_dep(self.call_dep.clone());
   }
 
   fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
@@ -76,8 +82,8 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
-    if let Some(error) = &self.error {
-      analyzer.try_scope_mut().throw(error.clone());
+    if let Some(errors) = &self.errors {
+      analyzer.forward_throw(errors.clone(), self.call_dep.clone());
     }
     self.value.r#await(analyzer)
   }
@@ -122,7 +128,11 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
 }
 
 impl<'a> PromiseEntity<'a> {
-  pub fn new(value: Entity<'a>, error: Option<Entity<'a>>) -> Entity<'a> {
-    Entity::new(Self { value, error })
+  pub fn new(
+    value: Entity<'a>,
+    errors: Option<Vec<Entity<'a>>>,
+    call_dep: EntityDep,
+  ) -> Entity<'a> {
+    Entity::new(Self { value, errors, call_dep })
   }
 }

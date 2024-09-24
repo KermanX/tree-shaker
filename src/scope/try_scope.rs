@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{entity::Entity, unknown::UnknownEntity},
+  entity::{dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, unknown::UnknownEntity},
 };
 
 #[derive(Debug)]
@@ -15,11 +15,6 @@ impl<'a> TryScope<'a> {
     TryScope { may_throw: false, thrown_values: Vec::new(), cf_scope_index }
   }
 
-  pub fn throw(&mut self, value: Entity<'a>) {
-    self.thrown_values.push(value);
-    self.may_throw = true;
-  }
-
   pub fn thrown_val(self) -> Option<Entity<'a>> {
     // Always unknown here
     self.may_throw.then(|| UnknownEntity::new_unknown_with_deps(self.thrown_values))
@@ -29,5 +24,24 @@ impl<'a> TryScope<'a> {
 impl<'a> Analyzer<'a> {
   pub fn may_throw(&mut self) {
     self.try_scope_mut().may_throw = true;
+  }
+
+  pub fn explicit_throw(&mut self, value: Entity<'a>) {
+    let try_scope = self.try_scope_mut();
+
+    try_scope.thrown_values.push(value);
+    try_scope.may_throw = true;
+
+    let cf_scope_index = try_scope.cf_scope_index;
+    self.exit_to(cf_scope_index);
+  }
+
+  pub fn forward_throw(&mut self, values: Vec<Entity<'a>>, dep: impl Into<EntityDep>) {
+    if values.is_empty() {
+      self.may_throw();
+    } else {
+      let thrown_val = UnknownEntity::new_unknown_with_deps(values);
+      self.explicit_throw(ForwardedEntity::new(thrown_val, dep.into()));
+    }
   }
 }
