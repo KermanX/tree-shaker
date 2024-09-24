@@ -45,21 +45,12 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn mark_exhaustive_write(
-    &mut self,
-    old_val: &Entity<'a>,
-    symbol: SymbolId,
-    target: usize,
-  ) -> bool {
-    if old_val.test_is_completely_unknown() {
-      false
-    } else {
-      let mut should_consume = false;
-      for scope in &mut self.scope_context.cf_scopes[target..] {
-        should_consume |= scope.borrow_mut().mark_exhaustive_write(symbol)
-      }
-      should_consume
+  pub fn mark_exhaustive_write(&mut self, symbol: SymbolId, target: usize) -> bool {
+    let mut should_consume = false;
+    for scope in &mut self.scope_context.cf_scopes[target..] {
+      should_consume |= scope.borrow_mut().mark_exhaustive_write(symbol)
     }
+    should_consume
   }
 
   pub fn exec_exhaustive_deps(&mut self, should_consume: bool, symbol: SymbolId) {

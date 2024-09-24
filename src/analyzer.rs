@@ -142,6 +142,8 @@ impl<'a> Analyzer<'a> {
       let value = ForwardedEntity::new(init, dep);
       if kind.is_untracked() {
         value.consume(self);
+      } else if kind.is_var() {
+        self.write_symbol(&symbol, value);
       } else {
         let variable_scope = variable_scopes.last().unwrap().clone();
         variable_scope.borrow_mut().init(self, symbol, value);
@@ -184,14 +186,18 @@ impl<'a> Analyzer<'a> {
       let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
       let target_variable_scope = self.find_first_different_variable_scope(variable_scopes);
       let dep = self.get_assignment_deps(target_variable_scope, decl_dep.clone());
-      let (is_consumed_exhaustively, old_val) = variable_scope_ref.read(self, symbol);
-      if is_consumed_exhaustively {
+      let (has_been_consumed_exhaustively, old_val) = variable_scope_ref.read(self, symbol);
+      if has_been_consumed_exhaustively {
         drop(variable_scope_ref);
         self.refer_dep(dep);
         new_val.consume(self);
       } else {
         let should_consume = if let Some(old_val) = &old_val {
-          self.mark_exhaustive_write(old_val, symbol.clone(), target_cf_scope)
+          if old_val.test_is_completely_unknown() {
+            false
+          } else {
+            self.mark_exhaustive_write(*symbol, target_cf_scope)
+          }
         } else {
           // TDZ
           true
