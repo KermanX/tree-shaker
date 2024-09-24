@@ -8,19 +8,15 @@ export function simple(unknown) {
 	effect(2);
 	effect(3);
 	effect(4);
-	let { g: { h: __unused_83AC, i: { j: __unused_C4E6 } } } = unknown;
+	let { g: { h, i: { j } } } = unknown;
 }
 export function with_rest(unknown) {
-	let { a: __unused_AA1B,...rest } = {
+	let { a,...rest } = {
 		a: 1,
 		b: unknown,
 		c: 2
 	};
 	effect(undefined, rest.b, 2);
-	let { b: __unused_4486,...__unused_2075 } = unknown;
-	let { d } = {
-		d: unknown,
-		e: unknown
-	};
+	let { b,...__unused_2075 } = unknown;
 	effect(d);
 }

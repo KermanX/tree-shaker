@@ -9,8 +9,7 @@ use oxc::{
   ast::{
     ast::{
       AssignmentTarget, BindingPattern, Expression, ForStatementLeft, IdentifierReference,
-      NumberBase, Program, SimpleAssignmentTarget, TSTypeAnnotation, UnaryOperator,
-      VariableDeclarationKind,
+      NumberBase, Program, SimpleAssignmentTarget, UnaryOperator, VariableDeclarationKind,
     },
     AstBuilder, NONE,
   },
@@ -99,16 +98,20 @@ impl<'a> Transformer<'a> {
     node.clone_in(self.allocator)
   }
 
-  pub fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
+  pub fn build_unused_binding_identifier(&self, span: Span) -> BindingPattern<'a> {
     let mut hasher = DefaultHasher::new();
     hasher.write_u32(span.start);
     hasher.write_u32(span.end);
     let name = format!("__unused_{:04X}", hasher.finish() % 0xFFFF);
     self.ast_builder.binding_pattern(
       self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
-      None::<TSTypeAnnotation>,
+      NONE,
       false,
     )
+  }
+
+  pub fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
+    self.build_unused_binding_identifier(span)
   }
 
   pub fn build_unused_identifier_reference_write(&self, span: Span) -> IdentifierReference<'a> {
