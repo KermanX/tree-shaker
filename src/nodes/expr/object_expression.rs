@@ -1,7 +1,9 @@
 use crate::{analyzer::Analyzer, build_effect, entity::entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
-    ast::{Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, SpreadElement},
+    ast::{
+      Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, PropertyKind, SpreadElement,
+    },
     AstKind,
   },
   span::{GetSpan, SPAN},
@@ -48,7 +50,13 @@ impl<'a> Transformer<'a> {
 
           let value = self.transform_expression(value, need_val);
 
-          if let Some(value) = value {
+          if let Some(mut value) = value {
+            if *kind == PropertyKind::Set {
+              if let Expression::FunctionExpression(value) = &mut value {
+                self.patch_method_definition_params(value);
+              }
+            }
+
             let (computed, key) = self.transform_property_key(key, true).unwrap();
             self.ast_builder.object_property_kind_object_property(
               *span, *kind, key, value, None, *method, false, computed,
