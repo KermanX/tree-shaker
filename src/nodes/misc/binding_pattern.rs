@@ -167,7 +167,7 @@ impl<'a> Transformer<'a> {
 
           let BindingProperty { span, key, value, shorthand, .. } = property;
 
-          if *shorthand {
+          if *shorthand && matches!(value.kind, BindingPatternKind::BindingIdentifier(_)) {
             if need_property {
               transformed_properties.push(self.clone_node(property));
             }
@@ -182,6 +182,7 @@ impl<'a> Transformer<'a> {
             }
           }
         }
+
         if !need_binding
           && transformed_properties.is_empty()
           && rest.is_none()
@@ -238,22 +239,28 @@ impl<'a> Transformer<'a> {
         let AssignmentPattern { span, left, right, .. } = node.as_ref();
 
         let left_span = left.span();
-        let left = self.transform_binding_pattern(left, need_binding);
-        let right =
-          data.need_right.then(|| self.transform_expression(right, left.is_some())).flatten();
+        let transformed_left = self.transform_binding_pattern(left, false);
+        let transformed_right = data
+          .need_right
+          .then(|| self.transform_expression(right, transformed_left.is_some()))
+          .flatten();
 
-        if let Some(right) = right {
+        if let Some(right) = transformed_right {
           Some(self.ast_builder.binding_pattern(
             self.ast_builder.binding_pattern_kind_assignment_pattern(
               *span,
-              left.unwrap_or(self.build_unused_binding_pattern(left_span)),
+              transformed_left.unwrap_or(self.build_unused_binding_pattern(left_span)),
               right,
             ),
             NONE,
             false,
           ))
+        } else if need_binding {
+          Some(
+            transformed_left.unwrap_or_else(|| self.transform_binding_pattern(left, true).unwrap()),
+          )
         } else {
-          left
+          transformed_left
         }
       }
     };
