@@ -1,4 +1,7 @@
 [
+  "// Poisoned builtin object prototype",
+  "language/statements/variable/dstr/ary-init-iter-get-err-array-prototype.js",
+
   "// Errors thrown by bigint operations",
   "language/expressions/bitwise-and/bigint-and-number.js",
   "language/expressions/bitwise-and/bigint-errors.js",
@@ -78,6 +81,8 @@
 
   "// Errors thrown by value getter in iterated object",
   "language/expressions/array/spread-err-mult-err-itr-value.js",
+  "language/statements/variable/dstr/ary-ptrn-elem-id-iter-val-err.js",
+  "language/statements/try/dstr/ary-ptrn-elem-id-iter-val-err.js",
 
   "// Errors thrown by referencing un-initialized lexical bindings",
   "language/module-code/instn-local-bndng-cls.js",
