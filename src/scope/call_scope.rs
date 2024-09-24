@@ -23,6 +23,7 @@ pub struct CallScope<'a> {
   pub args: (Entity<'a>, Vec<SymbolId>),
   pub returned_values: Vec<Entity<'a>>,
   pub is_async: bool,
+  pub is_generator: bool,
   pub try_scopes: Vec<TryScope<'a>>,
   pub need_consume_arguments: bool,
 }
@@ -37,6 +38,7 @@ impl<'a> CallScope<'a> {
     this: Entity<'a>,
     args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
+    is_generator: bool,
   ) -> Self {
     CallScope {
       source,
@@ -48,6 +50,7 @@ impl<'a> CallScope<'a> {
       args,
       returned_values: Vec::new(),
       is_async,
+      is_generator,
       try_scopes: vec![TryScope::new(cf_scope_index)],
       need_consume_arguments: false,
     }
@@ -60,7 +63,12 @@ impl<'a> CallScope<'a> {
     let try_scope = self.try_scopes.into_iter().next().unwrap();
     let mut promise_error = None;
     if try_scope.may_throw {
-      if self.is_async {
+      if self.is_generator {
+        analyzer.may_throw();
+        for value in try_scope.thrown_values {
+          value.consume(analyzer);
+        }
+      } else if self.is_async {
         promise_error = Some(try_scope.thrown_values);
       } else {
         analyzer.forward_throw(try_scope.thrown_values, self.call_dep.clone());

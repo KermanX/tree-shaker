@@ -54,6 +54,7 @@ impl<'a> Analyzer<'a> {
           this.clone(),
           (args.clone(), vec![ /* later filled by formal parameters */]),
           node.r#async,
+          node.generator,
         );
 
         let declare_in_body = is_expression && node.id.is_some();

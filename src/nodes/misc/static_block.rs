@@ -22,6 +22,7 @@ impl<'a> Analyzer<'a> {
       UnknownEntity::new_unknown(),
       (UnknownEntity::new_unknown(), vec![]),
       false,
+      false,
     );
 
     let data = self.load_data::<StatementVecData>(AST_TYPE, node);
