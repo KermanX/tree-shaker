@@ -75,7 +75,8 @@ impl<'a> VariableScope<'a> {
           Some(LiteralEntity::new_undefined())
         } else {
           // TODO: throw TDZ error
-          analyzer.explicit_throw_unknown();
+          // FIXME: exhaustively executed function should not throw TDZ error
+          analyzer.may_throw();
           analyzer.refer_global();
           None
         }
