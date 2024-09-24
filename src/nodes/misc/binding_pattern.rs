@@ -73,6 +73,7 @@ impl<'a> Analyzer<'a> {
 
         if init.test_nullish() != Some(false) {
           self.may_throw();
+          init.consume(self);
           let data = self.load_data::<ObjectPatternData>(AstType2::ObjectPattern, node.as_ref());
           data.need_destruct = true;
         }

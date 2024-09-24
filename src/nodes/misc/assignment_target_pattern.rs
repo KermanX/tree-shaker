@@ -24,6 +24,12 @@ impl<'a> Analyzer<'a> {
         }
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
+        if value.test_nullish() != Some(false) {
+          self.may_throw();
+          value.consume(self);
+          self.refer_dep(AstKind::ObjectAssignmentTarget(node));
+        }
+
         let mut enumerated = vec![];
         for property in &node.properties {
           enumerated.push(self.exec_assignment_target_property(property, value.clone()));
@@ -81,6 +87,8 @@ impl<'a> Transformer<'a> {
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
         let ObjectAssignmentTarget { span, properties, rest, .. } = node.as_ref();
 
+        let is_referred = self.is_referred(AstKind::ObjectAssignmentTarget(node));
+
         let rest = rest.as_ref().and_then(|rest| {
           self.transform_assignment_target_rest(
             rest,
@@ -96,7 +104,7 @@ impl<'a> Transformer<'a> {
             transformed_properties.push(property);
           }
         }
-        if transformed_properties.is_empty() && rest.is_none() {
+        if !is_referred && transformed_properties.is_empty() && rest.is_none() {
           None
         } else {
           Some(self.ast_builder.assignment_target_pattern_object_assignment_target(

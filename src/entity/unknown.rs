@@ -185,7 +185,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     match &self.kind {
-      UnknownEntityKind::Unknown => None,
+      UnknownEntityKind::Unknown | UnknownEntityKind::Object => None,
       _ => Some(false),
     }
   }
