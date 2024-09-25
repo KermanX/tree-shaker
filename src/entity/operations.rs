@@ -63,7 +63,7 @@ impl<'a> EntityOpHost<'a> {
           }
         }
 
-        return Some(lhs_lit == rhs_lit);
+        return Some(lhs_lit == rhs_lit && *lhs_lit != LiteralEntity::NaN);
       }
 
       if lhs_lit.iter().all(|lit| !rhs_lit.contains(lit)) {
