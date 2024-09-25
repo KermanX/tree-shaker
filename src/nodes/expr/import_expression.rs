@@ -8,13 +8,17 @@ use oxc::ast::ast::{Expression, ImportExpression};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_import_expression(&mut self, node: &'a ImportExpression<'a>) -> Entity<'a> {
-    self.exec_expression(&node.source);
+    let mut deps = vec![];
+
+    deps.push(self.exec_expression(&node.source).get_to_string());
 
     for argument in &node.arguments {
-      self.exec_expression(argument);
+      deps.push(self.exec_expression(argument));
     }
 
-    UnknownEntity::new_unknown()
+    // FIXME: if have side effects, then consume all deps
+
+    UnknownEntity::new_unknown_with_deps(deps)
   }
 }
 
@@ -26,11 +30,12 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let ImportExpression { span, source, arguments, .. } = node;
 
-    let source = self.transform_expression(source, need_val);
-
     // FIXME: side effects
+    let need_import = need_val;
 
-    if need_val {
+    let source = self.transform_expression(source, need_import);
+
+    if need_import {
       let mut transformed_arguments = self.ast_builder.vec();
       for argument in arguments {
         transformed_arguments.push(self.transform_expression(argument, true).unwrap());
