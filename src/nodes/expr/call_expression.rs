@@ -22,16 +22,24 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_call_expression(&mut self, node: &'a CallExpression) -> Entity<'a> {
-    if let Some((callee, this)) = self.exec_callee(&node.callee) {
+    self.exec_call_expression_in_chain(node).1
+  }
+
+  /// Returns (short-circuit, value)
+  pub fn exec_call_expression_in_chain(
+    &mut self,
+    node: &'a CallExpression,
+  ) -> (Option<bool>, Entity<'a>) {
+    if let Some((callee_indeterminate, callee, this)) = self.exec_callee(&node.callee) {
       let indeterminate = if node.optional {
         match callee.test_nullish() {
-          Some(true) => return LiteralEntity::new_undefined(),
+          Some(true) => return (Some(true), LiteralEntity::new_undefined()),
           Some(false) => false,
           None => true,
         }
       } else {
         false
-      };
+      } || callee_indeterminate;
 
       if indeterminate {
         self.push_cf_scope_normal(None);
@@ -45,12 +53,12 @@ impl<'a> Analyzer<'a> {
 
       if indeterminate {
         self.pop_cf_scope();
-        UnionEntity::new(vec![ret_val, LiteralEntity::new_undefined()])
+        (None, UnionEntity::new(vec![ret_val, LiteralEntity::new_undefined()]))
       } else {
-        ret_val
+        (Some(false), ret_val)
       }
     } else {
-      LiteralEntity::new_undefined()
+      (Some(true), LiteralEntity::new_undefined())
     }
   }
 }

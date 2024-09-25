@@ -4,7 +4,7 @@ use crate::{
   build_effect_from_arr,
   entity::{
     arguments::ArgumentsEntity, dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity,
-    literal::LiteralEntity, unknown::UnknownEntity,
+    literal::LiteralEntity, union::UnionEntity, unknown::UnknownEntity,
   },
   transformer::Transformer,
 };
@@ -21,7 +21,11 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a TaggedTemplateExpression<'a>,
   ) -> Entity<'a> {
-    if let Some((tag, this)) = self.exec_callee(&node.tag) {
+    if let Some((indeterminate, tag, this)) = self.exec_callee(&node.tag) {
+      if indeterminate {
+        self.push_cf_scope_normal(None);
+      }
+
       let mut arguments = vec![(false, UnknownEntity::new_unknown())];
 
       for expr in &node.quasi.expressions {
@@ -30,12 +34,19 @@ impl<'a> Analyzer<'a> {
         arguments.push((false, ForwardedEntity::new(value, dep)));
       }
 
-      tag.call(
+      let value = tag.call(
         self,
         AstKind::TaggedTemplateExpression(node),
         &this,
         &ArgumentsEntity::new(arguments),
-      )
+      );
+
+      if indeterminate {
+        self.pop_cf_scope();
+        UnionEntity::new(vec![value, LiteralEntity::new_undefined()])
+      } else {
+        value
+      }
     } else {
       LiteralEntity::new_undefined()
     }

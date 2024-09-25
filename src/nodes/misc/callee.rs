@@ -25,15 +25,30 @@ fn unwrap_to_member_expression<'a>(node: &'a Expression<'a>) -> Option<&'a Membe
 }
 
 impl<'a> Analyzer<'a> {
-  /// Returns: Some((callee, this)) or None for should not call due to ?. operator
-  pub fn exec_callee(&mut self, node: &'a Expression<'a>) -> Option<(Entity<'a>, Entity<'a>)> {
+  /// Returns: Some((indeterminate, callee, this)) or None for should not call due to ?. operator
+  pub fn exec_callee(
+    &mut self,
+    node: &'a Expression<'a>,
+  ) -> Option<(bool, Entity<'a>, Entity<'a>)> {
     let dep: EntityDepNode = (AST_TYPE, node).into();
     if let Some(member_expr) = unwrap_to_member_expression(node) {
-      let (callee, cache) = self.exec_member_expression_read(member_expr);
-      cache.map(|(object, _)| (callee, ForwardedEntity::new(object, dep)))
+      let (short_circuit, callee, cache) = self.exec_member_expression_read_in_chain(member_expr);
+      cache.map(|(object, _)| {
+        assert_ne!(short_circuit, Some(true));
+        let indeterminate = short_circuit.is_none();
+        (indeterminate, callee, ForwardedEntity::new(object, dep))
+      })
     } else {
-      let callee = self.exec_expression(node);
-      Some((callee, ForwardedEntity::new(LiteralEntity::new_undefined(), dep)))
+      let (short_circuit, callee) = self.exec_expression_in_chain(node);
+      if short_circuit == Some(true) {
+        None
+      } else {
+        Some((
+          short_circuit.is_none(),
+          callee,
+          ForwardedEntity::new(LiteralEntity::new_undefined(), dep),
+        ))
+      }
     }
   }
 }

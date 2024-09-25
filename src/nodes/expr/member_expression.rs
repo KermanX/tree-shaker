@@ -27,21 +27,39 @@ struct Data {
 }
 
 impl<'a> Analyzer<'a> {
+  /// Returns (short-circuit, value, cache)
   pub fn exec_member_expression_read(
     &mut self,
     node: &'a MemberExpression<'a>,
   ) -> (Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
-    let object = self.exec_expression(node.object());
+    let (short_circuit, value, cache) = self.exec_member_expression_read_in_chain(node);
+    debug_assert_eq!(short_circuit, Some(false));
+    (value, cache)
+  }
+
+  /// Returns (short-circuit, value, cache)
+  pub fn exec_member_expression_read_in_chain(
+    &mut self,
+    node: &'a MemberExpression<'a>,
+  ) -> (Option<bool>, Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
+    let (short_circuit, object) = self.exec_expression_in_chain(node.object());
+
+    let object_indeterminate = match short_circuit {
+      Some(true) => return (Some(true), LiteralEntity::new_undefined(), None),
+      Some(false) => false,
+      None => true,
+    };
 
     let indeterminate = if node.optional() {
       match object.test_nullish() {
-        Some(true) => return (LiteralEntity::new_undefined(), None),
+        Some(true) => return (Some(true), LiteralEntity::new_undefined(), None),
         Some(false) => false,
         None => true,
       }
     } else {
       false
-    };
+    } || object_indeterminate;
+    let short_circuit = if indeterminate { None } else { Some(false) };
 
     let data = self.load_data::<Data>(AST_TYPE_READ, node);
     data.need_access = true;
@@ -57,9 +75,9 @@ impl<'a> Analyzer<'a> {
 
     if indeterminate {
       self.pop_cf_scope();
-      (UnionEntity::new(vec![value, LiteralEntity::new_undefined()]), cache)
+      (short_circuit, UnionEntity::new(vec![value, LiteralEntity::new_undefined()]), cache)
     } else {
-      (value, cache)
+      (short_circuit, value, cache)
     }
   }
 

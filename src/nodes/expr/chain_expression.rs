@@ -7,8 +7,23 @@ use oxc::ast::{
 impl<'a> Analyzer<'a> {
   pub fn exec_chain_expression(&mut self, node: &'a ChainExpression<'a>) -> Entity<'a> {
     match &node.expression {
-      ChainElement::CallExpression(node) => self.exec_call_expression(node),
-      node => self.exec_member_expression_read(node.to_member_expression()).0,
+      ChainElement::CallExpression(node) => self.exec_call_expression_in_chain(node).1,
+      node => self.exec_member_expression_read_in_chain(node.to_member_expression()).1,
+    }
+  }
+
+  pub fn exec_expression_in_chain(
+    &mut self,
+    node: &'a Expression<'a>,
+  ) -> (Option<bool>, Entity<'a>) {
+    match node {
+      match_member_expression!(Expression) => {
+        let (short_circuit, value, _cache) =
+          self.exec_member_expression_read_in_chain(node.to_member_expression());
+        (short_circuit, value)
+      }
+      Expression::CallExpression(node) => self.exec_call_expression_in_chain(node),
+      _ => (Some(false), self.exec_expression(node)),
     }
   }
 }
