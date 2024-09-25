@@ -65,17 +65,7 @@ impl<'a> Analyzer<'a> {
           UnknownEntity::new_unknown_with_deps(vec![argument])
         }
       }
-      UnaryOperator::UnaryPlus => {
-        if let Some(num) = argument.get_literal().and_then(|lit| lit.to_number()) {
-          if let Some(num) = num {
-            LiteralEntity::new_number(num, self.allocator.alloc(num.0.to_string()))
-          } else {
-            LiteralEntity::new_nan()
-          }
-        } else {
-          UnknownEntity::new_with_deps(UnknownEntityKind::Number, vec![argument])
-        }
-      }
+      UnaryOperator::UnaryPlus => argument.get_to_numeric(),
       UnaryOperator::LogicalNot => match argument.test_truthy() {
         Some(true) => LiteralEntity::new_boolean(false),
         Some(false) => LiteralEntity::new_boolean(true),
