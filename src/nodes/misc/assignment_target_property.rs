@@ -60,7 +60,7 @@ impl<'a> Transformer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     has_rest: bool,
   ) -> Option<AssignmentTargetProperty<'a>> {
-    let is_referred = self.is_referred((AstType2::AssignmentTargetProperty, node));
+    let need_binding = has_rest || self.is_referred((AstType2::AssignmentTargetProperty, node));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let data = self
@@ -78,7 +78,7 @@ impl<'a> Transformer<'a> {
           })
           .flatten();
 
-        if is_referred && binding.is_none() {
+        if need_binding && binding.is_none() {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
             *span,
             self.ast_builder.property_key_identifier_name(binding_span, binding_name),
@@ -108,7 +108,7 @@ impl<'a> Transformer<'a> {
         let AssignmentTargetPropertyProperty { span, name, binding, .. } = node.as_ref();
 
         let name_span = name.span();
-        let binding = self.transform_assignment_target_maybe_default(binding, is_referred);
+        let binding = self.transform_assignment_target_maybe_default(binding, need_binding);
         if let Some(binding) = binding {
           let (_computed, name) = self.transform_property_key(name, true).unwrap();
           Some(
@@ -116,7 +116,7 @@ impl<'a> Transformer<'a> {
               .ast_builder
               .assignment_target_property_assignment_target_property_property(*span, name, binding),
           )
-        } else if let Some((_computed, name)) = self.transform_property_key(name, has_rest) {
+        } else if let Some((_computed, name)) = self.transform_property_key(name, false) {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
             *span,
             name,
