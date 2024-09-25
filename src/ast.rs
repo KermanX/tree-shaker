@@ -191,6 +191,7 @@ pub enum AstType2 {
   AssignmentTargetRest,
   BindingProperty,
   Callee,
+  ExpressionInTaggedTemplate,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

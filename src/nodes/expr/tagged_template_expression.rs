@@ -1,14 +1,19 @@
 use crate::{
   analyzer::Analyzer,
+  ast::AstType2,
   build_effect_from_arr,
   entity::{
-    arguments::ArgumentsEntity, entity::Entity, literal::LiteralEntity, unknown::UnknownEntity,
+    arguments::ArgumentsEntity, dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity,
+    literal::LiteralEntity, unknown::UnknownEntity,
   },
   transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{Expression, TSTypeParameterInstantiation, TaggedTemplateExpression, TemplateLiteral},
-  AstKind,
+use oxc::{
+  ast::{
+    ast::{Expression, TaggedTemplateExpression, TemplateLiteral},
+    AstKind, NONE,
+  },
+  span::GetSpan,
 };
 
 impl<'a> Analyzer<'a> {
@@ -20,7 +25,9 @@ impl<'a> Analyzer<'a> {
       let mut arguments = vec![(false, UnknownEntity::new_unknown())];
 
       for expr in &node.quasi.expressions {
-        arguments.push((false, self.exec_expression(expr)));
+        let value = self.exec_expression(expr);
+        let dep: EntityDepNode = (AstType2::ExpressionInTaggedTemplate, expr).into();
+        arguments.push((false, ForwardedEntity::new(value, dep)));
       }
 
       tag.call(
@@ -52,7 +59,7 @@ impl<'a> Transformer<'a> {
         *span,
         tag,
         self.transform_quasi(quasi),
-        None::<TSTypeParameterInstantiation>,
+        NONE,
       ))
     } else {
       build_effect_from_arr!(
@@ -68,8 +75,14 @@ impl<'a> Transformer<'a> {
     let TemplateLiteral { span, quasis, expressions } = node;
 
     let mut transformed_expressions = self.ast_builder.vec();
-    for expression in expressions {
-      transformed_expressions.push(self.transform_expression(expression, true).unwrap());
+    for expr in expressions {
+      let expr_span = expr.span();
+      let referred = self.is_referred((AstType2::ExpressionInTaggedTemplate, expr));
+      transformed_expressions.push(
+        self
+          .transform_expression(expr, referred)
+          .unwrap_or_else(|| self.build_unused_expression(expr_span)),
+      );
     }
 
     self.ast_builder.template_literal(*span, self.clone_node(quasis), transformed_expressions)
