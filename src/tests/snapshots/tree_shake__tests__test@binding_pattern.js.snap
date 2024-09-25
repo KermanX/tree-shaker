@@ -18,5 +18,9 @@ export function with_rest(unknown) {
 	};
 	effect(undefined, rest.b, 2);
 	let { b,...__unused_2075 } = unknown;
+	let { d } = {
+		d: unknown,
+		e: unknown
+	};
 	effect(d);
 }
