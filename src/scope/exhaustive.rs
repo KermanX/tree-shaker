@@ -62,4 +62,8 @@ impl<'a> Analyzer<'a> {
       }
     }
   }
+
+  pub fn has_exhaustive_scope_since(&self, target: usize) -> bool {
+    self.scope_context.cf_scopes[target..].iter().any(|scope| scope.borrow().is_exhaustive())
+  }
 }

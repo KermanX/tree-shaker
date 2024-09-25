@@ -23,7 +23,13 @@ impl<'a> TryScope<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn may_throw(&mut self) {
-    self.try_scope_mut().may_throw = true;
+    let try_scope = self.try_scope_mut();
+
+    try_scope.may_throw = true;
+
+    // FIXME: Some of the tests are failing because of this
+    // let cf_scope_index = try_scope.cf_scope_index;
+    // self.exit_to(cf_scope_index, false);
   }
 
   pub fn explicit_throw(&mut self, value: Entity<'a>) {

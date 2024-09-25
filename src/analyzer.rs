@@ -169,11 +169,12 @@ impl<'a> Analyzer<'a> {
       let variable_scope = variable_scopes.last().unwrap().clone();
       let variable_scope_ref = variable_scope.borrow();
       let target_cf_scope = self.find_first_different_cf_scope(&variable_scope_ref.cf_scopes);
-      let (_, val) = variable_scope_ref.read(self, symbol);
+      let (_, val) = variable_scope_ref.read(symbol);
       if let Some(val) = &val {
         self.mark_exhaustive_read(val, *symbol, target_cf_scope);
       } else {
         self.refer_dep(decl_dep);
+        self.handle_tdz(target_cf_scope);
       }
       val
     } else {
@@ -194,7 +195,7 @@ impl<'a> Analyzer<'a> {
       let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
       let target_variable_scope = self.find_first_different_variable_scope(variable_scopes);
       let dep = self.get_assignment_deps(target_variable_scope, decl_dep.clone());
-      let (has_been_consumed_exhaustively, old_val) = variable_scope_ref.read(self, symbol);
+      let (has_been_consumed_exhaustively, old_val) = variable_scope_ref.read(symbol);
       if has_been_consumed_exhaustively {
         drop(variable_scope_ref);
         self.refer_dep(dep);
@@ -207,7 +208,7 @@ impl<'a> Analyzer<'a> {
             self.mark_exhaustive_write(*symbol, target_cf_scope)
           }
         } else {
-          // TDZ
+          self.handle_tdz(target_cf_scope);
           true
         };
         let entity_to_set = if should_consume {
@@ -249,6 +250,15 @@ impl<'a> Analyzer<'a> {
   fn insert_var_decl(&mut self, symbol: SymbolId) {
     let key = self.call_scope().source;
     self.var_decls.entry(key).or_default().insert(symbol);
+  }
+
+  fn handle_tdz(&mut self, target_cf_scope: usize) {
+    if self.has_exhaustive_scope_since(target_cf_scope) {
+      self.may_throw();
+    } else {
+      self.explicit_throw_unknown();
+    }
+    self.refer_global();
   }
 
   pub fn refer_global(&mut self) {

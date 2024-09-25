@@ -172,16 +172,16 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exit_to(&mut self, target_index: usize) {
-    let mut force_exit = true;
+    let mut must_exit = true;
     for (idx, cf_scope) in self.scope_context.cf_scopes.iter().enumerate().rev() {
       let mut cf_scope = cf_scope.borrow_mut();
-      if force_exit {
+      if must_exit {
         let is_indeterminate = cf_scope.is_indeterminate();
         cf_scope.exited = Some(true);
 
         // Stop exiting outer scopes if one inner scope is indeterminate.
         if is_indeterminate {
-          force_exit = false;
+          must_exit = false;
           if cf_scope.is_if() {
             // For the `if` statement, do not mark the outer scopes as indeterminate here.
             // Instead, let the `if` statement handle it.

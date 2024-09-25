@@ -67,17 +67,13 @@ impl<'a> VariableScope<'a> {
   }
 
   /// Returns (consumed, {None => TDZ, Some => value})
-  pub fn read(&self, analyzer: &mut Analyzer<'a>, symbol: &SymbolId) -> (bool, Option<Entity<'a>>) {
+  pub fn read(&self, symbol: &SymbolId) -> (bool, Option<Entity<'a>>) {
     let (kind, consumed, value) = self.variables.get(symbol).unwrap();
     let value = value.as_ref().map_or_else(
       || {
         if kind.is_var() {
           Some(LiteralEntity::new_undefined())
         } else {
-          // TODO: throw TDZ error
-          // FIXME: exhaustively executed function should not throw TDZ error
-          analyzer.may_throw();
-          analyzer.refer_global();
           None
         }
       },

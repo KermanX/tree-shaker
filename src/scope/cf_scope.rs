@@ -83,6 +83,10 @@ impl<'a> CfScope<'a> {
     self.kind == CfScopeKind::Function
   }
 
+  pub fn is_exhaustive(&self) -> bool {
+    self.kind == CfScopeKind::Exhaustive
+  }
+
   pub fn mark_exhaustive_read(&mut self, symbol: SymbolId) {
     if let Some(data) = &mut self.exhaustive_data {
       if !data.dirty {
