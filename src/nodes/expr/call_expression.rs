@@ -31,7 +31,7 @@ impl<'a> Analyzer<'a> {
     node: &'a CallExpression,
   ) -> (Option<bool>, Entity<'a>) {
     if let Some((callee_indeterminate, callee, this)) = self.exec_callee(&node.callee) {
-      let indeterminate = if node.optional {
+      let self_indeterminate = if node.optional {
         match callee.test_nullish() {
           Some(true) => return (Some(true), LiteralEntity::new_undefined()),
           Some(false) => false,
@@ -39,7 +39,12 @@ impl<'a> Analyzer<'a> {
         }
       } else {
         false
-      } || callee_indeterminate;
+      };
+
+      let data = self.load_data::<Data>(AST_TYPE, node);
+      data.need_optional |= self_indeterminate;
+
+      let indeterminate = callee_indeterminate || self_indeterminate;
 
       if indeterminate {
         self.push_cf_scope_normal(None);
@@ -47,9 +52,6 @@ impl<'a> Analyzer<'a> {
 
       let args = self.exec_arguments(&node.arguments);
       let ret_val = callee.call(self, AstKind::CallExpression(node), &this, &args);
-
-      let data = self.load_data::<Data>(AST_TYPE, node);
-      data.need_optional |= indeterminate;
 
       if indeterminate {
         self.pop_cf_scope();

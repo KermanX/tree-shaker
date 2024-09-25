@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
       None => true,
     };
 
-    let indeterminate = if node.optional() {
+    let self_indeterminate = if node.optional() {
       match object.test_nullish() {
         Some(true) => return (Some(true), LiteralEntity::new_undefined(), None),
         Some(false) => false,
@@ -58,12 +58,13 @@ impl<'a> Analyzer<'a> {
       }
     } else {
       false
-    } || object_indeterminate;
-    let short_circuit = if indeterminate { None } else { Some(false) };
+    };
 
     let data = self.load_data::<Data>(AST_TYPE_READ, node);
     data.need_access = true;
-    data.need_optional |= indeterminate;
+    data.need_optional |= self_indeterminate;
+
+    let indeterminate = object_indeterminate || self_indeterminate;
 
     if indeterminate {
       self.push_cf_scope_normal(None);
@@ -75,9 +76,9 @@ impl<'a> Analyzer<'a> {
 
     if indeterminate {
       self.pop_cf_scope();
-      (short_circuit, UnionEntity::new(vec![value, LiteralEntity::new_undefined()]), cache)
+      (None, UnionEntity::new(vec![value, LiteralEntity::new_undefined()]), cache)
     } else {
-      (short_circuit, value, cache)
+      (Some(false), value, cache)
     }
   }
 
