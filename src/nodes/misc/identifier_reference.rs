@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
-    let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
+    let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
     let symbol = reference.symbol_id();
 
     if let Some(symbol) = symbol {
@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
     let dep = AstKind::IdentifierReference(node);
     let value = ForwardedEntity::new(value, dep);
 
-    let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
+    let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
     // Upstream bug
     // debug_assert!(reference.is_write());
     let symbol = reference.symbol_id();

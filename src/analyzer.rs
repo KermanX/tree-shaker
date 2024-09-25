@@ -1,7 +1,7 @@
 use crate::{
   ast::{AstType2, DeclarationKind},
   builtins::Builtins,
-  data::{get_node_ptr, ExtraData, ReferredNodes, StatementVecData},
+  data::{get_node_ptr, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
   entity::{
     dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, label::LabelEntity,
     literal::LiteralEntity, operations::EntityOpHost, union::UnionEntity, unknown::UnknownEntity,
@@ -21,9 +21,10 @@ use std::{mem, rc::Rc};
 pub struct Analyzer<'a> {
   pub config: TreeShakeConfig,
   pub allocator: &'a Allocator,
-  pub sematic: Semantic<'a>,
+  pub semantic: Semantic<'a>,
   pub data: ExtraData<'a>,
   pub referred_nodes: ReferredNodes<'a>,
+  pub var_decls: VarDeclarations<'a>,
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
   pub symbol_decls: FxHashMap<SymbolId, (DeclarationKind, VariableScopes<'a>, EntityDep)>,
@@ -35,13 +36,14 @@ pub struct Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new(config: TreeShakeConfig, allocator: &'a Allocator, sematic: Semantic<'a>) -> Self {
+  pub fn new(config: TreeShakeConfig, allocator: &'a Allocator, semantic: Semantic<'a>) -> Self {
     Analyzer {
       config,
       allocator,
-      sematic,
+      semantic,
       data: Default::default(),
       referred_nodes: Default::default(),
+      var_decls: Default::default(),
       named_exports: Vec::new(),
       default_export: None,
       symbol_decls: Default::default(),
@@ -117,6 +119,9 @@ impl<'a> Analyzer<'a> {
     }
     if kind == DeclarationKind::FunctionParameter {
       self.call_scope_mut().args.1.push(symbol);
+    }
+    if kind == DeclarationKind::Var {
+      self.insert_var_decl(symbol);
     }
 
     let variable_scopes = if kind.is_var() {
@@ -238,6 +243,12 @@ impl<'a> Analyzer<'a> {
 
   fn insert_untracked_var(&mut self, symbol: SymbolId) {
     self.symbol_decls.insert(symbol, (DeclarationKind::UntrackedVar, vec![], ().into()));
+    self.insert_var_decl(symbol);
+  }
+
+  fn insert_var_decl(&mut self, symbol: SymbolId) {
+    let key = self.call_scope().source;
+    self.var_decls.entry(key).or_default().insert(symbol);
   }
 
   pub fn refer_global(&mut self) {

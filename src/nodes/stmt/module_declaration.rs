@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
         for specifier in &node.specifiers {
           match &specifier.local {
             ModuleExportName::IdentifierReference(node) => {
-              let reference = self.sematic.symbols().get_reference(node.reference_id().unwrap());
+              let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
               if let Some(symbol) = reference.symbol_id() {
                 self.named_exports.push(symbol);
               }

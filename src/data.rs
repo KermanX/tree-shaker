@@ -1,4 +1,5 @@
 use crate::{ast::AstType2, entity::dep::EntityDepNode};
+use oxc::semantic::SymbolId;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 pub struct DataPlaceholder<'a> {
@@ -8,6 +9,8 @@ pub struct DataPlaceholder<'a> {
 pub type ExtraData<'a> = FxHashMap<(AstType2, usize), Box<DataPlaceholder<'a>>>;
 
 pub type ReferredNodes<'a> = FxHashSet<EntityDepNode>;
+
+pub type VarDeclarations<'a> = FxHashMap<EntityDepNode, FxHashSet<SymbolId>>;
 
 #[derive(Debug, Default)]
 pub struct StatementVecData {

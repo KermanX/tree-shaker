@@ -10,8 +10,8 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::ast::{
-  ast::{ArrowFunctionExpression, Expression, TSTypeAnnotation, TSTypeParameterDeclaration},
-  AstKind,
+  ast::{ArrowFunctionExpression, Expression},
+  AstKind, NONE,
 };
 use std::rc::Rc;
 
@@ -63,8 +63,10 @@ impl<'a> Transformer<'a> {
     node: &'a ArrowFunctionExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    if need_val || self.is_referred(AstKind::ArrowFunctionExpression(&node)) {
+    if need_val || self.is_referred(AstKind::ArrowFunctionExpression(node)) {
       let ArrowFunctionExpression { span, expression, r#async, params, body, .. } = node;
+
+      self.call_stack.borrow_mut().push(AstKind::ArrowFunctionExpression(node).into());
 
       let params = self.transform_formal_parameters(params);
       let body = if *expression {
@@ -73,13 +75,15 @@ impl<'a> Transformer<'a> {
         self.transform_function_body(body)
       };
 
+      self.call_stack.borrow_mut().pop();
+
       Some(self.ast_builder.expression_arrow_function(
         *span,
         *expression,
         *r#async,
-        None::<TSTypeParameterDeclaration>,
+        NONE,
         params,
-        None::<TSTypeAnnotation>,
+        NONE,
         body,
       ))
     } else {

@@ -35,7 +35,9 @@ impl<'a> Transformer<'a> {
 
     let FunctionBody { span, directives, statements, .. } = node;
 
-    let statements = self.transform_statement_vec(data, statements);
+    let mut statements = self.transform_statement_vec(data, statements);
+
+    self.patch_var_declarations(&mut statements);
 
     self.ast_builder.function_body(*span, self.clone_node(directives), statements)
   }

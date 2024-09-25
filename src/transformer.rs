@@ -1,7 +1,10 @@
 use crate::{
   analyzer::Analyzer,
   ast::{Arguments, AstType2},
-  data::{get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData},
+  data::{
+    get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData, VarDeclarations,
+  },
+  entity::dep::EntityDepNode,
   TreeShakeConfig,
 };
 use oxc::{
@@ -9,10 +12,12 @@ use oxc::{
   ast::{
     ast::{
       AssignmentTarget, BindingPattern, Expression, ForStatementLeft, IdentifierReference,
-      NumberBase, Program, SimpleAssignmentTarget, UnaryOperator, VariableDeclarationKind,
+      NumberBase, Program, SimpleAssignmentTarget, Statement, UnaryOperator,
+      VariableDeclarationKind,
     },
     AstBuilder, NONE,
   },
+  semantic::Semantic,
   span::{GetSpan, Span, SPAN},
 };
 use std::{
@@ -24,23 +29,31 @@ use std::{
 pub struct Transformer<'a> {
   pub config: TreeShakeConfig,
   pub allocator: &'a Allocator,
+  pub semantic: Semantic<'a>,
   pub ast_builder: AstBuilder<'a>,
   pub data: ExtraData<'a>,
   pub referred_nodes: RefCell<ReferredNodes<'a>>,
+  pub var_decls: RefCell<VarDeclarations<'a>>,
 
+  pub call_stack: RefCell<Vec<EntityDepNode>>,
   pub deferred_arguments: RefCell<Vec<(&'a Arguments<'a>, *const Arguments<'a>)>>,
   pub need_unused_assignment_target: Cell<bool>,
 }
 
 impl<'a> Transformer<'a> {
   pub fn new(analyzer: Analyzer<'a>) -> Self {
-    let Analyzer { config, allocator, data, referred_nodes, .. } = analyzer;
+    let Analyzer { config, allocator, semantic, data, referred_nodes, var_decls, .. } = analyzer;
+
     Transformer {
       config,
       allocator,
+      semantic,
       ast_builder: AstBuilder::new(allocator),
       data,
       referred_nodes: RefCell::new(referred_nodes),
+      var_decls: RefCell::new(var_decls),
+
+      call_stack: RefCell::new(vec![EntityDepNode::Environment]),
       deferred_arguments: Default::default(),
       need_unused_assignment_target: Cell::new(false),
     }
@@ -63,6 +76,8 @@ impl<'a> Transformer<'a> {
         break;
       }
     }
+
+    self.patch_var_declarations(&mut body);
 
     if self.need_unused_assignment_target.get() {
       body.push(self.ast_builder.statement_declaration(self.ast_builder.declaration_variable(
@@ -90,6 +105,42 @@ impl<'a> Transformer<'a> {
       self.clone_node(directives),
       body,
     )
+  }
+
+  /// Append missing var declarations at the end of the function body or program
+  pub fn patch_var_declarations(&self, statements: &mut oxc::allocator::Vec<'a, Statement<'a>>) {
+    let call_stack = self.call_stack.borrow();
+    let key = call_stack.last().unwrap();
+    if let Some(var_decls) = self.var_decls.borrow().get(key) {
+      if !var_decls.is_empty() {
+        statements.push(self.ast_builder.statement_declaration(
+          self.ast_builder.declaration_variable(
+            SPAN,
+            VariableDeclarationKind::Var,
+            {
+              let mut decls = self.ast_builder.vec();
+              for symbol_id in var_decls.iter() {
+                let name = self.semantic.symbols().get_name(*symbol_id);
+                let span = self.semantic.symbols().get_span(*symbol_id);
+                decls.push(self.ast_builder.variable_declarator(
+                  span,
+                  VariableDeclarationKind::Var,
+                  self.ast_builder.binding_pattern(
+                    self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
+                    NONE,
+                    false,
+                  ),
+                  None,
+                  false,
+                ));
+              }
+              decls
+            },
+            false,
+          ),
+        ));
+      }
+    }
   }
 }
 

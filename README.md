@@ -42,7 +42,7 @@ export function f() {
 ## Approach
 
 1. Parse the code via `oxc_parser`.
-2. Build the sematic information via `oxc_semantic`.
+2. Build the semantic information via `oxc_semantic`.
 3. Tree shake the code.
     - Emulate the runtime behavior of the code. (Control flow, Side effects, ...)
     - Analyze the possible runtime values of the variables.
