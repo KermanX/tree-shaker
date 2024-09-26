@@ -33,7 +33,7 @@ impl<'a> Analyzer<'a> {
     data.elements_init.push(elements_init.clone());
     data.rest_init.push(rest_init.clone());
 
-    for (param, _) in node.items.iter().zip(&elements_init) {
+    for param in &node.items {
       self.declare_binding_pattern(&param.pattern, false, kind);
     }
 
