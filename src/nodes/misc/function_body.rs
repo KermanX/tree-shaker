@@ -55,9 +55,11 @@ impl<'a> Transformer<'a> {
       self.ast_builder.function_body(
         *span,
         self.clone_node(directives),
-        expr.map_or_else(
-          || self.ast_builder.vec(),
-          |expr| self.ast_builder.vec1(self.ast_builder.statement_expression(*span, expr)),
+        self.ast_builder.vec1(
+          self.ast_builder.statement_expression(
+            *span,
+            expr.unwrap_or_else(|| self.build_unused_expression(*span)),
+          ),
         ),
       )
     } else {
