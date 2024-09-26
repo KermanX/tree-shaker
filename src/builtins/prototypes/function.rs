@@ -4,7 +4,7 @@ use crate::entity::{
   builtin_fn::{ImplementedBuiltinFnEntity, PureBuiltinFnEntity},
   entity::Entity,
   union::UnionEntity,
-  unknown::{UnknownEntity, UnknownEntityKind},
+  unknown::UnknownEntity,
 };
 
 pub fn create_function_prototype<'a>() -> Prototype<'a> {
@@ -35,7 +35,7 @@ pub fn create_function_prototype<'a>() -> Prototype<'a> {
   );
   prototype.insert("bind", PureBuiltinFnEntity::returns_unknown());
   // FIXME: Consume self / warn
-  prototype.insert("length", UnknownEntity::new(UnknownEntityKind::Number));
+  prototype.insert("length", UnknownEntity::new_number());
   prototype.insert("arguments", UnknownEntity::new_unknown());
   prototype.insert("caller", UnknownEntity::new_unknown());
   prototype.insert("name", UnknownEntity::new_unknown());

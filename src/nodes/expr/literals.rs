@@ -1,9 +1,5 @@
 use crate::{
-  entity::{
-    entity::Entity,
-    literal::LiteralEntity,
-    unknown::{UnknownEntity, UnknownEntityKind},
-  },
+  entity::{entity::Entity, literal::LiteralEntity, unknown::UnknownEntity},
   Analyzer,
 };
 use oxc::ast::ast::{
@@ -18,7 +14,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn exc_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity<'a> {
     if node.base == NumberBase::Float {
-      UnknownEntity::new(UnknownEntityKind::Number)
+      UnknownEntity::new_number()
     } else {
       LiteralEntity::new_number(node.value, self.allocator.alloc(node.value.to_string()))
     }
@@ -37,6 +33,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_regexp_literal(&mut self, _node: &'a RegExpLiteral<'a>) -> Entity<'a> {
-    UnknownEntity::new(UnknownEntityKind::Regexp)
+    UnknownEntity::new_regexp()
   }
 }

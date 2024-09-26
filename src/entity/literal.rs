@@ -1,10 +1,10 @@
 use super::{
+  consumable::Consumable,
   consumed_object,
-  dep::EntityDep,
   entity::{Entity, EntityTrait},
   interactions::InteractionKind,
   typeof_result::TypeofResult,
-  unknown::{UnknownEntity, UnknownEntityKind},
+  unknown::UnknownEntity,
 };
 use crate::{analyzer::Analyzer, builtins::Prototype, utils::F64WithEq};
 use oxc::{
@@ -34,13 +34,13 @@ pub enum LiteralEntity<'a> {
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn interact(&self, _analyzer: &mut Analyzer<'a>, _dep: EntityDep, _kind: InteractionKind) {}
+  fn interact(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>, _kind: InteractionKind) {}
 
   fn get_property(
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
@@ -57,7 +57,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -73,16 +73,16 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-    _dep: EntityDep,
+    _dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     // No effect
     vec![]
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, _key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _key: &Entity<'a>) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       // TODO: throw warning
-      analyzer.refer_dep(dep);
+      analyzer.consume(dep);
     } else {
       // No effect
     }
@@ -92,7 +92,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
@@ -109,16 +109,12 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     match self {
       LiteralEntity::String(value) => (
         vec![],
-        if value.is_empty() {
-          None
-        } else {
-          Some(UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()]))
-        },
+        if value.is_empty() { None } else { Some(UnknownEntity::new_computed_string(rc.clone())) },
       ),
       _ => {
         // TODO: throw warning

@@ -2,7 +2,8 @@ use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
   entity::{
-    dep::{EntityDep, EntityDepNode},
+    consumable::Consumable,
+    dep::EntityDepNode,
     entity::Entity,
     function::{FunctionEntity, FunctionEntitySource},
     unknown::UnknownEntity,
@@ -36,10 +37,10 @@ impl<'a> Analyzer<'a> {
   pub fn call_function(
     &mut self,
     fn_entity: Entity<'a>,
-    decl_dep: EntityDep,
+    decl_dep: Consumable<'a>,
     source: EntityDepNode,
     is_expression: bool,
-    call_dep: EntityDep,
+    call_dep: Consumable<'a>,
     node: &'a Function<'a>,
     variable_scopes: Rc<VariableScopes<'a>>,
     this: Entity<'a>,

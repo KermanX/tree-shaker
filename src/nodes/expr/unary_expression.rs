@@ -1,11 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   build_effect,
-  entity::{
-    entity::Entity,
-    literal::LiteralEntity,
-    unknown::{UnknownEntity, UnknownEntityKind},
-  },
+  entity::{entity::Entity, literal::LiteralEntity, unknown::UnknownEntity},
   transformer::Transformer,
 };
 use oxc::{
@@ -62,16 +58,16 @@ impl<'a> Analyzer<'a> {
           }
         } else {
           // Maybe number or bigint
-          UnknownEntity::new_unknown_with_deps(vec![argument])
+          UnknownEntity::new_computed_unknown(vec![argument])
         }
       }
       UnaryOperator::UnaryPlus => argument.get_to_numeric(),
       UnaryOperator::LogicalNot => match argument.test_truthy() {
         Some(true) => LiteralEntity::new_boolean(false),
         Some(false) => LiteralEntity::new_boolean(true),
-        None => UnknownEntity::new_with_deps(UnknownEntityKind::Boolean, vec![argument]),
+        None => UnknownEntity::new_computed_boolean(argument),
       },
-      UnaryOperator::BitwiseNot => UnknownEntity::new_unknown_with_deps(vec![argument]),
+      UnaryOperator::BitwiseNot => UnknownEntity::new_computed_unknown(vec![argument]),
       UnaryOperator::Typeof => argument.get_typeof(),
       UnaryOperator::Void => LiteralEntity::new_undefined(),
       UnaryOperator::Delete => unreachable!(),

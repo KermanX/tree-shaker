@@ -1,7 +1,7 @@
 use super::{
-  collected::CollectedEntity,
+  computed::ComputedEntity,
+  consumable::Consumable,
   consumed_object,
-  dep::EntityDep,
   entity::{Entity, EntityTrait},
   interactions::InteractionKind,
   literal::LiteralEntity,
@@ -10,14 +10,11 @@ use super::{
 };
 use crate::{analyzer::Analyzer, scope::CfScopeKind};
 use rustc_hash::FxHashSet;
-use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug)]
 pub struct UnionEntity<'a> {
   /// Possible values
   pub values: Vec<Entity<'a>>,
-  /// Which is the actual value depends on these
-  pub deps: Rc<Vec<Entity<'a>>>,
 }
 
 impl<'a> EntityTrait<'a> for UnionEntity<'a> {
@@ -25,12 +22,9 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for value in &self.values {
       value.consume(analyzer);
     }
-    for dep in self.deps.iter() {
-      dep.consume(analyzer);
-    }
   }
 
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
     for value in &self.values {
       value.interact(analyzer, dep.clone(), kind);
     }
@@ -40,21 +34,21 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
     let mut values = Vec::new();
     for entity in &self.values {
       values.push(entity.get_property(analyzer, dep.clone(), key));
     }
-    UnionEntity::new_with_deps(values, self.deps.clone())
+    UnionEntity::new(values)
   }
 
   fn set_property(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -67,14 +61,14 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     // FIXME:
     self.consume(analyzer);
     consumed_object::enumerate_properties(analyzer, dep)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
     for entity in &self.values {
       entity.delete_property(analyzer, dep.clone(), key);
     }
@@ -84,7 +78,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
@@ -94,7 +88,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
       results.push(entity.call(analyzer, dep.clone(), this, args));
     }
     analyzer.pop_cf_scope();
-    UnionEntity::new_with_deps(results, self.deps.clone())
+    UnionEntity::new(results)
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
@@ -102,14 +96,14 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.values {
       values.push(entity.r#await(analyzer));
     }
-    UnionEntity::new_with_deps(values, self.deps.clone())
+    UnionEntity::new(values)
   }
 
   fn iterate(
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     let mut results = Vec::new();
     let mut has_undefined = false;
@@ -123,7 +117,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     if has_undefined {
       results.push(LiteralEntity::new_undefined());
     }
-    (vec![], UnionEntity::try_new_with_deps(results, self.deps.clone()))
+    (vec![], UnionEntity::try_new(results))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -200,39 +194,28 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 }
 
 impl<'a> UnionEntity<'a> {
-  pub fn try_new_with_deps(
-    values: Vec<Entity<'a>>,
-    deps: Rc<Vec<Entity<'a>>>,
-  ) -> Option<Entity<'a>> {
+  pub fn try_new(values: Vec<Entity<'a>>) -> Option<Entity<'a>> {
     if values.is_empty() {
       None
     } else {
       Some(if values.len() == 1 {
-        let value = values.first().unwrap().clone();
-        if deps.is_empty() {
-          value
-        } else {
-          CollectedEntity::new(value, RefCell::new((*deps).clone()))
-        }
+        values.first().unwrap().clone()
       } else {
         let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
         if has_unknown {
-          UnknownEntity::new_unknown_with_deps(values)
+          UnknownEntity::new_computed_unknown(values)
         } else {
-          Entity::new(UnionEntity { values, deps })
+          Entity::new(UnionEntity { values })
         }
       })
     }
   }
 
-  pub fn new_with_deps(
-    values: Vec<Entity<'a>>,
-    deps: impl Into<Rc<Vec<Entity<'a>>>>,
-  ) -> Entity<'a> {
-    Self::try_new_with_deps(values, deps.into()).unwrap()
+  pub fn new(values: Vec<Entity<'a>>) -> Entity<'a> {
+    Self::try_new(values).unwrap()
   }
 
-  pub fn new(values: Vec<Entity<'a>>) -> Entity<'a> {
-    Self::new_with_deps(values, Rc::new(vec![]))
+  pub fn new_computed(values: Vec<Entity<'a>>, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
+    ComputedEntity::new(Self::new(values), dep)
   }
 }

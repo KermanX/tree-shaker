@@ -1,16 +1,16 @@
 use super::{
+  computed::ComputedEntity,
+  consumable::Consumable,
   consumed_object,
-  dep::EntityDep,
   entity::{Entity, EntityTrait},
   interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
 };
 use crate::{analyzer::Analyzer, builtins::Prototype};
-use std::cell::RefCell;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UnknownEntityKind {
+pub enum UnknownEntity {
   // TODO: NumericString, NoneEmptyString, ...
   String,
   Number,
@@ -24,22 +24,10 @@ pub enum UnknownEntityKind {
   Unknown,
 }
 
-#[derive(Debug, Clone)]
-pub struct UnknownEntity<'a> {
-  pub kind: UnknownEntityKind,
-  pub deps: RefCell<Vec<Entity<'a>>>,
-}
+impl<'a> EntityTrait<'a> for UnknownEntity {
+  fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
-impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    let mut deps = self.deps.borrow_mut();
-    for dep in deps.iter() {
-      dep.consume(analyzer);
-    }
-    deps.clear();
-  }
-
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
     self.consume(analyzer);
     consumed_object::interact(analyzer, dep, kind)
   }
@@ -48,7 +36,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
     if self.maybe_object() {
@@ -64,7 +52,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -80,7 +68,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     if self.maybe_object() {
       self.consume(analyzer);
@@ -90,7 +78,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
     if self.maybe_object() {
       consumed_object::delete_property(analyzer, dep, key)
     } else {
@@ -102,7 +90,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
@@ -127,10 +115,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    if self.kind == UnknownEntityKind::Array {
-      return (vec![], Some(UnknownEntity::new_unknown_with_deps(vec![rc.clone()])));
+    if *self == UnknownEntity::Array {
+      return (vec![], Some(UnknownEntity::new_computed_unknown(rc.clone())));
     }
     if !self.maybe_object() {
       // TODO: throw warning
@@ -144,99 +132,110 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     if let Some(str) = self.test_typeof().to_string() {
       LiteralEntity::new_string(str)
     } else {
-      UnknownEntity::new_with_deps(UnknownEntityKind::String, self.deps.borrow().clone())
+      UnknownEntity::new_string()
     }
   }
 
   fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_with_deps(UnknownEntityKind::String, self.deps.borrow().clone())
+    UnknownEntity::new_string()
   }
 
   fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_unknown_with_deps(self.deps.borrow().clone())
+    UnknownEntity::new_unknown()
   }
 
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_with_deps(UnknownEntityKind::Unknown, self.deps.borrow().clone())
+    UnknownEntity::new_unknown()
   }
 
   fn test_typeof(&self) -> TypeofResult {
-    match &self.kind {
-      UnknownEntityKind::String => TypeofResult::String,
-      UnknownEntityKind::Number => TypeofResult::Number,
-      UnknownEntityKind::BigInt => TypeofResult::BigInt,
-      UnknownEntityKind::Boolean => TypeofResult::Boolean,
-      UnknownEntityKind::Symbol => TypeofResult::Symbol,
-      UnknownEntityKind::Function => TypeofResult::Function,
-      UnknownEntityKind::Regexp => TypeofResult::Object,
-      UnknownEntityKind::Array => TypeofResult::Object,
-      UnknownEntityKind::Object => TypeofResult::Object,
-      UnknownEntityKind::Unknown => TypeofResult::_Unknown,
+    match self {
+      UnknownEntity::String => TypeofResult::String,
+      UnknownEntity::Number => TypeofResult::Number,
+      UnknownEntity::BigInt => TypeofResult::BigInt,
+      UnknownEntity::Boolean => TypeofResult::Boolean,
+      UnknownEntity::Symbol => TypeofResult::Symbol,
+      UnknownEntity::Function => TypeofResult::Function,
+      UnknownEntity::Regexp => TypeofResult::Object,
+      UnknownEntity::Array => TypeofResult::Object,
+      UnknownEntity::Object => TypeofResult::Object,
+      UnknownEntity::Unknown => TypeofResult::_Unknown,
     }
   }
 
   fn test_truthy(&self) -> Option<bool> {
-    match &self.kind {
-      UnknownEntityKind::Symbol
-      | UnknownEntityKind::Function
-      | UnknownEntityKind::Array
-      | UnknownEntityKind::Object => Some(true),
+    match self {
+      UnknownEntity::Symbol
+      | UnknownEntity::Function
+      | UnknownEntity::Array
+      | UnknownEntity::Object => Some(true),
       _ => None,
     }
   }
 
   fn test_nullish(&self) -> Option<bool> {
-    match &self.kind {
-      UnknownEntityKind::Unknown | UnknownEntityKind::Object => None,
+    match self {
+      UnknownEntity::Unknown | UnknownEntity::Object => None,
       _ => Some(false),
     }
   }
 
   fn test_is_completely_unknown(&self) -> bool {
-    matches!(self.kind, UnknownEntityKind::Unknown) && self.deps.borrow().is_empty()
+    matches!(self, UnknownEntity::Unknown)
   }
 }
 
-impl<'a> UnknownEntity<'a> {
-  pub fn new_with_deps(kind: UnknownEntityKind, deps: Vec<Entity<'a>>) -> Entity<'a> {
-    Entity::new(Self { kind, deps: RefCell::new(deps) })
-  }
+macro_rules! unknown_entity_ctors {
+  ($($name:ident + $computed:ident -> $variant:ident,)*) => {
+    $(
+      pub fn $name() -> Entity<'a> {
+        Entity::new(UnknownEntity::$variant)
+      }
 
-  pub fn new(kind: UnknownEntityKind) -> Entity<'a> {
-    Self::new_with_deps(kind, Vec::new())
-  }
+      pub fn $computed(dep: impl Into<Consumable<'a>>) -> Entity<'a> {
+        ComputedEntity::new(Self::$name(), dep)
+      }
+    )*
+  };
+}
 
-  pub fn new_unknown() -> Entity<'a> {
-    Self::new(UnknownEntityKind::Unknown)
-  }
-
-  pub fn new_unknown_with_deps(deps: Vec<Entity<'a>>) -> Entity<'a> {
-    Self::new_with_deps(UnknownEntityKind::Unknown, deps)
+impl<'a> UnknownEntity {
+  unknown_entity_ctors! {
+    new_unknown  + new_computed_unknown -> Unknown,
+    new_boolean  + new_computed_boolean -> Boolean,
+    new_number   + new_computed_number -> Number,
+    new_string   + new_computed_string -> String,
+    new_bigint   + new_computed_bigint -> BigInt,
+    new_symbol   + new_computed_symbol -> Symbol,
+    new_function + new_computed_function -> Function,
+    new_regexp   + new_computed_regexp -> Regexp,
+    new_array    + new_computed_array -> Array,
+    new_object   + new_computed_object -> Object,
   }
 
   pub fn maybe_object(&self) -> bool {
     matches!(
-      self.kind,
-      UnknownEntityKind::Object
-        | UnknownEntityKind::Array
-        | UnknownEntityKind::Function
-        | UnknownEntityKind::Regexp
-        | UnknownEntityKind::Unknown
+      self,
+      UnknownEntity::Object
+        | UnknownEntity::Array
+        | UnknownEntity::Function
+        | UnknownEntity::Regexp
+        | UnknownEntity::Unknown
     )
   }
 
   fn get_prototype<'b>(&self, analyzer: &'b mut Analyzer<'a>) -> &'b Prototype<'a> {
-    match &self.kind {
-      UnknownEntityKind::String => &analyzer.builtins.prototypes.string,
-      UnknownEntityKind::Number => &analyzer.builtins.prototypes.number,
-      UnknownEntityKind::BigInt => &analyzer.builtins.prototypes.bigint,
-      UnknownEntityKind::Boolean => &analyzer.builtins.prototypes.boolean,
-      UnknownEntityKind::Symbol => &analyzer.builtins.prototypes.symbol,
-      UnknownEntityKind::Function => &analyzer.builtins.prototypes.function,
-      UnknownEntityKind::Regexp => &analyzer.builtins.prototypes.regexp,
-      UnknownEntityKind::Array => &analyzer.builtins.prototypes.array,
-      UnknownEntityKind::Object => &analyzer.builtins.prototypes.object,
-      UnknownEntityKind::Unknown => unreachable!(),
+    match self {
+      UnknownEntity::String => &analyzer.builtins.prototypes.string,
+      UnknownEntity::Number => &analyzer.builtins.prototypes.number,
+      UnknownEntity::BigInt => &analyzer.builtins.prototypes.bigint,
+      UnknownEntity::Boolean => &analyzer.builtins.prototypes.boolean,
+      UnknownEntity::Symbol => &analyzer.builtins.prototypes.symbol,
+      UnknownEntity::Function => &analyzer.builtins.prototypes.function,
+      UnknownEntity::Regexp => &analyzer.builtins.prototypes.regexp,
+      UnknownEntity::Array => &analyzer.builtins.prototypes.array,
+      UnknownEntity::Object => &analyzer.builtins.prototypes.object,
+      UnknownEntity::Unknown => unreachable!(),
     }
   }
 }

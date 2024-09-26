@@ -1,10 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  entity::{
-    typeof_result::TypeofResult,
-    unknown::{UnknownEntity, UnknownEntityKind},
-  },
+  entity::{typeof_result::TypeofResult, unknown::UnknownEntity},
   scope::CfScopeKind,
   transformer::Transformer,
 };
@@ -46,7 +43,7 @@ impl<'a> Analyzer<'a> {
 
     self.push_variable_scope();
 
-    self.exec_for_statement_left(&node.left, UnknownEntity::new(UnknownEntityKind::String));
+    self.exec_for_statement_left(&node.left, UnknownEntity::new_string());
 
     self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
     self.exec_loop(move |analyzer| {

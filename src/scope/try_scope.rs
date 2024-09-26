@@ -1,6 +1,8 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, unknown::UnknownEntity},
+  entity::{
+    consumable::Consumable, entity::Entity, forwarded::ForwardedEntity, unknown::UnknownEntity,
+  },
 };
 
 #[derive(Debug)]
@@ -17,7 +19,7 @@ impl<'a> TryScope<'a> {
 
   pub fn thrown_val(self) -> Option<Entity<'a>> {
     // Always unknown here
-    self.may_throw.then(|| UnknownEntity::new_unknown_with_deps(self.thrown_values))
+    self.may_throw.then(|| UnknownEntity::new_computed_unknown(self.thrown_values))
   }
 }
 
@@ -54,11 +56,11 @@ impl<'a> Analyzer<'a> {
     self.exit_to(cf_scope_index);
   }
 
-  pub fn forward_throw(&mut self, values: Vec<Entity<'a>>, dep: impl Into<EntityDep>) {
+  pub fn forward_throw(&mut self, values: Vec<Entity<'a>>, dep: impl Into<Consumable<'a>>) {
     if values.is_empty() {
       self.may_throw();
     } else {
-      let thrown_val = UnknownEntity::new_unknown_with_deps(values);
+      let thrown_val = UnknownEntity::new_computed_unknown(values);
       self.explicit_throw(ForwardedEntity::new(thrown_val, dep.into()));
     }
   }

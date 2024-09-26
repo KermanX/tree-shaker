@@ -2,7 +2,8 @@ use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
   entity::{
-    dep::{EntityDep, EntityDepNode},
+    consumable::Consumable,
+    dep::EntityDepNode,
     entity::Entity,
     function::{FunctionEntity, FunctionEntitySource},
   },
@@ -30,7 +31,7 @@ impl<'a> Analyzer<'a> {
   pub fn call_arrow_function_expression(
     &mut self,
     source: EntityDepNode,
-    dep: EntityDep,
+    call_dep: Consumable<'a>,
     node: &'a ArrowFunctionExpression<'a>,
     variable_scopes: Rc<VariableScopes<'a>>,
     args: Entity<'a>,
@@ -38,7 +39,7 @@ impl<'a> Analyzer<'a> {
     let parent_call_scope = self.call_scope();
     self.push_call_scope(
       source,
-      dep,
+      call_dep,
       variable_scopes,
       parent_call_scope.this.clone(),
       parent_call_scope.args.clone(),

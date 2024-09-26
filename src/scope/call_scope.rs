@@ -2,13 +2,8 @@ use super::{try_scope::TryScope, variable_scope::VariableScopes};
 use crate::{
   analyzer::Analyzer,
   entity::{
-    dep::{EntityDep, EntityDepNode},
-    entity::Entity,
-    forwarded::ForwardedEntity,
-    literal::LiteralEntity,
-    promise::PromiseEntity,
-    union::UnionEntity,
-    unknown::UnknownEntity,
+    consumable::Consumable, dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity,
+    literal::LiteralEntity, promise::PromiseEntity, union::UnionEntity, unknown::UnknownEntity,
   },
 };
 use oxc::semantic::SymbolId;
@@ -16,7 +11,7 @@ use oxc::semantic::SymbolId;
 #[derive(Debug)]
 pub struct CallScope<'a> {
   pub source: EntityDepNode,
-  pub call_dep: EntityDep,
+  pub call_dep: Consumable<'a>,
   pub old_variable_scopes: VariableScopes<'a>,
   pub cf_scope_index: usize,
   pub variable_scope_index: usize,
@@ -32,7 +27,7 @@ pub struct CallScope<'a> {
 impl<'a> CallScope<'a> {
   pub fn new(
     source: EntityDepNode,
-    call_dep: EntityDep,
+    call_dep: Consumable<'a>,
     old_variable_scopes: VariableScopes<'a>,
     cf_scope_index: usize,
     variable_scope_index: usize,
@@ -105,7 +100,7 @@ impl<'a> Analyzer<'a> {
         let decl_dep = decl_dep.clone();
         let variable_scope = variable_scopes.last().unwrap().clone();
         variable_scope.borrow_mut().consume(self, symbol);
-        self.refer_dep(decl_dep);
+        self.consume(decl_dep);
       } else {
         // TDZ
         arguments_consumed = false;

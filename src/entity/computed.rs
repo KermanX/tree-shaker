@@ -5,29 +5,27 @@ use super::{
   literal::LiteralEntity,
   typeof_result::TypeofResult,
 };
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use rustc_hash::FxHashSet;
-use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug)]
-pub struct CollectedEntity<'a> {
+pub struct ComputedEntity<'a> {
   val: Entity<'a>,
-  deps: Rc<RefCell<Vec<Entity<'a>>>>,
+  dep: Consumable<'a>,
 }
 
-impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
+impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    for entity in self.deps.borrow().iter() {
-      entity.consume(analyzer);
-    }
-    self.val.consume(analyzer)
+    self.val.consume(analyzer);
+    self.dep.consume(analyzer);
   }
 
   fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
-    for entity in self.deps.borrow().iter() {
-      entity.interact(analyzer, dep.clone(), kind);
-    }
-    self.val.interact(analyzer, dep, kind)
+    self.val.interact(analyzer, (self.dep.clone(), dep), kind);
+  }
+
+  fn refer_dep_shallow(&self, transformer: &Transformer<'a>) {
+    self.dep.refer_dep_shallow(transformer);
   }
 
   fn get_property(
@@ -37,7 +35,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
-    let value = self.val.get_property(analyzer, dep, key);
+    let value = self.val.get_property(analyzer, (self.dep.clone(), dep), key);
     self.forward(value)
   }
 
@@ -49,10 +47,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
-    for entity in self.deps.borrow().iter() {
-      entity.consume(analyzer);
-    }
-    self.val.set_property(analyzer, dep, key, value)
+    self.val.set_property(analyzer, (self.dep.clone(), dep), key, value);
   }
 
   fn enumerate_properties(
@@ -61,17 +56,16 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-    for entity in self.deps.borrow().iter() {
-      entity.consume(analyzer);
-    }
-    self.val.enumerate_properties(analyzer, dep)
+    self
+      .val
+      .enumerate_properties(analyzer, (self.dep.clone(), dep))
+      .into_iter()
+      .map(|(definite, key, value)| (definite, key, self.forward(value)))
+      .collect()
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
-    for entity in self.deps.borrow().iter() {
-      entity.consume(analyzer);
-    }
-    self.val.delete_property(analyzer, dep, key)
+    self.val.delete_property(analyzer, (self.dep.clone(), dep), key)
   }
 
   fn call(
@@ -82,8 +76,8 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    let ret_cal = self.val.call(analyzer, dep, this, args);
-    self.forward(ret_cal)
+    let ret_val = self.val.call(analyzer, (self.dep.clone(), dep), this, args);
+    self.forward(ret_val)
   }
 
   fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
@@ -96,12 +90,11 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    let (elements, rest) = self.val.iterate(analyzer, dep);
+    let (elements, rest) = self.val.iterate(analyzer, (self.dep.clone(), dep));
     (elements.into_iter().map(|v| self.forward(v)).collect(), rest.map(|v| self.forward(v)))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
-    // TODO: Verify this
     self.forward(self.val.get_typeof())
   }
 
@@ -134,12 +127,12 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
   }
 }
 
-impl<'a> CollectedEntity<'a> {
-  pub fn new(val: Entity<'a>, collected: impl Into<Rc<RefCell<Vec<Entity<'a>>>>>) -> Entity<'a> {
-    Entity::new(Self { val, deps: collected.into() })
+impl<'a> ComputedEntity<'a> {
+  pub fn new(val: Entity<'a>, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
+    Entity::new(Self { val, dep: dep.into() })
   }
 
-  fn forward(&self, val: Entity<'a>) -> Entity<'a> {
-    CollectedEntity::new(val, self.deps.clone())
+  pub fn forward(&self, val: Entity<'a>) -> Entity<'a> {
+    ComputedEntity::new(val, self.dep.clone())
   }
 }

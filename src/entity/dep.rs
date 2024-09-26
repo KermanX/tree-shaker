@@ -1,12 +1,7 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  data::{get_node_ptr, ReferredNodes},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstType2, data::get_node_ptr, transformer::Transformer};
 use core::hash::Hash;
 use oxc::{ast::AstKind, span::GetSpan};
-use std::{fmt::Debug, rc::Rc};
+use std::fmt::Debug;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EntityDepNode {
@@ -46,88 +41,15 @@ impl<T: GetSpan> From<(AstType2, &T)> for EntityDepNode {
   }
 }
 
-#[derive(Debug, Clone)]
-enum EntityDepImpl {
-  Environment,
-  Single(EntityDepNode),
-  Multiple(Rc<Vec<EntityDep>>),
-  Concat(EntityDepNode, EntityDep),
-  Combined(EntityDep, EntityDep),
-}
-
-#[derive(Debug, Clone)]
-pub struct EntityDep(Rc<EntityDepImpl>);
-
-impl From<()> for EntityDep {
-  fn from(_: ()) -> Self {
-    Self(Rc::new(EntityDepImpl::Environment))
-  }
-}
-
-impl From<EntityDepNode> for EntityDep {
-  fn from(node: EntityDepNode) -> Self {
-    Self(Rc::new(EntityDepImpl::Single(node)))
-  }
-}
-
-impl From<Vec<EntityDep>> for EntityDep {
-  fn from(deps: Vec<EntityDep>) -> Self {
-    Self(Rc::new(EntityDepImpl::Multiple(Rc::new(deps))))
-  }
-}
-
-impl From<(EntityDepNode, EntityDep)> for EntityDep {
-  fn from((node, dep): (EntityDepNode, EntityDep)) -> Self {
-    Self(Rc::new(EntityDepImpl::Concat(node, dep)))
-  }
-}
-
-impl From<(EntityDep, EntityDep)> for EntityDep {
-  fn from((dep1, dep2): (EntityDep, EntityDep)) -> Self {
-    Self(Rc::new(EntityDepImpl::Combined(dep1, dep2)))
-  }
-}
-
-impl<'a> From<AstKind<'a>> for EntityDep {
-  fn from(node: AstKind<'a>) -> Self {
-    EntityDepNode::from(node).into()
-  }
-}
-
-impl EntityDep {
-  pub fn mark_referred<'a>(&self, host: &mut ReferredNodes<'a>) {
-    match self.0.as_ref() {
-      EntityDepImpl::Environment => {}
-      EntityDepImpl::Single(node) => {
-        host.insert(*node);
-      }
-      EntityDepImpl::Multiple(nodes) => {
-        for node in nodes.as_ref() {
-          node.mark_referred(host);
-        }
-      }
-      EntityDepImpl::Concat(node, dep) => {
-        host.insert(*node);
-        dep.mark_referred(host);
-      }
-      EntityDepImpl::Combined(dep1, dep2) => {
-        dep1.mark_referred(host);
-        dep2.mark_referred(host);
-      }
-    }
-  }
-}
-
 impl<'a> Analyzer<'a> {
-  pub fn refer_dep(&mut self, dep: impl Into<EntityDep>) {
-    dep.into().mark_referred(&mut self.referred_nodes);
+  pub fn refer_dep(&mut self, dep: impl Into<EntityDepNode>) {
+    self.referred_nodes.insert(dep.into());
   }
 }
 
 impl<'a> Transformer<'a> {
-  pub fn refer_dep(&self, dep: impl Into<EntityDep>) {
-    let mut referred_nodes = self.referred_nodes.borrow_mut();
-    dep.into().mark_referred(&mut referred_nodes);
+  pub fn refer_dep(&self, dep: impl Into<EntityDepNode>) {
+    self.referred_nodes.borrow_mut().insert(dep.into());
   }
 
   pub fn is_referred(&self, dep: impl Into<EntityDepNode>) -> bool {

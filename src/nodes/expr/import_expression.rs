@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
 
     // FIXME: if have side effects, then consume all deps
 
-    UnknownEntity::new_unknown_with_deps(deps)
+    UnknownEntity::new_computed_unknown(deps)
   }
 }
 

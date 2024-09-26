@@ -3,6 +3,8 @@ pub mod array;
 pub mod builtin_fn;
 pub mod collected;
 pub mod collector;
+pub mod computed;
+pub mod consumable;
 mod consumed_object;
 pub mod dep;
 pub mod entity;

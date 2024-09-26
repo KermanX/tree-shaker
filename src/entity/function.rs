@@ -1,11 +1,12 @@
 use super::{
-  dep::{EntityDep, EntityDepNode},
+  consumable::Consumable,
+  dep::EntityDepNode,
   entity::{Entity, EntityTrait},
   forwarded::ForwardedEntity,
   interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
-  unknown::{UnknownEntity, UnknownEntityKind},
+  unknown::UnknownEntity,
 };
 use crate::{
   analyzer::Analyzer,
@@ -50,7 +51,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       let ret_val = self_cloned.call_impl(
         &UnknownEntity::new_unknown(),
         analyzer,
-        (EntityDepNode::Environment).into(),
+        ().into(),
         &UnknownEntity::new_unknown(),
         &UnknownEntity::new_unknown(),
       );
@@ -63,7 +64,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     });
   }
 
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
     self.consume(analyzer);
     consumed_object::interact(analyzer, dep, kind);
   }
@@ -72,7 +73,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
@@ -85,7 +86,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -93,7 +94,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     consumed_object::set_property(analyzer, dep, key, value)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
     self.consume(analyzer);
     consumed_object::delete_property(analyzer, dep, key)
   }
@@ -102,7 +103,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     self.consume(analyzer);
     consumed_object::enumerate_properties(analyzer, dep)
@@ -112,11 +113,11 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    let source = self.dep_node();
+    let source = self.dep();
     let recursed = analyzer.scope_context.call_scopes.iter().any(|scope| scope.source == source);
     if recursed {
       self.consume(analyzer);
@@ -136,7 +137,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
@@ -150,7 +151,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string();
     }
-    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
+    UnknownEntity::new_computed_string(rc.clone())
   }
 
   fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
@@ -191,43 +192,38 @@ impl<'a> FunctionEntity<'a> {
     })
   }
 
-  pub fn dep_node(&self) -> EntityDepNode {
+  pub fn dep(&self) -> EntityDepNode {
     EntityDepNode::from(match self.source {
       FunctionEntitySource::Function(node) => AstKind::Function(node),
       FunctionEntitySource::ArrowFunctionExpression(node) => AstKind::ArrowFunctionExpression(node),
     })
   }
 
-  pub fn dep(&self) -> EntityDep {
-    self.dep_node().into()
-  }
-
   pub fn call_impl(
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    let source = self.dep_node();
-    let dep = (source, dep).into();
+    let source = self.dep();
+    let call_dep: Consumable<'a> = (source, dep).into();
     let variable_scopes = self.variable_scopes.clone();
     let ret_val = match self.source {
       FunctionEntitySource::Function(node) => analyzer.call_function(
         rc.clone(),
-        self.dep(),
+        self.dep().into(),
         source,
         self.is_expression,
-        dep,
+        call_dep,
         node,
         variable_scopes,
         this.clone(),
         args.clone(),
       ),
-      FunctionEntitySource::ArrowFunctionExpression(node) => {
-        analyzer.call_arrow_function_expression(source, dep, node, variable_scopes, args.clone())
-      }
+      FunctionEntitySource::ArrowFunctionExpression(node) => analyzer
+        .call_arrow_function_expression(source, call_dep, node, variable_scopes, args.clone()),
     };
     ForwardedEntity::new(ret_val, self.dep())
   }

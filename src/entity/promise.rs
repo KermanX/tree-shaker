@@ -1,11 +1,11 @@
 use super::{
+  consumable::Consumable,
   consumed_object,
-  dep::EntityDep,
   entity::{Entity, EntityTrait},
   interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
-  unknown::{UnknownEntity, UnknownEntityKind},
+  unknown::UnknownEntity,
 };
 use crate::analyzer::Analyzer;
 
@@ -13,7 +13,7 @@ use crate::analyzer::Analyzer;
 pub struct PromiseEntity<'a> {
   pub value: Entity<'a>,
   pub errors: Option<Vec<Entity<'a>>>,
-  pub call_dep: EntityDep,
+  pub call_dep: Consumable<'a>,
 }
 
 impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
@@ -24,10 +24,10 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
         error.consume(analyzer);
       }
     }
-    analyzer.refer_dep(self.call_dep.clone());
+    analyzer.consume(self.call_dep.clone());
   }
 
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
     self.consume(analyzer);
     consumed_object::interact(analyzer, dep, kind)
   }
@@ -36,7 +36,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
     analyzer.builtins.prototypes.promise.get_property(rc, key, dep)
@@ -46,7 +46,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -58,13 +58,13 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     self.consume(analyzer);
     consumed_object::enumerate_properties(analyzer, dep)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
     self.consume(analyzer);
     consumed_object::delete_property(analyzer, dep, key)
   }
@@ -73,7 +73,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
@@ -92,7 +92,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
@@ -103,15 +103,15 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   }
 
   fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![self.value.clone()])
+    UnknownEntity::new_computed_string(self.value.clone())
   }
 
   fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_unknown_with_deps(vec![rc.clone()])
+    UnknownEntity::new_computed_unknown(vec![rc.clone()])
   }
 
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![self.value.clone()])
+    UnknownEntity::new_computed_string(self.value.clone())
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -131,7 +131,7 @@ impl<'a> PromiseEntity<'a> {
   pub fn new(
     value: Entity<'a>,
     errors: Option<Vec<Entity<'a>>>,
-    call_dep: EntityDep,
+    call_dep: Consumable<'a>,
   ) -> Entity<'a> {
     Entity::new(Self { value, errors, call_dep })
   }

@@ -1,9 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{
-    entity::Entity,
-    unknown::{UnknownEntity, UnknownEntityKind},
-  },
+  entity::{entity::Entity, unknown::UnknownEntity},
   transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, NewExpression, TSTypeParameterInstantiation};
@@ -16,7 +13,7 @@ impl<'a> Analyzer<'a> {
     callee.consume(self);
     arguments.consume(self);
 
-    UnknownEntity::new(UnknownEntityKind::Object)
+    UnknownEntity::new_object()
   }
 }
 

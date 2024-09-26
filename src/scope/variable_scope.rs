@@ -2,7 +2,9 @@ use super::cf_scope::CfScopes;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{dep::EntityDep, entity::Entity, literal::LiteralEntity, unknown::UnknownEntity},
+  entity::{
+    consumable::Consumable, entity::Entity, literal::LiteralEntity, unknown::UnknownEntity,
+  },
 };
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashMap;
@@ -10,7 +12,7 @@ use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug)]
 pub struct VariableScope<'a> {
-  pub dep: Option<EntityDep>,
+  pub dep: Option<Consumable<'a>>,
   /// Cf scopes when the scope was created
   pub cf_scopes: CfScopes<'a>,
   /// (kind, is_consumed_exhaustively, entity_or_TDZ)
@@ -20,7 +22,7 @@ pub struct VariableScope<'a> {
 pub type VariableScopes<'a> = Vec<Rc<RefCell<VariableScope<'a>>>>;
 
 impl<'a> VariableScope<'a> {
-  pub fn new(dep: Option<EntityDep>, cf_scopes: CfScopes<'a>) -> Self {
+  pub fn new(dep: Option<Consumable<'a>>, cf_scopes: CfScopes<'a>) -> Self {
     Self { dep, cf_scopes, variables: FxHashMap::default() }
   }
 

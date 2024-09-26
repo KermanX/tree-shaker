@@ -3,7 +3,7 @@ use crate::{
   builtins::Builtins,
   data::{get_node_ptr, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
   entity::{
-    dep::EntityDep, entity::Entity, forwarded::ForwardedEntity, label::LabelEntity,
+    consumable::Consumable, entity::Entity, forwarded::ForwardedEntity, label::LabelEntity,
     literal::LiteralEntity, operations::EntityOpHost, union::UnionEntity, unknown::UnknownEntity,
   },
   scope::{variable_scope::VariableScopes, ScopeContext},
@@ -27,7 +27,7 @@ pub struct Analyzer<'a> {
   pub var_decls: VarDeclarations<'a>,
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
-  pub symbol_decls: FxHashMap<SymbolId, (DeclarationKind, VariableScopes<'a>, EntityDep)>,
+  pub symbol_decls: FxHashMap<SymbolId, (DeclarationKind, VariableScopes<'a>, Consumable<'a>)>,
   pub exhaustive_deps: FxHashMap<SymbolId, Vec<Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>>>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
       entity.consume(self);
 
       let (_, _, decl_dep) = self.symbol_decls.get(&symbol).unwrap();
-      self.refer_dep(decl_dep.clone());
+      self.consume(decl_dep.clone());
     }
     // Consume uncaught thrown values
     self.call_scope_mut().try_scopes.pop().unwrap().thrown_val().map(|entity| {
@@ -101,14 +101,14 @@ impl<'a> Analyzer<'a> {
   pub fn declare_symbol(
     &mut self,
     symbol: SymbolId,
-    decl_dep: impl Into<EntityDep>,
+    decl_dep: impl Into<Consumable<'a>>,
     exporting: bool,
     kind: DeclarationKind,
     value: Option<Entity<'a>>,
   ) {
     let old_decl = self.symbol_decls.get(&symbol);
     if matches!(old_decl, Some((kind,_,_)) if kind.is_untracked()) {
-      self.refer_dep(decl_dep);
+      self.consume(decl_dep.into());
       value.map(|val| val.consume(self));
       return;
     }
@@ -139,7 +139,7 @@ impl<'a> Analyzer<'a> {
     self.symbol_decls.insert(symbol, (kind, variable_scopes, decl_dep));
   }
 
-  pub fn init_symbol(&mut self, symbol: SymbolId, init: Option<Entity<'a>>, dep: EntityDep) {
+  pub fn init_symbol(&mut self, symbol: SymbolId, init: Option<Entity<'a>>, dep: Consumable<'a>) {
     let (kind, variable_scopes, _) = &self.symbol_decls.get(&symbol).unwrap();
     let init = if kind.is_redeclarable() {
       init
@@ -173,7 +173,7 @@ impl<'a> Analyzer<'a> {
       if let Some(val) = &val {
         self.mark_exhaustive_read(val, *symbol, target_cf_scope);
       } else {
-        self.refer_dep(decl_dep);
+        self.consume(decl_dep);
         self.handle_tdz(target_cf_scope);
       }
       val
@@ -198,7 +198,7 @@ impl<'a> Analyzer<'a> {
       let (has_been_consumed_exhaustively, old_val) = variable_scope_ref.read(symbol);
       if has_been_consumed_exhaustively {
         drop(variable_scope_ref);
-        self.refer_dep(dep);
+        self.consume(dep);
         new_val.consume(self);
       } else {
         let should_consume = if let Some(old_val) = &old_val {
@@ -213,7 +213,7 @@ impl<'a> Analyzer<'a> {
         };
         let entity_to_set = if should_consume {
           drop(variable_scope_ref);
-          self.refer_dep(dep);
+          self.consume(dep);
           old_val.map(|v| v.consume(self));
           new_val.consume(self);
           (true, UnknownEntity::new_unknown())
@@ -270,7 +270,7 @@ impl<'a> Analyzer<'a> {
         .iter()
         .filter_map(|scope| scope.borrow().dep.clone())
         .collect::<Vec<_>>();
-      self.refer_dep(deps);
+      self.consume(deps);
     }
   }
 }

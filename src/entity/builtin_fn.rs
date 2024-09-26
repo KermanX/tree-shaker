@@ -1,11 +1,11 @@
 use super::{
+  consumable::Consumable,
   consumed_object,
-  dep::EntityDep,
   entity::{Entity, EntityTrait},
   interactions::InteractionKind,
   literal::LiteralEntity,
   typeof_result::TypeofResult,
-  unknown::{UnknownEntity, UnknownEntityKind},
+  unknown::UnknownEntity,
 };
 use crate::analyzer::Analyzer;
 use std::fmt::Debug;
@@ -14,7 +14,7 @@ pub trait BuiltinFnEntity<'a>: Debug {
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a>;
@@ -23,7 +23,7 @@ pub trait BuiltinFnEntity<'a>: Debug {
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind) {
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
     consumed_object::interact(analyzer, dep, kind)
   }
 
@@ -31,7 +31,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
     analyzer.builtins.prototypes.function.get_property(rc, key, dep)
@@ -41,7 +41,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -49,7 +49,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     consumed_object::set_property(analyzer, dep, key, value)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
     // TODO: throw warning
     consumed_object::delete_property(analyzer, dep, key)
   }
@@ -58,7 +58,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-    _dep: EntityDep,
+    _dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     vec![]
   }
@@ -67,7 +67,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
@@ -82,7 +82,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     // TODO: throw warning
     analyzer.explicit_throw_unknown();
@@ -94,7 +94,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![rc.clone()])
+    UnknownEntity::new_computed_string(rc.clone())
   }
 
   fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
@@ -119,7 +119,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 }
 
 pub type BuiltinFnImplementation<'a> =
-  fn(&mut Analyzer<'a>, EntityDep, &Entity<'a>, &Entity<'a>) -> Entity<'a>;
+  fn(&mut Analyzer<'a>, Consumable<'a>, &Entity<'a>, &Entity<'a>) -> Entity<'a>;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ImplementedBuiltinFnEntity<'a> {
@@ -130,7 +130,7 @@ impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
@@ -154,7 +154,7 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
@@ -174,28 +174,28 @@ impl<'a> PureBuiltinFnEntity<'a> {
     self
   }
 
-  pub fn returns_unknown_entity(kind: UnknownEntityKind) -> Self {
-    Self::new(UnknownEntity::new(kind))
-  }
-
   pub fn returns_unknown() -> Self {
-    Self::returns_unknown_entity(UnknownEntityKind::Unknown)
+    Self::new(UnknownEntity::new_unknown())
   }
 
   pub fn returns_string() -> Self {
-    Self::returns_unknown_entity(UnknownEntityKind::String)
+    Self::new(UnknownEntity::new_string())
   }
 
   pub fn returns_number() -> Self {
-    Self::returns_unknown_entity(UnknownEntityKind::Number)
+    Self::new(UnknownEntity::new_number())
   }
 
   pub fn returns_boolean() -> Self {
-    Self::returns_unknown_entity(UnknownEntityKind::Boolean)
+    Self::new(UnknownEntity::new_boolean())
   }
 
   pub fn returns_array() -> Self {
-    Self::returns_unknown_entity(UnknownEntityKind::Object)
+    Self::new(UnknownEntity::new_array())
+  }
+
+  pub fn returns_object() -> Self {
+    Self::new(UnknownEntity::new_object())
   }
 
   pub fn returns_null() -> Self {
@@ -204,9 +204,5 @@ impl<'a> PureBuiltinFnEntity<'a> {
 
   pub fn returns_undefined() -> Self {
     Self::new(LiteralEntity::new_undefined())
-  }
-
-  pub fn returns_object() -> Self {
-    Self::returns_unknown_entity(UnknownEntityKind::Object)
   }
 }

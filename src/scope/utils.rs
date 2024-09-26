@@ -1,5 +1,5 @@
 use super::{cf_scope::CfScopes, variable_scope::VariableScopes};
-use crate::{analyzer::Analyzer, entity::dep::EntityDep};
+use crate::{analyzer::Analyzer, entity::consumable::Consumable};
 use std::rc::Rc;
 
 pub fn find_first_different<T>(a: &Vec<Rc<T>>, b: &Vec<Rc<T>>) -> usize {
@@ -43,12 +43,16 @@ impl<'a> Analyzer<'a> {
     self.is_relatively_indeterminate(first_different, cf_scopes_2)
   }
 
-  pub fn get_assignment_deps(&self, target_variable_scope: usize, extra: EntityDep) -> EntityDep {
+  pub fn get_assignment_deps(
+    &self,
+    target_variable_scope: usize,
+    extra: Consumable<'a>,
+  ) -> Consumable<'a> {
     let mut deps = self.scope_context.variable_scopes[target_variable_scope..]
       .iter()
       .filter_map(|scope| scope.borrow().dep.clone())
       .collect::<Vec<_>>();
     deps.push(extra);
-    EntityDep::from(deps)
+    Consumable::from(deps)
   }
 }

@@ -1,10 +1,6 @@
 use super::{
-  collected::CollectedEntity,
-  entity::Entity,
-  literal::LiteralEntity,
-  typeof_result::TypeofResult,
-  unknown::{UnknownEntity, UnknownEntityKind},
-  utils::boolean_from_test_result,
+  collected::CollectedEntity, entity::Entity, literal::LiteralEntity, typeof_result::TypeofResult,
+  unknown::UnknownEntity, utils::boolean_from_test_result,
 };
 use crate::entity::union::UnionEntity;
 use oxc::{
@@ -131,7 +127,7 @@ impl<'a> EntityOpHost<'a> {
   }
 
   pub fn shift_left(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_with_deps(UnknownEntityKind::Number, vec![lhs.clone(), rhs.clone()])
+    UnknownEntity::new_computed_number((lhs.clone(), rhs.clone()))
   }
 
   pub fn add(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Entity<'a> {
@@ -163,19 +159,13 @@ impl<'a> EntityOpHost<'a> {
           }
         },
         _ => {
-          values.push(UnknownEntity::new_with_deps(
-            UnknownEntityKind::Number,
-            vec![lhs.clone(), rhs.clone()],
-          ));
+          values.push(UnknownEntity::new_computed_number((lhs.clone(), rhs.clone())));
         }
       }
     }
     if lhs_t.contains(TypeofResult::BigInt) && rhs_t.contains(TypeofResult::BigInt) {
       // Possibly bigint
-      values.push(UnknownEntity::new_with_deps(
-        UnknownEntityKind::BigInt,
-        vec![lhs.clone(), rhs.clone()],
-      ));
+      values.push(UnknownEntity::new_computed_bigint((lhs.clone(), rhs.clone())));
     }
     if !lhs_t.difference(must_not_convert_to_str).is_empty()
       || !rhs_t.difference(must_not_convert_to_str).is_empty()
@@ -192,17 +182,16 @@ impl<'a> EntityOpHost<'a> {
           values.push(LiteralEntity::new_string(self.allocator.alloc(val)));
         }
         _ => {
-          values
-            .push(UnknownEntity::new_with_deps(UnknownEntityKind::String, vec![lhs_str, rhs_str]));
+          values.push(UnknownEntity::new_computed_string((lhs_str, rhs_str)));
         }
       }
     }
 
     if values.is_empty() {
       // TODO: throw warning
-      UnknownEntity::new_unknown_with_deps(vec![lhs.clone(), rhs.clone()])
+      UnknownEntity::new_computed_unknown((lhs.clone(), rhs.clone()))
     } else {
-      UnionEntity::new_with_deps(values, vec![lhs.clone(), rhs.clone()])
+      UnionEntity::new_computed(values, (lhs.clone(), rhs.clone()))
     }
   }
 
@@ -229,17 +218,17 @@ impl<'a> EntityOpHost<'a> {
 
     let mut values = vec![];
     if input_t.contains(TypeofResult::BigInt) {
-      values.push(UnknownEntity::new_with_deps(UnknownEntityKind::BigInt, vec![input.clone()]));
+      values.push(UnknownEntity::new_computed_bigint(input.clone()));
     }
     if input_t.contains(TypeofResult::Number) {
-      values.push(UnknownEntity::new_with_deps(UnknownEntityKind::Number, vec![input.clone()]));
+      values.push(UnknownEntity::new_computed_number(input.clone()));
     }
 
     if values.is_empty() {
       // TODO: throw warning
-      UnknownEntity::new_unknown_with_deps(vec![input.clone()])
+      UnknownEntity::new_computed_unknown(input.clone())
     } else {
-      UnionEntity::new_with_deps(values, vec![input.clone()])
+      UnionEntity::new_computed(values, input.clone())
     }
   }
 
@@ -250,7 +239,7 @@ impl<'a> EntityOpHost<'a> {
     rhs: &Entity<'a>,
   ) -> Entity<'a> {
     let to_result =
-      |result: Option<bool>| boolean_from_test_result(result, || vec![lhs.clone(), rhs.clone()]);
+      |result: Option<bool>| boolean_from_test_result(result, || (lhs.clone(), rhs.clone()));
 
     match operator {
       BinaryOperator::Equality => to_result(self.eq(lhs, rhs)),
@@ -274,10 +263,10 @@ impl<'a> EntityOpHost<'a> {
       | BinaryOperator::BitwiseAnd
       | BinaryOperator::Exponential => {
         // Can be number or bigint
-        UnknownEntity::new_unknown_with_deps(vec![lhs.clone(), rhs.clone()])
+        UnknownEntity::new_computed_unknown((lhs.clone(), rhs.clone()))
       }
       BinaryOperator::In | BinaryOperator::Instanceof => {
-        UnknownEntity::new_with_deps(UnknownEntityKind::Boolean, vec![lhs.clone(), rhs.clone()])
+        UnknownEntity::new_computed_boolean((lhs.clone(), rhs.clone()))
       }
     }
   }

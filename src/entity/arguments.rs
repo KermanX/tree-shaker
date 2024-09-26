@@ -1,5 +1,5 @@
 use super::{
-  dep::EntityDep,
+  consumable::Consumable,
   entity::{Entity, EntityTrait},
   interactions::InteractionKind,
   typeof_result::TypeofResult,
@@ -19,7 +19,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     }
   }
 
-  fn interact(&self, _analyzer: &mut Analyzer<'a>, _dep: EntityDep, _kind: InteractionKind) {
+  fn interact(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>, _kind: InteractionKind) {
     unreachable!()
   }
 
@@ -27,7 +27,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-    _dep: EntityDep,
+    _dep: Consumable<'a>,
     _key: &Entity<'a>,
   ) -> Entity<'a> {
     unreachable!()
@@ -37,7 +37,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-    _dep: EntityDep,
+    _dep: Consumable<'a>,
     _key: &Entity<'a>,
     _value: Entity<'a>,
   ) {
@@ -48,12 +48,12 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-    _dep: EntityDep,
+    _dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     unreachable!()
   }
 
-  fn delete_property(&self, _analyzer: &mut Analyzer<'a>, _dep: EntityDep, _key: &Entity<'a>) {
+  fn delete_property(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>, _key: &Entity<'a>) {
     unreachable!()
   }
 
@@ -61,7 +61,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-    _dep: EntityDep,
+    _dep: Consumable<'a>,
     _this: &Entity<'a>,
     _args: &Entity<'a>,
   ) -> Entity<'a> {
@@ -76,7 +76,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     &self,
     _rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     let mut elements = Vec::new();
     let mut rest: Option<Vec<Entity<'a>>> = None;

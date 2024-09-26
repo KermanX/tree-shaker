@@ -8,9 +8,7 @@ pub mod variable_scope;
 use crate::{
   analyzer::Analyzer,
   entity::{
-    dep::{EntityDep, EntityDepNode},
-    entity::Entity,
-    label::LabelEntity,
+    consumable::Consumable, dep::EntityDepNode, entity::Entity, label::LabelEntity,
     unknown::UnknownEntity,
   },
 };
@@ -72,14 +70,14 @@ impl<'a> Analyzer<'a> {
   pub fn push_call_scope(
     &mut self,
     source: impl Into<EntityDepNode>,
-    call_dep: impl Into<EntityDep>,
+    call_dep: impl Into<Consumable<'a>>,
     variable_scopes: Rc<VariableScopes<'a>>,
     this: Entity<'a>,
     args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
     is_generator: bool,
   ) {
-    let call_dep: EntityDep = call_dep.into();
+    let call_dep = call_dep.into();
     let mut call_stack_deps: Vec<_> =
       self.scope_context.call_scopes.iter().map(|scope| scope.borrow().call_dep.clone()).collect();
     call_stack_deps.push(call_dep.clone());

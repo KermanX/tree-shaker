@@ -1,5 +1,5 @@
 use super::{
-  dep::EntityDep, interactions::InteractionKind, literal::LiteralEntity,
+  consumable::Consumable, interactions::InteractionKind, literal::LiteralEntity,
   typeof_result::TypeofResult, union::UnionEntity,
 };
 use crate::{analyzer::Analyzer, transformer::Transformer};
@@ -8,7 +8,7 @@ use std::{fmt::Debug, rc::Rc};
 
 pub trait EntityTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, kind: InteractionKind);
+  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind);
 
   /// FIXME: Not a good idea
   /// Only implemented by `ForwardedEntity`
@@ -18,14 +18,14 @@ pub trait EntityTrait<'a>: Debug {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a>;
   fn set_property(
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     key: &Entity<'a>,
     value: Entity<'a>,
   );
@@ -33,14 +33,14 @@ pub trait EntityTrait<'a>: Debug {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)>;
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: EntityDep, key: &Entity<'a>);
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>);
   fn call(
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a>;
@@ -49,7 +49,7 @@ pub trait EntityTrait<'a>: Debug {
     &self,
     rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
-    dep: EntityDep,
+    dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>);
 
   fn get_typeof(&self) -> Entity<'a>;
@@ -102,7 +102,7 @@ impl<'a> Entity<'a> {
   pub fn interact(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<EntityDep>,
+    dep: impl Into<Consumable<'a>>,
     kind: InteractionKind,
   ) {
     self.0.interact(analyzer, dep.into(), kind)
@@ -115,7 +115,7 @@ impl<'a> Entity<'a> {
   pub fn get_property(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<EntityDep>,
+    dep: impl Into<Consumable<'a>>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
     self.0.get_property(self, analyzer, dep.into(), key)
@@ -124,7 +124,7 @@ impl<'a> Entity<'a> {
   pub fn set_property(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<EntityDep>,
+    dep: impl Into<Consumable<'a>>,
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -134,7 +134,7 @@ impl<'a> Entity<'a> {
   pub fn enumerate_properties(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<EntityDep>,
+    dep: impl Into<Consumable<'a>>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     self.0.enumerate_properties(self, analyzer, dep.into())
   }
@@ -142,7 +142,7 @@ impl<'a> Entity<'a> {
   pub fn delete_property(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<EntityDep>,
+    dep: impl Into<Consumable<'a>>,
     key: &Entity<'a>,
   ) {
     self.0.delete_property(analyzer, dep.into(), key)
@@ -151,7 +151,7 @@ impl<'a> Entity<'a> {
   pub fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<EntityDep>,
+    dep: impl Into<Consumable<'a>>,
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
@@ -165,7 +165,7 @@ impl<'a> Entity<'a> {
   pub fn iterate(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<EntityDep>,
+    dep: impl Into<Consumable<'a>>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     self.0.iterate(self, analyzer, dep.into())
   }
@@ -217,7 +217,7 @@ impl<'a> Entity<'a> {
   pub fn destruct_as_array(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<EntityDep>,
+    dep: impl Into<Consumable<'a>>,
     length: usize,
   ) -> (Vec<Entity<'a>>, Entity<'a>) {
     let (elements, rest) = self.iterate(analyzer, dep);
@@ -247,7 +247,7 @@ impl<'a> Entity<'a> {
   pub fn iterate_result_union(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<EntityDep>,
+    dep: impl Into<Consumable<'a>>,
   ) -> Option<Entity<'a>> {
     let (elements, rest) = self.iterate(analyzer, dep);
     if let Some(rest) = rest {
