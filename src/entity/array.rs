@@ -10,10 +10,9 @@ use crate::{
 use oxc::syntax::number::ToJsInt32;
 use std::{
   cell::{Cell, RefCell},
-  mem,
+  fmt, mem,
 };
 
-#[derive(Debug)]
 pub struct ArrayEntity<'a> {
   consumed: Cell<bool>,
   deps: RefCell<Vec<Consumable<'a>>>,
@@ -21,6 +20,17 @@ pub struct ArrayEntity<'a> {
   variable_scopes: VariableScopes<'a>,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Vec<Entity<'a>>>,
+}
+
+impl<'a> fmt::Debug for ArrayEntity<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.debug_struct("ArrayEntity")
+      .field("consumed", &self.consumed.get())
+      .field("deps", &self.deps.borrow())
+      .field("elements", &self.elements.borrow())
+      .field("rest", &self.rest.borrow())
+      .finish()
+  }
 }
 
 impl<'a> EntityTrait<'a> for ArrayEntity<'a> {

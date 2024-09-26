@@ -11,10 +11,10 @@ use oxc::ast::ast::PropertyKind;
 use rustc_hash::FxHashMap;
 use std::{
   cell::{Cell, RefCell},
-  mem,
+  fmt, mem,
 };
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct ObjectEntity<'a> {
   consumed: Cell<bool>,
   deps: RefCell<Vec<Consumable<'a>>>,
@@ -24,6 +24,18 @@ pub struct ObjectEntity<'a> {
   pub unknown_keyed: RefCell<ObjectProperty<'a>>,
   // TODO: symbol_keyed
   pub rest: RefCell<ObjectProperty<'a>>,
+}
+
+impl<'a> fmt::Debug for ObjectEntity<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.debug_struct("ObjectEntity")
+      .field("consumed", &self.consumed.get())
+      .field("deps", &self.deps)
+      .field("string_keyed", &self.string_keyed)
+      .field("unknown_keyed", &self.unknown_keyed)
+      .field("rest", &self.rest)
+      .finish()
+  }
 }
 
 #[derive(Debug, Clone)]
