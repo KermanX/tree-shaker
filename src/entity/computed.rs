@@ -74,8 +74,13 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     self.forward(ret_val)
   }
 
-  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
-    self.forward(self.val.r#await(analyzer))
+  fn r#await(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Entity<'a> {
+    self.forward(self.val.r#await(analyzer, (self.dep.clone(), dep)))
   }
 
   fn iterate(

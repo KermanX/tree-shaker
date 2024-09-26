@@ -76,11 +76,16 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     consumed_object::call(analyzer, dep, this, args)
   }
 
-  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+  fn r#await(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Entity<'a> {
     if let Some(errors) = &self.errors {
       analyzer.forward_throw(errors.clone(), self.call_dep.clone());
     }
-    self.value.r#await(analyzer)
+    self.value.r#await(analyzer, dep)
   }
 
   fn iterate(

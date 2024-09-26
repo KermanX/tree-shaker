@@ -69,7 +69,12 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     self.call_impl(analyzer, dep, this, args)
   }
 
-  fn r#await(&self, rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+  fn r#await(
+    &self,
+    rc: &Entity<'a>,
+    _analyzer: &mut Analyzer<'a>,
+    _dep: Consumable<'a>,
+  ) -> Entity<'a> {
     rc.clone()
   }
 

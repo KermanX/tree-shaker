@@ -119,9 +119,14 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     self.call_impl(rc, analyzer, dep, this, args)
   }
 
-  fn r#await(&self, rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+  fn r#await(
+    &self,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::r#await(analyzer);
+      return consumed_object::r#await(analyzer, dep);
     }
     rc.clone()
   }
@@ -147,7 +152,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     UnknownEntity::new_computed_string(rc.clone())
   }
 
-  fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric();
     }

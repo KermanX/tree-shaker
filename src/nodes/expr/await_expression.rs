@@ -3,15 +3,13 @@ use oxc::ast::ast::{AwaitExpression, Expression};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_await_expression(&mut self, node: &'a AwaitExpression<'a>) -> Entity<'a> {
-    let value = self.exec_expression(&node.argument);
-    let awaited = value.r#await(self);
-
     let call_scope = self.call_scope_mut();
     if !call_scope.is_async {
       // TODO: throw warning
     }
 
-    awaited
+    let value = self.exec_expression(&node.argument);
+    value.r#await(self, ())
   }
 }
 

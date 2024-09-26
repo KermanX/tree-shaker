@@ -80,8 +80,13 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.forward(ret_cal)
   }
 
-  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
-    self.forward(self.val.r#await(analyzer))
+  fn r#await(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Entity<'a> {
+    self.forward(self.val.r#await(analyzer, dep))
   }
 
   fn iterate(

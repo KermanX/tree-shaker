@@ -331,9 +331,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     consumed_object::call(analyzer, dep, this, args)
   }
 
-  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+  fn r#await(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Entity<'a> {
     self.consume(analyzer);
-    consumed_object::r#await(analyzer)
+    consumed_object::r#await(analyzer, dep)
   }
 
   fn iterate(

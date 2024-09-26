@@ -62,7 +62,12 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
-  fn r#await(&self, _rc: &Entity<'a>, _analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+  fn r#await(
+    &self,
+    _rc: &Entity<'a>,
+    _analyzer: &mut Analyzer<'a>,
+    _dep: Consumable<'a>,
+  ) -> Entity<'a> {
     unreachable!()
   }
 

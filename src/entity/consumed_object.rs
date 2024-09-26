@@ -61,8 +61,9 @@ pub fn call<'a>(
   UnknownEntity::new_unknown()
 }
 
-pub fn r#await<'a>(analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
   analyzer.may_throw();
+  analyzer.consume(dep);
   analyzer.refer_global();
   UnknownEntity::new_unknown()
 }

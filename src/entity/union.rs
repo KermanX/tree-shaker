@@ -85,10 +85,15 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     UnionEntity::new(results)
   }
 
-  fn r#await(&self, _rc: &Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+  fn r#await(
+    &self,
+    _rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Entity<'a> {
     let mut values = Vec::new();
     for entity in &self.values {
-      values.push(entity.r#await(analyzer));
+      values.push(entity.r#await(analyzer, dep.clone()));
     }
     UnionEntity::new(values)
   }
