@@ -101,11 +101,14 @@ impl<'a> Analyzer<'a> {
     args_entity.consume(self);
     for symbol in args_symbols {
       // FIXME: Accessing `arguments` in formal parameters
-      if let Some(old) = self.read_symbol(&symbol) {
-        self.write_symbol(&symbol, UnknownEntity::new_unknown_with_deps(vec![old]));
+      if let Some((_, variable_scopes, decl_dep)) = self.symbol_decls.get(&symbol) {
+        let decl_dep = decl_dep.clone();
+        let variable_scope = variable_scopes.last().unwrap().clone();
+        variable_scope.borrow_mut().consume(self, symbol);
+        self.refer_dep(decl_dep);
       } else {
         // TDZ
-        arguments_consumed = false
+        arguments_consumed = false;
       }
     }
     arguments_consumed

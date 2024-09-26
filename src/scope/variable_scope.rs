@@ -102,4 +102,11 @@ impl<'a> VariableScope<'a> {
     }
     *old = (old.0, consumed || old.1, Some(value));
   }
+
+  pub fn consume(&mut self, analyzer: &mut Analyzer<'a>, symbol: SymbolId) {
+    if let (false, Some(val)) = self.read(&symbol) {
+      val.consume(analyzer);
+      self.write(analyzer, symbol, (true, UnknownEntity::new_unknown()));
+    }
+  }
 }
