@@ -1,7 +1,4 @@
-use super::{
-  consumable::Consumable, interactions::InteractionKind, literal::LiteralEntity,
-  typeof_result::TypeofResult, union::UnionEntity,
-};
+use super::{Consumable, InteractionKind, LiteralEntity, TypeofResult, UnionEntity};
 use crate::{analyzer::Analyzer, transformer::Transformer};
 use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};

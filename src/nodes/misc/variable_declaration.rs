@@ -1,6 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::DeclarationKind, entity::entity::Entity, transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{VariableDeclaration, VariableDeclarationKind};
 
 impl<'a> Analyzer<'a> {

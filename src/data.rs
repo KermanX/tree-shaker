@@ -1,4 +1,4 @@
-use crate::{ast::AstType2, entity::dep::EntityDepNode};
+use crate::{ast::AstType2, entity::EntityDepNode};
 use oxc::semantic::SymbolId;
 use rustc_hash::{FxHashMap, FxHashSet};
 

@@ -1,16 +1,9 @@
 use super::{
-  consumable::Consumable,
-  dep::EntityDepNode,
-  entity::{Entity, EntityTrait},
-  forwarded::ForwardedEntity,
-  interactions::InteractionKind,
-  literal::LiteralEntity,
-  typeof_result::TypeofResult,
-  unknown::UnknownEntity,
+  consumed_object, Consumable, Entity, EntityDepNode, EntityTrait, ForwardedEntity,
+  InteractionKind, LiteralEntity, TypeofResult, UnknownEntity,
 };
 use crate::{
   analyzer::Analyzer,
-  entity::consumed_object,
   scope::variable_scope::{VariableScope, VariableScopes},
   use_consumed_flag,
 };

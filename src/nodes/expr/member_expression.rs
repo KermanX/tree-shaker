@@ -2,9 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{
-    entity::Entity, forwarded::ForwardedEntity, literal::LiteralEntity, union::UnionEntity,
-  },
+  entity::{Entity, ForwardedEntity, LiteralEntity, UnionEntity},
   transformer::Transformer,
 };
 use oxc::{

@@ -1,6 +1,6 @@
 use crate::{
   ast::Arguments,
-  entity::{arguments::ArgumentsEntity, entity::Entity, forwarded::ForwardedEntity},
+  entity::{ArgumentsEntity, Entity, ForwardedEntity},
   transformer::Transformer,
   Analyzer,
 };

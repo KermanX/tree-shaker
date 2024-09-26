@@ -1,11 +1,6 @@
 use super::{
-  consumable::Consumable,
-  consumed_object,
-  entity::{Entity, EntityTrait},
-  interactions::InteractionKind,
-  literal::LiteralEntity,
-  typeof_result::TypeofResult,
-  unknown::UnknownEntity,
+  consumed_object, Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity, TypeofResult,
+  UnknownEntity,
 };
 use crate::analyzer::Analyzer;
 use std::fmt::Debug;

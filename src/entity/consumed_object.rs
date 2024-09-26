@@ -1,6 +1,4 @@
-use super::{
-  consumable::Consumable, entity::Entity, interactions::InteractionKind, unknown::UnknownEntity,
-};
+use super::{Consumable, Entity, InteractionKind, UnknownEntity};
 use crate::analyzer::Analyzer;
 
 pub fn interact<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _kind: InteractionKind) {

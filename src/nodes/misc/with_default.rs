@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{entity::Entity, union::UnionEntity},
+  entity::{Entity, UnionEntity},
 };
 use oxc::ast::ast::Expression;
 

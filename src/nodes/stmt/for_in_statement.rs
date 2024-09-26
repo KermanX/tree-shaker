@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  entity::{typeof_result::TypeofResult, unknown::UnknownEntity},
+  entity::{TypeofResult, UnknownEntity},
   scope::CfScopeKind,
   transformer::Transformer,
 };

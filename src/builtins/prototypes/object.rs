@@ -1,5 +1,5 @@
 use super::{null::create_null_prototype, Prototype};
-use crate::entity::builtin_fn::PureBuiltinFnEntity;
+use crate::entity::PureBuiltinFnEntity;
 
 pub fn create_object_prototype<'a>() -> Prototype<'a> {
   let mut prototype = create_null_prototype();

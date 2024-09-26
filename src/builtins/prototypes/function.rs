@@ -1,10 +1,6 @@
 use super::{object::create_object_prototype, Prototype};
 use crate::entity::{
-  array::ArrayEntity,
-  builtin_fn::{ImplementedBuiltinFnEntity, PureBuiltinFnEntity},
-  entity::Entity,
-  union::UnionEntity,
-  unknown::UnknownEntity,
+  ArrayEntity, Entity, ImplementedBuiltinFnEntity, PureBuiltinFnEntity, UnionEntity, UnknownEntity,
 };
 
 pub fn create_function_prototype<'a>() -> Prototype<'a> {

@@ -24,16 +24,18 @@ mod unary_expression;
 mod update_expression;
 mod yield_expression;
 
-use crate::ast::AstType2;
-use crate::build_effect;
-use crate::entity::collector::LiteralCollector;
-use crate::entity::entity::Entity;
-use crate::entity::literal::LiteralEntity;
-use crate::{transformer::Transformer, Analyzer};
-use oxc::allocator::CloneIn;
-use oxc::ast::ast::Expression;
-use oxc::ast::match_member_expression;
-use oxc::span::GetSpan;
+use crate::{
+  analyzer::Analyzer,
+  ast::AstType2,
+  build_effect,
+  entity::{Entity, LiteralCollector, LiteralEntity},
+  transformer::Transformer,
+};
+use oxc::{
+  allocator::CloneIn,
+  ast::{ast::Expression, match_member_expression},
+  span::GetSpan,
+};
 
 const AST_TYPE: AstType2 = AstType2::Expression;
 

@@ -2,8 +2,8 @@ use super::{try_scope::TryScope, variable_scope::VariableScopes};
 use crate::{
   analyzer::Analyzer,
   entity::{
-    consumable::Consumable, dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity,
-    literal::LiteralEntity, promise::PromiseEntity, union::UnionEntity, unknown::UnknownEntity,
+    Consumable, Entity, EntityDepNode, ForwardedEntity, LiteralEntity, PromiseEntity, UnionEntity,
+    UnknownEntity,
   },
 };
 use oxc::semantic::SymbolId;

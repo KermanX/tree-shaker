@@ -1,8 +1,6 @@
 use crate::entity::{
-  builtin_fn::ImplementedBuiltinFnEntity,
-  entity::Entity,
-  object::{ObjectEntity, ObjectProperty, ObjectPropertyValue},
-  unknown::UnknownEntity,
+  Entity, ImplementedBuiltinFnEntity, ObjectEntity, ObjectProperty, ObjectPropertyValue,
+  UnknownEntity,
 };
 
 pub fn create_import_meta<'a>() -> Entity<'a> {

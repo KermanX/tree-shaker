@@ -1,12 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{
-    consumable::Consumable,
-    dep::EntityDepNode,
-    entity::Entity,
-    function::{FunctionEntity, FunctionEntitySource},
-  },
+  entity::{Consumable, Entity, EntityDepNode, FunctionEntity, FunctionEntitySource},
   scope::variable_scope::VariableScopes,
   transformer::Transformer,
 };

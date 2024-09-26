@@ -1,5 +1,5 @@
 use crate::{
-  entity::{entity::Entity, literal::LiteralEntity, unknown::UnknownEntity},
+  entity::{Entity, LiteralEntity, UnknownEntity},
   Analyzer,
 };
 use oxc::ast::ast::{

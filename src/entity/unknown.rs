@@ -1,11 +1,6 @@
 use super::{
-  computed::ComputedEntity,
-  consumable::Consumable,
-  consumed_object,
-  entity::{Entity, EntityTrait},
-  interactions::InteractionKind,
-  literal::LiteralEntity,
-  typeof_result::TypeofResult,
+  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity,
+  TypeofResult,
 };
 use crate::{analyzer::Analyzer, builtins::Prototype};
 

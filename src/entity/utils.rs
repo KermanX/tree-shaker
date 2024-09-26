@@ -1,7 +1,4 @@
-use super::{
-  computed::ComputedEntity, consumable::Consumable, entity::Entity, literal::LiteralEntity,
-  unknown::UnknownEntity,
-};
+use super::{ComputedEntity, Consumable, Entity, LiteralEntity, UnknownEntity};
 
 pub fn boolean_from_test_result<'a, T: Into<Consumable<'a>>>(
   result: Option<bool>,

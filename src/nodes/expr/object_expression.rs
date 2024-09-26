@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, build_effect, entity::entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{

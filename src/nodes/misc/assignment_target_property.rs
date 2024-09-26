@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  entity::{dep::EntityDepNode, entity::Entity, literal::LiteralEntity},
+  entity::{Entity, EntityDepNode, LiteralEntity},
   transformer::Transformer,
 };
 use oxc::{

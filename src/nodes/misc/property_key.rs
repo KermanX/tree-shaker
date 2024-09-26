@@ -1,8 +1,9 @@
-use crate::ast::AstType2;
-use crate::entity::collector::LiteralCollector;
-use crate::entity::entity::Entity;
-use crate::entity::literal::LiteralEntity;
-use crate::{transformer::Transformer, Analyzer};
+use crate::{
+  analyzer::Analyzer,
+  ast::AstType2,
+  entity::{Entity, LiteralCollector, LiteralEntity},
+  transformer::Transformer,
+};
 use oxc::{ast::ast::PropertyKey, span::GetSpan};
 
 const AST_TYPE: AstType2 = AstType2::PropertyKey;

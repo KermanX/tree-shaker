@@ -1,8 +1,10 @@
-use crate::ast::AstType2;
-use crate::build_effect;
-use crate::entity::entity::Entity;
-use crate::entity::union::UnionEntity;
-use crate::{analyzer::Analyzer, Transformer};
+use crate::{
+  analyzer::Analyzer,
+  ast::AstType2,
+  build_effect,
+  entity::{Entity, UnionEntity},
+  transformer::Transformer,
+};
 use oxc::ast::ast::{ConditionalExpression, Expression};
 
 const AST_TYPE: AstType2 = AstType2::ConditionalExpression;

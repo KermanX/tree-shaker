@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, data::StatementVecData, entity::forwarded::ForwardedEntity,
+  analyzer::Analyzer, ast::AstType2, data::StatementVecData, entity::ForwardedEntity,
   transformer::Transformer,
 };
 use oxc::ast::{

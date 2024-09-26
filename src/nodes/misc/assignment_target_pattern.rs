@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstType2, entity::entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstType2, entity::Entity, transformer::Transformer};
 use oxc::ast::{
   ast::{ArrayAssignmentTarget, AssignmentTargetPattern, ObjectAssignmentTarget},
   AstKind,

@@ -1,6 +1,4 @@
-use crate::ast::DeclarationKind;
-use crate::entity::entity::Entity;
-use crate::{transformer::Transformer, Analyzer};
+use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::BindingRestElement;
 
 impl<'a> Analyzer<'a> {

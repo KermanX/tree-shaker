@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   build_effect_from_arr,
-  entity::{entity::Entity, literal::LiteralEntity},
+  entity::{Entity, LiteralEntity},
   transformer::Transformer,
 };
 use oxc::{

@@ -1,7 +1,4 @@
-use super::{
-  dep::EntityDepNode,
-  entity::{Entity, EntityTrait},
-};
+use super::{Entity, EntityDepNode, EntityTrait};
 use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::AstKind;
 use std::{fmt::Debug, ops::Deref, rc::Rc};

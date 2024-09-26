@@ -3,8 +3,8 @@ use crate::{
   ast::AstType2,
   build_effect_from_arr,
   entity::{
-    arguments::ArgumentsEntity, dep::EntityDepNode, entity::Entity, forwarded::ForwardedEntity,
-    literal::LiteralEntity, union::UnionEntity, unknown::UnknownEntity,
+    ArgumentsEntity, Entity, EntityDepNode, ForwardedEntity, LiteralEntity, UnionEntity,
+    UnknownEntity,
   },
   transformer::Transformer,
 };

@@ -1,11 +1,10 @@
+use super::{CollectedEntity, Entity, LiteralEntity};
 use crate::{analyzer::Analyzer, TreeShakeConfig};
-use std::{cell::RefCell, rc::Rc};
-
-use super::{collected::CollectedEntity, entity::Entity, literal::LiteralEntity};
 use oxc::{
   ast::{ast::Expression, AstBuilder},
   span::Span,
 };
+use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug, Default)]
 pub struct LiteralCollector<'a> {

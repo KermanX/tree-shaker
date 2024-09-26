@@ -10,10 +10,7 @@ mod regexp;
 mod string;
 mod symbol;
 
-use crate::entity::{
-  consumable::Consumable, entity::Entity, entry::EntryEntity, literal::LiteralEntity,
-  union::UnionEntity, unknown::UnknownEntity,
-};
+use crate::entity::{Consumable, Entity, EntryEntity, LiteralEntity, UnionEntity, UnknownEntity};
 use rustc_hash::FxHashMap;
 
 pub struct Prototype<'a>(FxHashMap<&'static str, Entity<'a>>);

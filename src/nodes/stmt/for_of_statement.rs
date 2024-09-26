@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, entity::unknown::UnknownEntity, scope::CfScopeKind,
+  analyzer::Analyzer, ast::AstType2, entity::UnknownEntity, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::{

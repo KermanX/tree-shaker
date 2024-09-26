@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   data::StatementVecData,
-  entity::{dep::EntityDepNode, unknown::UnknownEntity},
+  entity::{EntityDepNode, UnknownEntity},
   transformer::Transformer,
 };
 use oxc::ast::{

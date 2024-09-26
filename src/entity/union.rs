@@ -1,12 +1,6 @@
 use super::{
-  computed::ComputedEntity,
-  consumable::Consumable,
-  consumed_object,
-  entity::{Entity, EntityTrait},
-  interactions::InteractionKind,
-  literal::LiteralEntity,
-  typeof_result::TypeofResult,
-  unknown::UnknownEntity,
+  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity,
+  TypeofResult, UnknownEntity,
 };
 use crate::{analyzer::Analyzer, scope::CfScopeKind};
 use rustc_hash::FxHashSet;

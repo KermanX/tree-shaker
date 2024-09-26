@@ -1,10 +1,4 @@
-use super::{
-  consumable::Consumable,
-  entity::{Entity, EntityTrait},
-  interactions::InteractionKind,
-  typeof_result::TypeofResult,
-  union::UnionEntity,
-};
+use super::{Consumable, Entity, EntityTrait, InteractionKind, TypeofResult, UnionEntity};
 use crate::analyzer::Analyzer;
 
 #[derive(Debug)]

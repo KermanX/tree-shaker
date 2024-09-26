@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, entity::forwarded::ForwardedEntity, transformer::Transformer};
+use crate::{analyzer::Analyzer, entity::ForwardedEntity, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{Statement, ThrowStatement},

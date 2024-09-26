@@ -1,8 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{
-    consumable::Consumable, entity::Entity, forwarded::ForwardedEntity, unknown::UnknownEntity,
-  },
+  entity::{Consumable, Entity, ForwardedEntity, UnknownEntity},
 };
 
 #[derive(Debug)]

@@ -1,5 +1,5 @@
 use super::{cf_scope::CfScopes, variable_scope::VariableScopes};
-use crate::{analyzer::Analyzer, entity::consumable::Consumable};
+use crate::{analyzer::Analyzer, entity::Consumable};
 use std::rc::Rc;
 
 pub fn find_first_different<T>(a: &Vec<Rc<T>>, b: &Vec<Rc<T>>) -> usize {

@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, entity::entity::Entity, scope::CfScopeKind};
+use crate::{analyzer::Analyzer, entity::Entity, scope::CfScopeKind};
 use oxc::semantic::SymbolId;
 use std::{mem, rc::Rc};
 

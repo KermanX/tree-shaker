@@ -2,9 +2,7 @@ use super::cf_scope::CfScopes;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{
-    consumable::Consumable, entity::Entity, literal::LiteralEntity, unknown::UnknownEntity,
-  },
+  entity::{Consumable, Entity, LiteralEntity, UnknownEntity},
 };
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashMap;

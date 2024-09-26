@@ -1,6 +1,4 @@
-use crate::{
-  ast::DeclarationKind, entity::unknown::UnknownEntity, transformer::Transformer, Analyzer,
-};
+use crate::{ast::DeclarationKind, entity::UnknownEntity, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{
   ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
   ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,

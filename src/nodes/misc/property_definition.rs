@@ -1,6 +1,5 @@
+use crate::{analyzer::Analyzer, entity::LiteralEntity, transformer::Transformer};
 use oxc::ast::ast::{ClassElement, PropertyDefinition, TSAccessibility, TSTypeAnnotation};
-
-use crate::{analyzer::Analyzer, entity::literal::LiteralEntity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_property_definition(&mut self, node: &'a PropertyDefinition<'a>) {

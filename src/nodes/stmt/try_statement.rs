@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, entity::unknown::UnknownEntity, scope::CfScopeKind, transformer::Transformer,
+  analyzer::Analyzer, entity::UnknownEntity, scope::CfScopeKind, transformer::Transformer,
 };
 use oxc::{
   ast::ast::{Statement, TryStatement},

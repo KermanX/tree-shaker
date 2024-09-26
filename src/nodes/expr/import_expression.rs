@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   build_effect_from_arr,
-  entity::{entity::Entity, unknown::UnknownEntity},
+  entity::{Entity, UnknownEntity},
   transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, ImportExpression};

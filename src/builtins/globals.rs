@@ -1,4 +1,4 @@
-use crate::entity::{entity::Entity, literal::LiteralEntity, unknown::UnknownEntity};
+use crate::entity::{Entity, LiteralEntity, UnknownEntity};
 use rustc_hash::FxHashMap;
 
 pub fn create_globals<'a>() -> FxHashMap<&'static str, Entity<'a>> {

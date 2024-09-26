@@ -1,9 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{
-    dep::EntityDepNode,
-    entity::{Entity, EntityTrait},
-  },
+  entity::{Entity, EntityDepNode, EntityTrait},
 };
 use oxc::ast::ast::PropertyKind;
 

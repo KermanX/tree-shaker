@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, entity::label::LabelEntity, transformer::Transformer};
+use crate::{analyzer::Analyzer, entity::LabelEntity, transformer::Transformer};
 use oxc::ast::{
   ast::{LabeledStatement, Statement},
   AstKind,

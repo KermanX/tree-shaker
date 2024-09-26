@@ -3,7 +3,7 @@ mod globals;
 mod import_meta;
 mod prototypes;
 
-use crate::entity::entity::Entity;
+use crate::entity::Entity;
 use environment::create_environment;
 use globals::create_globals;
 use import_meta::create_import_meta;

@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{entity::Entity, unknown::UnknownEntity},
+  entity::{Entity, UnknownEntity},
   transformer::Transformer,
 };
 use oxc::ast::ast::{Class, ClassBody, TSTypeParameterDeclaration, TSTypeParameterInstantiation};

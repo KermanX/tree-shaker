@@ -1,6 +1,6 @@
 use crate::{
   ast::{AstType2, DeclarationKind},
-  entity::{dep::EntityDepNode, entity::Entity, unknown::UnknownEntity},
+  entity::{Entity, EntityDepNode, UnknownEntity},
   transformer::Transformer,
   Analyzer,
 };

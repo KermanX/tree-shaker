@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, entity::entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{Expression, SequenceExpression},
   span::SPAN,

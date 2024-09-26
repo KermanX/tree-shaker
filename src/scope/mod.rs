@@ -7,10 +7,7 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  entity::{
-    consumable::Consumable, dep::EntityDepNode, entity::Entity, label::LabelEntity,
-    unknown::UnknownEntity,
-  },
+  entity::{Consumable, Entity, EntityDepNode, LabelEntity, UnknownEntity},
 };
 use call_scope::CallScope;
 pub use cf_scope::CfScopeKind;

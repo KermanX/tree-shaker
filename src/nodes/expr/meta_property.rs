@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{entity::Entity, unknown::UnknownEntity},
+  entity::{Entity, UnknownEntity},
   transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, MetaProperty};

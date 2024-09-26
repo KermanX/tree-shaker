@@ -1,10 +1,5 @@
 use super::{
-  consumable::Consumable,
-  consumed_object,
-  entity::{Entity, EntityTrait},
-  interactions::InteractionKind,
-  typeof_result::TypeofResult,
-  unknown::UnknownEntity,
+  consumed_object, Consumable, Entity, EntityTrait, InteractionKind, TypeofResult, UnknownEntity,
 };
 use crate::{analyzer::Analyzer, builtins::Prototype, utils::F64WithEq};
 use oxc::{

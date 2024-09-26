@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  entity::{entity::Entity, forwarded::ForwardedEntity, unknown::UnknownEntity},
+  entity::{Entity, ForwardedEntity, UnknownEntity},
   transformer::Transformer,
 };
 use oxc::ast::{ast::IdentifierReference, AstKind};

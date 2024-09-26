@@ -4,7 +4,7 @@ use crate::{
   data::{
     get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData, VarDeclarations,
   },
-  entity::dep::EntityDepNode,
+  entity::EntityDepNode,
   TreeShakeConfig,
 };
 use oxc::{

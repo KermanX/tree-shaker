@@ -1,6 +1,6 @@
 use super::{
-  collected::CollectedEntity, entity::Entity, literal::LiteralEntity, typeof_result::TypeofResult,
-  unknown::UnknownEntity, utils::boolean_from_test_result,
+  utils::boolean_from_test_result, CollectedEntity, Entity, LiteralEntity, TypeofResult,
+  UnknownEntity,
 };
 use crate::entity::union::UnionEntity;
 use oxc::{

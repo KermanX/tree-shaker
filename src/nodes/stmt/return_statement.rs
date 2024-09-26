@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{forwarded::ForwardedEntity, literal::LiteralEntity},
+  entity::{ForwardedEntity, LiteralEntity},
   transformer::Transformer,
 };
 use oxc::ast::{

@@ -1,10 +1,4 @@
-use super::{
-  consumable::Consumable,
-  entity::{Entity, EntityTrait},
-  interactions::InteractionKind,
-  literal::LiteralEntity,
-  typeof_result::TypeofResult,
-};
+use super::{Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity, TypeofResult};
 use crate::{analyzer::Analyzer, transformer::Transformer};
 use rustc_hash::FxHashSet;
 

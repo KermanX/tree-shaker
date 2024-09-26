@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, entity::literal::LiteralEntity, transformer::Transformer};
+use crate::{analyzer::Analyzer, entity::LiteralEntity, transformer::Transformer};
 use oxc::ast::{
   ast::{AccessorProperty, ClassElement},
   NONE,

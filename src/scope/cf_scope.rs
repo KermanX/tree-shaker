@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, entity::label::LabelEntity};
+use crate::{analyzer::Analyzer, entity::LabelEntity};
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashSet;
 use std::{cell::RefCell, rc::Rc};

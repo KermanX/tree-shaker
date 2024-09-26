@@ -3,8 +3,8 @@ use crate::{
   builtins::Builtins,
   data::{get_node_ptr, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
   entity::{
-    consumable::Consumable, entity::Entity, forwarded::ForwardedEntity, label::LabelEntity,
-    literal::LiteralEntity, operations::EntityOpHost, union::UnionEntity, unknown::UnknownEntity,
+    Consumable, Entity, EntityOpHost, ForwardedEntity, LabelEntity, LiteralEntity, UnionEntity,
+    UnknownEntity,
   },
   scope::{variable_scope::VariableScopes, ScopeContext},
   TreeShakeConfig,

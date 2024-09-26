@@ -1,4 +1,4 @@
-use super::dep::EntityDepNode;
+use super::EntityDepNode;
 use oxc::ast::{ast::LabelIdentifier, AstKind};
 
 #[derive(Debug, Clone, Copy)]

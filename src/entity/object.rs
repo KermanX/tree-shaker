@@ -1,15 +1,6 @@
 use super::{
-  arguments::ArgumentsEntity,
-  consumable::Consumable,
-  consumed_object,
-  entity::{Entity, EntityTrait},
-  entry::EntryEntity,
-  forwarded::ForwardedEntity,
-  interactions::InteractionKind,
-  literal::LiteralEntity,
-  typeof_result::TypeofResult,
-  union::UnionEntity,
-  unknown::UnknownEntity,
+  consumed_object, ArgumentsEntity, Consumable, Entity, EntityTrait, EntryEntity, ForwardedEntity,
+  InteractionKind, LiteralEntity, TypeofResult, UnionEntity, UnknownEntity,
 };
 use crate::{
   analyzer::Analyzer,
