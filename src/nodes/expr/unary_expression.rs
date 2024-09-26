@@ -58,7 +58,7 @@ impl<'a> Analyzer<'a> {
           }
         } else {
           // Maybe number or bigint
-          UnknownEntity::new_computed_unknown(vec![argument])
+          UnknownEntity::new_computed_unknown(argument)
         }
       }
       UnaryOperator::UnaryPlus => argument.get_to_numeric(),
@@ -67,7 +67,7 @@ impl<'a> Analyzer<'a> {
         Some(false) => LiteralEntity::new_boolean(true),
         None => UnknownEntity::new_computed_boolean(argument),
       },
-      UnaryOperator::BitwiseNot => UnknownEntity::new_computed_unknown(vec![argument]),
+      UnaryOperator::BitwiseNot => UnknownEntity::new_computed_unknown(argument),
       UnaryOperator::Typeof => argument.get_typeof(),
       UnaryOperator::Void => LiteralEntity::new_undefined(),
       UnaryOperator::Delete => unreachable!(),

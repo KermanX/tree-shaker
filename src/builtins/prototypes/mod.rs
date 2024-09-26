@@ -57,7 +57,7 @@ impl<'a> Prototype<'a> {
         );
       }
     }
-    EntryEntity::new(UnknownEntity::new_computed_unknown(vec![rc.clone()]), key.clone())
+    EntryEntity::new(UnknownEntity::new_computed_unknown(rc.clone()), key.clone())
   }
 }
 
