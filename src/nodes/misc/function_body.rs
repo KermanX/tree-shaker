@@ -55,12 +55,10 @@ impl<'a> Transformer<'a> {
       self.ast_builder.function_body(
         *span,
         self.clone_node(directives),
-        self.ast_builder.vec1(
-          self.ast_builder.statement_expression(
-            *span,
-            expr.unwrap_or_else(|| self.build_unused_expression(*span)),
-          ),
-        ),
+        self.ast_builder.vec1(self.ast_builder.statement_expression(
+          *span,
+          expr.unwrap_or_else(|| self.build_unused_expression(*span)),
+        )),
       )
     } else {
       unreachable!();
