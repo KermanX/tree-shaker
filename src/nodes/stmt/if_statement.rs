@@ -30,7 +30,6 @@ impl<'a> Analyzer<'a> {
     data.maybe_true |= maybe_true;
     data.maybe_false |= maybe_false;
 
-
     let branch_exited = if maybe_true && maybe_false { None } else { Some(false) };
     let mut should_exit = true;
     let mut exit_target_inner = 0;
