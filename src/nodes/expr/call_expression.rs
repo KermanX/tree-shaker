@@ -5,12 +5,9 @@ use crate::{
   entity::{Entity, LiteralEntity, UnionEntity},
   transformer::Transformer,
 };
-use oxc::{
-  allocator::{Box, IntoIn},
-  ast::{
-    ast::{CallExpression, Expression, TSTypeParameterInstantiation},
-    AstKind,
-  },
+use oxc::ast::{
+  ast::{CallExpression, Expression},
+  AstKind, NONE,
 };
 
 const AST_TYPE: AstType2 = AstType2::CallExpression;
@@ -81,21 +78,9 @@ impl<'a> Transformer<'a> {
       // Need call
       let callee = self.transform_callee(callee, true).unwrap();
 
-      let call_expr: Box<_> = self
-        .ast_builder
-        .call_expression(
-          *span,
-          callee,
-          None::<TSTypeParameterInstantiation>,
-          // Placeholder arguments
-          self.ast_builder.vec(),
-          data.need_optional,
-        )
-        .into_in(&self.allocator);
+      let arguments = self.transform_arguments_need_call(arguments);
 
-      self.deferred_arguments.borrow_mut().push((arguments, &call_expr.arguments as *const _));
-
-      Some(Expression::CallExpression(call_expr))
+      Some(self.ast_builder.expression_call(*span, callee, NONE, arguments, data.need_optional))
     } else {
       // Only need effects in callee and args
       let callee = self.transform_callee(callee, false);

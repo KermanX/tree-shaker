@@ -1,15 +1,11 @@
 use super::{Consumable, InteractionKind, LiteralEntity, TypeofResult, UnionEntity};
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};
 
 pub trait EntityTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
   fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind);
-
-  /// FIXME: Not a good idea
-  /// Only implemented by `ForwardedEntity`
-  fn refer_dep_shallow(&self, _transformer: &Transformer<'a>) {}
 
   fn get_property(
     &self,
@@ -108,10 +104,6 @@ impl<'a> Entity<'a> {
     kind: InteractionKind,
   ) {
     self.0.interact(analyzer, dep.into(), kind)
-  }
-
-  pub fn refer_dep_shallow(&self, transformer: &Transformer<'a>) {
-    self.0.refer_dep_shallow(transformer)
   }
 
   pub fn get_property(

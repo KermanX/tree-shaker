@@ -27,15 +27,7 @@ impl<'a> Analyzer<'a> {
       None => node.init.as_ref().map(|init| self.exec_expression(init)),
     };
 
-    if let Some(init) = init.clone() {
-      self.push_variable_scope_with_dep(init);
-    }
-
-    self.init_binding_pattern(&node.id, init.clone());
-
-    if init.is_some() {
-      self.pop_variable_scope();
-    }
+    self.init_binding_pattern(&node.id, init);
   }
 }
 

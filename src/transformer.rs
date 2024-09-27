@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  ast::{Arguments, AstType2},
+  ast::AstType2,
   data::{
     get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData, VarDeclarations,
   },
@@ -36,7 +36,6 @@ pub struct Transformer<'a> {
   pub var_decls: RefCell<VarDeclarations<'a>>,
 
   pub call_stack: RefCell<Vec<EntityDepNode>>,
-  pub deferred_arguments: RefCell<Vec<(&'a Arguments<'a>, *const Arguments<'a>)>>,
   pub need_unused_assignment_target: Cell<bool>,
 }
 
@@ -54,7 +53,6 @@ impl<'a> Transformer<'a> {
       var_decls: RefCell::new(var_decls),
 
       call_stack: RefCell::new(vec![EntityDepNode::Environment]),
-      deferred_arguments: Default::default(),
       need_unused_assignment_target: Cell::new(false),
     }
   }
@@ -64,18 +62,6 @@ impl<'a> Transformer<'a> {
 
     let data = self.get_data::<StatementVecData>(AstType2::Program, node);
     let mut body = self.transform_statement_vec(data, body);
-
-    loop {
-      let mut deferred_arguments = self.deferred_arguments.borrow_mut();
-      if let Some((source, target)) = deferred_arguments.pop() {
-        drop(deferred_arguments);
-        let mut_ptr: *mut Arguments<'a> = unsafe { mem::transmute(target) };
-        let mut_ref = unsafe { &mut *mut_ptr };
-        *mut_ref = self.transform_arguments_need_call(source);
-      } else {
-        break;
-      }
-    }
 
     self.patch_var_declarations(&mut body);
 

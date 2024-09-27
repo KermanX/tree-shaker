@@ -1,13 +1,10 @@
 use super::{Entity, EntityDepNode, EntityTrait};
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::analyzer::Analyzer;
 use oxc::ast::AstKind;
 use std::{fmt::Debug, ops::Deref, rc::Rc};
 
 pub trait ConsumableInternal<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
-
-  /// FIXME: remove this
-  fn refer_dep_shallow(&self, _transformer: &Transformer<'a>) {}
 }
 
 #[derive(Debug, Clone)]
@@ -49,10 +46,6 @@ impl<'a> ConsumableInternal<'a> for () {
 impl<'a> ConsumableInternal<'a> for EntityDepNode {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.refer_dep(*self);
-  }
-
-  fn refer_dep_shallow(&self, transformer: &Transformer<'a>) {
-    transformer.refer_dep(*self);
   }
 }
 

@@ -1,9 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::{AstType2, DeclarationKind},
-  entity::Entity,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{BindingPatternKind, FormalParameter, FormalParameters},
@@ -11,14 +6,6 @@ use oxc::{
   },
   span::{GetSpan, SPAN},
 };
-
-const AST_TYPE: AstType2 = AstType2::FormalParameter;
-
-#[derive(Debug, Default)]
-pub struct Data<'a> {
-  elements_init: Vec<Vec<Entity<'a>>>,
-  rest_init: Vec<Entity<'a>>,
-}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_formal_parameters(
@@ -28,10 +15,6 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
   ) {
     let (elements_init, rest_init) = args.destruct_as_array(self, (), node.items.len());
-
-    let data = self.load_data::<Data>(AST_TYPE, node);
-    data.elements_init.push(elements_init.clone());
-    data.rest_init.push(rest_init.clone());
 
     for param in &node.items {
       self.declare_binding_pattern(&param.pattern, false, kind);
@@ -59,8 +42,6 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a FormalParameters<'a>,
   ) -> FormalParameters<'a> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
-
     let FormalParameters { span, items, rest, kind, .. } = node;
 
     let mut transformed_items = self.ast_builder.vec();
@@ -72,15 +53,7 @@ impl<'a> Transformer<'a> {
       let FormalParameter { span, decorators, pattern, .. } = param;
 
       let pattern_was_assignment = matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_));
-      let pattern = if let Some(pattern) = self.transform_binding_pattern(pattern, false) {
-        used_length = index + 1;
-        for dep in &data.elements_init {
-          dep[index].refer_dep_shallow(self);
-        }
-        pattern
-      } else {
-        self.build_unused_binding_identifier(*span)
-      };
+      let pattern = self.transform_binding_pattern(pattern, true).unwrap();
       let pattern_is_assignment = matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_));
 
       transformed_items.push(self.ast_builder.formal_parameter(
