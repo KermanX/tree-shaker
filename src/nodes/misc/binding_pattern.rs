@@ -236,11 +236,7 @@ impl<'a> Transformer<'a> {
           }
         }
 
-        if !need_binding
-          && (!self.config.iterate_side_effects
-            && transformed_elements.is_empty()
-            && rest.is_none())
-        {
+        if !need_binding && !is_referred && transformed_elements.is_empty() && rest.is_none() {
           None
         } else {
           Some(self.ast_builder.binding_pattern(
