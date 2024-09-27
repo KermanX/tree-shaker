@@ -61,11 +61,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn init_binding_pattern(&mut self, node: &'a BindingPattern<'a>, init: Option<Entity<'a>>) {
-    let has_init = init.is_some();
-    if let Some(init) = init.clone() {
-      self.push_variable_scope_with_dep(init);
-    }
-
     match &node.kind {
       BindingPatternKind::BindingIdentifier(node) => {
         self.init_binding_identifier(node, init);
@@ -92,7 +87,11 @@ impl<'a> Analyzer<'a> {
         let mut enumerated = vec![];
         for property in &node.properties {
           let dep = EntityDepNode::from((AstType2::BindingProperty, property));
+
+          self.push_variable_scope_with_dep(init.clone());
           let key = self.exec_property_key(&property.key);
+          self.pop_variable_scope();
+
           enumerated.push(key.clone());
           let init = init.get_property(self, dep, &key);
           self.init_binding_pattern(&property.value, Some(init));
@@ -130,10 +129,6 @@ impl<'a> Analyzer<'a> {
 
         self.init_binding_pattern(&node.left, Some(binding_val));
       }
-    }
-
-    if has_init {
-      self.pop_variable_scope();
     }
   }
 }
