@@ -53,7 +53,9 @@ impl<'a> Transformer<'a> {
       let FormalParameter { span, decorators, pattern, .. } = param;
 
       let pattern_was_assignment = matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_));
-      let pattern = self.transform_binding_pattern(pattern, true).unwrap();
+      let pattern = self
+        .transform_binding_pattern(pattern, false)
+        .unwrap_or_else(|| self.build_unused_binding_identifier(*span));
       let pattern_is_assignment = matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_));
 
       transformed_items.push(self.ast_builder.formal_parameter(
