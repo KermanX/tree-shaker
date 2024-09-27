@@ -37,7 +37,7 @@ jobs:
         git submodule init
         git submodule update
     - name: Setup Rust
-      uses: Boshen/setup-rust@main
+      uses: dtolnay/rust-toolchain@stable
     - name: Use Node.js 22
       uses: actions/setup-node@v4
       with:
