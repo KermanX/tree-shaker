@@ -1,9 +1,10 @@
+use std::usize;
+
 use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{IfStatement, Statement},
   span::GetSpan,
 };
-use std::usize;
 
 const AST_TYPE: AstType2 = AstType2::IfStatement;
 
@@ -25,16 +26,11 @@ impl<'a> Analyzer<'a> {
       None => (true, true),
     };
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
-
-    data.maybe_true |= maybe_true;
-    data.maybe_false |= maybe_false;
-
-    if data.maybe_true && data.maybe_false {
-      self.consume(test);
-    }
-
     let indeterminate = maybe_true && maybe_false;
+
+    if indeterminate {
+      test.consume(self);
+    }
 
     let branch_exited = if indeterminate { None } else { Some(false) };
     let mut should_exit = true;
@@ -77,6 +73,11 @@ impl<'a> Analyzer<'a> {
         cf_scope.borrow_mut().exited = None;
       }
     }
+
+    let data = self.load_data::<Data>(AST_TYPE, node);
+
+    data.maybe_true |= maybe_true;
+    data.maybe_false |= maybe_false;
   }
 }
 

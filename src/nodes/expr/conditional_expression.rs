@@ -25,18 +25,10 @@ impl<'a> Analyzer<'a> {
       None => (true, true),
     };
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
-
-    data.maybe_true |= maybe_true;
-    data.maybe_false |= maybe_false;
-
-    if data.maybe_true && data.maybe_false {
-      self.consume(test);
-    }
-
     let indeterminate = maybe_true && maybe_false;
 
     if indeterminate {
+      test.consume(self);
       self.push_cf_scope_normal(None);
     }
 
@@ -54,6 +46,11 @@ impl<'a> Analyzer<'a> {
     if indeterminate {
       self.pop_cf_scope();
     }
+
+    let data = self.load_data::<Data>(AST_TYPE, node);
+
+    data.maybe_true |= maybe_true;
+    data.maybe_false |= maybe_false;
 
     result
   }
