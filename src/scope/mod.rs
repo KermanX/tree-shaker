@@ -116,6 +116,13 @@ impl<'a> Analyzer<'a> {
       .push(Rc::new(RefCell::new(VariableScope::new(None, self.scope_context.cf_scopes.clone()))));
   }
 
+  pub fn push_variable_scope_with_dep(&mut self, dep: impl Into<Consumable<'a>>) {
+    self.scope_context.variable_scopes.push(Rc::new(RefCell::new(VariableScope::new(
+      Some(dep.into()),
+      self.scope_context.cf_scopes.clone(),
+    ))));
+  }
+
   pub fn pop_variable_scope(&mut self) {
     self.scope_context.variable_scopes.pop().unwrap();
   }
