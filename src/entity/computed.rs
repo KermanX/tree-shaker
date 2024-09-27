@@ -25,8 +25,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
-    let value = self.val.get_property(analyzer, (self.dep.clone(), dep), key);
-    self.forward(value)
+    self.val.get_property(analyzer, (self.dep.clone(), dep), key)
   }
 
   fn set_property(
@@ -46,12 +45,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-    self
-      .val
-      .enumerate_properties(analyzer, (self.dep.clone(), dep))
-      .into_iter()
-      .map(|(definite, key, value)| (definite, key, self.forward(value)))
-      .collect()
+    self.val.enumerate_properties(analyzer, (self.dep.clone(), dep))
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
@@ -66,8 +60,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    let ret_val = self.val.call(analyzer, (self.dep.clone(), dep), this, args);
-    self.forward(ret_val)
+    self.val.call(analyzer, (self.dep.clone(), dep), this, args)
   }
 
   fn r#await(
@@ -76,7 +69,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
-    self.forward(self.val.r#await(analyzer, (self.dep.clone(), dep)))
+    self.val.r#await(analyzer, (self.dep.clone(), dep))
   }
 
   fn iterate(
@@ -85,8 +78,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    let (elements, rest) = self.val.iterate(analyzer, (self.dep.clone(), dep));
-    (elements.into_iter().map(|v| self.forward(v)).collect(), rest.map(|v| self.forward(v)))
+    self.val.iterate(analyzer, (self.dep.clone(), dep))
   }
 
   fn get_typeof(&self) -> Entity<'a> {

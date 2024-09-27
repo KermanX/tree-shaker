@@ -214,15 +214,21 @@ impl<'a> FunctionEntity<'a> {
         self.dep().into(),
         source,
         self.is_expression,
-        call_dep,
+        call_dep.clone(),
         node,
         variable_scopes,
         this.clone(),
         args.clone(),
       ),
       FunctionEntitySource::ArrowFunctionExpression(node) => analyzer
-        .call_arrow_function_expression(source, call_dep, node, variable_scopes, args.clone()),
+        .call_arrow_function_expression(
+          source,
+          call_dep.clone(),
+          node,
+          variable_scopes,
+          args.clone(),
+        ),
     };
-    ForwardedEntity::new(ret_val, self.dep())
+    ForwardedEntity::new(ret_val, call_dep)
   }
 }

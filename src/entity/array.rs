@@ -63,6 +63,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_property(analyzer, dep, key);
     }
+    let mut deps = self.deps.borrow().clone();
+    deps.push(dep);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let mut result = vec![];
@@ -106,13 +108,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
           _ => unreachable!(),
         }
       }
-      ForwardedEntity::new(
-        EntryEntity::new(UnionEntity::new(result), key.clone()),
-        self.deps.borrow().clone(),
-      )
+      ForwardedEntity::new(EntryEntity::new(UnionEntity::new(result), key.clone()), deps)
     } else {
-      let mut deps = self.deps.borrow().clone();
-      deps.push(dep);
       ForwardedEntity::new(
         UnknownEntity::new_computed_unknown(
           self
@@ -212,8 +209,11 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::enumerate_properties(analyzer, dep);
     }
+    let mut deps = self.deps.borrow().clone();
+    deps.push(dep.clone());
+    let self_dep = Consumable::new(deps);
+
     let mut entries = Vec::new();
-    let self_dep = Consumable::new(self.deps.borrow().clone());
     for (i, element) in self.elements.borrow().iter().enumerate() {
       entries.push((
         true,
