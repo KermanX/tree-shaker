@@ -36,10 +36,8 @@ jobs:
       run: |
         git submodule init
         git submodule update
-    - uses: Boshen/setup-rust@main
-      with:
-        cache-key: test262
-        save-cache: ${{ github.ref_name == 'main' }}
+    - name: Setup Rust
+      uses: Boshen/setup-rust@main
     - name: Use Node.js 22
       uses: actions/setup-node@v4
       with:
