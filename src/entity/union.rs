@@ -146,6 +146,14 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     UnionEntity::new(result)
   }
 
+  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
+    let mut result = Vec::new();
+    for entity in &self.values {
+      result.push(entity.get_to_boolean());
+    }
+    UnionEntity::new(result)
+  }
+
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     let mut result = Vec::new();
     // TODO: dedupe

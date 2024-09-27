@@ -112,6 +112,10 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.forward(self.val.get_to_numeric())
   }
 
+  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
+    self.forward(self.val.get_to_boolean())
+  }
+
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     self.forward(self.val.get_to_property_key())
   }

@@ -88,3 +88,7 @@ pub fn get_to_numeric<'a>() -> Entity<'a> {
   // Possibly number or bigint
   UnknownEntity::new_unknown()
 }
+
+pub fn get_to_boolean<'a>() -> Entity<'a> {
+  UnknownEntity::new_boolean()
+}
