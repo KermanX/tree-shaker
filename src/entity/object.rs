@@ -386,6 +386,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     UnknownEntity::new_computed_unknown(rc.clone())
   }
 
+  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
+    // FIXME: Special methods
+    if self.consumed.get() {
+      return consumed_object::get_to_boolean();
+    }
+    LiteralEntity::new_boolean(true)
+  }
+
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     self.get_to_string(rc)
   }

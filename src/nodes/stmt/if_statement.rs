@@ -26,23 +26,22 @@ impl<'a> Analyzer<'a> {
       None => (true, true),
     };
 
-    let indeterminate = maybe_true && maybe_false;
+    let data = self.load_data::<Data>(AST_TYPE, node);
+    data.maybe_true |= maybe_true;
+    data.maybe_false |= maybe_false;
 
-    if indeterminate {
-      test.consume(self);
-    }
-
-    let branch_exited = if indeterminate { None } else { Some(false) };
+    let branch_exited = if maybe_true && maybe_false { None } else { Some(false) };
     let mut should_exit = true;
     let mut exit_target_inner = 0;
     let mut exit_target_outer = usize::MAX;
 
+    self.push_variable_scope_with_dep(test.get_to_boolean());
     if maybe_true {
       self.push_cf_scope(CfScopeKind::If, None, branch_exited);
       self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
       self.exec_statement(&node.consequent);
       self.pop_cf_scope();
-      if let Some(stopped_exit) = self.pop_cf_scope().borrow().stopped_exit {
+      if let Some(stopped_exit) = self.pop_cf_scope().borrow().blocked_exit {
         exit_target_inner = exit_target_inner.max(stopped_exit);
         exit_target_outer = exit_target_outer.min(stopped_exit);
       } else {
@@ -55,7 +54,7 @@ impl<'a> Analyzer<'a> {
         self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
         self.exec_statement(alternate);
         self.pop_cf_scope();
-        if let Some(stopped_exit) = self.pop_cf_scope().borrow().stopped_exit {
+        if let Some(stopped_exit) = self.pop_cf_scope().borrow().blocked_exit {
           exit_target_inner = exit_target_inner.max(stopped_exit);
           exit_target_outer = exit_target_outer.min(stopped_exit);
         } else {
@@ -65,6 +64,7 @@ impl<'a> Analyzer<'a> {
         should_exit = false;
       }
     }
+    self.pop_variable_scope();
 
     if should_exit {
       self.exit_to(exit_target_inner);
@@ -73,11 +73,6 @@ impl<'a> Analyzer<'a> {
         cf_scope.borrow_mut().exited = None;
       }
     }
-
-    let data = self.load_data::<Data>(AST_TYPE, node);
-
-    data.maybe_true |= maybe_true;
-    data.maybe_false |= maybe_false;
   }
 }
 

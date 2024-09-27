@@ -135,6 +135,7 @@
   "language/expressions/multiplication/order-of-evaluation.js",
   "language/expressions/right-shift/order-of-evaluation.js",
   "language/expressions/subtraction/order-of-evaluation.js",
+  "language/expressions/exponentiation/exp-operator-evaluation-order.js",
 
   "// Invalid Symbol.toPrimitive method",
   "language/expressions/addition/coerce-symbol-to-prim-return-prim.js",

@@ -159,6 +159,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     LiteralEntity::new_nan()
   }
 
+  fn get_to_boolean(&self, rc: &Entity<'a>) -> Entity<'a> {
+    LiteralEntity::new_boolean(true)
+  }
+
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     self.get_to_string(rc)
   }

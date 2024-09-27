@@ -167,6 +167,13 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
+  fn get_to_boolean(&self, rc: &Entity<'a>) -> Entity<'a> {
+    match self.test_truthy() {
+      Some(value) => Self::new_boolean(value),
+      None => UnknownEntity::new_computed_boolean(rc.clone()),
+    }
+  }
+
   fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
     match self {
       LiteralEntity::Symbol(_, _) => Entity::new(*self),

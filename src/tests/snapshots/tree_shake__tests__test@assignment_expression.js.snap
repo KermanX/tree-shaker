@@ -13,7 +13,7 @@ export function f3(a, b) {
 	if (b) a = 2;
 	return a;
 }
-export function f4(__unused_7C4F, b) {
+export function f4(__unused_7C4F, __unused_9371) {
 	return 3;
 }
 export function f5(a, b) {

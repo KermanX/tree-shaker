@@ -111,6 +111,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
+  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
+    unreachable!()
+  }
+
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
     unreachable!()
   }
