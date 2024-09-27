@@ -35,6 +35,8 @@ impl<'a> Analyzer<'a> {
     let mut exit_target_inner = 0;
     let mut exit_target_outer = usize::MAX;
 
+    println!("test: {:?}", test);
+
     self.push_variable_scope_with_dep(test.get_to_boolean());
     if maybe_true {
       self.push_cf_scope(CfScopeKind::If, None, branch_exited);

@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{self, Analyzer},
   entity::{Consumable, Entity, ForwardedEntity, UnknownEntity},
 };
 
@@ -8,11 +8,12 @@ pub struct TryScope<'a> {
   pub may_throw: bool,
   pub thrown_values: Vec<Entity<'a>>,
   pub cf_scope_index: usize,
+  pub variable_scope_index: usize,
 }
 
 impl<'a> TryScope<'a> {
-  pub fn new(cf_scope_index: usize) -> Self {
-    TryScope { may_throw: false, thrown_values: Vec::new(), cf_scope_index }
+  pub fn new(cf_scope_index: usize, variable_scope_index: usize) -> Self {
+    TryScope { may_throw: false, thrown_values: Vec::new(), cf_scope_index, variable_scope_index }
   }
 
   pub fn thrown_val(self) -> Option<Entity<'a>> {
@@ -33,6 +34,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn explicit_throw(&mut self, value: Entity<'a>) {
+    let try_scope = self.try_scope();
+    let value =
+      ForwardedEntity::new(value, self.get_assignment_deps(try_scope.variable_scope_index, ()));
+
     let try_scope = self.try_scope_mut();
 
     try_scope.may_throw = true;
@@ -43,11 +48,17 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn explicit_throw_unknown(&mut self) {
+    let try_scope = self.try_scope();
+    let value = ForwardedEntity::new(
+      UnknownEntity::new_unknown(),
+      self.get_assignment_deps(try_scope.variable_scope_index, ()),
+    );
+
     let try_scope = self.try_scope_mut();
 
     try_scope.may_throw = true;
     if try_scope.thrown_values.is_empty() {
-      try_scope.thrown_values.push(UnknownEntity::new_unknown());
+      try_scope.thrown_values.push(value);
     }
 
     let cf_scope_index = try_scope.cf_scope_index;

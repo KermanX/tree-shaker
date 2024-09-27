@@ -47,7 +47,7 @@ impl<'a> CallScope<'a> {
       returned_values: Vec::new(),
       is_async,
       is_generator,
-      try_scopes: vec![TryScope::new(cf_scope_index)],
+      try_scopes: vec![TryScope::new(cf_scope_index, variable_scope_index)],
       need_consume_arguments: false,
     }
   }

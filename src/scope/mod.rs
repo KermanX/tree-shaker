@@ -165,7 +165,8 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_try_scope(&mut self) {
     let cf_scope_index = self.push_cf_scope(CfScopeKind::Normal, None, None);
-    self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_index));
+    let variable_scope_index = self.scope_context.variable_scopes.len() - 1;
+    self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_index, variable_scope_index));
   }
 
   pub fn pop_try_scope(&mut self) -> TryScope<'a> {
