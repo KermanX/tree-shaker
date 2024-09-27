@@ -1,39 +1,81 @@
 use crate::{analyzer::Analyzer, entity::Entity, scope::CfScopeKind};
 use oxc::semantic::SymbolId;
-use std::{mem, rc::Rc};
+use rustc_hash::FxHashSet;
+use std::{
+  hash::{Hash, Hasher},
+  mem,
+  rc::Rc,
+};
+
+#[derive(Clone)]
+pub struct TrackerRunner<'a> {
+  pub runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
+  pub once: bool,
+}
+impl<'a> PartialEq for TrackerRunner<'a> {
+  fn eq(&self, other: &Self) -> bool {
+    self.once == other.once && Rc::ptr_eq(&self.runner, &other.runner)
+  }
+}
+impl<'a> Eq for TrackerRunner<'a> {}
+impl Hash for TrackerRunner<'_> {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    Rc::as_ptr(&self.runner).hash(state);
+  }
+}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
-    self.exec_exhaustively_impl(false, runner)
+    self.exec_exhaustively(Rc::new(runner), false);
   }
 
-  pub fn exec_exhaustively(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
-    self.exec_exhaustively_impl(true, runner)
+  pub fn exec_consumed_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
+    let runner = Rc::new(runner);
+    let deps = self.exec_exhaustively(runner.clone(), false);
+    self.track_dep_after_finished(false, runner, deps);
   }
 
-  fn exec_exhaustively_impl(
+  pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
+    let runner = Rc::new(runner);
+    let deps = self.exec_exhaustively(runner.clone(), true);
+    self.track_dep_after_finished(true, runner, deps);
+  }
+
+  fn exec_exhaustively(
     &mut self,
-    track_dep_after_finished: bool,
-    runner: impl Fn(&mut Analyzer<'a>) -> () + 'a,
-  ) {
+    runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
+    once: bool,
+  ) -> FxHashSet<SymbolId> {
     self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
     let mut round_counter = 0;
     while self.cf_scope().borrow_mut().iterate_exhaustively() {
       runner(self);
       round_counter += 1;
+      if once {
+        break;
+      }
       if round_counter > 1000 {
         unreachable!("Exhaustive loop is too deep");
       }
     }
     let scope = self.pop_cf_scope();
-    if track_dep_after_finished {
-      let mut scope_ref = scope.borrow_mut();
-      let exhaustive_data = scope_ref.exhaustive_data.as_mut().unwrap();
-      let deps = mem::take(&mut exhaustive_data.deps);
-      let runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a> = Rc::new(runner);
-      for symbol in deps {
-        self.exhaustive_deps.entry(symbol).or_insert_with(Vec::new).push(runner.clone());
-      }
+    let mut scope_ref = scope.borrow_mut();
+    let exhaustive_data = scope_ref.exhaustive_data.as_mut().unwrap();
+    mem::take(&mut exhaustive_data.deps)
+  }
+
+  fn track_dep_after_finished(
+    &mut self,
+    once: bool,
+    runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
+    deps: FxHashSet<SymbolId>,
+  ) {
+    for symbol in deps {
+      self
+        .exhaustive_deps
+        .entry(symbol)
+        .or_insert_with(Default::default)
+        .insert(TrackerRunner { runner: runner.clone(), once });
     }
   }
 
@@ -57,8 +99,8 @@ impl<'a> Analyzer<'a> {
     if let Some(runners) = self.exhaustive_deps.get_mut(&symbol) {
       let runners = if should_consume { mem::take(runners) } else { runners.clone() };
       for runner in runners {
-        let runner = runner.clone();
-        (*runner)(self);
+        let TrackerRunner { runner, once } = runner.clone();
+        self.exec_exhaustively(runner, once);
       }
     }
   }

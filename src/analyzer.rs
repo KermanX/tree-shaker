@@ -6,7 +6,7 @@ use crate::{
     Consumable, Entity, EntityOpHost, ForwardedEntity, LabelEntity, LiteralEntity, UnionEntity,
     UnknownEntity,
   },
-  scope::{variable_scope::VariableScopes, ScopeContext},
+  scope::{exhaustive::TrackerRunner, variable_scope::VariableScopes, ScopeContext},
   TreeShakeConfig,
 };
 use oxc::{
@@ -15,8 +15,8 @@ use oxc::{
   semantic::{Semantic, SymbolId},
   span::GetSpan,
 };
-use rustc_hash::FxHashMap;
-use std::{mem, rc::Rc};
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::mem;
 
 pub struct Analyzer<'a> {
   pub config: TreeShakeConfig,
@@ -28,7 +28,7 @@ pub struct Analyzer<'a> {
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
   pub symbol_decls: FxHashMap<SymbolId, (DeclarationKind, VariableScopes<'a>, Consumable<'a>)>,
-  pub exhaustive_deps: FxHashMap<SymbolId, Vec<Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>>>,
+  pub exhaustive_deps: FxHashMap<SymbolId, FxHashSet<TrackerRunner<'a>>>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
   pub builtins: Builtins<'a>,

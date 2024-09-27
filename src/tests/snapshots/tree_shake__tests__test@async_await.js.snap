@@ -10,14 +10,17 @@ export const l4 = await (unknown + "a");
 async function pure() {
 	return 1;
 }
-export const r1 = (await pure(), 1);
+export const r1 = await pure();
 export const r2 = pure();
-export const r3 = (await nested_pure(), 1);
+async function nested_pure() {
+	return pure();
+}
+export const r3 = await nested_pure();
 async function effect() {
 	await something;
-	return;
+	return 1;
 }
-export const r4 = (await effect(), 1);
+export const r4 = await effect();
 function effect2() {
 	return something;
 }

@@ -37,7 +37,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     analyzer.refer_dep(self.dep());
 
     let self_cloned = self.clone();
-    analyzer.exec_exhaustively(move |analyzer| {
+    analyzer.exec_consumed_fn(move |analyzer| {
       analyzer.push_cf_scope_normal(None);
       analyzer.push_try_scope();
 
