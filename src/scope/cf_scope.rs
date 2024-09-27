@@ -24,9 +24,9 @@ pub struct CfScope<'a> {
   pub kind: CfScopeKind,
   pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
   pub exited: Option<bool>,
-  // Exits that have been stopped by this scope's indeterminate state.
-  // Only available when `kind` is `If`.
-  pub stopped_exit: Option<usize>,
+  /// Exits that have been stopped by this scope's indeterminate state.
+  /// Only available when `kind` is `If`.
+  pub blocked_exit: Option<usize>,
   pub exhaustive_data: Option<Box<ExhaustiveData>>,
 }
 
@@ -42,7 +42,7 @@ impl<'a> CfScope<'a> {
       kind,
       labels,
       exited,
-      stopped_exit: None,
+      blocked_exit: None,
       exhaustive_data: if kind == CfScopeKind::Exhaustive {
         Some(Box::new(ExhaustiveData { dirty: true, deps: FxHashSet::default() }))
       } else {

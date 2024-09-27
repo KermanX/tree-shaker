@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{Entity, UnionEntity},
+  entity::{ComputedEntity, Entity, UnionEntity},
   transformer::Transformer,
 };
 use oxc::ast::ast::{ConditionalExpression, Expression};
@@ -25,34 +25,24 @@ impl<'a> Analyzer<'a> {
       None => (true, true),
     };
 
-    let indeterminate = maybe_true && maybe_false;
-
-    if indeterminate {
-      test.consume(self);
-      self.push_cf_scope_normal(None);
-    }
-
-    let result = match (maybe_true, maybe_false) {
-      (true, false) => self.exec_expression(&node.consequent),
-      (false, true) => self.exec_expression(&node.alternate),
-      (true, true) => {
-        let consequent = self.exec_expression(&node.consequent);
-        let alternate = self.exec_expression(&node.alternate);
-        UnionEntity::new(vec![consequent, alternate])
-      }
-      _ => unreachable!(),
-    };
-
-    if indeterminate {
-      self.pop_cf_scope();
-    }
-
     let data = self.load_data::<Data>(AST_TYPE, node);
-
     data.maybe_true |= maybe_true;
     data.maybe_false |= maybe_false;
 
-    result
+    self.push_variable_scope_with_dep(test.get_to_boolean());
+    let result = match (maybe_true, maybe_false) {
+      (true, false) => self.exec_expression(&node.consequent),
+      (false, true) => self.exec_expression(&node.alternate),
+      (true, true) => self.exec_indeterminately(|analyzer| {
+        let consequent = analyzer.exec_expression(&node.consequent);
+        let alternate = analyzer.exec_expression(&node.alternate);
+        UnionEntity::new(vec![consequent, alternate])
+      }),
+      _ => unreachable!(),
+    };
+    self.pop_variable_scope();
+
+    ComputedEntity::new(result, test)
   }
 }
 
