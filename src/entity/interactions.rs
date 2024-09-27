@@ -3,5 +3,4 @@
 pub enum InteractionKind {
   #[default]
   Unknown,
-  
 }
