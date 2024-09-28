@@ -41,7 +41,7 @@ impl<'a> ScopeContext<'a> {
         true,
         false,
       )],
-      variable_scopes: vec![Rc::new(RefCell::new(VariableScope::new(None, cf_scopes.clone())))],
+      variable_scopes: vec![Rc::new(VariableScope::new(None, cf_scopes.clone()))],
       cf_scopes,
     }
   }
@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
     self.scope_context.call_scopes.last().unwrap()
   }
 
-  pub fn variable_scope(&mut self) -> &Rc<RefCell<VariableScope<'a>>> {
+  pub fn variable_scope(&mut self) -> &Rc<VariableScope<'a>> {
     self.scope_context.variable_scopes.last().unwrap()
   }
 
@@ -82,10 +82,10 @@ impl<'a> Analyzer<'a> {
     let old_variable_scopes =
       mem::replace(&mut self.scope_context.variable_scopes, variable_scopes.as_ref().clone());
     let variable_scope_index = self.scope_context.variable_scopes.len();
-    self.scope_context.variable_scopes.push(Rc::new(RefCell::new(VariableScope::new(
+    self.scope_context.variable_scopes.push(Rc::new(VariableScope::new(
       Some(call_stack_deps.into()),
       self.scope_context.cf_scopes.clone(),
-    ))));
+    )));
     let cf_scope_index = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
     self.scope_context.call_scopes.push(CallScope::new(
       source.into(),
@@ -113,14 +113,14 @@ impl<'a> Analyzer<'a> {
     self
       .scope_context
       .variable_scopes
-      .push(Rc::new(RefCell::new(VariableScope::new(None, self.scope_context.cf_scopes.clone()))));
+      .push(Rc::new(VariableScope::new(None, self.scope_context.cf_scopes.clone())));
   }
 
   pub fn push_variable_scope_with_dep(&mut self, dep: impl Into<Consumable<'a>>) {
-    self.scope_context.variable_scopes.push(Rc::new(RefCell::new(VariableScope::new(
-      Some(dep.into()),
-      self.scope_context.cf_scopes.clone(),
-    ))));
+    self
+      .scope_context
+      .variable_scopes
+      .push(Rc::new(VariableScope::new(Some(dep.into()), self.scope_context.cf_scopes.clone())));
   }
 
   pub fn pop_variable_scope(&mut self) {

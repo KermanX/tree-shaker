@@ -99,7 +99,7 @@ impl<'a> Analyzer<'a> {
       if let Some((_, variable_scopes, decl_dep)) = self.symbol_decls.get(&symbol) {
         let decl_dep = decl_dep.clone();
         let variable_scope = variable_scopes.last().unwrap().clone();
-        variable_scope.borrow_mut().consume(self, symbol);
+        variable_scope.consume(self, symbol);
         self.consume(decl_dep);
       } else {
         // TDZ
