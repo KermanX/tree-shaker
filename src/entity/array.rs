@@ -15,7 +15,7 @@ use std::{
 
 pub struct ArrayEntity<'a> {
   consumed: Cell<bool>,
-  deps: RefCell<Vec<Consumable<'a>>>,
+  pub deps: RefCell<Vec<Consumable<'a>>>,
   cf_scopes: CfScopes<'a>,
   variable_scopes: VariableScopes<'a>,
   pub elements: RefCell<Vec<Entity<'a>>>,

@@ -232,13 +232,19 @@ impl<'a> Entity<'a> {
       }
     }
     let rest_arr = analyzer.new_empty_array();
+    let mut rest_arr_is_empty = true;
     if length < elements.len() {
       for element in &elements[length..elements.len()] {
         rest_arr.push_element(element.clone());
+        rest_arr_is_empty = false;
       }
     }
     if let Some(rest) = rest {
       rest_arr.init_rest(rest);
+      rest_arr_is_empty = false;
+    }
+    if rest_arr_is_empty {
+      rest_arr.deps.borrow_mut().push(self.clone().into());
     }
     (result, Entity::new(rest_arr))
   }
