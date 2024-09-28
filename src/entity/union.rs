@@ -2,7 +2,7 @@ use super::{
   consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity,
   TypeofResult, UnknownEntity,
 };
-use crate::{analyzer::Analyzer, scope::CfScopeKind};
+use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 
 #[derive(Debug)]
