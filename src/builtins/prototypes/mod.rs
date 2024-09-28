@@ -51,10 +51,10 @@ impl<'a> Prototype<'a> {
             _ => unreachable!(),
           }
         }
-        return EntryEntity::new(UnionEntity::new(values), key.clone());
+        return EntryEntity::new(UnionEntity::new(values), (rc.clone(), key.clone()));
       }
     }
-    EntryEntity::new(UnknownEntity::new_computed_unknown(rc.clone()), key.clone())
+    UnknownEntity::new_computed_unknown((rc.clone(), key.clone()))
   }
 }
 
