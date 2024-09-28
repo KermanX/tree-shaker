@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::{self, Analyzer},
+  analyzer::Analyzer,
   entity::{Consumable, Entity, ForwardedEntity, UnknownEntity},
 };
 
