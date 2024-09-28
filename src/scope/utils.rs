@@ -46,13 +46,13 @@ impl<'a> Analyzer<'a> {
   pub fn get_assignment_deps(
     &self,
     target_variable_scope: usize,
-    extra: Consumable<'a>,
+    extra: impl Into<Consumable<'a>>,
   ) -> Consumable<'a> {
     let mut deps = self.scope_context.variable_scopes[target_variable_scope..]
       .iter()
-      .filter_map(|scope| scope.borrow().dep.clone())
+      .filter_map(|scope| scope.dep.clone())
       .collect::<Vec<_>>();
-    deps.push(extra);
+    deps.push(extra.into());
     Consumable::from(deps)
   }
 }

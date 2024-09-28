@@ -14,42 +14,43 @@ pub struct VariableScope<'a> {
   /// Cf scopes when the scope was created
   pub cf_scopes: CfScopes<'a>,
   /// (kind, is_consumed_exhaustively, entity_or_TDZ)
-  pub variables: FxHashMap<SymbolId, (DeclarationKind, bool, Option<Entity<'a>>)>,
+  pub variables: RefCell<FxHashMap<SymbolId, (DeclarationKind, bool, Option<Entity<'a>>)>>,
 }
 
-pub type VariableScopes<'a> = Vec<Rc<RefCell<VariableScope<'a>>>>;
+pub type VariableScopes<'a> = Vec<Rc<VariableScope<'a>>>;
 
 impl<'a> VariableScope<'a> {
   pub fn new(dep: Option<Consumable<'a>>, cf_scopes: CfScopes<'a>) -> Self {
-    Self { dep, cf_scopes, variables: FxHashMap::default() }
+    Self { dep, cf_scopes, variables: Default::default() }
   }
 
   pub fn declare(
-    &mut self,
+    &self,
     analyzer: &mut Analyzer<'a>,
     kind: DeclarationKind,
     symbol: SymbolId,
     value: Option<Entity<'a>>,
   ) {
+    let mut variables = self.variables.borrow_mut();
     if kind.is_redeclarable() {
-      if let Some((old_kind, old_consumed, old_val)) = self.variables.get(&symbol) {
+      if let Some((old_kind, old_consumed, old_val)) = variables.get(&symbol).cloned() {
         if !old_kind.is_redeclarable() {
           // TODO: ERROR: "Variable already declared"
           analyzer.explicit_throw_unknown();
           value.map(|value| value.consume(analyzer));
-          self.variables.insert(symbol, (kind, true, Some(UnknownEntity::new_unknown())));
+          variables.insert(symbol, (kind, true, Some(UnknownEntity::new_unknown())));
         } else {
-          if *old_consumed {
+          if old_consumed {
             value.map(|value| value.consume(analyzer));
           } else {
-            self.variables.insert(symbol, (kind, false, value.or(old_val.clone())));
+            variables.insert(symbol, (kind, false, value.or(old_val.clone())));
           }
         }
       } else {
-        self.variables.insert(symbol, (kind, false, value));
+        variables.insert(symbol, (kind, false, value));
       }
     } else {
-      let old = self.variables.insert(symbol, (kind, false, value));
+      let old = variables.insert(symbol, (kind, false, value));
       if old.is_some() {
         // TODO: error "Variable already declared"
         analyzer.explicit_throw_unknown();
@@ -57,8 +58,9 @@ impl<'a> VariableScope<'a> {
     }
   }
 
-  pub fn init(&mut self, analyzer: &mut Analyzer<'a>, symbol: SymbolId, value: Entity<'a>) {
-    let (_, consumed, val) = self.variables.get_mut(&symbol).unwrap();
+  pub fn init(&self, analyzer: &mut Analyzer<'a>, symbol: SymbolId, value: Entity<'a>) {
+    let mut variables = self.variables.borrow_mut();
+    let (_, consumed, val) = variables.get_mut(&symbol).unwrap();
     if *consumed {
       value.consume(analyzer);
     } else {
@@ -68,7 +70,8 @@ impl<'a> VariableScope<'a> {
 
   /// Returns (consumed, {None => TDZ, Some => value})
   pub fn read(&self, symbol: &SymbolId) -> (bool, Option<Entity<'a>>) {
-    let (kind, consumed, value) = self.variables.get(symbol).unwrap();
+    let variables = self.variables.borrow();
+    let (kind, consumed, value) = variables.get(symbol).unwrap();
     let value = value.as_ref().map_or_else(
       || {
         if kind.is_var() {
@@ -83,12 +86,13 @@ impl<'a> VariableScope<'a> {
   }
 
   pub fn write(
-    &mut self,
+    &self,
     analyzer: &mut Analyzer<'a>,
     symbol: SymbolId,
     (consumed, value): (bool, Entity<'a>),
   ) {
-    let old = self.variables.get_mut(&symbol).unwrap();
+    let mut variables = self.variables.borrow_mut();
+    let old = variables.get_mut(&symbol).unwrap();
     if !old.0.is_var() && old.2.is_none() {
       // TODO: throw TDZ error
       analyzer.may_throw();
@@ -103,7 +107,7 @@ impl<'a> VariableScope<'a> {
     *old = (old.0, consumed || old.1, Some(value));
   }
 
-  pub fn consume(&mut self, analyzer: &mut Analyzer<'a>, symbol: SymbolId) {
+  pub fn consume(&self, analyzer: &mut Analyzer<'a>, symbol: SymbolId) {
     if let (false, Some(val)) = self.read(&symbol) {
       val.consume(analyzer);
       self.write(analyzer, symbol, (true, UnknownEntity::new_unknown()));

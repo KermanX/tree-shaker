@@ -78,7 +78,7 @@ impl<'a> Transformer<'a> {
           }
         }
 
-        if !self.config.iterate_side_effects && transformed_elements.is_empty() && rest.is_none() {
+        if !is_referred && transformed_elements.is_empty() && rest.is_none() {
           None
         } else {
           let trailing_comma = (transformed_elements.last().is_some_and(Option::is_none)

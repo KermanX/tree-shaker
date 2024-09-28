@@ -47,7 +47,7 @@ impl<'a> CallScope<'a> {
       returned_values: Vec::new(),
       is_async,
       is_generator,
-      try_scopes: vec![TryScope::new(cf_scope_index)],
+      try_scopes: vec![TryScope::new(cf_scope_index, variable_scope_index)],
       need_consume_arguments: false,
     }
   }
@@ -90,6 +90,18 @@ impl<'a> CallScope<'a> {
 }
 
 impl<'a> Analyzer<'a> {
+  pub fn return_value(&mut self, value: Entity<'a>, dep: impl Into<Consumable<'a>>) {
+    let call_scope = self.call_scope();
+    let value =
+      ForwardedEntity::new(value, self.get_assignment_deps(call_scope.variable_scope_index, dep));
+
+    let call_scope = self.call_scope_mut();
+    call_scope.returned_values.push(value);
+
+    let cf_scope_id = call_scope.cf_scope_index;
+    self.exit_to(cf_scope_id);
+  }
+
   pub fn consume_arguments(&mut self) -> bool {
     let mut arguments_consumed = true;
     let (args_entity, args_symbols) = self.call_scope().args.clone();
@@ -99,7 +111,7 @@ impl<'a> Analyzer<'a> {
       if let Some((_, variable_scopes, decl_dep)) = self.symbol_decls.get(&symbol) {
         let decl_dep = decl_dep.clone();
         let variable_scope = variable_scopes.last().unwrap().clone();
-        variable_scope.borrow_mut().consume(self, symbol);
+        variable_scope.consume(self, symbol);
         self.consume(decl_dep);
       } else {
         // TDZ

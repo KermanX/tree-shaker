@@ -2,19 +2,12 @@ use super::{
   consumed_object, Consumable, Entity, EntityDepNode, EntityTrait, ForwardedEntity,
   InteractionKind, LiteralEntity, TypeofResult, UnknownEntity,
 };
-use crate::{
-  analyzer::Analyzer,
-  scope::variable_scope::{VariableScope, VariableScopes},
-  use_consumed_flag,
-};
+use crate::{analyzer::Analyzer, scope::variable_scope::VariableScopes, use_consumed_flag};
 use oxc::ast::{
   ast::{ArrowFunctionExpression, Function},
   AstKind,
 };
-use std::{
-  cell::{Cell, RefCell},
-  rc::Rc,
-};
+use std::{cell::Cell, rc::Rc};
 
 #[derive(Debug, Clone, Copy)]
 pub enum FunctionEntitySource<'a> {
@@ -159,7 +152,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     LiteralEntity::new_nan()
   }
 
-  fn get_to_boolean(&self, rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
     LiteralEntity::new_boolean(true)
   }
 
@@ -183,7 +176,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 impl<'a> FunctionEntity<'a> {
   pub fn new(
     source: FunctionEntitySource<'a>,
-    variable_scopes: Vec<Rc<RefCell<VariableScope<'a>>>>,
+    variable_scopes: VariableScopes<'a>,
     is_expression: bool,
   ) -> Entity<'a> {
     Entity::new(Self {

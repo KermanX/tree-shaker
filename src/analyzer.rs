@@ -130,7 +130,7 @@ impl<'a> Analyzer<'a> {
     } else {
       self.scope_context.variable_scopes.clone()
     };
-    variable_scopes.last().unwrap().borrow_mut().declare(self, kind, symbol, value);
+    variable_scopes.last().unwrap().declare(self, kind, symbol, value);
     let decl_dep = if let Some(old_decl_dep) = old_decl_dep {
       (old_decl_dep, decl_dep.into()).into()
     } else {
@@ -154,7 +154,7 @@ impl<'a> Analyzer<'a> {
         self.write_symbol(&symbol, value);
       } else {
         let variable_scope = variable_scopes.last().unwrap().clone();
-        variable_scope.borrow_mut().init(self, symbol, value);
+        variable_scope.init(self, symbol, value);
       }
     }
   }
@@ -167,9 +167,8 @@ impl<'a> Analyzer<'a> {
       }
       let decl_dep = decl_dep.clone();
       let variable_scope = variable_scopes.last().unwrap().clone();
-      let variable_scope_ref = variable_scope.borrow();
-      let target_cf_scope = self.find_first_different_cf_scope(&variable_scope_ref.cf_scopes);
-      let (_, val) = variable_scope_ref.read(symbol);
+      let target_cf_scope = self.find_first_different_cf_scope(&variable_scope.cf_scopes);
+      let (_, val) = variable_scope.read(symbol);
       if let Some(val) = &val {
         self.mark_exhaustive_read(val, *symbol, target_cf_scope);
       } else {
@@ -190,14 +189,12 @@ impl<'a> Analyzer<'a> {
         return;
       }
       let decl_variable_scope = variable_scopes.last().unwrap().clone();
-      let variable_scope_ref = decl_variable_scope.borrow();
-      let variable_scope_cf_scopes = &variable_scope_ref.cf_scopes;
+      let variable_scope_cf_scopes = &decl_variable_scope.cf_scopes;
       let target_cf_scope = self.find_first_different_cf_scope(variable_scope_cf_scopes);
       let target_variable_scope = self.find_first_different_variable_scope(variable_scopes);
       let dep = self.get_assignment_deps(target_variable_scope, decl_dep.clone());
-      let (has_been_consumed_exhaustively, old_val) = variable_scope_ref.read(symbol);
+      let (has_been_consumed_exhaustively, old_val) = decl_variable_scope.read(symbol);
       if has_been_consumed_exhaustively {
-        drop(variable_scope_ref);
         self.consume(dep);
         new_val.consume(self);
       } else {
@@ -212,7 +209,6 @@ impl<'a> Analyzer<'a> {
           true
         };
         let entity_to_set = if should_consume {
-          drop(variable_scope_ref);
           self.consume(dep);
           old_val.map(|v| v.consume(self));
           new_val.consume(self);
@@ -220,7 +216,7 @@ impl<'a> Analyzer<'a> {
         } else {
           let indeterminate =
             self.is_relatively_indeterminate(target_cf_scope, variable_scope_cf_scopes);
-          drop(variable_scope_ref);
+
           (
             false,
             ForwardedEntity::new(
@@ -233,7 +229,7 @@ impl<'a> Analyzer<'a> {
             ),
           )
         };
-        decl_variable_scope.borrow_mut().write(self, *symbol, entity_to_set);
+        decl_variable_scope.write(self, *symbol, entity_to_set);
         self.exec_exhaustive_deps(should_consume, *symbol);
       }
     } else {
@@ -268,7 +264,7 @@ impl<'a> Analyzer<'a> {
         .scope_context
         .variable_scopes
         .iter()
-        .filter_map(|scope| scope.borrow().dep.clone())
+        .filter_map(|scope| scope.dep.clone())
         .collect::<Vec<_>>();
       self.consume(deps);
     }

@@ -26,16 +26,18 @@ jobs:
 
   test262:
     permissions: write-all
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     concurrency:
-      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-      cancel-in-progress: ${{ github.event.pull_request.number && true || false }}
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     steps:
     - uses: actions/checkout@v4
     - name: Init submodule
       run: |
         git submodule init
         git submodule update
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
     - name: Use Node.js 22
       uses: actions/setup-node@v4
       with:

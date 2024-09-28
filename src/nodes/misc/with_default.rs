@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{Entity, UnionEntity},
+  entity::{ComputedEntity, Entity, UnionEntity},
 };
 use oxc::ast::ast::Expression;
 
@@ -11,8 +11,10 @@ impl<'a> Analyzer<'a> {
     value: Entity<'a>,
   ) -> (bool, Entity<'a>) {
     let is_undefined = value.test_is_undefined();
+
+    self.push_variable_scope_with_dep(value.clone());
     let binding_val = match is_undefined {
-      Some(true) => self.exec_expression(default),
+      Some(true) => ComputedEntity::new(self.exec_expression(default), value),
       Some(false) => value,
       None => {
         self.push_cf_scope_normal(None);
@@ -21,6 +23,8 @@ impl<'a> Analyzer<'a> {
         value
       }
     };
+    self.pop_variable_scope();
+
     (is_undefined != Some(false), binding_val)
   }
 }
