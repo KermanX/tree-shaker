@@ -50,14 +50,14 @@ process.stdin.on('end', () => {
   fs.writeFileSync(path.join(__dirname, 'stat.txt'), `## Test262 Result
 
 - Total: ${total}
+- **Unexpected Failed: ${failedNum}**
 - Passed: ${passedNum}
 - Expected Failed: ${expectedFailedNum}
-- New Failed: ${failedNum}
 ${restMessage.split('\n').filter(Boolean).map(s => `- ${s.trim()}`).join('\n')}
 
 ${failedNum ? `
 <details>
-<summary> New Failed Tests </summary>
+<summary> Unexpected Failed Tests </summary>
 
 ${failedList}
 
