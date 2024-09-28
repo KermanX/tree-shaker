@@ -33,7 +33,9 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   ) -> Entity<'a> {
     let mut values = Vec::new();
     for entity in &self.values {
-      values.push(entity.get_property(analyzer, dep.clone(), key));
+      values.push(
+        analyzer.exec_indeterminately(|analyzer| entity.get_property(analyzer, dep.clone(), key)),
+      );
     }
     UnionEntity::new(values)
   }
@@ -47,7 +49,9 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     value: Entity<'a>,
   ) {
     for entity in &self.values {
-      entity.set_property(analyzer, dep.clone(), key, value.clone());
+      analyzer.exec_indeterminately(|analyzer| {
+        entity.set_property(analyzer, dep.clone(), key, value.clone())
+      });
     }
   }
 
@@ -64,7 +68,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
     for entity in &self.values {
-      entity.delete_property(analyzer, dep.clone(), key);
+      analyzer.exec_indeterminately(|analyzer| entity.delete_property(analyzer, dep.clone(), key));
     }
   }
 
@@ -77,11 +81,11 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     args: &Entity<'a>,
   ) -> Entity<'a> {
     let mut results = Vec::new();
-    analyzer.push_cf_scope(CfScopeKind::Normal, None, None);
     for entity in &self.values {
-      results.push(entity.call(analyzer, dep.clone(), this, args));
+      results.push(
+        analyzer.exec_indeterminately(|analyzer| entity.call(analyzer, dep.clone(), this, args)),
+      );
     }
-    analyzer.pop_cf_scope();
     UnionEntity::new(results)
   }
 
@@ -93,7 +97,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   ) -> Entity<'a> {
     let mut values = Vec::new();
     for entity in &self.values {
-      values.push(entity.r#await(analyzer, dep.clone()));
+      values.push(analyzer.exec_indeterminately(|analyzer| entity.r#await(analyzer, dep.clone())));
     }
     UnionEntity::new(values)
   }
@@ -107,7 +111,9 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     let mut results = Vec::new();
     let mut has_undefined = false;
     for entity in &self.values {
-      if let Some(result) = entity.iterate_result_union(analyzer, dep.clone()) {
+      if let Some(result) =
+        analyzer.exec_indeterminately(|analyzer| entity.iterate_result_union(analyzer, dep.clone()))
+      {
         results.push(result);
       } else {
         has_undefined = true;
