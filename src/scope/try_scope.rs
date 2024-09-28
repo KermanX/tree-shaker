@@ -37,14 +37,7 @@ impl<'a> Analyzer<'a> {
     let try_scope = self.try_scope();
     let value =
       ForwardedEntity::new(value, self.get_assignment_deps(try_scope.variable_scope_index, ()));
-
-    let try_scope = self.try_scope_mut();
-
-    try_scope.may_throw = true;
-    try_scope.thrown_values.push(value);
-
-    let cf_scope_index = try_scope.cf_scope_index;
-    self.exit_to(cf_scope_index);
+    self.explicit_throw_impl(value);
   }
 
   pub fn explicit_throw_unknown(&mut self) {
@@ -54,15 +47,7 @@ impl<'a> Analyzer<'a> {
       self.get_assignment_deps(try_scope.variable_scope_index, ()),
     );
 
-    let try_scope = self.try_scope_mut();
-
-    try_scope.may_throw = true;
-    if try_scope.thrown_values.is_empty() {
-      try_scope.thrown_values.push(value);
-    }
-
-    let cf_scope_index = try_scope.cf_scope_index;
-    self.exit_to(cf_scope_index);
+    self.explicit_throw_impl(value);
   }
 
   pub fn forward_throw(&mut self, values: Vec<Entity<'a>>, dep: impl Into<Consumable<'a>>) {
@@ -70,7 +55,17 @@ impl<'a> Analyzer<'a> {
       self.may_throw();
     } else {
       let thrown_val = UnknownEntity::new_computed_unknown(values);
-      self.explicit_throw(ForwardedEntity::new(thrown_val, dep.into()));
+      self.explicit_throw_impl(ForwardedEntity::new(thrown_val, dep.into()));
     }
+  }
+
+  fn explicit_throw_impl(&mut self, value: Entity<'a>) {
+    let try_scope = self.try_scope_mut();
+
+    try_scope.may_throw = true;
+    try_scope.thrown_values.push(value);
+
+    let cf_scope_index = try_scope.cf_scope_index;
+    self.exit_to(cf_scope_index);
   }
 }
