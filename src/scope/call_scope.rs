@@ -102,10 +102,21 @@ impl<'a> Analyzer<'a> {
     self.exit_to(cf_scope_id);
   }
 
-  pub fn consume_arguments(&mut self) -> bool {
-    let mut arguments_consumed = true;
-    let (args_entity, args_symbols) = self.call_scope().args.clone();
+  pub fn consume_arguments(&mut self, search: Option<EntityDepNode>) -> bool {
+    let call_scope = if let Some(source) = search {
+      if let Some(call_scope) =
+        self.scope_context.call_scopes.iter().rev().find(|scope| scope.source == source)
+      {
+        call_scope
+      } else {
+        return false;
+      }
+    } else {
+      self.call_scope()
+    };
+    let (args_entity, args_symbols) = call_scope.args.clone();
     args_entity.consume(self);
+    let mut arguments_consumed = true;
     for symbol in args_symbols {
       // FIXME: Accessing `arguments` in formal parameters
       if let Some((_, variable_scopes, decl_dep)) = self.symbol_decls.get(&symbol) {
