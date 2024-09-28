@@ -90,6 +90,18 @@ impl<'a> CallScope<'a> {
 }
 
 impl<'a> Analyzer<'a> {
+  pub fn return_value(&mut self, value: Entity<'a>, dep: impl Into<Consumable<'a>>) {
+    let call_scope = self.call_scope();
+    let value =
+      ForwardedEntity::new(value, self.get_assignment_deps(call_scope.variable_scope_index, dep));
+
+    let call_scope = self.call_scope_mut();
+    call_scope.returned_values.push(value);
+
+    let cf_scope_id = call_scope.cf_scope_index;
+    self.exit_to(cf_scope_id);
+  }
+
   pub fn consume_arguments(&mut self) -> bool {
     let mut arguments_consumed = true;
     let (args_entity, args_symbols) = self.call_scope().args.clone();

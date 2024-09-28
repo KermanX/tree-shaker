@@ -1,8 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{ForwardedEntity, LiteralEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, entity::LiteralEntity, transformer::Transformer};
 use oxc::ast::{
   ast::{ReturnStatement, Statement},
   AstKind,
@@ -15,12 +11,7 @@ impl<'a> Analyzer<'a> {
       .as_ref()
       .map_or_else(|| LiteralEntity::new_undefined(), |expr| self.exec_expression(expr));
     let dep = AstKind::ReturnStatement(node);
-    let value = ForwardedEntity::new(value, dep);
-
-    let call_scope = self.call_scope_mut();
-    call_scope.returned_values.push(value);
-    let cf_scope_id = call_scope.cf_scope_index;
-    self.exit_to(cf_scope_id);
+    self.return_value(value, dep);
   }
 }
 
