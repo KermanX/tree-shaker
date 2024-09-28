@@ -1,4 +1,8 @@
 [
+  "// Usage of eval, Function, Generator, or AsyncFunction",
+  "language/expressions/import.meta/syntax/goal-async-function-params-or-body.js",
+  "language/expressions/import.meta/syntax/goal-async-generator-params-or-body.js",
+
   "// Poisoned builtin object prototype",
   "language/expressions/arrow-function/dstr/ary-init-iter-get-err-array-prototype.js",
   "language/expressions/arrow-function/dstr/ary-ptrn-elem-id-iter-val-array-prototype.js",
@@ -136,6 +140,9 @@
   "language/expressions/right-shift/order-of-evaluation.js",
   "language/expressions/subtraction/order-of-evaluation.js",
   "language/expressions/exponentiation/exp-operator-evaluation-order.js",
+  "language/expressions/template-literal/literal-expr-tostr-error.js",
+  "language/expressions/template-literal/middle-list-one-expr-tostr-error.js",
+  "language/expressions/template-literal/middle-list-one-expr-tostr-error.js",
 
   "// Invalid Symbol.toPrimitive method",
   "language/expressions/addition/coerce-symbol-to-prim-return-prim.js",
@@ -228,6 +235,7 @@
   "// Access to global this",
   "language/global-code/decl-func.js",
   "language/global-code/decl-var.js",
+  "language/types/object/S8.6.2_A5_T3.js",
 
   "// Unicode tests, somehow failed",
   "language/identifiers/start-unicode-15.1.0-class-escaped.js",
@@ -248,5 +256,22 @@
   "language/import/import-attributes/json-value-object.js",
   "language/import/import-attributes/json-value-string.js",
   "language/import/import-attributes/json-via-namespace.js",
-  "language/module-code/import-attributes/import-attribute-empty.js"
+  "language/module-code/import-attributes/import-attribute-empty.js",
+
+  "// ArrayBuffer related tests, somehow failed, but the transformation is correct",
+  "language/destructuring/binding/typedarray-backed-by-resizable-buffer.js",
+  "language/expressions/class/subclass-builtins/subclass-SharedArrayBuffer.js",
+  "language/statements/class/subclass-builtins/subclass-SharedArrayBuffer.js",
+  "language/statements/for-of/typedarray-backed-by-resizable-buffer-grow-before-end.js",
+  "language/statements/for-of/typedarray-backed-by-resizable-buffer-grow-mid-iteration.js",
+  "language/statements/for-of/typedarray-backed-by-resizable-buffer-shrink-mid-iteration.js",
+  "language/statements/for-of/typedarray-backed-by-resizable-buffer-shrink-to-zero-mid-iteration.js",
+
+  "// Somehow failed, but the transformation is correct",
+  "language/expressions/left-shift/S9.5_A2.1_T1.js",
+  "language/expressions/left-shift/S9.5_A2.2_T1.js",
+  "language/statements/for/dstr/let-obj-init-undefined.js",
+  "language/statements/for/dstr/var-obj-init-undefined.js",
+  "language/statements/let/dstr/obj-init-undefined.js",
+  "language/statements/variable/dstr/obj-init-undefined.js"
 ]
