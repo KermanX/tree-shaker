@@ -21,35 +21,38 @@ impl<'a> Analyzer<'a> {
   pub fn exec_for_of_statement(&mut self, node: &'a ForOfStatement<'a>) {
     let labels = self.take_labels();
 
-    let right = self.exec_expression(&node.right);
-
     let dep = AstKind::ForOfStatement(node);
-    let value = if node.r#await {
+
+    let right = self.exec_expression(&node.right);
+    let right = if node.r#await {
       right.consume(self);
       self.refer_dep(dep);
-      Some(UnknownEntity::new_unknown())
+      UnknownEntity::new_unknown()
     } else {
-      right.iterate_result_union(self, dep)
+      right
     };
 
+    let iterated_0 = right.iterate_result_union(self, dep);
+    if iterated_0.is_none() {
+      return;
+    }
+
     let data = self.load_data::<Data>(AST_TYPE, node);
-    data.need_loop |= value.is_some();
+    data.need_loop = true;
 
-    if let Some(value) = value {
-      self.push_variable_scope();
+    self.push_variable_scope();
+    self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
+    self.exec_loop(move |analyzer| {
+      if let Some(iterated) = right.iterate_result_union(analyzer, dep) {
+        analyzer.exec_for_statement_left(&node.left, iterated);
 
-      self.exec_for_statement_left(&node.left, value);
-
-      self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
-      self.exec_loop(move |analyzer| {
         analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
         analyzer.exec_statement(&node.body);
         analyzer.pop_cf_scope();
-      });
-      self.pop_cf_scope();
-
-      self.pop_variable_scope();
-    }
+      }
+    });
+    self.pop_cf_scope();
+    self.pop_variable_scope();
   }
 }
 
