@@ -1,12 +1,15 @@
-use crate::{analyzer::Analyzer, entity::LiteralEntity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer,
+  entity::{Entity, LiteralEntity},
+  transformer::Transformer,
+};
 use oxc::ast::{
   ast::{AccessorProperty, ClassElement},
   NONE,
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_accessor_property(&mut self, node: &'a AccessorProperty<'a>) {
-    let key = self.exec_property_key(&node.key);
+  pub fn exec_accessor_property(&mut self, node: &'a AccessorProperty<'a>, key: Entity<'a>) {
     let value = node
       .value
       .as_ref()

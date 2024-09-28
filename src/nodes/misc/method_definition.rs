@@ -1,12 +1,11 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{ClassElement, Function, MethodDefinition, MethodDefinitionKind},
   span::SPAN,
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_method_definition(&mut self, node: &'a MethodDefinition<'a>) {
-    let key = self.exec_property_key(&node.key);
+  pub fn exec_method_definition(&mut self, node: &'a MethodDefinition<'a>, key: Entity<'a>) {
     let value = self.exec_function(&node.value, true);
 
     key.consume(self);
