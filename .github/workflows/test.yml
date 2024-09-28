@@ -28,8 +28,8 @@ jobs:
     permissions: write-all
     runs-on: self-hosted
     concurrency:
-      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-      cancel-in-progress: ${{ github.event.pull_request.number && true || false }}
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     steps:
     - uses: actions/checkout@v4
     - name: Init submodule
