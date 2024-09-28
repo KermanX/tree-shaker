@@ -11,7 +11,7 @@ use oxc::semantic::SymbolId;
 #[derive(Debug)]
 pub struct CallScope<'a> {
   pub source: EntityDepNode,
-  pub call_dep: Consumable<'a>,
+  pub exec_deps: Vec<Consumable<'a>>,
   pub old_variable_scopes: VariableScopes<'a>,
   pub cf_scope_index: usize,
   pub variable_scope_index: usize,
@@ -38,7 +38,7 @@ impl<'a> CallScope<'a> {
   ) -> Self {
     CallScope {
       source,
-      call_dep,
+      exec_deps: vec![call_dep],
       old_variable_scopes,
       cf_scope_index,
       variable_scope_index,
@@ -52,8 +52,14 @@ impl<'a> CallScope<'a> {
     }
   }
 
+  pub fn get_exec_dep(&self) -> Consumable<'a> {
+    self.exec_deps.clone().into()
+  }
+
   pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (VariableScopes<'a>, Entity<'a>) {
     assert_eq!(self.try_scopes.len(), 1);
+    assert_eq!(self.exec_deps.len(), 1);
+    let call_dep = self.exec_deps[0].clone();
 
     // Forwards the thrown value to the parent try scope
     let try_scope = self.try_scopes.into_iter().next().unwrap();
@@ -65,7 +71,7 @@ impl<'a> CallScope<'a> {
         if !try_scope.thrown_values.is_empty() {
           parent_try_scope
             .thrown_values
-            .push(ForwardedEntity::new(UnknownEntity::new_unknown(), self.call_dep.clone()));
+            .push(ForwardedEntity::new(UnknownEntity::new_unknown(), call_dep.clone()));
         }
         for value in try_scope.thrown_values {
           value.consume(analyzer);
@@ -73,7 +79,7 @@ impl<'a> CallScope<'a> {
       } else if self.is_async {
         promise_error = Some(try_scope.thrown_values);
       } else {
-        analyzer.forward_throw(try_scope.thrown_values, self.call_dep.clone());
+        analyzer.forward_throw(try_scope.thrown_values, call_dep.clone());
       }
     }
 
@@ -84,7 +90,7 @@ impl<'a> CallScope<'a> {
     };
     (
       self.old_variable_scopes,
-      if self.is_async { PromiseEntity::new(value, promise_error, self.call_dep) } else { value },
+      if self.is_async { PromiseEntity::new(value, promise_error, call_dep) } else { value },
     )
   }
 }

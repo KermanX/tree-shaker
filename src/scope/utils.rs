@@ -52,6 +52,7 @@ impl<'a> Analyzer<'a> {
       .iter()
       .filter_map(|scope| scope.dep.clone())
       .collect::<Vec<_>>();
+    deps.push(self.call_scope().get_exec_dep());
     deps.push(extra.into());
     Consumable::from(deps)
   }

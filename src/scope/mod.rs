@@ -13,7 +13,7 @@ use call_scope::CallScope;
 pub use cf_scope::CfScopeKind;
 use cf_scope::{CfScope, CfScopes};
 use oxc::semantic::SymbolId;
-use std::{borrow::Borrow, cell::RefCell, mem, rc::Rc};
+use std::{cell::RefCell, mem, rc::Rc};
 use try_scope::TryScope;
 use variable_scope::{VariableScope, VariableScopes};
 
@@ -76,7 +76,7 @@ impl<'a> Analyzer<'a> {
   ) {
     let call_dep = call_dep.into();
     let mut call_stack_deps: Vec<_> =
-      self.scope_context.call_scopes.iter().map(|scope| scope.borrow().call_dep.clone()).collect();
+      self.scope_context.call_scopes.iter().map(|scope| scope.get_exec_dep()).collect();
     call_stack_deps.push(call_dep.clone());
 
     let old_variable_scopes =
@@ -116,15 +116,16 @@ impl<'a> Analyzer<'a> {
       .push(Rc::new(VariableScope::new(None, self.scope_context.cf_scopes.clone())));
   }
 
-  pub fn push_variable_scope_with_dep(&mut self, dep: impl Into<Consumable<'a>>) {
-    self
-      .scope_context
-      .variable_scopes
-      .push(Rc::new(VariableScope::new(Some(dep.into()), self.scope_context.cf_scopes.clone())));
-  }
-
   pub fn pop_variable_scope(&mut self) {
     self.scope_context.variable_scopes.pop().unwrap();
+  }
+
+  pub fn push_exec_dep(&mut self, call_dep: impl Into<Consumable<'a>>) {
+    self.call_scope_mut().exec_deps.push(call_dep.into());
+  }
+
+  pub fn pop_exec_dep(&mut self) {
+    self.call_scope_mut().exec_deps.pop();
   }
 
   pub fn take_labels(&mut self) -> Option<Rc<Vec<LabelEntity<'a>>>> {

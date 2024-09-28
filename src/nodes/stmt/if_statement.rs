@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
     let mut exit_target_inner = 0;
     let mut exit_target_outer = usize::MAX;
 
-    self.push_variable_scope_with_dep(test.get_to_boolean());
+    self.push_exec_dep(test.get_to_boolean());
     if maybe_true {
       self.push_cf_scope(CfScopeKind::If, None, branch_exited);
       self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
@@ -64,7 +64,7 @@ impl<'a> Analyzer<'a> {
         should_exit = false;
       }
     }
-    self.pop_variable_scope();
+    self.pop_exec_dep();
 
     if should_exit {
       self.exit_to(exit_target_inner);

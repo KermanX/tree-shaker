@@ -45,9 +45,9 @@ impl<'a> Analyzer<'a> {
         key
       }
       AssignmentTargetProperty::AssignmentTargetPropertyProperty(node) => {
-        self.push_variable_scope_with_dep(value.clone());
+        self.push_exec_dep(value.clone());
         let key = self.exec_property_key(&node.name);
-        self.pop_variable_scope();
+        self.pop_exec_dep();
 
         let value = value.get_property(self, dep, &key);
         self.exec_assignment_target_maybe_default(&node.binding, value);

@@ -260,12 +260,13 @@ impl<'a> Analyzer<'a> {
   pub fn refer_global(&mut self) {
     if self.config.unknown_global_side_effects {
       self.may_throw();
-      let deps = self
+      let mut deps = self
         .scope_context
         .variable_scopes
         .iter()
         .filter_map(|scope| scope.dep.clone())
         .collect::<Vec<_>>();
+      deps.push(self.call_scope().get_exec_dep());
       self.consume(deps);
     }
   }

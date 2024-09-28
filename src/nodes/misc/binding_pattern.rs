@@ -88,9 +88,9 @@ impl<'a> Analyzer<'a> {
         for property in &node.properties {
           let dep = EntityDepNode::from((AstType2::BindingProperty, property));
 
-          self.push_variable_scope_with_dep(init.clone());
+          self.push_exec_dep(init.clone());
           let key = self.exec_property_key(&property.key);
-          self.pop_variable_scope();
+          self.pop_exec_dep();
 
           enumerated.push(key.clone());
           let init = init.get_property(self, dep, &key);
