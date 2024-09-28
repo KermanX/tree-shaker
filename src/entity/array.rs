@@ -300,9 +300,6 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   }
 
   fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    if self.consumed.get() {
-      return consumed_object::get_to_boolean();
-    }
     LiteralEntity::new_boolean(true)
   }
 

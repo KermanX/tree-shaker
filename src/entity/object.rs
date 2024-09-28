@@ -384,10 +384,6 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   }
 
   fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    // FIXME: Special methods
-    if self.consumed.get() {
-      return consumed_object::get_to_boolean();
-    }
     LiteralEntity::new_boolean(true)
   }
 
