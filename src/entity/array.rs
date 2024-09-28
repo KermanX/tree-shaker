@@ -186,8 +186,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               }
             } else {
               self.consume(analyzer);
-              has_effect = true;
-              break;
+              analyzer.consume(dep);
+              return;
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
