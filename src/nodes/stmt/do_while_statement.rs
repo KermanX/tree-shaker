@@ -1,4 +1,6 @@
-use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstType2, build_effect, scope::CfScopeKind, transformer::Transformer,
+};
 use oxc::{
   ast::ast::{DoWhileStatement, Statement},
   span::GetSpan,
@@ -62,16 +64,15 @@ impl<'a> Transformer<'a> {
 
     let DoWhileStatement { span, test, body, .. } = node;
     let body_span = body.span();
+    let test_span = test.span();
 
     let body = self.transform_statement(body);
 
     // if !data.need_test {
     //   body
     // } else {
-    // FIXME: Temporarily added `body.is_some()` because can't handle break/continue
-    let need_loop = data.need_loop || body.is_some();
-    let test = self.transform_expression(test, need_loop);
-    if !need_loop {
+    // FIXME: Temporarily added `body.is_none()` because can't handle break/continue
+    if !data.need_loop && body.is_none() {
       // match (body, test) {
       //   (Some(body), Some(test)) => {
       //     let mut statements = self.ast_builder.vec();
@@ -83,12 +84,22 @@ impl<'a> Transformer<'a> {
       //   (Some(body), None) => Some(body),
       //   (None, None) => None,
       // }
+      let test = self.transform_expression(test, false);
       test.map(|test| self.ast_builder.statement_expression(*span, test))
     } else {
       Some(self.ast_builder.statement_do_while(
         *span,
         body.unwrap_or_else(|| self.ast_builder.statement_empty(body_span)),
-        test.unwrap(),
+        if data.need_loop {
+          self.transform_expression(test, true).unwrap()
+        } else {
+          build_effect!(
+            self.ast_builder,
+            test_span,
+            self.transform_expression(test, false);
+            self.build_unused_expression(test_span)
+          )
+        },
       ))
     }
     // }
