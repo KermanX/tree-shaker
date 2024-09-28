@@ -33,8 +33,10 @@ impl<'a> Analyzer<'a> {
       self.exec_block_statement(finalizer);
     }
 
-    if let Some(uncaught) = uncaught {
-      self.forward_throw(uncaught.clone(), ());
+    if !self.cf_scope().borrow().must_exited() {
+      if let Some(uncaught) = uncaught {
+        self.forward_throw(uncaught.clone(), ());
+      }
     }
 
     self.pop_cf_scope();
