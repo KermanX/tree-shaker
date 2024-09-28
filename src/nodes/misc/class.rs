@@ -18,8 +18,15 @@ impl<'a> Analyzer<'a> {
 
     super_class.map(|entity| entity.consume(self));
 
-    for element in &node.body.body {
-      self.exec_class_element(element);
+    let element_keys = node
+      .body
+      .body
+      .iter()
+      .map(|element| element.property_key().map(|key| self.exec_property_key(key)))
+      .collect::<Vec<_>>();
+
+    for (index, key) in element_keys.into_iter().enumerate() {
+      self.exec_class_element(&node.body.body[index], key);
     }
 
     self.pop_variable_scope();

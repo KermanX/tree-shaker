@@ -1,9 +1,15 @@
-use crate::{analyzer::Analyzer, entity::LiteralEntity, transformer::Transformer};
-use oxc::ast::ast::{ClassElement, PropertyDefinition, TSAccessibility, TSTypeAnnotation};
+use crate::{
+  analyzer::Analyzer,
+  entity::{Entity, LiteralEntity},
+  transformer::Transformer,
+};
+use oxc::ast::{
+  ast::{ClassElement, PropertyDefinition},
+  NONE,
+};
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_property_definition(&mut self, node: &'a PropertyDefinition<'a>) {
-    let key = self.exec_property_key(&node.key);
+  pub fn exec_property_definition(&mut self, node: &'a PropertyDefinition<'a>, key: Entity<'a>) {
     let value = node
       .value
       .as_ref()
@@ -37,8 +43,8 @@ impl<'a> Transformer<'a> {
       false,
       false,
       false,
-      None::<TSTypeAnnotation>,
-      None::<TSAccessibility>,
+      NONE,
+      None,
     )
   }
 }
