@@ -27,7 +27,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    analyzer.refer_dep(self.dep());
+    let dep = self.dep();
+
+    analyzer.consume(dep);
+    analyzer.consume_arguments(Some(dep));
 
     let self_cloned = self.clone();
     analyzer.exec_consumed_fn(move |analyzer| {

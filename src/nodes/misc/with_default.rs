@@ -12,7 +12,7 @@ impl<'a> Analyzer<'a> {
   ) -> (bool, Entity<'a>) {
     let is_undefined = value.test_is_undefined();
 
-    self.push_variable_scope_with_dep(value.clone());
+    self.push_exec_dep(value.clone());
     let binding_val = match is_undefined {
       Some(true) => ComputedEntity::new(self.exec_expression(default), value),
       Some(false) => value,
@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
         value
       }
     };
-    self.pop_variable_scope();
+    self.pop_exec_dep();
 
     (is_undefined != Some(false), binding_val)
   }

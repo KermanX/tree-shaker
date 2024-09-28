@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
     data.maybe_true |= maybe_true;
     data.maybe_false |= maybe_false;
 
-    self.push_variable_scope_with_dep(test.get_to_boolean());
+    self.push_exec_dep(test.get_to_boolean());
     let result = match (maybe_true, maybe_false) {
       (true, false) => self.exec_expression(&node.consequent),
       (false, true) => self.exec_expression(&node.alternate),
@@ -40,7 +40,7 @@ impl<'a> Analyzer<'a> {
       }),
       _ => unreachable!(),
     };
-    self.pop_variable_scope();
+    self.pop_exec_dep();
 
     ComputedEntity::new(result, test)
   }
