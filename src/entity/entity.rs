@@ -1,4 +1,6 @@
-use super::{Consumable, InteractionKind, LiteralEntity, TypeofResult, UnionEntity};
+use super::{
+  ComputedEntity, Consumable, InteractionKind, LiteralEntity, TypeofResult, UnionEntity,
+};
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};
@@ -228,7 +230,7 @@ impl<'a> Entity<'a> {
       if let Some(rest) = rest.clone() {
         result.push(rest.clone());
       } else {
-        result.push(LiteralEntity::new_undefined());
+        result.push(ComputedEntity::new(LiteralEntity::new_undefined(), self.clone()));
       }
     }
     let rest_arr = analyzer.new_empty_array();
