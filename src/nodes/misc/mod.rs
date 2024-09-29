@@ -1,4 +1,3 @@
-mod accessor_property;
 mod arguments;
 mod assignment_target;
 mod assignment_target_maybe_default;
