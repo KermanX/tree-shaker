@@ -177,8 +177,7 @@ impl<'a> Analyzer<'a> {
       }
       val
     } else {
-      self.insert_untracked_var(*symbol);
-      Some(UnknownEntity::new_unknown())
+      self.on_unresolved_reference(*symbol)
     }
   }
 
@@ -234,13 +233,20 @@ impl<'a> Analyzer<'a> {
       }
     } else {
       new_val.consume(self);
-      self.insert_untracked_var(*symbol);
+      self.on_unresolved_reference(*symbol);
     }
   }
 
-  fn insert_untracked_var(&mut self, symbol: SymbolId) {
+  fn on_unresolved_reference(&mut self, symbol: SymbolId) -> Option<Entity<'a>> {
     self.symbol_decls.insert(symbol, (DeclarationKind::UntrackedVar, vec![], ().into()));
-    self.insert_var_decl(symbol);
+    if self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration() {
+      self.insert_var_decl(symbol);
+      Some(UnknownEntity::new_unknown())
+    } else {
+      // TODO: warning: unresolved reference
+      self.explicit_throw_unknown();
+      None
+    }
   }
 
   fn insert_var_decl(&mut self, symbol: SymbolId) {
