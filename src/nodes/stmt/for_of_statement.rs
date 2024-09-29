@@ -32,8 +32,12 @@ impl<'a> Analyzer<'a> {
       right
     };
 
+    self.push_variable_scope();
+    self.declare_for_statement_left(&node.left);
+
     let iterated_0 = right.iterate_result_union(self, dep);
     if iterated_0.is_none() {
+      self.pop_variable_scope();
       return;
     }
 
@@ -44,7 +48,8 @@ impl<'a> Analyzer<'a> {
     self.exec_loop(move |analyzer| {
       if let Some(iterated) = right.iterate_result_union(analyzer, dep) {
         analyzer.push_variable_scope();
-        analyzer.exec_for_statement_left(&node.left, iterated);
+        analyzer.declare_for_statement_left(&node.left);
+        analyzer.init_for_statement_left(&node.left, iterated);
 
         analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
         analyzer.exec_statement(&node.body);
@@ -53,6 +58,7 @@ impl<'a> Analyzer<'a> {
       }
     });
     self.pop_cf_scope();
+    self.pop_variable_scope();
   }
 }
 
