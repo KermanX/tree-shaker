@@ -284,7 +284,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       result.push((
         false,
         UnknownEntity::new_unknown(),
-        ForwardedEntity::new(UnionEntity::new(unknown_keyed), self_dep.clone()),
+        UnionEntity::new_computed(unknown_keyed, self_dep.clone()),
       ));
     }
     for (key, properties) in self.string_keyed.borrow().iter() {
@@ -292,7 +292,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       result.push((
         properties.definite,
         LiteralEntity::new_string(key),
-        ForwardedEntity::new(UnionEntity::new(values), self_dep.clone()),
+        UnionEntity::new_computed(values, self_dep.clone()),
       ));
     }
     result

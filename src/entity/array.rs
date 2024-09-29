@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Consumable, Entity, EntityTrait, EntryEntity, ForwardedEntity, InteractionKind,
-  LiteralEntity, TypeofResult, UnionEntity, UnknownEntity,
+  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, EntryEntity, ForwardedEntity,
+  InteractionKind, LiteralEntity, TypeofResult, UnionEntity, UnknownEntity,
 };
 use crate::{
   analyzer::Analyzer,
@@ -65,6 +65,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
     let mut deps = self.deps.borrow().clone();
     deps.push(dep);
+    deps.push(key.clone().into());
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let mut result = vec![];
@@ -108,19 +109,17 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
           _ => unreachable!(),
         }
       }
-      ForwardedEntity::new(EntryEntity::new(UnionEntity::new(result), key.clone()), deps)
+      UnionEntity::new_computed(result, deps)
     } else {
-      ForwardedEntity::new(
-        UnknownEntity::new_computed_unknown(
-          self
-            .elements
-            .borrow()
-            .iter()
-            .chain(self.rest.borrow().iter())
-            .map(|v| v.clone())
-            .collect::<Vec<_>>(),
-        ),
-        deps,
+      UnknownEntity::new_computed_unknown(
+        self
+          .elements
+          .borrow()
+          .iter()
+          .chain(self.rest.borrow().iter())
+          .map(|v| Consumable::from(v.clone()))
+          .chain(deps)
+          .collect::<Vec<_>>(),
       )
     }
   }
@@ -272,11 +271,16 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
     let rest = self.rest.borrow();
     (
-      self.elements.borrow().clone(),
+      self
+        .elements
+        .borrow()
+        .iter()
+        .map(|val| ComputedEntity::new(val.clone(), dep.clone()))
+        .collect(),
       if rest.is_empty() {
         None
       } else {
-        Some(UnionEntity::new(self.rest.borrow().iter().cloned().collect()))
+        Some(UnionEntity::new_computed(self.rest.borrow().iter().cloned().collect(), dep))
       },
     )
   }
