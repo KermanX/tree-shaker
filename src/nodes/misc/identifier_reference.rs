@@ -51,8 +51,7 @@ impl<'a> Analyzer<'a> {
     let value = ForwardedEntity::new(value, dep);
 
     let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
-    // Upstream bug
-    // debug_assert!(reference.is_write());
+    debug_assert!(reference.is_write());
     let symbol = reference.symbol_id();
 
     if let Some(symbol) = symbol {
