@@ -165,7 +165,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
       UnknownEntity::Function => TypeofResult::Function,
       UnknownEntity::Regexp => TypeofResult::Object,
       UnknownEntity::Array => TypeofResult::Object,
-      UnknownEntity::Object => TypeofResult::Object,
+      UnknownEntity::Object => TypeofResult::Object | TypeofResult::Function,
       UnknownEntity::Unknown => TypeofResult::_Unknown,
     }
   }
