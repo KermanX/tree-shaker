@@ -1,5 +1,8 @@
 use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
-use oxc::ast::ast::{Expression, SequenceExpression};
+use oxc::{
+  ast::ast::{Expression, SequenceExpression},
+  span::SPAN,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_sequence_expression(&mut self, node: &'a SequenceExpression<'a>) -> Entity<'a> {
@@ -31,7 +34,14 @@ impl<'a> Transformer<'a> {
     if transformed_expressions.is_empty() {
       None
     } else if transformed_expressions.len() == 1 {
-      Some(transformed_expressions.pop().unwrap())
+      if self.config.preserve_function_name
+        && matches!(transformed_expressions.last().unwrap(), Expression::FunctionExpression(_))
+      {
+        transformed_expressions.insert(0, self.build_unused_expression(SPAN));
+        Some(self.ast_builder.expression_sequence(*span, transformed_expressions))
+      } else {
+        Some(transformed_expressions.pop().unwrap())
+      }
     } else {
       Some(self.ast_builder.expression_sequence(*span, transformed_expressions))
     }

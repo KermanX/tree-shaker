@@ -3,6 +3,7 @@ use regex::Regex;
 #[derive(Debug, Clone)]
 pub struct TreeShakeConfig {
   pub unknown_global_side_effects: bool,
+  pub preserve_function_name: bool,
   pub preserve_function_length: bool,
   pub iterate_side_effects: bool,
 
@@ -16,6 +17,7 @@ impl Default for TreeShakeConfig {
   fn default() -> Self {
     Self {
       unknown_global_side_effects: true,
+      preserve_function_name: true,
       preserve_function_length: true,
       iterate_side_effects: true,
 
