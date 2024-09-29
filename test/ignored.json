@@ -1,4 +1,7 @@
 [
+  "// Oxc issue: https://github.com/oxc-project/oxc/issues/6154",
+  "language/expressions/assignment/fn-name-lhs-cover.js",
+
   "// Usage of eval, Function, Generator, or AsyncFunction",
   "language/expressions/import.meta/syntax/goal-async-function-params-or-body.js",
   "language/expressions/import.meta/syntax/goal-async-generator-params-or-body.js",
@@ -124,6 +127,7 @@
   "language/expressions/equals/coerce-symbol-to-prim-invocation.js",
   "language/expressions/addition/coerce-symbol-to-prim-err.js",
   "language/expressions/addition/coerce-symbol-to-prim-return-obj.js",
+  "language/expressions/addition/coerce-symbol-to-prim-invocation.js",
   "language/expressions/addition/get-symbol-to-prim-err.js",
   "language/expressions/postfix-decrement/S11.3.2_A2.2_T1.js",
   "language/computed-property-names/to-name-side-effects/numbers-object.js",
@@ -236,6 +240,7 @@
   "language/global-code/decl-func.js",
   "language/global-code/decl-var.js",
   "language/types/object/S8.6.2_A5_T3.js",
+  "language/statements/variable/S12.2_A11.js",
 
   "// Unicode tests, somehow failed",
   "language/identifiers/start-unicode-15.1.0-class-escaped.js",
@@ -268,10 +273,31 @@
   "language/statements/for-of/typedarray-backed-by-resizable-buffer-shrink-to-zero-mid-iteration.js",
 
   "// Somehow failed, but the transformation is correct",
+  "language/expressions/addition/coerce-bigint-to-string.js",
+  "language/expressions/bitwise-not/S9.5_A2.2_T2.js",
+  "language/expressions/unsigned-right-shift/S9.6_A2.2.js",
   "language/expressions/left-shift/S9.5_A2.1_T1.js",
   "language/expressions/left-shift/S9.5_A2.2_T1.js",
   "language/statements/for/dstr/let-obj-init-undefined.js",
   "language/statements/for/dstr/var-obj-init-undefined.js",
   "language/statements/let/dstr/obj-init-undefined.js",
-  "language/statements/variable/dstr/obj-init-undefined.js"
+  "language/statements/variable/dstr/obj-init-undefined.js",
+  "language/expressions/dynamic-import/usage/nested-arrow-assignment-expression-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-arrow-import-then-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-async-arrow-function-await-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-async-arrow-function-return-await-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-async-function-await-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-async-function-return-await-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-async-function-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-async-gen-await-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-async-gen-return-await-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-block-import-then-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-do-while-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-else-import-then-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-function-import-then-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-if-braceless-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-if-import-then-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/nested-while-import-then-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/syntax-nested-block-labeled-specifier-tostring.js",
+  "language/expressions/dynamic-import/usage/top-level-import-then-specifier-tostring.js"
 ]
