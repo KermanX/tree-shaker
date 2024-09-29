@@ -106,14 +106,6 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn clear_exhaustive_dirty(&mut self) {
-    if let Some(data) = &mut self.exhaustive_data {
-      data.dirty = false;
-    } else {
-      unreachable!()
-    }
-  }
-
   pub fn iterate_exhaustively(&mut self) -> bool {
     let exited = self.must_exited();
     let data = self.exhaustive_data.as_mut().unwrap();
