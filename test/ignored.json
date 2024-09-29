@@ -119,7 +119,7 @@
   "// Errors thrown by symbol operations",
   "language/expressions/addition/symbol-to-string.js",
 
-  "// Side-effect in valueOf or toString or Symbol.toPrimitive",
+  "// Side-effect in valueOf or toString or Symbol.toPrimitive or Symbol.hasInstance",
   "language/expressions/division/order-of-evaluation.js",
   "language/expressions/does-not-equals/S11.9.2_A7.8.js",
   "language/expressions/equals/coerce-symbol-to-prim-err.js",
@@ -147,6 +147,9 @@
   "language/expressions/template-literal/literal-expr-tostr-error.js",
   "language/expressions/template-literal/middle-list-one-expr-tostr-error.js",
   "language/expressions/template-literal/middle-list-one-expr-tostr-error.js",
+  "language/expressions/instanceof/symbol-hasinstance-invocation.js",
+  "language/expressions/instanceof/symbol-hasinstance-get-err.js",
+  
 
   "// Invalid Symbol.toPrimitive method",
   "language/expressions/addition/coerce-symbol-to-prim-return-prim.js",
@@ -282,6 +285,7 @@
   "language/statements/for/dstr/var-obj-init-undefined.js",
   "language/statements/let/dstr/obj-init-undefined.js",
   "language/statements/variable/dstr/obj-init-undefined.js",
+  "language/types/number/8.5.1.js",
   "language/expressions/dynamic-import/usage/nested-arrow-assignment-expression-specifier-tostring.js",
   "language/expressions/dynamic-import/usage/nested-arrow-import-then-specifier-tostring.js",
   "language/expressions/dynamic-import/usage/nested-async-arrow-function-await-specifier-tostring.js",
