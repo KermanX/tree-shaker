@@ -126,10 +126,6 @@ impl<'a> EntityOpHost<'a> {
     self.lt(rhs, lhs, eq)
   }
 
-  pub fn shift_left(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_computed_number((lhs.clone(), rhs.clone()))
-  }
-
   pub fn add(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Entity<'a> {
     let lhs_t = lhs.test_typeof();
     let rhs_t = rhs.test_typeof();

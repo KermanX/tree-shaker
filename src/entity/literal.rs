@@ -1,5 +1,6 @@
 use super::{
-  consumed_object, Consumable, Entity, EntityTrait, InteractionKind, TypeofResult, UnknownEntity,
+  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, InteractionKind, TypeofResult,
+  UnknownEntity,
 };
 use crate::{analyzer::Analyzer, builtins::Prototype, utils::F64WithEq};
 use oxc::{
@@ -117,9 +118,9 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     &self,
     rc: &Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    dep: Consumable<'a>,
   ) -> Entity<'a> {
-    rc.clone()
+    ComputedEntity::new(rc.clone(), dep)
   }
 
   fn iterate(

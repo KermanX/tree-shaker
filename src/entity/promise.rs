@@ -110,7 +110,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     UnknownEntity::new_computed_unknown(vec![rc.clone()])
   }
 
-  fn get_to_boolean(&self, rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
     LiteralEntity::new_boolean(true)
   }
 

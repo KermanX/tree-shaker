@@ -257,7 +257,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer, dep);
     }
-    rc.clone()
+    ComputedEntity::new(rc.clone(), dep)
   }
 
   fn iterate(

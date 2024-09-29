@@ -113,7 +113,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
       self.consume(analyzer);
       consumed_object::r#await(analyzer, dep)
     } else {
-      rc.clone()
+      ComputedEntity::new(rc.clone(), dep)
     }
   }
 

@@ -1,5 +1,5 @@
 use super::{
-  consumed_object, Consumable, Entity, EntityDepNode, EntityTrait, ForwardedEntity,
+  consumed_object, ComputedEntity, Consumable, Entity, EntityDepNode, EntityTrait, ForwardedEntity,
   InteractionKind, LiteralEntity, TypeofResult, UnknownEntity,
 };
 use crate::{analyzer::Analyzer, scope::variable_scope::VariableScopes, use_consumed_flag};
@@ -115,7 +115,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer, dep);
     }
-    rc.clone()
+    ComputedEntity::new(rc.clone(), dep)
   }
 
   fn iterate(
