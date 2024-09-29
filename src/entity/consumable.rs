@@ -56,6 +56,16 @@ impl<'a, T1: ConsumableTrait<'a>, T2: ConsumableTrait<'a>> ConsumableInternal<'a
   }
 }
 
+impl<'a, T1: ConsumableTrait<'a>, T2: ConsumableTrait<'a>, T3: ConsumableTrait<'a>>
+  ConsumableInternal<'a> for (T1, T2, T3)
+{
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    self.0.consume(analyzer);
+    self.1.consume(analyzer);
+    self.2.consume(analyzer);
+  }
+}
+
 impl<'a, T: ConsumableTrait<'a>> ConsumableInternal<'a> for Vec<T> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     for item in self {
