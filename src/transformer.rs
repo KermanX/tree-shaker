@@ -151,6 +151,18 @@ impl<'a> Transformer<'a> {
     self.build_unused_binding_identifier(span)
   }
 
+  pub fn build_unused_assignment_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
+    self.ast_builder.binding_pattern(
+      self.ast_builder.binding_pattern_kind_assignment_pattern(
+        span,
+        self.build_unused_binding_pattern(SPAN),
+        self.build_unused_expression(SPAN),
+      ),
+      NONE,
+      false,
+    )
+  }
+
   pub fn build_unused_identifier_reference_write(&self, span: Span) -> IdentifierReference<'a> {
     self.need_unused_assignment_target.set(true);
     self.ast_builder.identifier_reference(span, "__unused__")
