@@ -91,7 +91,11 @@ impl<'a> Analyzer<'a> {
 
     let (object, key) = cache.unwrap_or_else(|| {
       let object = self.exec_expression(node.object());
+
+      self.push_exec_dep(object.clone());
       let key = self.exec_key(node);
+      self.pop_exec_dep();
+
       (object, key)
     });
 

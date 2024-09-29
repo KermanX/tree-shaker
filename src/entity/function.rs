@@ -34,22 +34,13 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
     let self_cloned = self.clone();
     analyzer.exec_consumed_fn(move |analyzer| {
-      analyzer.push_cf_scope_normal(None);
-      analyzer.push_try_scope();
-
-      let ret_val = self_cloned.call_impl(
+      self_cloned.call_impl(
         &UnknownEntity::new_unknown(),
         analyzer,
         ().into(),
         &UnknownEntity::new_unknown(),
         &UnknownEntity::new_unknown(),
-      );
-      ret_val.consume(analyzer);
-
-      analyzer.pop_try_scope().thrown_val().map(|thrown_val| {
-        thrown_val.consume(analyzer);
-      });
-      analyzer.pop_cf_scope();
+      )
     });
   }
 

@@ -29,8 +29,17 @@ impl<'a> Analyzer<'a> {
     self.exec_exhaustively(Rc::new(runner), false);
   }
 
-  pub fn exec_consumed_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
-    let runner = Rc::new(runner);
+  pub fn exec_consumed_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a) {
+    let runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a> = Rc::new(move |analyzer| {
+      analyzer.push_cf_scope_normal(None);
+      analyzer.push_try_scope();
+      let ret_val = runner(analyzer);
+      ret_val.consume(analyzer);
+      analyzer.pop_try_scope().thrown_val().map(|thrown_val| {
+        thrown_val.consume(analyzer);
+      });
+      analyzer.pop_cf_scope();
+    });
     let deps = self.exec_exhaustively(runner.clone(), false);
     self.track_dep_after_finished(false, runner, deps);
   }

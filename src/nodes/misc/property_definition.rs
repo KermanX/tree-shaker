@@ -1,22 +1,14 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{Entity, LiteralEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::{
   ast::{ClassElement, PropertyDefinition},
   NONE,
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_property_definition(&mut self, node: &'a PropertyDefinition<'a>, key: Entity<'a>) {
-    let value = node
-      .value
-      .as_ref()
-      .map_or_else(|| LiteralEntity::new_undefined(), |node| self.exec_expression(node));
-
-    key.consume(self);
-    value.consume(self);
+  pub fn exec_property_definition(&mut self, node: &'a PropertyDefinition<'a>) {
+    if let Some(value) = &node.value {
+      self.exec_consumed_fn(|analyzer| analyzer.exec_expression(value));
+    }
   }
 }
 

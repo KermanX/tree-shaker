@@ -48,18 +48,23 @@ impl<'a> Transformer<'a> {
 
           let value_span = value.span();
 
-          let value = self.transform_expression(value, need_val);
+          let transformed_value = self.transform_expression(value, need_val);
 
-          if let Some(mut value) = value {
+          if let Some(mut transformed_value) = transformed_value {
             if *kind == PropertyKind::Set {
-              if let Expression::FunctionExpression(value) = &mut value {
-                self.patch_method_definition_params(value);
+              if let (
+                Expression::FunctionExpression(original_node),
+                Expression::FunctionExpression(transformed_node),
+              ) = (value,&mut transformed_value) {
+                self.patch_method_definition_params(original_node, transformed_node);
+              } else {
+                unreachable!()
               }
             }
 
             let (computed, key) = self.transform_property_key(key, true).unwrap();
             self.ast_builder.object_property_kind_object_property(
-              *span, *kind, key, value, None, *method, false, computed,
+              *span, *kind, key, transformed_value, None, *method, false, computed,
             )
           } else {
             if let Some((computed, key)) = self.transform_property_key(key, false) {
