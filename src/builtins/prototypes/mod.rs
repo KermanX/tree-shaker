@@ -28,12 +28,7 @@ impl<'a> Prototype<'a> {
     self.0.get(key)
   }
 
-  pub fn get_property(
-    &self,
-    rc: &Entity<'a>,
-    key: &Entity<'a>,
-    _dep: Consumable<'a>,
-  ) -> Entity<'a> {
+  pub fn get_property(&self, rc: &Entity<'a>, key: &Entity<'a>, dep: Consumable<'a>) -> Entity<'a> {
     let key = key.get_to_property_key();
     'known: {
       if let Some(key_literals) = key.get_to_literals() {
@@ -51,10 +46,10 @@ impl<'a> Prototype<'a> {
             _ => unreachable!(),
           }
         }
-        return EntryEntity::new(UnionEntity::new(values), (rc.clone(), key.clone()));
+        return EntryEntity::new(UnionEntity::new(values), (dep, rc.clone(), key.clone()));
       }
     }
-    UnknownEntity::new_computed_unknown((rc.clone(), key.clone()))
+    UnknownEntity::new_computed_unknown((dep, rc.clone(), key.clone()))
   }
 }
 
