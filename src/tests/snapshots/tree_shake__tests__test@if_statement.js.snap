@@ -1,67 +1,13 @@
 ---
 source: src/tests/mod.rs
-expression: tree_shake(&input)
+expression: tree_shake(input)
 input_file: src/tests/fixtures/if_statement.js
 ---
 export function truthy() {
-	s1;
-	s2;
-	e;
-	s3;
-	s4;
-	e;
-	s5;
-	s6;
-	e;
-	s7;
-	e;
-	s8;
-	{
-		e;
-		e;
-	}
-	s9;
-	e;
-	s10;
-	{
-		e;
-		e;
-	}
-	s11;
-	e;
-	s12;
-	{
-		e;
-		e;
-	}
+	s1, s2, e, s3, s4, e, s5, s6, e, s7, e, s8, e, e, s9, e, s10, e, e, s11, e, s12, e, e;
 }
 export function falsy() {
-	s1;
-	s2;
-	s3;
-	e;
-	s4;
-	f;
-	s5;
-	s6;
-	s7;
-	e;
-	s8;
-	e;
-	s9;
-	{
-		e;
-		e;
-	}
-	s10;
-	{
-		e;
-		f;
-	}
-	s11;
-	e;
-	s12;
-	e;
+	s1, s2, s3, e, s4, f, s5, s6, s7, e, s8, e, s9, e, e, s10, e, f, s11, e, s12, e;
 }
 export function unknown(a) {
 	s1;

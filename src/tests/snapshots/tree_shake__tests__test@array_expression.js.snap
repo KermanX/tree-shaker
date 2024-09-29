@@ -5,7 +5,14 @@ input_file: src/tests/fixtures/array_expression.js
 ---
 export function main(unknown) {
 	effect(2, "ab");
-	const arr2 = [4, ...[6], , ...unknown, unknown, ...[...[1, 4]]];
+	const arr2 = [
+		4,
+		...[6],
+		,
+		...unknown,
+		unknown,
+		...[...[1, 4]]
+	];
 	effect(arr2);
 	const __unused_2782 = effect();
 	const __unused_F2EA = effect();

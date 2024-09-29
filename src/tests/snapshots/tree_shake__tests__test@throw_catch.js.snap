@@ -13,8 +13,7 @@ export function f2(__unused_1A99) {
 		throw effect2();
 	} catch {
 		effect3();
-	}
- finally {
+	} finally {
 		effect4();
 	}
 }
