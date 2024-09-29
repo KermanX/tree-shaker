@@ -2,9 +2,18 @@
   "// Oxc issue: https://github.com/oxc-project/oxc/issues/6154",
   "language/expressions/assignment/fn-name-lhs-cover.js",
 
+  "// Oxc issue: https://github.com/oxc-project/oxc/issues/6026",
+  "language/statements/class/ident-name-method-def-static-escaped.js",
+
+  "// Oxc issue: https://github.com/oxc-project/oxc/issues/3526",
+  "language/statements/for-of/string-astral-truncated.js",
+
   "// Usage of eval, Function, Generator, or AsyncFunction",
   "language/expressions/import.meta/syntax/goal-async-function-params-or-body.js",
   "language/expressions/import.meta/syntax/goal-async-generator-params-or-body.js",
+
+  "// Function or class name related",
+  "language/expressions/class/elements/class-name-static-initializer-anonymous.js",
 
   "// Poisoned builtin object prototype",
   "language/expressions/arrow-function/dstr/ary-init-iter-get-err-array-prototype.js",
@@ -68,6 +77,7 @@
   "language/statements/variable/dstr/ary-init-iter-get-err-array-prototype.js",
   "language/statements/variable/dstr/ary-ptrn-elem-id-iter-val-array-prototype.js",
   "language/expressions/instanceof/primitive-prototype-with-object.js",
+  "language/expressions/instanceof/prototype-getter-with-object-throws.js",
 
   "// Errors thrown by bigint operations",
   "language/expressions/bitwise-and/bigint-and-number.js",
@@ -146,7 +156,7 @@
   "language/expressions/exponentiation/exp-operator-evaluation-order.js",
   "language/expressions/template-literal/literal-expr-tostr-error.js",
   "language/expressions/template-literal/middle-list-one-expr-tostr-error.js",
-  "language/expressions/template-literal/middle-list-one-expr-tostr-error.js",
+  "language/expressions/template-literal/middle-list-many-expr-tostr-error.js",
   "language/expressions/instanceof/symbol-hasinstance-invocation.js",
   "language/expressions/instanceof/symbol-hasinstance-get-err.js",
   
