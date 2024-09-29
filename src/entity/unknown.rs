@@ -150,10 +150,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     UnknownEntity::new_unknown()
   }
 
-  fn get_to_boolean(&self, rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
     match self.test_truthy() {
       Some(val) => LiteralEntity::new_boolean(val),
-      None => UnknownEntity::new_computed_boolean(rc.clone()),
+      None => UnknownEntity::new_boolean(),
     }
   }
 
