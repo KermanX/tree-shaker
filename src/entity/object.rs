@@ -160,7 +160,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           }
         }
         ForwardedEntity::new(
-          EntryEntity::new(UnionEntity::new(values), key.clone()),
+          EntryEntity::new(UnionEntity::new(values), (dep, key.clone())),
           self.deps.borrow().clone(),
         )
       } else {
@@ -271,17 +271,20 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::enumerate_properties(analyzer, dep);
     }
+    let mut deps = self.deps.borrow().clone();
+    deps.push(dep.clone());
+    let self_dep = Consumable::new(deps);
+
     let this = rc.clone();
     // unknown_keyed = unknown_keyed + rest
     let mut unknown_keyed = self.unknown_keyed.borrow().get_value(analyzer, dep.clone(), &this);
     unknown_keyed.extend(self.rest.borrow().get_value(analyzer, dep.clone(), &this));
     let mut result = Vec::new();
-    let self_dep = Consumable::from(self.deps.borrow().clone());
     if unknown_keyed.len() > 0 {
       result.push((
         false,
         UnknownEntity::new_unknown(),
-        ForwardedEntity::new(UnionEntity::new(unknown_keyed), self_dep.clone()),
+        UnionEntity::new_computed(unknown_keyed, self_dep.clone()),
       ));
     }
     for (key, properties) in self.string_keyed.borrow().iter() {
@@ -289,7 +292,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       result.push((
         properties.definite,
         LiteralEntity::new_string(key),
-        ForwardedEntity::new(UnionEntity::new(values), self_dep.clone()),
+        UnionEntity::new_computed(values, self_dep.clone()),
       ));
     }
     result

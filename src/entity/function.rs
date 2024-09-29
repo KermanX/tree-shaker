@@ -27,7 +27,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    let dep = self.dep();
+    let dep = self.source_dep_node();
 
     analyzer.consume(dep);
     analyzer.consume_arguments(Some(dep));
@@ -97,7 +97,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    let source = self.dep();
+    let source = self.source_dep_node();
     let recursed = analyzer.scope_context.call_scopes.iter().any(|scope| scope.source == source);
     if recursed {
       self.consume(analyzer);
@@ -181,7 +181,7 @@ impl<'a> FunctionEntity<'a> {
     })
   }
 
-  pub fn dep(&self) -> EntityDepNode {
+  pub fn source_dep_node(&self) -> EntityDepNode {
     EntityDepNode::from(match self.source {
       FunctionEntitySource::Function(node) => AstKind::Function(node),
       FunctionEntitySource::ArrowFunctionExpression(node) => AstKind::ArrowFunctionExpression(node),
@@ -196,24 +196,30 @@ impl<'a> FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    let source = self.dep();
+    let source = self.source_dep_node();
     let call_dep: Consumable<'a> = (source, dep).into();
     let variable_scopes = self.variable_scopes.clone();
     let ret_val = match self.source {
       FunctionEntitySource::Function(node) => analyzer.call_function(
         rc.clone(),
-        self.dep().into(),
+        self.source_dep_node().into(),
         source,
         self.is_expression,
-        call_dep,
+        call_dep.clone(),
         node,
         variable_scopes,
         this.clone(),
         args.clone(),
       ),
       FunctionEntitySource::ArrowFunctionExpression(node) => analyzer
-        .call_arrow_function_expression(source, call_dep, node, variable_scopes, args.clone()),
+        .call_arrow_function_expression(
+          source,
+          call_dep.clone(),
+          node,
+          variable_scopes,
+          args.clone(),
+        ),
     };
-    ForwardedEntity::new(ret_val, self.dep())
+    ForwardedEntity::new(ret_val, call_dep)
   }
 }
