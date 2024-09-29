@@ -49,18 +49,15 @@ process.stdin.on('end', () => {
   const restMessage = stat.match(/^Treeshake[\s\S]+/m)[0];
   fs.writeFileSync(path.join(__dirname, 'stat.txt'), `## Test262 Result
 
+- **Failed: ${failedNum}**
 - Total: ${total}
-- **Unexpected Failed: ${failedNum}**
 - Passed: ${passedNum}
-- Expected Failed: ${expectedFailedNum}
+- Ignored: ${expectedFailedNum}
 ${restMessage.split('\n').filter(Boolean).map(s => `- ${s.trim()}`).join('\n')}
 
 ${failedNum ? `
-<details>
-<summary> Unexpected Failed Tests </summary>
+## Failed Tests
 
 ${failedList}
-
-</details>
 ` : ''}`);
 });
