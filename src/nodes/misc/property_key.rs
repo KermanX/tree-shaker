@@ -66,8 +66,12 @@ impl<'a> Transformer<'a> {
             None
           }
         } else {
-          let expr = self.transform_expression(node, true).unwrap();
-          Some((true, self.ast_builder.property_key_expression(expr)))
+          if need_val || self.transform_expression(node, false).is_some() {
+            let expr = self.transform_expression(node, true).unwrap();
+            Some((true, self.ast_builder.property_key_expression(expr)))
+          } else {
+            None
+          }
         }
       }
     }
