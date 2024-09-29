@@ -42,8 +42,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn explicit_throw_unknown(&mut self) {
     let try_scope = self.try_scope();
-    let value = ForwardedEntity::new(
-      UnknownEntity::new_unknown(),
+    let value = UnknownEntity::new_computed_unknown(
       self.get_assignment_deps(try_scope.variable_scope_index, ()),
     );
     self.explicit_throw_impl(value);
@@ -53,8 +52,8 @@ impl<'a> Analyzer<'a> {
     if values.is_empty() {
       self.may_throw();
     } else {
-      let thrown_val = UnknownEntity::new_computed_unknown(values);
-      self.explicit_throw_impl(ForwardedEntity::new(thrown_val, dep.into()));
+      let thrown_val = UnknownEntity::new_computed_unknown((values, dep.into()));
+      self.explicit_throw_impl(thrown_val);
     }
   }
 

@@ -1,34 +1,12 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  data::StatementVecData,
-  entity::{EntityDepNode, UnknownEntity},
-  transformer::Transformer,
-};
-use oxc::ast::{
-  ast::{ClassElement, StaticBlock},
-  AstKind,
-};
-use std::rc::Rc;
+use crate::{analyzer::Analyzer, ast::AstType2, data::StatementVecData, transformer::Transformer};
+use oxc::ast::ast::{ClassElement, StaticBlock};
 
 const AST_TYPE: AstType2 = AstType2::StaticBlock;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_static_block(&mut self, node: &'a StaticBlock<'a>) {
-    self.push_call_scope(
-      AstKind::StaticBlock(node),
-      EntityDepNode::Environment,
-      Rc::new(self.scope_context.variable_scopes.clone()),
-      UnknownEntity::new_unknown(),
-      (UnknownEntity::new_unknown(), vec![]),
-      false,
-      false,
-    );
-
     let data = self.load_data::<StatementVecData>(AST_TYPE, node);
     self.exec_statement_vec(data, &node.body);
-
-    self.pop_call_scope();
   }
 }
 
