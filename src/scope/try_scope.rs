@@ -46,7 +46,6 @@ impl<'a> Analyzer<'a> {
       UnknownEntity::new_unknown(),
       self.get_assignment_deps(try_scope.variable_scope_index, ()),
     );
-
     self.explicit_throw_impl(value);
   }
 
