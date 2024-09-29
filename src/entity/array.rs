@@ -1,5 +1,5 @@
 use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, EntryEntity, ForwardedEntity,
+  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, ForwardedEntity,
   InteractionKind, LiteralEntity, TypeofResult, UnionEntity, UnknownEntity,
 };
 use crate::{
