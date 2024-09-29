@@ -18,10 +18,6 @@ pub trait BuiltinFnEntity<'a>: Debug {
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
-    consumed_object::interact(analyzer, dep, kind)
-  }
-
   fn get_property(
     &self,
     rc: &Entity<'a>,
@@ -162,7 +158,8 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    this.interact(analyzer, dep, self.interaction_kind);
+    analyzer.consume(dep);
+    this.consume(analyzer);
     args.consume(analyzer);
     self.return_value.clone()
   }

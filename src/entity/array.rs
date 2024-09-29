@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, ForwardedEntity,
-  InteractionKind, LiteralEntity, TypeofResult, UnionEntity, UnknownEntity,
+  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, ForwardedEntity, LiteralEntity,
+  TypeofResult, UnionEntity, UnknownEntity,
 };
 use crate::{
   analyzer::Analyzer,
@@ -46,11 +46,6 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     for rest in self.rest.borrow().iter() {
       rest.consume(analyzer);
     }
-  }
-
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
-    self.consume(analyzer);
-    consumed_object::interact(analyzer, dep, kind);
   }
 
   fn get_property(

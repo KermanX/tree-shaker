@@ -1,6 +1,5 @@
 use super::{
-  consumed_object, Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity, TypeofResult,
-  UnknownEntity,
+  consumed_object, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult, UnknownEntity,
 };
 use crate::analyzer::Analyzer;
 
@@ -20,11 +19,6 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
       }
     }
     analyzer.consume(self.call_dep.clone());
-  }
-
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
-    self.consume(analyzer);
-    consumed_object::interact(analyzer, dep, kind)
   }
 
   fn get_property(

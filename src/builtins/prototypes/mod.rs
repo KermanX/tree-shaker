@@ -10,7 +10,7 @@ mod regexp;
 mod string;
 mod symbol;
 
-use crate::entity::{Consumable, Entity, EntryEntity, LiteralEntity, UnionEntity, UnknownEntity};
+use crate::entity::{Consumable, Entity, LiteralEntity, UnionEntity, UnknownEntity};
 use rustc_hash::FxHashMap;
 
 pub struct Prototype<'a>(FxHashMap<&'static str, Entity<'a>>);
@@ -46,7 +46,7 @@ impl<'a> Prototype<'a> {
             _ => unreachable!(),
           }
         }
-        return EntryEntity::new(UnionEntity::new(values), (dep, rc.clone(), key.clone()));
+        return UnionEntity::new_computed(values, (dep, rc.clone(), key.clone()));
       }
     }
     UnknownEntity::new_computed_unknown((dep, rc.clone(), key.clone()))

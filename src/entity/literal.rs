@@ -1,6 +1,5 @@
 use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, InteractionKind, TypeofResult,
-  UnknownEntity,
+  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, TypeofResult, UnknownEntity,
 };
 use crate::{analyzer::Analyzer, builtins::Prototype, utils::F64WithEq};
 use oxc::{
@@ -29,8 +28,6 @@ pub enum LiteralEntity<'a> {
 
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
-
-  fn interact(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>, _kind: InteractionKind) {}
 
   fn get_property(
     &self,

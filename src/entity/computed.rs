@@ -1,4 +1,4 @@
-use super::{Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity, TypeofResult};
+use super::{Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult};
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 
@@ -12,10 +12,6 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.val.consume(analyzer);
     self.dep.consume(analyzer);
-  }
-
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
-    self.val.interact(analyzer, (self.dep.clone(), dep), kind);
   }
 
   fn get_property(

@@ -1,4 +1,4 @@
-use super::{Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity, TypeofResult};
+use super::{Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult};
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
 use std::{cell::RefCell, rc::Rc};
@@ -15,13 +15,6 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
       entity.consume(analyzer);
     }
     self.val.consume(analyzer)
-  }
-
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
-    for entity in self.deps.borrow().iter() {
-      entity.interact(analyzer, dep.clone(), kind);
-    }
-    self.val.interact(analyzer, dep, kind)
   }
 
   fn get_property(

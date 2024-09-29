@@ -1,6 +1,6 @@
 use super::{
   consumed_object, ComputedEntity, Consumable, Entity, EntityDepNode, EntityTrait, ForwardedEntity,
-  InteractionKind, LiteralEntity, TypeofResult, UnknownEntity,
+  LiteralEntity, TypeofResult, UnknownEntity,
 };
 use crate::{analyzer::Analyzer, scope::variable_scope::VariableScopes, use_consumed_flag};
 use oxc::ast::{
@@ -42,11 +42,6 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
         &UnknownEntity::new_unknown(),
       )
     });
-  }
-
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
-    self.consume(analyzer);
-    consumed_object::interact(analyzer, dep, kind);
   }
 
   fn get_property(

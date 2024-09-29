@@ -1,6 +1,5 @@
 use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity,
-  TypeofResult,
+  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{analyzer::Analyzer, builtins::Prototype};
 
@@ -21,11 +20,6 @@ pub enum UnknownEntity {
 
 impl<'a> EntityTrait<'a> for UnknownEntity {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
-
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
-    self.consume(analyzer);
-    consumed_object::interact(analyzer, dep, kind)
-  }
 
   fn get_property(
     &self,

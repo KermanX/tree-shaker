@@ -1,4 +1,4 @@
-use super::{Consumable, Entity, EntityTrait, InteractionKind, TypeofResult, UnionEntity};
+use super::{Consumable, Entity, EntityTrait, TypeofResult, UnionEntity};
 use crate::analyzer::Analyzer;
 
 #[derive(Debug)]
@@ -11,10 +11,6 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     for (_, entity) in &self.arguments {
       entity.consume(analyzer);
     }
-  }
-
-  fn interact(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>, _kind: InteractionKind) {
-    unreachable!()
   }
 
   fn get_property(

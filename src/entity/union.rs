@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity,
-  TypeofResult, UnknownEntity,
+  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult,
+  UnknownEntity,
 };
 use crate::analyzer::Analyzer;
 use rustc_hash::FxHashSet;
@@ -15,12 +15,6 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     for value in &self.values {
       value.consume(analyzer);
-    }
-  }
-
-  fn interact(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, kind: InteractionKind) {
-    for value in &self.values {
-      value.interact(analyzer, dep.clone(), kind);
     }
   }
 
