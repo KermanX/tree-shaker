@@ -66,12 +66,29 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn enumerate_properties(
     &self,
-    _rc: &Entity<'a>,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    rc: &Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-    // No effect
-    vec![]
+    if let LiteralEntity::String(value) = self {
+      if value.len() <= analyzer.config.max_simple_string_length {
+        value
+          .char_indices()
+          .map(|(i, c)| {
+            (
+              true,
+              LiteralEntity::new_number(i as f64, analyzer.allocator.alloc(i.to_string())),
+              LiteralEntity::new_string(analyzer.allocator.alloc(c.to_string())),
+            )
+          })
+          .collect()
+      } else {
+        UnknownEntity::new_computed_string(rc.clone()).enumerate_properties(analyzer, dep)
+      }
+    } else {
+      // No effect
+      vec![]
+    }
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _key: &Entity<'a>) {

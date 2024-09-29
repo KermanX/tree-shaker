@@ -61,13 +61,19 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 
   fn enumerate_properties(
     &self,
-    _rc: &Entity<'a>,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     if self.maybe_object() {
       self.consume(analyzer);
       consumed_object::enumerate_properties(analyzer, dep)
+    } else if *self == UnknownEntity::String {
+      vec![(
+        false,
+        UnknownEntity::new_computed_unknown(rc.clone()),
+        UnknownEntity::new_computed_unknown(rc.clone()),
+      )]
     } else {
       vec![]
     }
@@ -195,10 +201,12 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 macro_rules! unknown_entity_ctors {
   ($($name:ident + $computed:ident -> $variant:ident,)*) => {
     $(
+      #[allow(unused)]
       pub fn $name() -> Entity<'a> {
         Entity::new(UnknownEntity::$variant)
       }
 
+      #[allow(unused)]
       pub fn $computed(dep: impl Into<Consumable<'a>>) -> Entity<'a> {
         ComputedEntity::new(Self::$name(), dep)
       }
