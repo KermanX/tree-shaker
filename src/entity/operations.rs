@@ -221,7 +221,6 @@ impl<'a> EntityOpHost<'a> {
     }
 
     if values.is_empty() {
-      // TODO: throw warning
       UnknownEntity::new_computed_unknown(input.clone())
     } else {
       UnionEntity::new_computed(values, input.clone())

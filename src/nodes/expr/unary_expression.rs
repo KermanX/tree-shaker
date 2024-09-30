@@ -24,7 +24,7 @@ impl<'a> Analyzer<'a> {
           object.delete_property(self, dep, &property)
         }
         Expression::PrivateFieldExpression(node) => {
-          // TODO: throw warning: SyntaxError: private fields can't be deleted
+          self.add_diagnostic("SyntaxError: private fields can't be deleted");
           let _object = self.exec_expression(&node.object);
           self.refer_dep(dep);
         }
@@ -34,7 +34,7 @@ impl<'a> Analyzer<'a> {
           object.delete_property(self, dep, &property)
         }
         Expression::Identifier(_node) => {
-          // TODO: throw warning: SyntaxError: Delete of an unqualified identifier in strict mode.
+          self.add_diagnostic("SyntaxError: Delete of an unqualified identifier in strict mode");
           self.refer_dep(dep);
         }
         expr => {
@@ -96,7 +96,6 @@ impl<'a> Transformer<'a> {
             ))
           }
           Expression::PrivateFieldExpression(node) => {
-            // TODO: throw warning: SyntaxError: private fields can't be deleted
             let object = self.transform_expression(&node.object, true).unwrap();
             self.ast_builder.expression_member(
               self.ast_builder.member_expression_private_field_expression(

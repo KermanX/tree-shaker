@@ -8,7 +8,18 @@ use oxc::{
 extern crate napi_derive;
 
 #[napi]
-pub fn tree_shake(input: String, do_tree_shake: bool, do_minify: bool, eval_mode: bool) -> String {
+pub struct TreeShakeResultBinding {
+  pub output: String,
+  pub diagnostics: Vec<String>,
+}
+
+#[napi]
+pub fn tree_shake(
+  input: String,
+  do_tree_shake: bool,
+  do_minify: bool,
+  eval_mode: bool,
+) -> TreeShakeResultBinding {
   let result = tree_shake::tree_shake(tree_shake::TreeShakeOptions {
     config: tree_shake::TreeShakeConfig::default(),
     allocator: &Allocator::default(),
@@ -19,5 +30,8 @@ pub fn tree_shake(input: String, do_tree_shake: bool, do_minify: bool, eval_mode
     code_gen: CodegenOptions { single_quote: true, minify: true },
     eval_mode,
   });
-  result.codegen_return.source_text
+  TreeShakeResultBinding {
+    output: result.codegen_return.source_text,
+    diagnostics: result.diagnostics.iter().map(|d| d.to_string()).collect(),
+  }
 }

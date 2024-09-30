@@ -169,7 +169,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                     }
                   }
                 } else {
-                  // TODO: throw warning: Invalid array length
+                  analyzer.explicit_throw_unknown("Invalid array length");
                   has_effect = true;
                 }
               } else {

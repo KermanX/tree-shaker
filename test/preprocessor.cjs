@@ -10,7 +10,7 @@ const { readFileSync } = require('fs');
 const do_minify = true;
 
 function treeShakeEval(input, tree_shake) {
-  return input.replace(/eval\('(.*)'\)/, (_, content) => {treeShake(content, tree_shake, do_minify, true)});
+  return input.replace(/eval\('(.*)'\)/, (_, content) => {treeShake(content, tree_shake, do_minify, true).output});
 }
 
 function printDiff(diff) {
@@ -72,9 +72,9 @@ module.exports = function(test) {
     if (process.env.CI) {
       process.stderr.write(`[TREESHAKE] ${test.file}\n`)
     }
-    let minified = treeShake(treeShakeEval(main, false), false, do_minify, false);
+    let minified = treeShake(treeShakeEval(main, false), false, do_minify, false).output;
     let startTime = Date.now();
-    let treeShaked = treeShake(treeShakeEval(main, true), true, do_minify, false);
+    let treeShaked = treeShake(treeShakeEval(main, true), true, do_minify, false).output;
     let endTime = Date.now();
 
     minifiedTotal += minified.length;
@@ -98,5 +98,5 @@ module.exports = function(test) {
 process.addListener('beforeExit', () => {
   let rate = (treeShakedTotal * 100 / minifiedTotal).toFixed(2) + '%';
   process.stdout.write(`Treeshaked: ${executed}, Skipped: ${skipped}\n`);
-  process.stdout.write(`\nTreeshake rate: ${rate}\n`);
+  process.stdout.write(`\ntreeshaked/minified ${rate} = \n`);
 })

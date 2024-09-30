@@ -1,7 +1,7 @@
 use crate::{
   ast::{AstType2, DeclarationKind},
   builtins::Builtins,
-  data::{get_node_ptr, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
+  data::{get_node_ptr, Diagnostics, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
   entity::{
     Consumable, Entity, EntityOpHost, ForwardedEntity, LabelEntity, LiteralEntity, UnionEntity,
     UnknownEntity,
@@ -22,6 +22,7 @@ pub struct Analyzer<'a> {
   pub config: TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub semantic: Semantic<'a>,
+  pub diagnostics: &'a mut Diagnostics,
   pub data: ExtraData<'a>,
   pub referred_nodes: ReferredNodes<'a>,
   pub var_decls: VarDeclarations<'a>,
@@ -36,11 +37,17 @@ pub struct Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new(config: TreeShakeConfig, allocator: &'a Allocator, semantic: Semantic<'a>) -> Self {
+  pub fn new(
+    config: TreeShakeConfig,
+    allocator: &'a Allocator,
+    semantic: Semantic<'a>,
+    diagnostics: &'a mut Diagnostics,
+  ) -> Self {
     Analyzer {
       config,
       allocator,
       semantic,
+      diagnostics,
       data: Default::default(),
       referred_nodes: Default::default(),
       var_decls: Default::default(),
@@ -94,6 +101,10 @@ impl<'a> Analyzer<'a> {
     let boxed =
       self.data.entry(key).or_insert_with(|| unsafe { mem::transmute(Box::new(D::default())) });
     unsafe { mem::transmute(boxed.as_mut()) }
+  }
+
+  pub fn add_diagnostic(&mut self, message: impl Into<String>) {
+    self.diagnostics.insert(message.into());
   }
 }
 
@@ -243,8 +254,7 @@ impl<'a> Analyzer<'a> {
       self.insert_var_decl(symbol);
       Some(UnknownEntity::new_unknown())
     } else {
-      // TODO: warning: unresolved reference
-      self.explicit_throw_unknown();
+      self.explicit_throw_unknown("Unresolved identifier reference");
       None
     }
   }
@@ -258,7 +268,7 @@ impl<'a> Analyzer<'a> {
     if self.has_exhaustive_scope_since(target_cf_scope) {
       self.may_throw();
     } else {
-      self.explicit_throw_unknown();
+      self.explicit_throw_unknown("Cannot access variable before initialization");
     }
     self.refer_global();
   }

@@ -90,8 +90,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     args: &Entity<'a>,
   ) -> Entity<'a> {
     if !self.maybe_object() {
-      // TODO: throw warning
-      analyzer.explicit_throw_unknown();
+      analyzer.explicit_throw_unknown("Cannot call non-object");
     }
     self.consume(analyzer);
     consumed_object::call(analyzer, dep, this, args)
@@ -117,12 +116,11 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    if *self == UnknownEntity::Array {
+    if *self == UnknownEntity::String {
       return (vec![], Some(UnknownEntity::new_computed_unknown(rc.clone())));
     }
     if !self.maybe_object() {
-      // TODO: throw warning
-      analyzer.explicit_throw_unknown();
+      analyzer.explicit_throw_unknown("Cannot iterate non-object");
     }
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)

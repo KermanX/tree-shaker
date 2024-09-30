@@ -91,7 +91,7 @@ impl<'a> Analyzer<'a> {
           node => self.exec_expression(node.to_expression()),
         };
         if self.default_export.is_some() {
-          // TODO: throw error
+          self.add_diagnostic("Duplicate default export");
         }
         self.default_export = Some(value);
       }

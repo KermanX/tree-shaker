@@ -35,8 +35,8 @@ impl<'a> VariableScope<'a> {
     if kind.is_redeclarable() {
       if let Some((old_kind, old_consumed, old_val)) = variables.get(&symbol).cloned() {
         if !old_kind.is_redeclarable() {
-          // TODO: ERROR: "Variable already declared"
-          analyzer.explicit_throw_unknown();
+          let name = analyzer.semantic.symbols().get_name(symbol);
+          analyzer.explicit_throw_unknown(format!("Variable {name:?} already declared"));
           value.map(|value| value.consume(analyzer));
           variables.insert(symbol, (kind, true, Some(UnknownEntity::new_unknown())));
         } else {
@@ -52,8 +52,8 @@ impl<'a> VariableScope<'a> {
     } else {
       let old = variables.insert(symbol, (kind, false, value));
       if old.is_some() {
-        // TODO: error "Variable already declared"
-        analyzer.explicit_throw_unknown();
+        let name = analyzer.semantic.symbols().get_name(symbol);
+        analyzer.explicit_throw_unknown(format!("Variable {name:?} already declared"));
       }
     }
   }
@@ -98,8 +98,7 @@ impl<'a> VariableScope<'a> {
       analyzer.may_throw();
       value.consume(analyzer);
     } else if old.0.is_const() {
-      // TODO: throw error
-      analyzer.explicit_throw_unknown();
+      analyzer.explicit_throw_unknown("Cannot assign to const variable");
       value.consume(analyzer);
     } else if old.1 {
       value.consume(analyzer);

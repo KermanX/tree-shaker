@@ -36,12 +36,14 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
-    // TODO: throw warning
+    analyzer.add_diagnostic(
+      "Should not set property of builtin function, it may cause unexpected tree-shaking behavior",
+    );
     consumed_object::set_property(analyzer, dep, key, value)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
-    // TODO: throw warning
+    analyzer.add_diagnostic("Should not delete property of builtin function, it may cause unexpected tree-shaking behavior");
     consumed_object::delete_property(analyzer, dep, key)
   }
 
@@ -80,8 +82,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    // TODO: throw warning
-    analyzer.explicit_throw_unknown();
+    analyzer.explicit_throw_unknown("Cannot iterate over function");
     consumed_object::iterate(analyzer, dep)
   }
 

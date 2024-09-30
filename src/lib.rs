@@ -15,6 +15,7 @@ mod tests;
 
 use analyzer::Analyzer;
 pub use config::TreeShakeConfig;
+use data::Diagnostics;
 use oxc::{
   allocator::Allocator,
   ast::AstBuilder,
@@ -41,6 +42,7 @@ pub struct TreeShakeOptions<'a> {
 pub struct TreeShakeReturn {
   pub minifier_return: Option<MinifierReturn>,
   pub codegen_return: CodegenReturn,
+  pub diagnostics: Diagnostics,
 }
 
 pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
@@ -66,10 +68,11 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
 
   let semantic_builder = SemanticBuilder::new(source_text.as_str());
   let semantic = semantic_builder.build(ast).semantic;
+  let mut diagnostics = Diagnostics::default();
 
   if tree_shake {
     // Step 1: Analyze the program
-    let mut analyzer = Analyzer::new(config, &allocator, semantic);
+    let mut analyzer = Analyzer::new(config, allocator, semantic, &mut diagnostics);
     analyzer.exec_program(ast);
 
     // Step 2: Remove dead code (transform)
@@ -91,5 +94,5 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
   let codegen = CodeGenerator::new().with_options(code_gen);
   let codegen_return = codegen.build(ast);
 
-  TreeShakeReturn { minifier_return, codegen_return }
+  TreeShakeReturn { minifier_return, codegen_return, diagnostics }
 }

@@ -12,6 +12,8 @@ pub type ReferredNodes<'a> = FxHashSet<EntityDepNode>;
 
 pub type VarDeclarations<'a> = FxHashMap<EntityDepNode, FxHashSet<SymbolId>>;
 
+pub type Diagnostics = FxHashSet<String>;
+
 #[derive(Debug, Default)]
 pub struct StatementVecData {
   pub last_stmt: Option<usize>,
