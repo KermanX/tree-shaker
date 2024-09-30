@@ -120,8 +120,8 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable_scopes.pop().unwrap();
   }
 
-  pub fn push_exec_dep(&mut self, call_dep: impl Into<Consumable<'a>>) {
-    self.call_scope_mut().exec_deps.push(call_dep.into());
+  pub fn push_exec_dep(&mut self, dep: impl Into<Consumable<'a>>) {
+    self.call_scope_mut().exec_deps.push(dep.into());
   }
 
   pub fn pop_exec_dep(&mut self) {

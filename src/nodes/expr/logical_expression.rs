@@ -5,7 +5,10 @@ use crate::{
   entity::{Entity, UnionEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::{Expression, LogicalExpression, LogicalOperator};
+use oxc::ast::{
+  ast::{Expression, LogicalExpression, LogicalOperator},
+  AstKind,
+};
 
 const AST_TYPE: AstType2 = AstType2::LogicalExpression;
 
@@ -23,7 +26,9 @@ impl<'a> Analyzer<'a> {
 
     let exec_unknown = |analyzer: &mut Analyzer<'a>| {
       analyzer.push_cf_scope_normal(None);
+      analyzer.push_exec_dep(AstKind::LogicalExpression(node));
       let right = analyzer.exec_expression(&node.right);
+      analyzer.pop_exec_dep();
       analyzer.pop_cf_scope();
       (UnionEntity::new(vec![left.clone(), right]), true, true)
     };
@@ -62,15 +67,17 @@ impl<'a> Transformer<'a> {
     need_val: bool,
   ) -> Option<Expression<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, node);
+    let need_left_val =
+      (need_val && data.need_left_val) || self.is_referred(AstKind::LogicalExpression(node));
 
     let LogicalExpression { span, left, operator, right, .. } = node;
 
-    let left = self.transform_expression(left, need_val && data.need_left_val);
+    let left = self.transform_expression(left, need_left_val);
     let right = data.need_right.then(|| self.transform_expression(right, need_val)).flatten();
 
     match (left, right) {
       (Some(left), Some(right)) => {
-        if need_val && data.need_left_val {
+        if need_left_val {
           Some(self.ast_builder.expression_logical(*span, left, *operator, right))
         } else {
           Some(build_effect!(self.ast_builder, *span, Some(left); right))
