@@ -276,14 +276,22 @@ impl<'a> Analyzer<'a> {
   pub fn refer_global(&mut self) {
     if self.config.unknown_global_side_effects {
       self.may_throw();
-      let mut deps = self
-        .scope_context
-        .variable_scopes
-        .iter()
-        .filter_map(|scope| scope.dep.clone())
-        .collect::<Vec<_>>();
-      deps.push(self.call_scope().get_exec_dep());
-      self.consume(deps);
+      self.refer_to_scope(0);
     }
+  }
+
+  pub fn refer_to_diff_scope(&mut self, variable_scopes: &VariableScopes<'a>) {
+    let target = self.find_first_different_variable_scope(variable_scopes);
+    self.refer_to_scope(target);
+  }
+
+  fn refer_to_scope(&mut self, target: usize) {
+    let scopes = self.scope_context.variable_scopes[target..].to_vec();
+    for scope in scopes {
+      if let Some(dep) = scope.dep.clone() {
+        self.consume(dep);
+      }
+    }
+    self.consume(self.call_scope().get_exec_dep());
   }
 }

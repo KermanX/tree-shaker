@@ -83,6 +83,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
+    analyzer.refer_to_diff_scope(&self.variable_scopes);
+
     analyzer.consume(mem::take(&mut *self.deps.borrow_mut()));
 
     fn consume_property<'a>(property: &ObjectProperty<'a>, analyzer: &mut Analyzer<'a>) {
