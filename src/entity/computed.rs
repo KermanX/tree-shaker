@@ -1,15 +1,19 @@
 use super::{Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult};
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, use_consumed_flag};
 use rustc_hash::FxHashSet;
+use std::cell::Cell;
 
 #[derive(Debug)]
 pub struct ComputedEntity<'a> {
   val: Entity<'a>,
   dep: Consumable<'a>,
+  consumed: Cell<bool>,
 }
 
 impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    use_consumed_flag!(self);
+
     self.val.consume(analyzer);
     self.dep.consume(analyzer);
   }
@@ -116,7 +120,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
 
 impl<'a> ComputedEntity<'a> {
   pub fn new(val: Entity<'a>, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
-    Entity::new(Self { val, dep: dep.into() })
+    Entity::new(Self { val, dep: dep.into(), consumed: Cell::new(false) })
   }
 
   pub fn forward(&self, val: Entity<'a>) -> Entity<'a> {

@@ -2,17 +2,21 @@ use super::{
   consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult,
   UnknownEntity,
 };
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, use_consumed_flag};
 use rustc_hash::FxHashSet;
+use std::cell::Cell;
 
 #[derive(Debug)]
 pub struct UnionEntity<'a> {
   /// Possible values
   pub values: Vec<Entity<'a>>,
+  consumed: Cell<bool>,
 }
 
 impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    use_consumed_flag!(self);
+
     for value in &self.values {
       value.consume(analyzer);
     }
@@ -212,7 +216,7 @@ impl<'a> UnionEntity<'a> {
         if has_unknown {
           UnknownEntity::new_computed_unknown(values)
         } else {
-          Entity::new(UnionEntity { values })
+          Entity::new(UnionEntity { values, consumed: Cell::new(false) })
         }
       })
     }
