@@ -1,7 +1,7 @@
 use super::{Entity, EntityDepNode, EntityTrait};
 use crate::analyzer::Analyzer;
 use oxc::ast::AstKind;
-use std::{fmt::Debug, ops::Deref, rc::Rc};
+use std::{cell::RefCell, fmt::Debug, ops::Deref, rc::Rc};
 
 pub trait ConsumableInternal<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
@@ -26,6 +26,12 @@ impl<'a> From<AstKind<'a>> for Consumable<'a> {
   fn from(value: AstKind<'a>) -> Self {
     let dep_node: EntityDepNode = value.into();
     Self::new(dep_node)
+  }
+}
+
+impl<'a, T: ConsumableTrait<'a> + 'a> From<Vec<T>> for Consumable<'a> {
+  fn from(value: Vec<T>) -> Self {
+    RefCell::new(value).into()
   }
 }
 
@@ -66,9 +72,9 @@ impl<'a, T1: ConsumableTrait<'a>, T2: ConsumableTrait<'a>, T3: ConsumableTrait<'
   }
 }
 
-impl<'a, T: ConsumableTrait<'a>> ConsumableInternal<'a> for Vec<T> {
+impl<'a, T: ConsumableTrait<'a>> ConsumableInternal<'a> for RefCell<Vec<T>> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    for item in self {
+    for item in self.take() {
       item.consume(analyzer);
     }
   }

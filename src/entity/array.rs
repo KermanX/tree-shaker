@@ -10,7 +10,7 @@ use crate::{
 use oxc::syntax::number::ToJsInt32;
 use std::{
   cell::{Cell, RefCell},
-  fmt, mem,
+  fmt,
 };
 
 pub struct ArrayEntity<'a> {
@@ -39,7 +39,9 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
     analyzer.refer_to_diff_scope(&self.variable_scopes);
 
-    analyzer.consume(mem::take(&mut *self.deps.borrow_mut()));
+    for dep in self.deps.take() {
+      analyzer.consume(dep);
+    }
 
     for element in self.elements.borrow().iter() {
       element.consume(analyzer);
@@ -207,7 +209,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
     let mut deps = self.deps.borrow().clone();
     deps.push(dep.clone());
-    let self_dep = Consumable::new(deps);
+    let self_dep = Consumable::from(deps);
 
     let mut entries = Vec::new();
     for (i, element) in self.elements.borrow().iter().enumerate() {

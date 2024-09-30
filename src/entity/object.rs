@@ -11,7 +11,7 @@ use oxc::ast::ast::PropertyKind;
 use rustc_hash::FxHashMap;
 use std::{
   cell::{Cell, RefCell},
-  fmt, mem,
+  fmt,
 };
 
 #[derive(Clone, Default)]
@@ -85,7 +85,9 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
     analyzer.refer_to_diff_scope(&self.variable_scopes);
 
-    analyzer.consume(mem::take(&mut *self.deps.borrow_mut()));
+    for dep in self.deps.take() {
+      analyzer.consume(dep);
+    }
 
     fn consume_property<'a>(property: &ObjectProperty<'a>, analyzer: &mut Analyzer<'a>) {
       for value in &property.values {
@@ -270,7 +272,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
     let mut deps = self.deps.borrow().clone();
     deps.push(dep.clone());
-    let self_dep = Consumable::new(deps);
+    let self_dep = Consumable::from(deps);
 
     let this = rc.clone();
     // unknown_keyed = unknown_keyed + rest

@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
     if values.is_empty() {
       self.may_throw();
     } else {
-      let thrown_val = UnknownEntity::new_computed_unknown((values, dep.into()));
+      let thrown_val = UnknownEntity::new_computed_unknown((Consumable::from(values), dep.into()));
       self.explicit_throw_impl(thrown_val);
     }
   }
