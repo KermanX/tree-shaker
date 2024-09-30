@@ -1,6 +1,5 @@
 use super::{
-  consumed_object, Consumable, Entity, EntityTrait, InteractionKind, LiteralEntity, TypeofResult,
-  UnknownEntity,
+  consumed_object, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult, UnknownEntity,
 };
 use crate::analyzer::Analyzer;
 use std::fmt::Debug;
@@ -148,7 +147,6 @@ impl<'a> ImplementedBuiltinFnEntity<'a> {
 #[derive(Debug, Clone)]
 pub struct PureBuiltinFnEntity<'a> {
   return_value: Entity<'a>,
-  interaction_kind: InteractionKind,
 }
 
 impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
@@ -168,12 +166,7 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
 
 impl<'a> PureBuiltinFnEntity<'a> {
   pub fn new(return_value: Entity<'a>) -> Self {
-    Self { return_value, interaction_kind: InteractionKind::Unknown }
-  }
-
-  pub fn interaction_kind(mut self, interaction_kind: InteractionKind) -> Self {
-    self.interaction_kind = interaction_kind;
-    self
+    Self { return_value }
   }
 
   pub fn returns_unknown() -> Self {

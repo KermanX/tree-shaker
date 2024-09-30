@@ -1,11 +1,5 @@
-use super::{Consumable, Entity, InteractionKind, UnknownEntity};
+use super::{Consumable, Entity, UnknownEntity};
 use crate::analyzer::Analyzer;
-
-pub fn interact<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _kind: InteractionKind) {
-  analyzer.may_throw();
-  analyzer.consume(dep);
-  analyzer.refer_global();
-}
 
 pub fn get_property<'a>(
   analyzer: &mut Analyzer<'a>,
