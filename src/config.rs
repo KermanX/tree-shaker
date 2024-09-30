@@ -15,6 +15,12 @@ pub struct TreeShakeConfig {
 
 impl Default for TreeShakeConfig {
   fn default() -> Self {
+    Self::safest()
+  }
+}
+
+impl TreeShakeConfig {
+  pub fn safest() -> Self {
     Self {
       unknown_global_side_effects: true,
       preserve_function_name: true,
@@ -26,5 +32,9 @@ impl Default for TreeShakeConfig {
       max_simple_string_length: 12,
       static_property_key_regex: Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]+$").unwrap(),
     }
+  }
+
+  pub fn recommended() -> Self {
+    Self { preserve_function_name: false, preserve_function_length: false, ..Default::default() }
   }
 }
