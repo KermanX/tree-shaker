@@ -41,13 +41,15 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn explicit_throw_unknown(&mut self, message: impl Into<String>) {
+    if self.scope_context.cf_scopes.iter().rev().all(|scope| scope.borrow().exited == Some(false)) {
+      self.add_diagnostic(message);
+    }
+
     let try_scope = self.try_scope();
     let value = UnknownEntity::new_computed_unknown(
       self.get_assignment_deps(try_scope.variable_scope_index, ()),
     );
     self.explicit_throw_impl(value);
-
-    self.add_diagnostic(message);
   }
 
   pub fn forward_throw(&mut self, values: Vec<Entity<'a>>, dep: impl Into<Consumable<'a>>) {

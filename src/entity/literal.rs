@@ -105,7 +105,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.explicit_throw_unknown("Cannot call a non-function object");
+    analyzer.explicit_throw_unknown(format!("Cannot call a non-function object {:?}", self));
     consumed_object::call(analyzer, dep, this, args)
   }
 

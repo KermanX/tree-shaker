@@ -13,7 +13,7 @@ use oxc::{
   allocator::Allocator,
   ast::ast::Program,
   semantic::{Semantic, SymbolId},
-  span::GetSpan,
+  span::{GetSpan, Span},
 };
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
@@ -23,6 +23,7 @@ pub struct Analyzer<'a> {
   pub allocator: &'a Allocator,
   pub semantic: Semantic<'a>,
   pub diagnostics: &'a mut Diagnostics,
+  pub current_span: Vec<Span>,
   pub data: ExtraData<'a>,
   pub referred_nodes: ReferredNodes<'a>,
   pub var_decls: VarDeclarations<'a>,
@@ -48,6 +49,7 @@ impl<'a> Analyzer<'a> {
       allocator,
       semantic,
       diagnostics,
+      current_span: vec![],
       data: Default::default(),
       referred_nodes: Default::default(),
       var_decls: Default::default(),
@@ -104,7 +106,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {
-    self.diagnostics.insert(message.into());
+    let span = self.current_span.last().unwrap();
+    self.diagnostics.insert(message.into() + format!(" at {}-{}", span.start, span.end).as_str());
   }
 }
 
