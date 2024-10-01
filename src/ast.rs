@@ -222,14 +222,7 @@ impl DeclarationKind {
     matches!(self, DeclarationKind::Const | DeclarationKind::NamedFunctionInBody)
   }
 
-  pub fn is_redeclarable(self) -> bool {
-    matches!(
-      self,
-      DeclarationKind::Var
-        | DeclarationKind::UntrackedVar
-        | DeclarationKind::Function
-        | DeclarationKind::FunctionParameter
-        | DeclarationKind::Caught
-    )
+  pub fn is_shadowable(self) -> bool {
+    matches!(self, DeclarationKind::FunctionParameter | DeclarationKind::Caught)
   }
 }

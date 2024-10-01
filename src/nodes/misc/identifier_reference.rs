@@ -22,7 +22,7 @@ impl<'a> Analyzer<'a> {
     let symbol = reference.symbol_id();
 
     if let Some(symbol) = symbol {
-      if let Some(value) = self.read_symbol(&symbol) {
+      if let Some(value) = self.read_symbol(symbol) {
         value
       } else {
         self.set_data(AST_TYPE, node, Data { has_effect: true });
@@ -55,7 +55,7 @@ impl<'a> Analyzer<'a> {
     let symbol = reference.symbol_id();
 
     if let Some(symbol) = symbol {
-      self.write_symbol(&symbol, value);
+      self.write_symbol(symbol, value);
     } else if self.builtins.globals.contains_key(node.name.as_str()) {
       self.add_diagnostic(
         "Should not write to builtin object, it may cause unexpected tree-shaking behavior",

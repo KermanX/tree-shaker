@@ -120,17 +120,13 @@ impl<'a> Analyzer<'a> {
     } else {
       self.call_scope()
     };
+    let variable_scope =
+      self.scope_context.variable_scopes[call_scope.variable_scope_index].clone();
     let (args_entity, args_symbols) = call_scope.args.clone();
     args_entity.consume(self);
     let mut arguments_consumed = true;
     for symbol in args_symbols {
-      // FIXME: Accessing `arguments` in formal parameters
-      if let Some((_, variable_scopes, decl_dep)) = self.symbol_decls.get(&symbol) {
-        let decl_dep = decl_dep.clone();
-        let variable_scope = variable_scopes.last().unwrap().clone();
-        variable_scope.consume(self, symbol);
-        self.consume(decl_dep);
-      } else {
+      if !variable_scope.consume(self, symbol) {
         // TDZ
         arguments_consumed = false;
       }

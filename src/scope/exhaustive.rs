@@ -96,7 +96,15 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn mark_exhaustive_write(&mut self, symbol: SymbolId, target: usize) -> bool {
+  pub fn mark_exhaustive_write(
+    &mut self,
+    val: &Entity<'a>,
+    symbol: SymbolId,
+    target: usize,
+  ) -> bool {
+    if val.test_is_completely_unknown() {
+      return false;
+    }
     let mut should_consume = false;
     for scope in &mut self.scope_context.cf_scopes[target..] {
       should_consume |= scope.borrow_mut().mark_exhaustive_write(symbol)

@@ -102,6 +102,10 @@ impl<'a> Analyzer<'a> {
   pub fn consume(&mut self, dep: impl ConsumableTrait<'a>) {
     dep.consume(self);
   }
+
+  pub fn consume_ref(&mut self, dep: &impl ConsumableTrait<'a>) {
+    dep.consume(self);
+  }
 }
 
 pub trait ConsumableTrait<'a>: Debug {
