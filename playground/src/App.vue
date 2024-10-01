@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { compressToBase64, decompressFromBase64 } from 'lz-string'
 import { tree_shake } from '@kermanx/tree-shaker'
-import { computed, ref, watch, watchEffect } from 'vue'
+import { computed, ref, toRef, watch, watchEffect } from 'vue'
 import Editor from './Editor.vue'
 import { DEMO } from './examples';
 
@@ -43,10 +43,9 @@ function save() {
 load()
 watchEffect(save)
 
-const result = computed(() =>
-  tree_shake(debouncedInput.value, doTreeShake.value, doMinify.value, false).trim()
-  || `// Empty output or error`
-)
+const result = computed(() => tree_shake(debouncedInput.value, doTreeShake.value, doMinify.value, false))
+const output = computed(() => result.value.output.trim() || `// Empty output or error`)
+const diagnostics = computed(() => result.value.diagnostics.join('\n'))
 </script>
 
 <template>
@@ -90,27 +89,18 @@ const result = computed(() =>
           Output
         </h2>
         <div flex-grow relative max-h-full>
-          <Editor v-model="result" lang="javascript" readonly class="w-full h-full max-h-full" />
-          <!-- <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex flex-col gap-2>
-            <div v-if="error" relative text-red-200 bg-red-900 bg-op-80 b-red-500>
+          <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
+          <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex flex-col gap-2>
+            <div v-if="diagnostics" relative text-red-200 bg-red-900 bg-op-80 b-red-500>
               <h3 text-lg pb-1>
                 Error
               </h3>
               <div font-mono>
-                {{ error }}
+                {{ diagnostics }}
               </div>
-              <button absolute right-3 top-3 w-6 h-6 b-none i-carbon-close @click="error = ''" />
+              <button absolute right-3 top-3 w-6 h-6 b-none i-carbon-close @click="diagnostics = ''" />
             </div>
-            <div v-if="loading" relative text-gray-300 bg-gray-900 bg-op-80 b-gray-500>
-              <h3 text-lg pb-1>
-                Running
-              </h3>
-              <div font-mono>
-                Loading formatter
-              </div>
-              <button absolute right-3 top-3 w-6 h-6 b-none i-carbon-close @click="loading = false" />
-            </div>
-          </div> -->
+          </div>
         </div>
       </div>
     </div>
