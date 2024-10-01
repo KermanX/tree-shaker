@@ -6,7 +6,7 @@ use crate::{
 };
 use oxc::{
   ast::{ast::VariableDeclarator, AstKind},
-  span::GetSpan,
+  span::{GetSpan, SPAN},
 };
 
 impl<'a> Analyzer<'a> {
@@ -53,17 +53,22 @@ impl<'a> Transformer<'a> {
     let id_span = id.span();
     let id = self.transform_binding_pattern(id, false);
 
-    let init = init.as_ref().and_then(|init| {
+    let transformed_init = init.as_ref().and_then(|init| {
       self.transform_expression(init, self.is_referred(AstKind::VariableDeclarator(node)))
     });
 
-    match (id, init) {
+    match (id, transformed_init) {
       (None, None) => None,
-      (id, init) => Some(self.ast_builder.variable_declarator(
+      (id, transformed_init) => Some(self.ast_builder.variable_declarator(
         *span,
         *kind,
         id.unwrap_or_else(|| self.build_unused_binding_pattern(id_span)),
-        init,
+        if kind.is_const() {
+          let init_span = init.as_ref().map_or(SPAN, GetSpan::span);
+          Some(transformed_init.unwrap_or_else(|| self.build_unused_expression(init_span)))
+        } else {
+          transformed_init
+        },
         false,
       )),
     }
