@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{Consumable, Entity, UnionEntity},
+  entity::{Entity, EntityDepNode, UnionEntity},
   transformer::Transformer,
 };
 use oxc::ast::{
@@ -26,7 +26,7 @@ impl<'a> Analyzer<'a> {
 
     let exec_unknown = |analyzer: &mut Analyzer<'a>| {
       analyzer.push_cf_scope_normal(None);
-      analyzer.push_exec_dep((left.clone(), Consumable::from(AstKind::LogicalExpression(node))));
+      analyzer.push_exec_dep((left.clone(), EntityDepNode::from(AstKind::LogicalExpression(node))));
       let right = analyzer.exec_expression(&node.right);
       analyzer.pop_exec_dep();
       analyzer.pop_cf_scope();

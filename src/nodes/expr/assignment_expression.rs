@@ -2,11 +2,12 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{Entity, UnionEntity},
+  entity::{Entity, EntityDepNode, UnionEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::{
-  AssignmentExpression, AssignmentOperator, BinaryOperator, Expression, LogicalOperator,
+use oxc::ast::{
+  ast::{AssignmentExpression, AssignmentOperator, BinaryOperator, Expression, LogicalOperator},
+  AstKind,
 };
 
 const AST_TYPE: AstType2 = AstType2::AssignmentExpression;
@@ -30,7 +31,10 @@ impl<'a> Analyzer<'a> {
 
       let exec_unknown = |analyzer: &mut Analyzer<'a>| {
         analyzer.push_cf_scope_normal(None);
+        analyzer
+          .push_exec_dep((left.clone(), EntityDepNode::from(AstKind::AssignmentExpression(node))));
         let right = analyzer.exec_expression(&node.right);
+        analyzer.pop_exec_dep();
         analyzer.pop_cf_scope();
         (UnionEntity::new(vec![left.clone(), right]), true, true)
       };
@@ -87,19 +91,35 @@ impl<'a> Transformer<'a> {
     let transformed_right = self.transform_expression(right, need_val || !left_is_empty);
 
     match (transformed_left, transformed_right) {
-      (Some(left), Some(right)) => {
-        Some(self.ast_builder.expression_assignment(*span, *operator, left, right))
-      }
+      (Some(left), Some(right)) => Some(self.ast_builder.expression_assignment(
+        *span,
+        if operator.is_logical() {
+          let data = self.get_data::<DataForLogical>(AST_TYPE, node);
+
+          if data.need_left_val {
+            *operator
+          } else {
+            AssignmentOperator::Assign
+          }
+        } else {
+          *operator
+        },
+        left,
+        right,
+      )),
       (None, Some(right)) => Some(if need_val && *operator != AssignmentOperator::Assign {
         if operator.is_logical() {
           let data = self.get_data::<DataForLogical>(AST_TYPE, node);
 
-          let left = self.transform_assignment_target_read(left, data.need_left_val);
+          let need_left_val = (need_val && data.need_left_val)
+            || self.is_referred(AstKind::AssignmentExpression(node));
+
+          let left = self.transform_assignment_target_read(left, need_left_val);
           let right = data.need_right.then_some(right);
 
           match (left, right) {
             (Some(left), Some(right)) => {
-              if need_val && data.need_left_val {
+              if need_left_val {
                 self.ast_builder.expression_logical(
                   *span,
                   left,
