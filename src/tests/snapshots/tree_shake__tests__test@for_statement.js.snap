@@ -11,7 +11,7 @@ export function main() {
 	for (let i = 1; test(i); i += 2) {
 		effect(5);
 	}
-	let i = 1;
+	let i;
 	for (i = 0; test(i); i++) {
 		effect(6);
 	}

@@ -1,5 +1,13 @@
-use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
-use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
+use crate::{
+  analyzer::Analyzer,
+  ast::DeclarationKind,
+  entity::{Entity, ForwardedEntity},
+  transformer::Transformer,
+};
+use oxc::{
+  ast::{ast::VariableDeclarator, AstKind},
+  span::GetSpan,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_variable_declarator(
@@ -25,7 +33,10 @@ impl<'a> Analyzer<'a> {
         }
         Some(init)
       }
-      None => node.init.as_ref().map(|init| self.exec_expression(init)),
+      None => node.init.as_ref().map(|init| {
+        let val = self.exec_expression(init);
+        ForwardedEntity::new(val, AstKind::VariableDeclarator(node))
+      }),
     };
 
     self.init_binding_pattern(&node.id, init);
@@ -42,7 +53,9 @@ impl<'a> Transformer<'a> {
     let id_span = id.span();
     let id = self.transform_binding_pattern(id, false);
 
-    let init = init.as_ref().and_then(|init| self.transform_expression(init, id.is_some()));
+    let init = init.as_ref().and_then(|init| {
+      self.transform_expression(init, self.is_referred(AstKind::VariableDeclarator(node)))
+    });
 
     match (id, init) {
       (None, None) => None,
