@@ -17,12 +17,7 @@ export const result = {
 	s13: typeof (unknown ? "a" : 1)
 };
 export function deletion() {
-	const obj1 = {
-		a: 1,
-		b: 2,
-		c: 3,
-		d: 4
-	};
+	const obj1 = { c: 3 };
 	delete obj1.a;
 	delete obj1["b"];
 	if (unknown) delete obj1.c;

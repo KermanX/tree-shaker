@@ -11,16 +11,9 @@ export function simple(unknown) {
 	let { g: { h, i: { j } } } = unknown;
 }
 export function with_rest(unknown) {
-	let { a,...rest } = {
-		a: 1,
-		b: unknown,
-		c: 2
-	};
+	let { a,...rest } = { b: unknown };
 	effect(undefined, rest.b, 2);
 	let { b,...__unused_2075 } = unknown;
-	let { d } = {
-		d: unknown,
-		e: unknown
-	};
+	let { d } = { d: unknown };
 	effect(d);
 }

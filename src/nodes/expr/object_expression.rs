@@ -1,4 +1,9 @@
-use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer,
+  build_effect,
+  entity::{Entity, ForwardedEntity},
+  transformer::Transformer,
+};
 use oxc::{
   ast::{
     ast::{
@@ -18,7 +23,12 @@ impl<'a> Analyzer<'a> {
         ObjectPropertyKind::ObjectProperty(node) => {
           let key = self.exec_property_key(&node.key);
           let value = self.exec_expression(&node.value);
-          object.init_property(node.kind, key, value, true);
+          object.init_property(
+            node.kind,
+            key,
+            ForwardedEntity::new(value, AstKind::ObjectProperty(node)),
+            true,
+          );
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);
@@ -48,14 +58,16 @@ impl<'a> Transformer<'a> {
 
           let value_span = value.span();
 
-          let transformed_value = self.transform_expression(value, need_val);
+          let transformed_value =
+            self.transform_expression(value, self.is_referred(AstKind::ObjectProperty(node)));
 
           if let Some(mut transformed_value) = transformed_value {
             if *kind == PropertyKind::Set {
               if let (
                 Expression::FunctionExpression(original_node),
                 Expression::FunctionExpression(transformed_node),
-              ) = (value,&mut transformed_value) {
+              ) = (value, &mut transformed_value)
+              {
                 self.patch_method_definition_params(original_node, transformed_node);
               } else {
                 unreachable!()
@@ -64,7 +76,14 @@ impl<'a> Transformer<'a> {
 
             let (computed, key) = self.transform_property_key(key, true).unwrap();
             self.ast_builder.object_property_kind_object_property(
-              *span, *kind, key, transformed_value, None, *method, false, computed,
+              *span,
+              *kind,
+              key,
+              transformed_value,
+              None,
+              *method,
+              false,
+              computed,
             )
           } else {
             if let Some((computed, key)) = self.transform_property_key(key, false) {
@@ -84,19 +103,24 @@ impl<'a> Transformer<'a> {
           }
         }
         ObjectPropertyKind::SpreadProperty(node) => {
-          let need_spread = need_val || self.is_referred(AstKind::SpreadElement(node));
-
           let SpreadElement { span, argument, .. } = node.as_ref();
 
-          let argument = self.transform_expression(argument, need_spread);
+          let referred = self.is_referred(AstKind::SpreadElement(node));
+
+          let argument = self.transform_expression(argument, referred);
 
           if let Some(argument) = argument {
             self.ast_builder.object_property_kind_spread_element(
               *span,
-              if need_spread {
+              if referred {
                 argument
               } else {
-                build_effect!(&self.ast_builder, *span, Some(argument); self.build_unused_expression(SPAN))
+                build_effect!(
+                  &self.ast_builder,
+                  *span,
+                  Some(argument);
+                  self.ast_builder.expression_object(SPAN, self.ast_builder.vec(), None)
+                )
               },
             )
           } else {
