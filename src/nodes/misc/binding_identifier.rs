@@ -19,7 +19,8 @@ impl<'a> Analyzer<'a> {
     init: Option<Entity<'a>>,
   ) {
     let symbol = node.symbol_id.get().unwrap();
-    self.init_symbol(symbol, init);
+    let dep = AstKind::BindingIdentifier(node);
+    self.init_symbol(symbol, init, dep);
   }
 }
 

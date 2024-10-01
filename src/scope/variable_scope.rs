@@ -73,7 +73,13 @@ impl<'a> VariableScope<'a> {
     }
   }
 
-  pub fn init(&self, analyzer: &mut Analyzer<'a>, symbol: SymbolId, value: Option<Entity<'a>>) {
+  pub fn init(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    symbol: SymbolId,
+    value: Option<Entity<'a>>,
+    init_dep: Consumable<'a>,
+  ) {
     let mut variables = self.variables.borrow_mut();
     let variable = variables.get_mut(&symbol).unwrap();
 
@@ -89,7 +95,8 @@ impl<'a> VariableScope<'a> {
       }
     } else {
       debug_assert!(!variable.exhausted);
-      variable.value = Some(value.unwrap_or_else(LiteralEntity::new_undefined));
+      variable.value =
+        Some(ForwardedEntity::new(value.unwrap_or_else(LiteralEntity::new_undefined), init_dep));
     }
   }
 
@@ -107,7 +114,7 @@ impl<'a> VariableScope<'a> {
       let target_cf_scope = analyzer.find_first_different_cf_scope(&self.cf_scopes);
       if let Some(value) = value {
         analyzer.mark_exhaustive_read(&value, symbol, target_cf_scope);
-        Some(ForwardedEntity::new(value, variable.decl_dep.clone()))
+        Some(value)
       } else {
         analyzer.consume(variable.decl_dep.clone());
         analyzer.handle_tdz(target_cf_scope);

@@ -131,11 +131,16 @@ impl<'a> Analyzer<'a> {
     variable_scope.declare(self, kind, symbol, decl_dep.into(), fn_value);
   }
 
-  pub fn init_symbol(&mut self, symbol: SymbolId, value: Option<Entity<'a>>) {
+  pub fn init_symbol(
+    &mut self,
+    symbol: SymbolId,
+    value: Option<Entity<'a>>,
+    init_dep: impl Into<Consumable<'a>>,
+  ) {
     let is_function_scope =
       self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration();
     let variable_scope = self.get_variable_scope(is_function_scope);
-    variable_scope.init(self, symbol, value);
+    variable_scope.init(self, symbol, value, init_dep.into());
   }
 
   fn get_variable_scope(&self, is_function_scope: bool) -> Rc<VariableScope<'a>> {
