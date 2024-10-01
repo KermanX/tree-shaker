@@ -6,7 +6,7 @@ use crate::{
 };
 use oxc::{
   ast::{
-    ast::{Expression, MemberExpression},
+    ast::{ChainElement, Expression, MemberExpression},
     match_member_expression,
   },
   span::{GetSpan, SPAN},
@@ -18,6 +18,10 @@ fn unwrap_to_member_expression<'a>(node: &'a Expression<'a>) -> Option<&'a Membe
   match node {
     match_member_expression!(Expression) => Some(node.to_member_expression()),
     Expression::ParenthesizedExpression(node) => unwrap_to_member_expression(&node.expression),
+    Expression::ChainExpression(node) => match &node.expression {
+      match_member_expression!(ChainElement) => Some(node.expression.to_member_expression()),
+      _ => None,
+    },
     _ => None,
   }
 }
