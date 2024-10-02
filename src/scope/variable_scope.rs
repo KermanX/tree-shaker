@@ -57,9 +57,13 @@ impl<'a> Analyzer<'a> {
       }
 
       if old.kind.is_shadowable() && kind.is_var() {
+        // Redeclaration is sometimes allowed
         // var x = 1; var x = 2;
         // function f(x) { var x }
-        self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap().kind = kind;
+        let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
+        variable.kind = kind;
+        // TODO: Sometimes this is not necessary
+        variable.decl_dep = (variable.decl_dep.clone(), decl_dep).into();
       } else {
         let decl_dep = (old.decl_dep.clone(), decl_dep);
         let name = self.semantic.symbols().get_name(symbol);
