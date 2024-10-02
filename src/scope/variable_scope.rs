@@ -64,9 +64,11 @@ impl<'a> Analyzer<'a> {
         // function f(x) { var x }
         let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
         variable.kind = kind;
-        variable.value = fn_value;
         // TODO: Sometimes this is not necessary
         variable.decl_dep = (variable.decl_dep.clone(), decl_dep).into();
+        if let Some(new_val) = fn_value {
+          self.write_on_scope((self.scope_context.variable.current_depth(), id), symbol, &new_val);
+        }
       } else {
         let decl_dep = (old.decl_dep.clone(), decl_dep);
         let name = self.semantic.symbols().get_name(symbol);
