@@ -114,10 +114,12 @@ impl<'a> Analyzer<'a> {
   /// Some(Some(val)): in this scope, and val is the value
   fn read_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> Option<Option<Entity<'a>>> {
     self.scope_context.variable.get(id).variables.get(&symbol).cloned().map(|variable| {
-      let value = variable
-        .value
-        .clone()
-        .or_else(|| variable.kind.is_var().then(LiteralEntity::new_undefined));
+      let value = variable.value.clone().or_else(|| {
+        variable
+          .kind
+          .is_var()
+          .then(|| ForwardedEntity::new(LiteralEntity::new_undefined(), variable.decl_dep.clone()))
+      });
 
       let target_cf_scope =
         self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
