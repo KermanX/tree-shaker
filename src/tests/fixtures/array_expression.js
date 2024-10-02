@@ -9,3 +9,13 @@ export function main(unknown) {
   const unused2 = [1+1, ...[effect()]];
   const unused3 = [1+1, ...[effect()], , effect()];
 }
+
+export function test2() {
+  function f () {
+    const a = {};
+    const b = {};
+    return [a, b];
+  }
+  const [x, y] = f();
+  t = x;
+}

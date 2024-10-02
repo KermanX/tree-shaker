@@ -1,9 +1,15 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{Entity, LiteralEntity, UnionEntity},
+  entity::{Entity, ForwardedEntity, LiteralEntity, UnionEntity},
   transformer::Transformer,
 };
-use oxc::ast::ast::{ArrayExpression, ArrayExpressionElement, Expression, SpreadElement};
+use oxc::{
+  ast::{
+    ast::{ArrayExpression, ArrayExpressionElement, Expression, SpreadElement},
+    AstKind,
+  },
+  span::GetSpan,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_array_expression(&mut self, node: &'a ArrayExpression<'a>) -> Entity<'a> {
@@ -26,7 +32,8 @@ impl<'a> Analyzer<'a> {
           }
         }
         _ => {
-          let element = self.exec_expression(element.to_expression());
+          let dep = AstKind::ArrayExpressionElement(element);
+          let element = ForwardedEntity::new(self.exec_expression(element.to_expression()), dep);
           if rest.is_empty() {
             array.push_element(element);
           } else {
@@ -55,21 +62,25 @@ impl<'a> Transformer<'a> {
     let mut transformed_elements = self.ast_builder.vec();
 
     for element in elements {
+      let span = element.span();
       match element {
         ArrayExpressionElement::SpreadElement(node) => {
           if let Some(element) = self.transform_spread_element(node, need_val) {
             transformed_elements.push(element);
           }
         }
-        ArrayExpressionElement::Elision(node) => {
+        ArrayExpressionElement::Elision(_) => {
           if need_val {
-            transformed_elements.push(self.ast_builder.array_expression_element_elision(node.span));
+            transformed_elements.push(self.ast_builder.array_expression_element_elision(span));
           }
         }
         _ => {
-          let element = self.transform_expression(element.to_expression(), need_val);
+          let referred = self.is_referred(AstKind::ArrayExpressionElement(element));
+          let element = self.transform_expression(element.to_expression(), need_val && referred);
           if let Some(inner) = element {
             transformed_elements.push(self.ast_builder.array_expression_element_expression(inner));
+          } else if need_val {
+            transformed_elements.push(self.ast_builder.array_expression_element_elision(span));
           }
         }
       }

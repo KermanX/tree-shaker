@@ -18,3 +18,11 @@ export function main(unknown) {
 	const __unused_F2EA = effect();
 	const __unused_ACA8 = [effect(), effect()];
 }
+export function test2() {
+	function f() {
+		const a = {};
+		return [a, ,];
+	}
+	const [x, ,] = f();
+	t = x;
+}
