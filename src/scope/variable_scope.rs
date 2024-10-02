@@ -140,6 +140,7 @@ impl<'a> Analyzer<'a> {
         self.consume(new_val);
       } else if variable.kind.is_const() {
         self.explicit_throw_unknown("Cannot assign to const variable");
+        self.consume(variable.decl_dep);
         new_val.consume(self);
       } else {
         let target_cf_scope =
