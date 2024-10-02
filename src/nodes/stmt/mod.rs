@@ -27,6 +27,7 @@ use oxc::{
 
 impl<'a> Analyzer<'a> {
   pub fn declare_statement(&mut self, node: &'a Statement) {
+    self.current_span.push(node.span());
     match node {
       match_declaration!(Statement) => {
         let node = node.to_declaration();
@@ -39,6 +40,7 @@ impl<'a> Analyzer<'a> {
       Statement::LabeledStatement(node) => self.declare_labeled_statement(node),
       _ => {}
     }
+    self.current_span.pop();
   }
 
   pub fn init_statement(&mut self, node: &'a Statement) {
