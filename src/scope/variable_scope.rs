@@ -1,10 +1,11 @@
+use super::exhaustive::TrackerRunner;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
   entity::{Consumable, Entity, ForwardedEntity, LiteralEntity, UnionEntity, UnknownEntity},
 };
 use oxc::semantic::{ScopeId, SymbolId};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::fmt;
 
 /// It's not good to clone, but it's fine for now
@@ -21,6 +22,7 @@ pub struct VariableScope<'a> {
   /// Cf scopes when the scope was created
   pub cf_scope: ScopeId,
   pub variables: FxHashMap<SymbolId, Variable<'a>>,
+  pub exhaustive_deps: FxHashMap<SymbolId, FxHashSet<TrackerRunner<'a>>>,
 }
 
 impl fmt::Debug for VariableScope<'_> {
@@ -35,7 +37,7 @@ impl fmt::Debug for VariableScope<'_> {
 
 impl<'a> VariableScope<'a> {
   pub fn new(dep: Option<Consumable<'a>>, cf_scope: ScopeId) -> Self {
-    Self { dep, cf_scope, variables: Default::default() }
+    Self { dep, cf_scope, variables: Default::default(), exhaustive_deps: Default::default() }
   }
 }
 
@@ -71,12 +73,16 @@ impl<'a> Analyzer<'a> {
         self.consume(decl_dep);
       }
     } else {
+      let has_fn_value = fn_value.is_some();
       self
         .scope_context
         .variable
         .get_mut(id)
         .variables
         .insert(symbol, Variable { kind, exhausted: false, value: fn_value, decl_dep });
+      if has_fn_value {
+        self.exec_exhaustive_deps(false, (id, symbol));
+      }
     }
   }
 
@@ -106,6 +112,7 @@ impl<'a> Analyzer<'a> {
     } else {
       variable.value =
         Some(ForwardedEntity::new(value.unwrap_or_else(LiteralEntity::new_undefined), init_dep));
+      self.exec_exhaustive_deps(false, (id, symbol));
     }
   }
 
@@ -123,14 +130,15 @@ impl<'a> Analyzer<'a> {
 
       let target_cf_scope =
         self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
-      if let Some(value) = value {
-        self.mark_exhaustive_read(&value, symbol, target_cf_scope);
-        Some(value)
-      } else {
+      self.mark_exhaustive_read((id, symbol), target_cf_scope);
+
+      if value.is_none() {
+        // TDZ
         self.consume(variable.decl_dep.clone());
         self.handle_tdz(target_cf_scope);
-        None
       }
+
+      value
     })
   }
 
@@ -158,14 +166,16 @@ impl<'a> Analyzer<'a> {
           self.consume(new_val);
         } else {
           let old_val = variable.value;
-          let should_consume = if let Some(old_val) = &old_val {
-            self.mark_exhaustive_write(old_val, symbol, target_cf_scope)
+          let should_consume = if variable.exhausted {
+            false
+          } else if old_val.is_some() {
+            self.mark_exhaustive_write((id, symbol), target_cf_scope)
           } else if !variable.kind.is_redeclarable() {
             self.handle_tdz(target_cf_scope);
             true
           } else {
             // Uninitialized `var`
-            self.mark_exhaustive_write(&LiteralEntity::new_undefined(), symbol, target_cf_scope);
+            self.mark_exhaustive_write((id, symbol), target_cf_scope);
             false
           };
 
@@ -198,7 +208,7 @@ impl<'a> Analyzer<'a> {
             ));
           };
 
-          self.exec_exhaustive_deps(should_consume, symbol);
+          self.exec_exhaustive_deps(should_consume, (id, symbol));
         }
       }
       true

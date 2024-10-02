@@ -3,7 +3,7 @@ use crate::{
   builtins::Builtins,
   data::{get_node_ptr, Diagnostics, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
   entity::{Entity, EntityOpHost, LabelEntity},
-  scope::{exhaustive::TrackerRunner, ScopeContext},
+  scope::ScopeContext,
   TreeShakeConfig,
 };
 use oxc::{
@@ -12,7 +12,6 @@ use oxc::{
   semantic::{Semantic, SymbolId},
   span::{GetSpan, Span},
 };
-use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
 
 pub struct Analyzer<'a> {
@@ -26,7 +25,6 @@ pub struct Analyzer<'a> {
   pub var_decls: VarDeclarations<'a>,
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
-  pub exhaustive_deps: FxHashMap<SymbolId, FxHashSet<TrackerRunner<'a>>>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
   pub builtins: Builtins<'a>,
@@ -51,7 +49,6 @@ impl<'a> Analyzer<'a> {
       var_decls: Default::default(),
       named_exports: Vec::new(),
       default_export: None,
-      exhaustive_deps: Default::default(),
       scope_context: ScopeContext::new(),
       pending_labels: Vec::new(),
       builtins: Builtins::new(),

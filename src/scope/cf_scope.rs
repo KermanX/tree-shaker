@@ -1,5 +1,5 @@
 use crate::{analyzer::Analyzer, entity::LabelEntity};
-use oxc::semantic::SymbolId;
+use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
 use std::rc::Rc;
 
@@ -16,7 +16,7 @@ pub enum CfScopeKind {
 #[derive(Debug)]
 pub struct ExhaustiveData {
   pub dirty: bool,
-  pub deps: FxHashSet<SymbolId>,
+  pub deps: FxHashSet<(ScopeId, SymbolId)>,
 }
 
 #[derive(Debug)]
@@ -85,17 +85,17 @@ impl<'a> CfScope<'a> {
     self.kind == CfScopeKind::Exhaustive
   }
 
-  pub fn mark_exhaustive_read(&mut self, symbol: SymbolId) {
+  pub fn mark_exhaustive_read(&mut self, variable: (ScopeId, SymbolId)) {
     if let Some(data) = &mut self.exhaustive_data {
       if !data.dirty {
-        data.deps.insert(symbol);
+        data.deps.insert(variable);
       }
     }
   }
 
-  pub fn mark_exhaustive_write(&mut self, symbol: SymbolId) -> bool {
+  pub fn mark_exhaustive_write(&mut self, variable: (ScopeId, SymbolId)) -> bool {
     if let Some(data) = &mut self.exhaustive_data {
-      if !data.dirty && data.deps.contains(&symbol) {
+      if !data.dirty && data.deps.contains(&variable) {
         data.dirty = true;
       }
       true

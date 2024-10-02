@@ -1,5 +1,5 @@
 use crate::{analyzer::Analyzer, entity::Entity, scope::CfScopeKind};
-use oxc::semantic::SymbolId;
+use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
 use std::{
   hash::{Hash, Hasher},
@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
     once: bool,
-  ) -> FxHashSet<SymbolId> {
+  ) -> FxHashSet<(ScopeId, SymbolId)> {
     self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
     let mut round_counter = 0;
     while self.cf_scope_mut().iterate_exhaustively() {
@@ -76,10 +76,13 @@ impl<'a> Analyzer<'a> {
     &mut self,
     once: bool,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
-    deps: FxHashSet<SymbolId>,
+    deps: FxHashSet<(ScopeId, SymbolId)>,
   ) {
-    for symbol in deps {
+    for (scope, symbol) in deps {
       self
+        .scope_context
+        .variable
+        .get_mut(scope)
         .exhaustive_deps
         .entry(symbol)
         .or_insert_with(Default::default)
@@ -87,32 +90,28 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, val: &Entity<'a>, symbol: SymbolId, target: usize) {
-    if !val.test_is_completely_unknown() {
-      for id in self.scope_context.cf.stack[target..].to_vec().into_iter() {
-        self.scope_context.cf.get_mut(id).mark_exhaustive_read(symbol);
-      }
+  pub fn mark_exhaustive_read(&mut self, variable: (ScopeId, SymbolId), target: usize) {
+    for id in self.scope_context.cf.stack[target..].to_vec().into_iter() {
+      self.scope_context.cf.get_mut(id).mark_exhaustive_read(variable);
     }
   }
 
-  pub fn mark_exhaustive_write(
-    &mut self,
-    val: &Entity<'a>,
-    symbol: SymbolId,
-    target: usize,
-  ) -> bool {
-    if val.test_is_completely_unknown() {
-      return false;
-    }
+  pub fn mark_exhaustive_write(&mut self, variable: (ScopeId, SymbolId), target: usize) -> bool {
     let mut should_consume = false;
     for id in self.scope_context.cf.stack[target..].to_vec().into_iter() {
-      should_consume |= self.scope_context.cf.get_mut(id).mark_exhaustive_write(symbol)
+      should_consume |= self.scope_context.cf.get_mut(id).mark_exhaustive_write(variable)
     }
     should_consume
   }
 
-  pub fn exec_exhaustive_deps(&mut self, should_consume: bool, symbol: SymbolId) {
-    if let Some(runners) = self.exhaustive_deps.get_mut(&symbol) {
+  pub fn exec_exhaustive_deps(
+    &mut self,
+    should_consume: bool,
+    (scope, symbol): (ScopeId, SymbolId),
+  ) {
+    if let Some(runners) =
+      self.scope_context.variable.get_mut(scope).exhaustive_deps.get_mut(&symbol)
+    {
       let runners = if should_consume { mem::take(runners) } else { runners.clone() };
       for runner in runners {
         let TrackerRunner { runner, once } = runner.clone();
