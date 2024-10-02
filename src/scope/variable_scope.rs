@@ -64,6 +64,7 @@ impl<'a> Analyzer<'a> {
         // function f(x) { var x }
         let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
         variable.kind = kind;
+        variable.value = fn_value;
         // TODO: Sometimes this is not necessary
         variable.decl_dep = (variable.decl_dep.clone(), decl_dep).into();
       } else {
