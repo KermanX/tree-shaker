@@ -234,6 +234,11 @@ impl DeclarationKind {
 
   pub fn is_shadowable(self) -> bool {
     self.is_redeclarable()
-      || matches!(self, DeclarationKind::ArrowFunctionParameter | DeclarationKind::Caught)
+      || matches!(
+        self,
+        DeclarationKind::FunctionParameter
+          | DeclarationKind::ArrowFunctionParameter
+          | DeclarationKind::Caught
+      )
   }
 }
