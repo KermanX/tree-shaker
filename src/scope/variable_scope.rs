@@ -102,6 +102,7 @@ impl<'a> Analyzer<'a> {
       if let Some(value) = value {
         self.consume(value);
       }
+      self.consume(init_dep);
     } else if variable.kind.is_redeclarable() {
       if let Some(value) = value {
         self.write_on_scope(
