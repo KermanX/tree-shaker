@@ -158,7 +158,7 @@ impl<'a> Analyzer<'a> {
           let old_val = variable.value;
           let should_consume = if let Some(old_val) = &old_val {
             self.mark_exhaustive_write(old_val, symbol, target_cf_scope)
-          } else if !variable.kind.is_var() {
+          } else if !variable.kind.is_redeclarable() {
             self.handle_tdz(target_cf_scope);
             true
           } else {
