@@ -95,7 +95,11 @@ impl<'a> Analyzer<'a> {
       }
     } else if variable.kind.is_var() {
       if let Some(value) = value {
-        self.write_on_scope((self.scope_context.variable.current_depth(), id), symbol, &value);
+        self.write_on_scope(
+          (self.scope_context.variable.current_depth(), id),
+          symbol,
+          &ForwardedEntity::new(value, init_dep),
+        );
       } else {
         // Do nothing
       }
