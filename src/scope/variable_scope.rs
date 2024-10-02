@@ -159,6 +159,7 @@ impl<'a> Analyzer<'a> {
             true
           } else {
             // Uninitialized `var`
+            self.mark_exhaustive_write(&LiteralEntity::new_undefined(), symbol, target_cf_scope);
             false
           };
 
