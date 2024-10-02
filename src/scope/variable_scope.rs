@@ -27,7 +27,7 @@ impl fmt::Debug for VariableScope<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let mut map = f.debug_map();
     for (k, v) in self.variables.iter() {
-      map.entry(&k, &format!("{:?}", v.kind));
+      map.entry(&k, &format!("{:?} {}", v.kind, v.value.is_some()));
     }
     map.finish()
   }
@@ -211,14 +211,10 @@ impl<'a> Analyzer<'a> {
         variable.decl_dep.consume(self);
         if let Some(value) = &variable.value {
           value.consume(self);
-
-          let variable =
-            self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
-          variable.exhausted = true;
-          variable.value = Some(UnknownEntity::new_unknown());
         }
         let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
         variable.exhausted = true;
+        variable.value = Some(UnknownEntity::new_unknown());
       }
       true
     } else {
