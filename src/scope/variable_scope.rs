@@ -227,7 +227,7 @@ impl<'a> Analyzer<'a> {
       Variable {
         exhausted: true,
         kind: DeclarationKind::UntrackedVar,
-        value: None,
+        value: Some(UnknownEntity::new_unknown()),
         decl_dep: ().into(),
       },
     );
