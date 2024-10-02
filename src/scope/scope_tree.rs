@@ -85,7 +85,7 @@ impl<T> ScopeTree<T> {
     }
 
     let mut current_idx = min_depth;
-    while current_idx >= 0 {
+    loop {
       if self.stack[current_idx] == another {
         break;
       }
