@@ -15,6 +15,7 @@ pub struct CallScope<'a> {
   pub old_variable_scope_stack: Vec<ScopeId>,
   pub cf_scope_depth: usize,
   pub variable_scope_depth: usize,
+  pub body_variable_scope: ScopeId,
   pub this: Entity<'a>,
   pub args: (Entity<'a>, Vec<SymbolId>),
   pub returned_values: Vec<Entity<'a>>,
@@ -31,6 +32,7 @@ impl<'a> CallScope<'a> {
     old_variable_scope_stack: Vec<ScopeId>,
     cf_scope_depth: usize,
     variable_scope_depth: usize,
+    body_variable_scope: ScopeId,
     this: Entity<'a>,
     args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
@@ -42,6 +44,7 @@ impl<'a> CallScope<'a> {
       old_variable_scope_stack,
       cf_scope_depth,
       variable_scope_depth,
+      body_variable_scope,
       this,
       args,
       returned_values: Vec::new(),
@@ -120,13 +123,13 @@ impl<'a> Analyzer<'a> {
     } else {
       self.call_scope()
     };
-    let variable_scope = self.scope_context.variable.stack[call_scope.variable_scope_depth];
+    let body_variable_scope = call_scope.body_variable_scope;
     let (args_entity, args_symbols) = call_scope.args.clone();
     args_entity.consume(self);
     let mut arguments_consumed = true;
     for symbol in args_symbols {
-      if !self.consume_on_scope(variable_scope, symbol) {
-        // TDZ
+      if !self.consume_on_scope(body_variable_scope, symbol) {
+        // Still inside parameter declaration
         arguments_consumed = false;
       }
     }

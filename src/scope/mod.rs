@@ -30,7 +30,7 @@ impl<'a> ScopeContext<'a> {
     let mut cf = ScopeTree::new();
     let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Function, None, Some(false)));
     let mut variable = ScopeTree::new();
-    variable.push(VariableScope::new(None, cf_scope_0));
+    let body_variable_scope = variable.push(VariableScope::new(None, cf_scope_0));
     ScopeContext {
       call: vec![CallScope::new(
         EntityDepNode::Environment,
@@ -38,6 +38,7 @@ impl<'a> ScopeContext<'a> {
         vec![],
         0,
         0,
+        body_variable_scope,
         // TODO: global this
         UnknownEntity::new_unknown(),
         (UnknownEntity::new_unknown(), vec![]),
@@ -103,7 +104,7 @@ impl<'a> Analyzer<'a> {
     // FIXME: no clone
     let variable_scope_stack = variable_scope_stack.as_ref().clone();
     let old_variable_scope_stack = self.scope_context.variable.replace_stack(variable_scope_stack);
-    self
+    let body_variable_scope = self
       .scope_context
       .variable
       .push(VariableScope::new(Some(call_stack_deps.into()), self.scope_context.cf.current_id()));
@@ -115,6 +116,7 @@ impl<'a> Analyzer<'a> {
       old_variable_scope_stack,
       cf_scope_depth,
       variable_scope_depth,
+      body_variable_scope,
       this,
       args,
       is_async,
@@ -131,8 +133,8 @@ impl<'a> Analyzer<'a> {
     ret_val
   }
 
-  pub fn push_variable_scope(&mut self) {
-    self.scope_context.variable.push(VariableScope::new(None, self.scope_context.cf.current_id()));
+  pub fn push_variable_scope(&mut self) -> ScopeId {
+    self.scope_context.variable.push(VariableScope::new(None, self.scope_context.cf.current_id()))
   }
 
   pub fn pop_variable_scope(&mut self) -> ScopeId {

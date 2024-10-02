@@ -48,9 +48,7 @@ impl<'a> Analyzer<'a> {
     decl_dep: Consumable<'a>,
     fn_value: Option<Entity<'a>>,
   ) {
-    let old = self.scope_context.variable.get(id).variables.get(&symbol);
-
-    if let Some(old) = old.and_then(|old| (!old.kind.is_shadowable()).then_some(old)) {
+    if let Some(old) = self.scope_context.variable.get(id).variables.get(&symbol) {
       // Here we can't use kind.is_untracked() because this time we are declaring a variable
       if old.kind.is_untracked() {
         self.consume(decl_dep);
@@ -58,9 +56,10 @@ impl<'a> Analyzer<'a> {
         return;
       }
 
-      if old.kind.is_var() && kind.is_var() {
+      if old.kind.is_shadowable() && kind.is_var() {
         // var x = 1; var x = 2;
-        // Do nothing
+        // function f(x) { var x }
+        self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap().kind = kind;
       } else {
         let decl_dep = (old.decl_dep.clone(), decl_dep);
         let name = self.semantic.symbols().get_name(symbol);
@@ -86,7 +85,7 @@ impl<'a> Analyzer<'a> {
   ) {
     let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
 
-    if variable.kind.is_untracked() {
+    if variable.exhausted {
       if let Some(value) = value {
         self.consume(value);
       }
@@ -97,7 +96,6 @@ impl<'a> Analyzer<'a> {
         // Do nothing
       }
     } else {
-      debug_assert!(!variable.exhausted);
       variable.value =
         Some(ForwardedEntity::new(value.unwrap_or_else(LiteralEntity::new_undefined), init_dep));
     }
@@ -269,8 +267,7 @@ impl<'a> Analyzer<'a> {
 
   fn get_variable_scope(&self, is_function_scope: bool) -> ScopeId {
     if is_function_scope {
-      let index = self.call_scope().variable_scope_depth;
-      self.scope_context.variable.stack[index]
+      self.call_scope().body_variable_scope
     } else {
       self.scope_context.variable.current_id()
     }
