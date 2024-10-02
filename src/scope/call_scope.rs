@@ -1,4 +1,4 @@
-use super::{try_scope::TryScope, variable_scope::VariableScopes};
+use super::try_scope::TryScope;
 use crate::{
   analyzer::Analyzer,
   entity::{
@@ -6,15 +6,15 @@ use crate::{
     UnknownEntity,
   },
 };
-use oxc::semantic::SymbolId;
+use oxc::semantic::{ScopeId, SymbolId};
 
 #[derive(Debug)]
 pub struct CallScope<'a> {
   pub source: EntityDepNode,
   pub exec_deps: Vec<Consumable<'a>>,
-  pub old_variable_scopes: VariableScopes<'a>,
-  pub cf_scope_index: usize,
-  pub variable_scope_index: usize,
+  pub old_variable_scope_stack: Vec<ScopeId>,
+  pub cf_scope_depth: usize,
+  pub variable_scope_depth: usize,
   pub this: Entity<'a>,
   pub args: (Entity<'a>, Vec<SymbolId>),
   pub returned_values: Vec<Entity<'a>>,
@@ -28,9 +28,9 @@ impl<'a> CallScope<'a> {
   pub fn new(
     source: EntityDepNode,
     call_dep: Consumable<'a>,
-    old_variable_scopes: VariableScopes<'a>,
-    cf_scope_index: usize,
-    variable_scope_index: usize,
+    old_variable_scope_stack: Vec<ScopeId>,
+    cf_scope_depth: usize,
+    variable_scope_depth: usize,
     this: Entity<'a>,
     args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
@@ -39,15 +39,15 @@ impl<'a> CallScope<'a> {
     CallScope {
       source,
       exec_deps: vec![call_dep],
-      old_variable_scopes,
-      cf_scope_index,
-      variable_scope_index,
+      old_variable_scope_stack,
+      cf_scope_depth,
+      variable_scope_depth,
       this,
       args,
       returned_values: Vec::new(),
       is_async,
       is_generator,
-      try_scopes: vec![TryScope::new(cf_scope_index, variable_scope_index)],
+      try_scopes: vec![TryScope::new(cf_scope_depth, variable_scope_depth)],
       need_consume_arguments: false,
     }
   }
@@ -56,7 +56,7 @@ impl<'a> CallScope<'a> {
     self.exec_deps.clone().into()
   }
 
-  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (VariableScopes<'a>, Entity<'a>) {
+  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (Vec<ScopeId>, Entity<'a>) {
     assert_eq!(self.try_scopes.len(), 1);
     assert_eq!(self.exec_deps.len(), 1);
     let call_dep = self.exec_deps[0].clone();
@@ -89,7 +89,7 @@ impl<'a> CallScope<'a> {
       UnionEntity::new(self.returned_values)
     };
     (
-      self.old_variable_scopes,
+      self.old_variable_scope_stack,
       if self.is_async { PromiseEntity::new(value, promise_error, call_dep) } else { value },
     )
   }
@@ -99,19 +99,19 @@ impl<'a> Analyzer<'a> {
   pub fn return_value(&mut self, value: Entity<'a>, dep: impl Into<Consumable<'a>>) {
     let call_scope = self.call_scope();
     let value =
-      ForwardedEntity::new(value, self.get_assignment_deps(call_scope.variable_scope_index, dep));
+      ForwardedEntity::new(value, self.get_assignment_deps(call_scope.variable_scope_depth, dep));
 
     let call_scope = self.call_scope_mut();
     call_scope.returned_values.push(value);
 
-    let cf_scope_id = call_scope.cf_scope_index;
+    let cf_scope_id = call_scope.cf_scope_depth;
     self.exit_to(cf_scope_id);
   }
 
   pub fn consume_arguments(&mut self, search: Option<EntityDepNode>) -> bool {
     let call_scope = if let Some(source) = search {
       if let Some(call_scope) =
-        self.scope_context.call_scopes.iter().rev().find(|scope| scope.source == source)
+        self.scope_context.call.iter().rev().find(|scope| scope.source == source)
       {
         call_scope
       } else {
@@ -120,13 +120,12 @@ impl<'a> Analyzer<'a> {
     } else {
       self.call_scope()
     };
-    let variable_scope =
-      self.scope_context.variable_scopes[call_scope.variable_scope_index].clone();
+    let variable_scope = self.scope_context.variable.stack[call_scope.variable_scope_depth];
     let (args_entity, args_symbols) = call_scope.args.clone();
     args_entity.consume(self);
     let mut arguments_consumed = true;
     for symbol in args_symbols {
-      if !variable_scope.consume(self, symbol) {
+      if !self.consume_on_scope(variable_scope, symbol) {
         // TDZ
         arguments_consumed = false;
       }

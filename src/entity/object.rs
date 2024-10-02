@@ -2,24 +2,19 @@ use super::{
   consumed_object, ArgumentsEntity, Consumable, Entity, EntityTrait, EntryEntity, ForwardedEntity,
   LiteralEntity, TypeofResult, UnionEntity, UnknownEntity,
 };
-use crate::{
-  analyzer::Analyzer,
-  scope::{cf_scope::CfScopes, variable_scope::VariableScopes},
-  use_consumed_flag,
-};
-use oxc::ast::ast::PropertyKind;
+use crate::{analyzer::Analyzer, use_consumed_flag};
+use oxc::{ast::ast::PropertyKind, semantic::ScopeId};
 use rustc_hash::FxHashMap;
 use std::{
   cell::{Cell, RefCell},
   fmt,
 };
 
-#[derive(Clone, Default)]
 pub struct ObjectEntity<'a> {
   consumed: Cell<bool>,
   deps: RefCell<Vec<Consumable<'a>>>,
-  cf_scopes: CfScopes<'a>,
-  variable_scopes: VariableScopes<'a>,
+  cf_scope: ScopeId,
+  variable_scope: ScopeId,
   pub string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
   pub unknown_keyed: RefCell<ObjectProperty<'a>>,
   // TODO: symbol_keyed
@@ -83,7 +78,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    analyzer.refer_to_diff_scope(&self.variable_scopes);
+    analyzer.refer_to_diff_variable_scope(self.variable_scope);
 
     for dep in self.deps.take() {
       analyzer.consume(dep);
@@ -181,7 +176,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
-    let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
+    let indeterminate = analyzer.is_assignment_indeterminate(self.cf_scope);
     analyzer.exec_indeterminately(move |analyzer| {
       self.add_assignment_dep(analyzer, dep.clone());
       let this = rc.clone();
@@ -301,7 +296,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::delete_property(analyzer, dep, key);
     }
-    let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
+    let indeterminate = analyzer.is_assignment_indeterminate(self.cf_scope);
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let definite = key_literals.len() == 1;
@@ -407,6 +402,18 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 }
 
 impl<'a> ObjectEntity<'a> {
+  pub fn new() -> Self {
+    ObjectEntity {
+      consumed: Cell::new(false),
+      deps: RefCell::new(Vec::new()),
+      cf_scope: ScopeId::new(0),
+      variable_scope: ScopeId::new(0),
+      string_keyed: Default::default(),
+      unknown_keyed: Default::default(),
+      rest: Default::default(),
+    }
+  }
+
   pub fn init_property(
     &self,
     kind: PropertyKind,
@@ -520,7 +527,7 @@ impl<'a> ObjectEntity<'a> {
   }
 
   fn add_assignment_dep(&self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) {
-    let target_variable_scope = analyzer.find_first_different_variable_scope(&self.variable_scopes);
+    let target_variable_scope = analyzer.find_first_different_variable_scope(self.variable_scope);
     self.deps.borrow_mut().push(analyzer.get_assignment_deps(target_variable_scope, dep));
   }
 }
@@ -530,8 +537,8 @@ impl<'a> Analyzer<'a> {
     ObjectEntity {
       consumed: Cell::new(false),
       deps: RefCell::new(Vec::new()),
-      cf_scopes: self.scope_context.cf_scopes.clone(),
-      variable_scopes: self.scope_context.variable_scopes.clone(),
+      cf_scope: self.scope_context.cf.current_id(),
+      variable_scope: self.scope_context.variable.current_id(),
       string_keyed: RefCell::new(FxHashMap::default()),
       unknown_keyed: RefCell::new(ObjectProperty::default()),
       rest: RefCell::new(ObjectProperty::default()),

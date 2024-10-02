@@ -4,7 +4,7 @@ use crate::entity::{
 };
 
 pub fn create_import_meta<'a>() -> Entity<'a> {
-  let object = ObjectEntity::default();
+  let object = ObjectEntity::new();
 
   // import.meta.url
   object.string_keyed.borrow_mut().insert(

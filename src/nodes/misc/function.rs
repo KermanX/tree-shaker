@@ -4,12 +4,14 @@ use crate::{
   entity::{
     Consumable, Entity, EntityDepNode, FunctionEntity, FunctionEntitySource, UnknownEntity,
   },
-  scope::variable_scope::VariableScopes,
   transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration},
-  AstKind,
+use oxc::{
+  ast::{
+    ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration},
+    AstKind,
+  },
+  semantic::ScopeId,
 };
 use std::rc::Rc;
 
@@ -17,7 +19,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_function(&mut self, node: &'a Function<'a>, is_expression: bool) -> Entity<'a> {
     FunctionEntity::new(
       FunctionEntitySource::Function(node),
-      self.scope_context.variable_scopes.clone(),
+      self.scope_context.variable.stack.clone(),
       is_expression,
     )
   }
@@ -38,7 +40,7 @@ impl<'a> Analyzer<'a> {
     is_expression: bool,
     call_dep: Consumable<'a>,
     node: &'a Function<'a>,
-    variable_scopes: Rc<VariableScopes<'a>>,
+    variable_scopes: Rc<Vec<ScopeId>>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -66,7 +68,7 @@ impl<'a> Analyzer<'a> {
           );
 
           analyzer.push_variable_scope();
-          analyzer.call_scope_mut().variable_scope_index += 1;
+          analyzer.call_scope_mut().variable_scope_depth += 1;
         }
 
         analyzer.exec_formal_parameters(

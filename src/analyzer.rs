@@ -1,13 +1,9 @@
 use crate::{
-  ast::{AstType2, DeclarationKind},
+  ast::AstType2,
   builtins::Builtins,
   data::{get_node_ptr, Diagnostics, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
-  entity::{Consumable, Entity, EntityOpHost, LabelEntity, UnknownEntity},
-  scope::{
-    exhaustive::TrackerRunner,
-    variable_scope::{VariableScope, VariableScopes},
-    ScopeContext,
-  },
+  entity::{Entity, EntityOpHost, LabelEntity},
+  scope::{exhaustive::TrackerRunner, ScopeContext},
   TreeShakeConfig,
 };
 use oxc::{
@@ -17,7 +13,7 @@ use oxc::{
   span::{GetSpan, Span},
 };
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::{mem, rc::Rc};
+use std::mem;
 
 pub struct Analyzer<'a> {
   pub config: TreeShakeConfig,
@@ -67,10 +63,6 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<StatementVecData>(AstType2::Program, node);
     self.exec_statement_vec(data, &node.body);
 
-    debug_assert_eq!(self.scope_context.call_scopes.len(), 1);
-    debug_assert_eq!(self.scope_context.variable_scopes.len(), 1);
-    debug_assert_eq!(self.scope_context.cf_scopes.len(), 1);
-
     // Consume exports
     self.default_export.take().map(|entity| entity.consume(self));
     for symbol in self.named_exports.clone() {
@@ -81,6 +73,8 @@ impl<'a> Analyzer<'a> {
     self.call_scope_mut().try_scopes.pop().unwrap().thrown_val().map(|entity| {
       entity.consume(self);
     });
+
+    self.scope_context.assert_final_state();
   }
 }
 
@@ -104,119 +98,5 @@ impl<'a> Analyzer<'a> {
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {
     let span = self.current_span.last().unwrap();
     self.diagnostics.insert(message.into() + format!(" at {}-{}", span.start, span.end).as_str());
-  }
-}
-
-impl<'a> Analyzer<'a> {
-  pub fn declare_symbol(
-    &mut self,
-    symbol: SymbolId,
-    decl_dep: impl Into<Consumable<'a>>,
-    exporting: bool,
-    kind: DeclarationKind,
-    fn_value: Option<Entity<'a>>,
-  ) {
-    if exporting {
-      self.named_exports.push(symbol);
-    }
-    if kind == DeclarationKind::FunctionParameter {
-      self.call_scope_mut().args.1.push(symbol);
-    }
-    if kind == DeclarationKind::Var {
-      self.insert_var_decl(symbol);
-    }
-
-    let variable_scope = self.get_variable_scope(kind.is_var());
-
-    variable_scope.declare(self, kind, symbol, decl_dep.into(), fn_value);
-  }
-
-  pub fn init_symbol(
-    &mut self,
-    symbol: SymbolId,
-    value: Option<Entity<'a>>,
-    init_dep: impl Into<Consumable<'a>>,
-  ) {
-    let is_function_scope =
-      self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration();
-    let variable_scope = self.get_variable_scope(is_function_scope);
-    variable_scope.init(self, symbol, value, init_dep.into());
-  }
-
-  fn get_variable_scope(&self, is_function_scope: bool) -> Rc<VariableScope<'a>> {
-    if is_function_scope {
-      let index = self.call_scope().variable_scope_index;
-      self.scope_context.variable_scopes[index].clone()
-    } else {
-      self.scope_context.variable_scopes.last().unwrap().clone()
-    }
-  }
-
-  /// `None` for TDZ
-  pub fn read_symbol(&mut self, symbol: SymbolId) -> Option<Entity<'a>> {
-    for index in (0..self.scope_context.variable_scopes.len()).rev() {
-      let scope = self.scope_context.variable_scopes[index].clone();
-      if let Some(value) = scope.read(self, symbol) {
-        return value;
-      }
-    }
-    self.mark_unresolved_reference(symbol);
-    Some(UnknownEntity::new_unknown())
-  }
-
-  pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
-    for index in (0..self.scope_context.variable_scopes.len()).rev() {
-      let scope = self.scope_context.variable_scopes[index].clone();
-      if scope.write(self, symbol, &new_val, index) {
-        return;
-      }
-    }
-    self.consume(new_val);
-    self.mark_unresolved_reference(symbol);
-  }
-
-  fn mark_unresolved_reference(&mut self, symbol: SymbolId) {
-    if self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration() {
-      self.insert_var_decl(symbol);
-      self.get_variable_scope(true).mark_untracked(symbol);
-    } else {
-      self.explicit_throw_unknown("Unresolved identifier reference");
-    }
-  }
-
-  fn insert_var_decl(&mut self, symbol: SymbolId) {
-    let key = self.call_scope().source;
-    self.var_decls.entry(key).or_default().insert(symbol);
-  }
-
-  pub fn handle_tdz(&mut self, target_cf_scope: usize) {
-    if self.has_exhaustive_scope_since(target_cf_scope) {
-      self.may_throw();
-    } else {
-      self.explicit_throw_unknown("Cannot access variable before initialization");
-    }
-    self.refer_global();
-  }
-
-  pub fn refer_global(&mut self) {
-    if self.config.unknown_global_side_effects {
-      self.may_throw();
-      self.refer_to_scope(0);
-    }
-  }
-
-  pub fn refer_to_diff_scope(&mut self, variable_scopes: &VariableScopes<'a>) {
-    let target = self.find_first_different_variable_scope(variable_scopes);
-    self.refer_to_scope(target);
-  }
-
-  fn refer_to_scope(&mut self, target: usize) {
-    let scopes = self.scope_context.variable_scopes[target..].to_vec();
-    for scope in scopes {
-      if let Some(dep) = scope.dep.clone() {
-        self.consume(dep);
-      }
-    }
-    self.consume(self.call_scope().get_exec_dep());
   }
 }

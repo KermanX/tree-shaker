@@ -2,12 +2,8 @@ use super::{
   consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, ForwardedEntity, LiteralEntity,
   TypeofResult, UnionEntity, UnknownEntity,
 };
-use crate::{
-  analyzer::Analyzer,
-  scope::{cf_scope::CfScopes, variable_scope::VariableScopes},
-  use_consumed_flag,
-};
-use oxc::syntax::number::ToJsInt32;
+use crate::{analyzer::Analyzer, use_consumed_flag};
+use oxc::{semantic::ScopeId, syntax::number::ToJsInt32};
 use std::{
   cell::{Cell, RefCell},
   fmt,
@@ -16,8 +12,8 @@ use std::{
 pub struct ArrayEntity<'a> {
   consumed: Cell<bool>,
   pub deps: RefCell<Vec<Consumable<'a>>>,
-  cf_scopes: CfScopes<'a>,
-  variable_scopes: VariableScopes<'a>,
+  cf_scope: ScopeId,
+  variable_scope: ScopeId,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Vec<Entity<'a>>>,
 }
@@ -37,7 +33,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    analyzer.refer_to_diff_scope(&self.variable_scopes);
+    analyzer.refer_to_diff_variable_scope(self.variable_scope);
 
     for dep in self.deps.take() {
       analyzer.consume(dep);
@@ -134,7 +130,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
-    let indeterminate = analyzer.is_assignment_indeterminate(&self.cf_scopes);
+    let indeterminate = analyzer.is_assignment_indeterminate(self.cf_scope);
     let mut has_effect = false;
     if let Some(key_literals) = key.get_to_property_key().get_to_literals() {
       let definite = !indeterminate && key_literals.len() == 1;
@@ -324,12 +320,12 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 }
 
 impl<'a> ArrayEntity<'a> {
-  pub fn new(cf_scopes: CfScopes<'a>, variable_scopes: VariableScopes<'a>) -> Self {
+  pub fn new(cf_scope: ScopeId, variable_scope: ScopeId) -> Self {
     ArrayEntity {
       consumed: Cell::new(false),
       deps: RefCell::new(Vec::new()),
-      cf_scopes,
-      variable_scopes,
+      cf_scope,
+      variable_scope,
       elements: RefCell::new(Vec::new()),
       rest: RefCell::new(Vec::new()),
     }
@@ -352,16 +348,13 @@ impl<'a> ArrayEntity<'a> {
   }
 
   fn add_dep(&self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) {
-    let target_variable_scope = analyzer.find_first_different_variable_scope(&self.variable_scopes);
+    let target_variable_scope = analyzer.find_first_different_variable_scope(self.variable_scope);
     self.deps.borrow_mut().push(analyzer.get_assignment_deps(target_variable_scope, dep));
   }
 }
 
 impl<'a> Analyzer<'a> {
   pub fn new_empty_array(&self) -> ArrayEntity<'a> {
-    ArrayEntity::new(
-      self.scope_context.cf_scopes.clone(),
-      self.scope_context.variable_scopes.clone(),
-    )
+    ArrayEntity::new(self.scope_context.cf.current_id(), self.scope_context.variable.current_id())
   }
 }

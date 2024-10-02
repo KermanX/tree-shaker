@@ -7,13 +7,15 @@ use crate::{
 pub struct TryScope<'a> {
   pub may_throw: bool,
   pub thrown_values: Vec<Entity<'a>>,
-  pub cf_scope_index: usize,
-  pub variable_scope_index: usize,
+  /// Here we use index in current stack instead of ScopeId
+  pub cf_scope_depth: usize,
+  /// Here we use index in current stack instead of ScopeId
+  pub variable_scope_depth: usize,
 }
 
 impl<'a> TryScope<'a> {
-  pub fn new(cf_scope_index: usize, variable_scope_index: usize) -> Self {
-    TryScope { may_throw: false, thrown_values: Vec::new(), cf_scope_index, variable_scope_index }
+  pub fn new(cf_scope_depth: usize, variable_scope_depth: usize) -> Self {
+    TryScope { may_throw: false, thrown_values: Vec::new(), cf_scope_depth, variable_scope_depth }
   }
 
   pub fn thrown_val(self) -> Option<Entity<'a>> {
@@ -29,25 +31,25 @@ impl<'a> Analyzer<'a> {
     try_scope.may_throw = true;
 
     // FIXME: Some of the tests are failing because of this
-    // let cf_scope_index = try_scope.cf_scope_index;
-    // self.exit_to(cf_scope_index, false);
+    // let cf_scope_depth = try_scope.cf_scope_depth;
+    // self.exit_to(cf_scope_depth, false);
   }
 
   pub fn explicit_throw(&mut self, value: Entity<'a>) {
     let try_scope = self.try_scope();
     let value =
-      ForwardedEntity::new(value, self.get_assignment_deps(try_scope.variable_scope_index, ()));
+      ForwardedEntity::new(value, self.get_assignment_deps(try_scope.variable_scope_depth, ()));
     self.explicit_throw_impl(value);
   }
 
   pub fn explicit_throw_unknown(&mut self, message: impl Into<String>) {
-    if self.scope_context.cf_scopes.iter().rev().all(|scope| scope.borrow().exited == Some(false)) {
+    if self.scope_context.cf.iter_stack().rev().all(|scope| scope.exited == Some(false)) {
       self.add_diagnostic(message);
     }
 
     let try_scope = self.try_scope();
     let value = UnknownEntity::new_computed_unknown(
-      self.get_assignment_deps(try_scope.variable_scope_index, ()),
+      self.get_assignment_deps(try_scope.variable_scope_depth, ()),
     );
     self.explicit_throw_impl(value);
   }
@@ -67,7 +69,7 @@ impl<'a> Analyzer<'a> {
     try_scope.may_throw = true;
     try_scope.thrown_values.push(value);
 
-    let cf_scope_index = try_scope.cf_scope_index;
-    self.exit_to(cf_scope_index);
+    let cf_scope_depth = try_scope.cf_scope_depth;
+    self.exit_to(cf_scope_depth);
   }
 }

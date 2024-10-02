@@ -1,7 +1,7 @@
 use crate::{analyzer::Analyzer, entity::LabelEntity};
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashSet;
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CfScopeKind {
@@ -29,8 +29,6 @@ pub struct CfScope<'a> {
   pub blocked_exit: Option<usize>,
   pub exhaustive_data: Option<Box<ExhaustiveData>>,
 }
-
-pub type CfScopes<'a> = Vec<Rc<RefCell<CfScope<'a>>>>;
 
 impl<'a> CfScope<'a> {
   pub fn new(

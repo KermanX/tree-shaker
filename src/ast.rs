@@ -223,6 +223,11 @@ impl DeclarationKind {
   }
 
   pub fn is_shadowable(self) -> bool {
-    matches!(self, DeclarationKind::FunctionParameter | DeclarationKind::Caught)
+    matches!(
+      self,
+      DeclarationKind::FunctionParameter
+        | DeclarationKind::ArrowFunctionParameter
+        | DeclarationKind::Caught
+    )
   }
 }

@@ -2,10 +2,13 @@ use super::{
   consumed_object, ComputedEntity, Consumable, Entity, EntityDepNode, EntityTrait, ForwardedEntity,
   LiteralEntity, TypeofResult, UnknownEntity,
 };
-use crate::{analyzer::Analyzer, scope::variable_scope::VariableScopes, use_consumed_flag};
-use oxc::ast::{
-  ast::{ArrowFunctionExpression, Function},
-  AstKind,
+use crate::{analyzer::Analyzer, use_consumed_flag};
+use oxc::{
+  ast::{
+    ast::{ArrowFunctionExpression, Function},
+    AstKind,
+  },
+  semantic::ScopeId,
 };
 use std::{cell::Cell, rc::Rc};
 
@@ -19,7 +22,7 @@ pub enum FunctionEntitySource<'a> {
 pub struct FunctionEntity<'a> {
   consumed: Rc<Cell<bool>>,
   pub source: FunctionEntitySource<'a>,
-  pub variable_scopes: Rc<VariableScopes<'a>>,
+  pub variable_scope_stack: Rc<Vec<ScopeId>>,
   pub is_expression: bool,
 }
 
@@ -93,7 +96,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     args: &Entity<'a>,
   ) -> Entity<'a> {
     let source = self.source_dep_node();
-    let recursed = analyzer.scope_context.call_scopes.iter().any(|scope| scope.source == source);
+    let recursed = analyzer.scope_context.call.iter().any(|scope| scope.source == source);
     if recursed {
       self.consume(analyzer);
       return consumed_object::call(analyzer, dep, this, args);
@@ -165,13 +168,13 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 impl<'a> FunctionEntity<'a> {
   pub fn new(
     source: FunctionEntitySource<'a>,
-    variable_scopes: VariableScopes<'a>,
+    variable_scope_stack: Vec<ScopeId>,
     is_expression: bool,
   ) -> Entity<'a> {
     Entity::new(Self {
       consumed: Rc::new(Cell::new(false)),
       source,
-      variable_scopes: Rc::new(variable_scopes),
+      variable_scope_stack: Rc::new(variable_scope_stack),
       is_expression,
     })
   }
@@ -193,7 +196,7 @@ impl<'a> FunctionEntity<'a> {
   ) -> Entity<'a> {
     let source = self.source_dep_node();
     let call_dep: Consumable<'a> = (source, dep).into();
-    let variable_scopes = self.variable_scopes.clone();
+    let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.source {
       FunctionEntitySource::Function(node) => analyzer.call_function(
         rc.clone(),

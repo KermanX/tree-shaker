@@ -57,7 +57,7 @@ impl<'a> Analyzer<'a> {
   ) -> FxHashSet<SymbolId> {
     self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
     let mut round_counter = 0;
-    while self.cf_scope().borrow_mut().iterate_exhaustively() {
+    while self.cf_scope_mut().iterate_exhaustively() {
       runner(self);
       round_counter += 1;
       if once {
@@ -67,9 +67,8 @@ impl<'a> Analyzer<'a> {
         unreachable!("Exhaustive loop is too deep");
       }
     }
-    let scope = self.pop_cf_scope();
-    let mut scope_ref = scope.borrow_mut();
-    let exhaustive_data = scope_ref.exhaustive_data.as_mut().unwrap();
+    let id = self.pop_cf_scope();
+    let exhaustive_data = self.scope_context.cf.get_mut(id).exhaustive_data.as_mut().unwrap();
     mem::take(&mut exhaustive_data.deps)
   }
 
@@ -90,8 +89,8 @@ impl<'a> Analyzer<'a> {
 
   pub fn mark_exhaustive_read(&mut self, val: &Entity<'a>, symbol: SymbolId, target: usize) {
     if !val.test_is_completely_unknown() {
-      for scope in &mut self.scope_context.cf_scopes[target..] {
-        scope.borrow_mut().mark_exhaustive_read(symbol)
+      for id in self.scope_context.cf.stack[target..].to_vec().into_iter() {
+        self.scope_context.cf.get_mut(id).mark_exhaustive_read(symbol);
       }
     }
   }
@@ -106,8 +105,8 @@ impl<'a> Analyzer<'a> {
       return false;
     }
     let mut should_consume = false;
-    for scope in &mut self.scope_context.cf_scopes[target..] {
-      should_consume |= scope.borrow_mut().mark_exhaustive_write(symbol)
+    for id in self.scope_context.cf.stack[target..].to_vec().into_iter() {
+      should_consume |= self.scope_context.cf.get_mut(id).mark_exhaustive_write(symbol)
     }
     should_consume
   }
@@ -123,6 +122,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn has_exhaustive_scope_since(&self, target: usize) -> bool {
-    self.scope_context.cf_scopes[target..].iter().any(|scope| scope.borrow().is_exhaustive())
+    self.scope_context.cf.iter_stack_range(target..).any(|scope| scope.is_exhaustive())
   }
 }

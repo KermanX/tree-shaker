@@ -12,10 +12,14 @@ pub fn create_function_prototype<'a>() -> Prototype<'a> {
       let mut args = args.destruct_as_array(analyzer, dep.clone(), 2).0;
       let args_arg = {
         let arg = args.pop().unwrap();
+        let cf_scope = analyzer.scope_context.cf.current_id();
+        let variable_scope = analyzer.scope_context.variable.current_id();
         match arg.test_is_undefined() {
-          Some(true) => Entity::new(ArrayEntity::new(vec![], vec![])),
+          Some(true) => Entity::new(ArrayEntity::new(cf_scope, variable_scope)),
           Some(false) => arg,
-          None => UnionEntity::new(vec![arg, Entity::new(ArrayEntity::new(vec![], vec![]))]),
+          None => {
+            UnionEntity::new(vec![arg, Entity::new(ArrayEntity::new(cf_scope, variable_scope))])
+          }
         }
       };
       let this_arg = args.pop().unwrap();

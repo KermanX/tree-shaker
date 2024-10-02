@@ -1,6 +1,7 @@
 pub mod call_scope;
 pub mod cf_scope;
 pub mod exhaustive;
+mod scope_tree;
 pub mod try_scope;
 mod utils;
 pub mod variable_scope;
@@ -10,26 +11,28 @@ use crate::{
   entity::{Consumable, Entity, EntityDepNode, LabelEntity, UnknownEntity},
 };
 use call_scope::CallScope;
+use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
-use cf_scope::{CfScope, CfScopes};
-use oxc::semantic::SymbolId;
-use std::{cell::RefCell, mem, rc::Rc};
+use oxc::semantic::{ScopeId, SymbolId};
+use scope_tree::ScopeTree;
+use std::{mem, rc::Rc};
 use try_scope::TryScope;
-use variable_scope::{VariableScope, VariableScopes};
+use variable_scope::VariableScope;
 
-#[derive(Debug, Default)]
 pub struct ScopeContext<'a> {
-  pub call_scopes: Vec<CallScope<'a>>,
-  pub variable_scopes: VariableScopes<'a>,
-  pub cf_scopes: CfScopes<'a>,
+  pub call: Vec<CallScope<'a>>,
+  pub variable: ScopeTree<VariableScope<'a>>,
+  pub cf: ScopeTree<CfScope<'a>>,
 }
 
 impl<'a> ScopeContext<'a> {
   pub fn new() -> Self {
-    let cf_scopes =
-      vec![Rc::new(RefCell::new(CfScope::new(CfScopeKind::Function, None, Some(false))))];
+    let mut cf = ScopeTree::new();
+    let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Function, None, Some(false)));
+    let mut variable = ScopeTree::new();
+    variable.push(VariableScope::new(None, cf_scope_0));
     ScopeContext {
-      call_scopes: vec![CallScope::new(
+      call: vec![CallScope::new(
         EntityDepNode::Environment,
         ().into(),
         vec![],
@@ -41,34 +44,52 @@ impl<'a> ScopeContext<'a> {
         true,
         false,
       )],
-      variable_scopes: vec![Rc::new(VariableScope::new(None, cf_scopes.clone()))],
-      cf_scopes,
+      variable,
+      cf,
     }
+  }
+
+  pub fn assert_final_state(&self) {
+    debug_assert_eq!(self.call.len(), 1);
+    debug_assert_eq!(self.variable.current_depth(), 0);
+    debug_assert_eq!(self.cf.current_depth(), 0);
   }
 }
 
 impl<'a> Analyzer<'a> {
   pub fn call_scope(&self) -> &CallScope<'a> {
-    self.scope_context.call_scopes.last().unwrap()
-  }
-
-  pub fn variable_scope(&mut self) -> &Rc<VariableScope<'a>> {
-    self.scope_context.variable_scopes.last().unwrap()
-  }
-
-  pub fn cf_scope(&self) -> &Rc<RefCell<CfScope<'a>>> {
-    self.scope_context.cf_scopes.last().unwrap()
+    self.scope_context.call.last().unwrap()
   }
 
   pub fn call_scope_mut(&mut self) -> &mut CallScope<'a> {
-    self.scope_context.call_scopes.last_mut().unwrap()
+    self.scope_context.call.last_mut().unwrap()
+  }
+
+  pub fn try_scope(&self) -> &TryScope<'a> {
+    self.call_scope().try_scopes.last().unwrap()
+  }
+
+  pub fn try_scope_mut(&mut self) -> &mut TryScope<'a> {
+    self.call_scope_mut().try_scopes.last_mut().unwrap()
+  }
+
+  pub fn variable_scope(&mut self) -> &VariableScope<'a> {
+    self.scope_context.variable.get_current()
+  }
+
+  pub fn cf_scope(&self) -> &CfScope<'a> {
+    self.scope_context.cf.get_current()
+  }
+
+  pub fn cf_scope_mut(&mut self) -> &mut CfScope<'a> {
+    self.scope_context.cf.get_current_mut()
   }
 
   pub fn push_call_scope(
     &mut self,
     source: impl Into<EntityDepNode>,
     call_dep: impl Into<Consumable<'a>>,
-    variable_scopes: Rc<VariableScopes<'a>>,
+    variable_scope_stack: Rc<Vec<ScopeId>>,
     this: Entity<'a>,
     args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
@@ -76,23 +97,24 @@ impl<'a> Analyzer<'a> {
   ) {
     let call_dep = call_dep.into();
     let mut call_stack_deps: Vec<_> =
-      self.scope_context.call_scopes.iter().map(|scope| scope.get_exec_dep()).collect();
+      self.scope_context.call.iter().map(|scope| scope.get_exec_dep()).collect();
     call_stack_deps.push(call_dep.clone());
 
-    let old_variable_scopes =
-      mem::replace(&mut self.scope_context.variable_scopes, variable_scopes.as_ref().clone());
-    let variable_scope_index = self.scope_context.variable_scopes.len();
-    self.scope_context.variable_scopes.push(Rc::new(VariableScope::new(
-      Some(call_stack_deps.into()),
-      self.scope_context.cf_scopes.clone(),
-    )));
-    let cf_scope_index = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
-    self.scope_context.call_scopes.push(CallScope::new(
+    // FIXME: no clone
+    let variable_scope_stack = variable_scope_stack.as_ref().clone();
+    let old_variable_scope_stack = self.scope_context.variable.replace_stack(variable_scope_stack);
+    self
+      .scope_context
+      .variable
+      .push(VariableScope::new(Some(call_stack_deps.into()), self.scope_context.cf.current_id()));
+    let variable_scope_depth = self.scope_context.variable.current_depth();
+    let cf_scope_depth = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
+    self.scope_context.call.push(CallScope::new(
       source.into(),
       call_dep,
-      old_variable_scopes,
-      cf_scope_index,
-      variable_scope_index,
+      old_variable_scope_stack,
+      cf_scope_depth,
+      variable_scope_depth,
       this,
       args,
       is_async,
@@ -101,23 +123,20 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn pop_call_scope(&mut self) -> Entity<'a> {
-    let scope = self.scope_context.call_scopes.pop().unwrap();
-    let (old_variable_scopes, ret_val) = scope.finalize(self);
+    let scope = self.scope_context.call.pop().unwrap();
+    let (old_variable_scope_stack, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
     self.pop_variable_scope();
-    self.scope_context.variable_scopes = old_variable_scopes;
+    self.scope_context.variable.replace_stack(old_variable_scope_stack);
     ret_val
   }
 
   pub fn push_variable_scope(&mut self) {
-    self
-      .scope_context
-      .variable_scopes
-      .push(Rc::new(VariableScope::new(None, self.scope_context.cf_scopes.clone())));
+    self.scope_context.variable.push(VariableScope::new(None, self.scope_context.cf.current_id()));
   }
 
-  pub fn pop_variable_scope(&mut self) {
-    self.scope_context.variable_scopes.pop().unwrap();
+  pub fn pop_variable_scope(&mut self) -> ScopeId {
+    self.scope_context.variable.pop()
   }
 
   pub fn push_exec_dep(&mut self, dep: impl Into<Consumable<'a>>) {
@@ -142,31 +161,27 @@ impl<'a> Analyzer<'a> {
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
     exited: Option<bool>,
   ) -> usize {
-    let index = self.scope_context.cf_scopes.len();
-    let cf_scope = Rc::new(RefCell::new(CfScope::new(kind, labels, exited)));
-    self.scope_context.cf_scopes.push(cf_scope);
-    index
+    self.scope_context.cf.push(CfScope::new(kind, labels, exited));
+    self.scope_context.cf.current_depth()
   }
 
   pub fn push_cf_scope_normal(&mut self, exited: Option<bool>) {
     self.push_cf_scope(CfScopeKind::Normal, None, exited);
   }
 
-  pub fn pop_cf_scope(&mut self) -> Rc<RefCell<CfScope<'a>>> {
-    self.scope_context.cf_scopes.pop().unwrap()
+  pub fn pop_cf_scope(&mut self) -> ScopeId {
+    self.scope_context.cf.pop()
   }
 
-  pub fn try_scope(&self) -> &TryScope<'a> {
-    self.call_scope().try_scopes.last().unwrap()
-  }
-
-  pub fn try_scope_mut(&mut self) -> &mut TryScope<'a> {
-    self.call_scope_mut().try_scopes.last_mut().unwrap()
+  pub fn pop_cf_scope_and_get(&mut self) -> &CfScope<'a> {
+    let id = self.pop_cf_scope();
+    self.scope_context.cf.get(id)
   }
 
   pub fn push_try_scope(&mut self) {
-    let cf_scope_index = self.push_cf_scope(CfScopeKind::Normal, None, None);
-    let variable_scope_index = self.scope_context.variable_scopes.len() - 1;
+    let cf_scope_index = self.scope_context.cf.current_depth() - 1;
+    self.push_cf_scope(CfScopeKind::Normal, None, None);
+    let variable_scope_index = self.scope_context.call.len() - 1;
     self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_index, variable_scope_index));
   }
 
@@ -177,8 +192,8 @@ impl<'a> Analyzer<'a> {
 
   pub fn exit_to(&mut self, target_index: usize) {
     let mut must_exit = true;
-    for (idx, cf_scope) in self.scope_context.cf_scopes.iter().enumerate().rev() {
-      let mut cf_scope = cf_scope.borrow_mut();
+    for (index, id) in self.scope_context.cf.stack.clone().into_iter().enumerate().rev() {
+      let cf_scope = self.scope_context.cf.get_mut(id);
       if must_exit {
         let is_indeterminate = cf_scope.is_indeterminate();
         cf_scope.exited = Some(true);
@@ -197,7 +212,7 @@ impl<'a> Analyzer<'a> {
       } else {
         cf_scope.exited = None;
       }
-      if idx == target_index {
+      if index == target_index {
         break;
       }
     }
@@ -208,8 +223,7 @@ impl<'a> Analyzer<'a> {
     let mut is_closest_breakable = true;
     let mut target_index = None;
     let mut label_used = false;
-    for (idx, cf_scope) in self.scope_context.cf_scopes.iter().enumerate().rev() {
-      let cf_scope = cf_scope.as_ref().borrow();
+    for (idx, cf_scope) in self.scope_context.cf.iter_stack().enumerate().rev() {
       if cf_scope.is_function() {
         break;
       }
@@ -240,8 +254,7 @@ impl<'a> Analyzer<'a> {
     let mut is_closest_continuable = true;
     let mut target_index = None;
     let mut label_used = false;
-    for (idx, cf_scope) in self.scope_context.cf_scopes.iter().enumerate().rev() {
-      let cf_scope = cf_scope.as_ref().borrow();
+    for (idx, cf_scope) in self.scope_context.cf.iter_stack().enumerate().rev() {
       if cf_scope.is_function() {
         break;
       }

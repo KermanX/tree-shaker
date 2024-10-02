@@ -2,12 +2,14 @@ use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
   entity::{Consumable, Entity, EntityDepNode, FunctionEntity, FunctionEntitySource},
-  scope::variable_scope::VariableScopes,
   transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{ArrowFunctionExpression, Expression},
-  AstKind, NONE,
+use oxc::{
+  ast::{
+    ast::{ArrowFunctionExpression, Expression},
+    AstKind, NONE,
+  },
+  semantic::ScopeId,
 };
 use std::rc::Rc;
 
@@ -18,7 +20,7 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     FunctionEntity::new(
       FunctionEntitySource::ArrowFunctionExpression(node),
-      self.scope_context.variable_scopes.clone(),
+      self.scope_context.variable.stack.clone(),
       true,
     )
   }
@@ -28,7 +30,7 @@ impl<'a> Analyzer<'a> {
     source: EntityDepNode,
     call_dep: Consumable<'a>,
     node: &'a ArrowFunctionExpression<'a>,
-    variable_scopes: Rc<VariableScopes<'a>>,
+    variable_scopes: Rc<Vec<ScopeId>>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     let parent_call_scope = self.call_scope();

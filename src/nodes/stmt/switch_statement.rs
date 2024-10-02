@@ -75,7 +75,7 @@ impl<'a> Analyzer<'a> {
     self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels, Some(false));
     let mut entered = Some(false);
     for (index, case) in node.cases.iter().enumerate() {
-      if self.cf_scope().borrow().must_exited() {
+      if self.cf_scope().must_exited() {
         break;
       }
 
