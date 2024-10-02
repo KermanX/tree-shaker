@@ -148,7 +148,7 @@ impl<'a> Analyzer<'a> {
 
   fn write_on_scope(
     &mut self,
-    (index, id): (usize, ScopeId),
+    (depth, id): (usize, ScopeId),
     symbol: SymbolId,
     new_val: &Entity<'a>,
   ) -> bool {
@@ -163,24 +163,23 @@ impl<'a> Analyzer<'a> {
       } else {
         let target_cf_scope =
           self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
-        let dep = self.get_assignment_deps(index, variable.decl_dep.clone());
+        let dep = self.get_assignment_deps(depth, variable.decl_dep.clone());
 
         if variable.exhausted {
           self.consume(dep);
           self.consume(new_val);
         } else {
           let old_val = variable.value;
-          let should_consume = if variable.exhausted {
-            false
-          } else if old_val.is_some() {
+          let should_consume = if old_val.is_some() {
+            // Normal write
             self.mark_exhaustive_write((id, symbol), target_cf_scope)
           } else if !variable.kind.is_redeclarable() {
+            // TDZ write
             self.handle_tdz(target_cf_scope);
             true
           } else {
-            // Uninitialized `var`
-            self.mark_exhaustive_write((id, symbol), target_cf_scope);
-            false
+            // Write uninitialized `var`
+            self.mark_exhaustive_write((id, symbol), target_cf_scope)
           };
 
           if should_consume {

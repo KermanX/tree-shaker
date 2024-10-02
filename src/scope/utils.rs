@@ -22,13 +22,13 @@ impl<'a> Analyzer<'a> {
 
   pub fn get_assignment_deps(
     &self,
-    target_variable_scope: usize,
+    target_depth: usize,
     extra: impl Into<Consumable<'a>>,
   ) -> Consumable<'a> {
     let mut deps = self
       .scope_context
       .variable
-      .iter_stack_range(target_variable_scope..)
+      .iter_stack_range(target_depth..)
       .filter_map(|scope| scope.dep.clone())
       .collect::<Vec<_>>();
     deps.push(self.call_scope().get_exec_dep());
