@@ -56,7 +56,7 @@ impl<'a> Analyzer<'a> {
         return;
       }
 
-      if old.kind.is_shadowable() && kind.is_var() {
+      if old.kind.is_shadowable() && kind.is_redeclarable() {
         // Redeclaration is sometimes allowed
         // var x = 1; var x = 2;
         // function f(x) { var x }
@@ -93,7 +93,7 @@ impl<'a> Analyzer<'a> {
       if let Some(value) = value {
         self.consume(value);
       }
-    } else if variable.kind.is_var() {
+    } else if variable.kind.is_redeclarable() {
       if let Some(value) = value {
         self.write_on_scope(
           (self.scope_context.variable.current_depth(), id),
