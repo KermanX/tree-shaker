@@ -7,7 +7,6 @@ use crate::analyzer::Analyzer;
 pub struct PromiseEntity<'a> {
   pub value: Entity<'a>,
   pub errors: Option<Vec<Entity<'a>>>,
-  pub call_dep: Consumable<'a>,
 }
 
 impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
@@ -18,7 +17,6 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
         error.consume(analyzer);
       }
     }
-    analyzer.consume(self.call_dep.clone());
   }
 
   fn get_property(
@@ -77,7 +75,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     dep: Consumable<'a>,
   ) -> Entity<'a> {
     if let Some(errors) = &self.errors {
-      analyzer.forward_throw(errors.clone(), self.call_dep.clone());
+      analyzer.forward_throw(errors.clone());
     }
     self.value.r#await(analyzer, dep)
   }
@@ -126,11 +124,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
 }
 
 impl<'a> PromiseEntity<'a> {
-  pub fn new(
-    value: Entity<'a>,
-    errors: Option<Vec<Entity<'a>>>,
-    call_dep: Consumable<'a>,
-  ) -> Entity<'a> {
-    Entity::new(Self { value, errors, call_dep })
+  pub fn new(value: Entity<'a>, errors: Option<Vec<Entity<'a>>>) -> Entity<'a> {
+    Entity::new(Self { value, errors })
   }
 }

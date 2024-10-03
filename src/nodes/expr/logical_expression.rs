@@ -3,6 +3,7 @@ use crate::{
   ast::AstType2,
   build_effect,
   entity::{Entity, EntityDepNode, UnionEntity},
+  scope::conditional::ConditionalData,
   transformer::Transformer,
 };
 use oxc::ast::{
@@ -12,42 +13,32 @@ use oxc::ast::{
 
 const AST_TYPE: AstType2 = AstType2::LogicalExpression;
 
-#[derive(Debug, Default, Clone)]
-pub struct Data {
+#[derive(Debug, Default)]
+pub struct Data<'a> {
   need_left_val: bool,
   need_right: bool,
+  conditional: ConditionalData<'a>,
 }
 
 impl<'a> Analyzer<'a> {
   pub fn exec_logical_expression(&mut self, node: &'a LogicalExpression<'a>) -> Entity<'a> {
     let left = self.exec_expression(&node.left);
 
-    let exec_right = |analyzer: &mut Analyzer<'a>| analyzer.exec_expression(&node.right);
-
-    let exec_unknown = |analyzer: &mut Analyzer<'a>| {
-      analyzer.push_cf_scope_normal(None);
-      analyzer.push_exec_dep((left.clone(), EntityDepNode::from(AstKind::LogicalExpression(node))));
-      let right = analyzer.exec_expression(&node.right);
-      analyzer.pop_exec_dep();
-      analyzer.pop_cf_scope();
-      (UnionEntity::new(vec![left.clone(), right]), true, true)
-    };
-
-    let (value, need_left_val, need_right) = match &node.operator {
+    let (need_left_val, need_right) = match &node.operator {
       LogicalOperator::And => match left.test_truthy() {
-        Some(true) => (exec_right(self), false, true),
-        Some(false) => (left, true, false),
-        None => exec_unknown(self),
+        Some(true) => (false, true),
+        Some(false) => (true, false),
+        None => (true, true),
       },
       LogicalOperator::Or => match left.test_truthy() {
-        Some(true) => (left, true, false),
-        Some(false) => (exec_right(self), false, true),
-        None => exec_unknown(self),
+        Some(true) => (true, false),
+        Some(false) => (false, true),
+        None => (true, true),
       },
       LogicalOperator::Coalesce => match left.test_nullish() {
-        Some(true) => (exec_right(self), false, true),
-        Some(false) => (left, true, false),
-        None => exec_unknown(self),
+        Some(true) => (false, true),
+        Some(false) => (true, false),
+        None => (true, true),
       },
     };
 
@@ -55,6 +46,27 @@ impl<'a> Analyzer<'a> {
 
     data.need_left_val |= need_left_val;
     data.need_right |= need_right;
+
+    let historical_indeterminate = data.need_left_val && data.need_right;
+    let current_indeterminate = need_left_val && need_right;
+
+    self.push_conditional_cf_scope(
+      &mut data.conditional,
+      left.clone(),
+      historical_indeterminate,
+      current_indeterminate,
+    );
+    self.push_cf_scope_for_deps(vec![EntityDepNode::from(AstKind::LogicalExpression(node)).into()]);
+
+    let value = match (need_left_val, need_right) {
+      (false, true) => self.exec_expression(&node.right),
+      (true, false) => left,
+      (true, true) => UnionEntity::new(vec![left, self.exec_expression(&node.right)]),
+      (false, false) => unreachable!(),
+    };
+
+    self.pop_cf_scope();
+    self.pop_cf_scope();
 
     value
   }
@@ -68,7 +80,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let data = self.get_data::<Data>(AST_TYPE, node);
     let need_left_val =
-      (need_val && data.need_left_val) || self.is_referred(AstKind::LogicalExpression(node));
+      data.need_left_val && (need_val || self.is_referred(AstKind::LogicalExpression(node)));
 
     let LogicalExpression { span, left, operator, right, .. } = node;
 

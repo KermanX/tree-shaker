@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
 
     if !self.cf_scope().must_exited() {
       if let Some(uncaught) = uncaught {
-        self.forward_throw(uncaught.clone(), ());
+        self.forward_throw(uncaught.clone());
       }
     }
 

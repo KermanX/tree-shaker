@@ -120,7 +120,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn has_exhaustive_scope_since(&self, target: usize) -> bool {
-    self.scope_context.cf.iter_stack_range(target..).any(|scope| scope.is_exhaustive())
+  pub fn has_exhaustive_scope_since(&self, target_depth: usize) -> bool {
+    self.scope_context.cf.iter_stack_range(target_depth..).any(|scope| scope.is_exhaustive())
   }
 }

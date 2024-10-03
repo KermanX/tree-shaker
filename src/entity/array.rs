@@ -348,8 +348,8 @@ impl<'a> ArrayEntity<'a> {
   }
 
   fn add_dep(&self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) {
-    let target_variable_scope = analyzer.find_first_different_variable_scope(self.variable_scope);
-    self.deps.borrow_mut().push(analyzer.get_assignment_deps(target_variable_scope, dep));
+    let target_depth = analyzer.find_first_different_variable_scope(self.variable_scope);
+    self.deps.borrow_mut().push(analyzer.get_assignment_deps(target_depth, dep));
   }
 }
 

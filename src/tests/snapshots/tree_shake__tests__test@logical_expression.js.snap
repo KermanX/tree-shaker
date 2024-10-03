@@ -1,0 +1,34 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(input)
+input_file: src/tests/fixtures/logical_expression.js
+---
+export function pure() {
+	t1 = 2;
+	t2 = 0;
+	t3 = 1;
+	t4 = "a";
+	t5 = 1;
+	t6 = 0;
+	t7 = 2;
+}
+export function impure(a) {
+	a && effect;
+	a || effect;
+	effect, effect1;
+	effect;
+	effect;
+	effect, effect4;
+	t1 = (effect1, effect1);
+	t2 = (effect2, 0);
+	t3 = (effect3, 1);
+	t4 = (effect4, effect4);
+	function f(b) {
+		b && effect;
+	}
+	f(1);
+	function g(b) {
+		b || effect;
+	}
+	g(0);
+}

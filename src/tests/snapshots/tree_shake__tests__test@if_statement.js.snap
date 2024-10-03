@@ -35,3 +35,11 @@ else f;
 	s12;
 	if (e) e;
 }
+export function with_effect(unknown) {
+	function f(e) {
+		if (e) return;
+		effect();
+	}
+	f(unknown);
+	e1;
+}

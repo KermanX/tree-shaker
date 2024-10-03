@@ -53,3 +53,18 @@ export function unknown(a) {
   s11; if (e) {2}
   s12; if (e) {e}
 }
+
+export function with_effect(unknown) {
+  function f(e) {
+    if (e) return;
+    effect();
+  }
+  f(unknown)
+
+  let a = {}
+  if (a) {
+    e1
+  } else {
+    e2
+  }
+}

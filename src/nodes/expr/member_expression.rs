@@ -92,9 +92,9 @@ impl<'a> Analyzer<'a> {
     let (object, key) = cache.unwrap_or_else(|| {
       let object = self.exec_expression(node.object());
 
-      self.push_exec_dep(object.clone());
+      self.push_cf_scope_for_deps(vec![object.clone().into()]);
       let key = self.exec_key(node);
-      self.pop_exec_dep();
+      self.pop_cf_scope();
 
       (object, key)
     });
