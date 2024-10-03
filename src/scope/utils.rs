@@ -25,10 +25,11 @@ impl<'a> Analyzer<'a> {
     target_depth: usize,
     extra: impl Into<Consumable<'a>>,
   ) -> Consumable<'a> {
-    if let Some(variable_scope) = self.scope_context.variable.get_from_depth(target_depth) {
-      self.get_exec_dep(variable_scope.cf_scope_depth, extra)
+    if target_depth == 0 {
+      self.get_exec_dep(0, extra)
     } else {
-      ().into()
+      let variable_scope = self.scope_context.variable.get_from_depth(target_depth - 1).unwrap();
+      self.get_exec_dep(variable_scope.cf_scope_depth + 1, extra)
     }
   }
 }
