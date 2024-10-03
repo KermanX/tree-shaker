@@ -18,9 +18,9 @@ pub struct Variable<'a> {
 }
 
 pub struct VariableScope<'a> {
-  pub dep: Option<Consumable<'a>>,
   /// Cf scopes when the scope was created
-  pub cf_scope: ScopeId,
+  pub cf_scope_id: ScopeId,
+  pub cf_scope_depth: usize,
   pub variables: FxHashMap<SymbolId, Variable<'a>>,
   pub exhaustive_deps: FxHashMap<SymbolId, FxHashSet<TrackerRunner<'a>>>,
 }
@@ -36,8 +36,13 @@ impl fmt::Debug for VariableScope<'_> {
 }
 
 impl<'a> VariableScope<'a> {
-  pub fn new(dep: Option<Consumable<'a>>, cf_scope: ScopeId) -> Self {
-    Self { dep, cf_scope, variables: Default::default(), exhaustive_deps: Default::default() }
+  pub fn new(cf_scope_id: ScopeId, cf_scope_depth: usize) -> Self {
+    Self {
+      cf_scope_id,
+      cf_scope_depth,
+      variables: Default::default(),
+      exhaustive_deps: Default::default(),
+    }
   }
 }
 
@@ -133,7 +138,7 @@ impl<'a> Analyzer<'a> {
       });
 
       let target_cf_scope =
-        self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
+        self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope_id);
       self.mark_exhaustive_read((id, symbol), target_cf_scope);
 
       if value.is_none() {
@@ -162,7 +167,7 @@ impl<'a> Analyzer<'a> {
         new_val.consume(self);
       } else {
         let target_cf_scope =
-          self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
+          self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope_id);
         let dep = self.get_assignment_deps(depth, variable.decl_dep.clone());
 
         if variable.exhausted {
@@ -347,16 +352,11 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn refer_to_diff_variable_scope(&mut self, another: ScopeId) {
-    let target = self.find_first_different_variable_scope(another);
-    self.refer_to_variable_scope(target);
+    let target_depth = self.find_first_different_variable_scope(another);
+    self.refer_to_variable_scope(target_depth);
   }
 
-  fn refer_to_variable_scope(&mut self, target: usize) {
-    for id in self.scope_context.variable.stack[target..].to_vec() {
-      if let Some(dep) = self.scope_context.variable.get(id).dep.clone() {
-        self.consume(dep);
-      }
-    }
-    self.consume(self.call_scope().get_exec_dep());
+  fn refer_to_variable_scope(&mut self, target_depth: usize) {
+    self.consume(self.get_assignment_deps(target_depth, ()));
   }
 }

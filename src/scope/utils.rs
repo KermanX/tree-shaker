@@ -25,14 +25,7 @@ impl<'a> Analyzer<'a> {
     target_depth: usize,
     extra: impl Into<Consumable<'a>>,
   ) -> Consumable<'a> {
-    let mut deps = self
-      .scope_context
-      .variable
-      .iter_stack_range(target_depth..)
-      .filter_map(|scope| scope.dep.clone())
-      .collect::<Vec<_>>();
-    deps.push(self.call_scope().get_exec_dep());
-    deps.push(extra.into());
-    Consumable::from(deps)
+    self
+      .get_exec_dep(self.scope_context.variable.get_from_depth(target_depth).cf_scope_depth, extra)
   }
 }

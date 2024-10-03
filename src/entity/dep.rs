@@ -7,7 +7,8 @@ use std::fmt::Debug;
 pub enum EntityDepNode {
   Environment,
   AstKind((usize, usize)),
-  Ptr(AstType2, usize),
+  AstType(AstType2, usize),
+  DataPtr(usize),
 }
 
 impl Debug for EntityDepNode {
@@ -20,12 +21,21 @@ impl Debug for EntityDepNode {
         let node = unsafe { std::mem::transmute::<_, AstKind<'static>>(*node) };
         node.span().fmt(f)?;
       }
-      EntityDepNode::Ptr(t, s) => {
+      EntityDepNode::AstType(t, s) => {
         (*t).fmt(f)?;
         s.fmt(f)?;
       }
+      EntityDepNode::DataPtr(p) => {
+        p.fmt(f)?;
+      }
     }
     Ok(())
+  }
+}
+
+impl<'a> EntityDepNode {
+  pub fn from_data<T: 'a>(data: &'a T) -> Self {
+    EntityDepNode::DataPtr(get_node_ptr(data))
   }
 }
 
@@ -37,13 +47,17 @@ impl<'a> From<AstKind<'a>> for EntityDepNode {
 
 impl<T: GetSpan> From<(AstType2, &T)> for EntityDepNode {
   fn from((ty, node): (AstType2, &T)) -> Self {
-    EntityDepNode::Ptr(ty, get_node_ptr(node))
+    EntityDepNode::AstType(ty, get_node_ptr(node))
   }
 }
 
 impl<'a> Analyzer<'a> {
   pub fn refer_dep(&mut self, dep: impl Into<EntityDepNode>) {
     self.referred_nodes.insert(dep.into());
+  }
+
+  pub fn is_referred(&self, dep: impl Into<EntityDepNode>) -> bool {
+    self.referred_nodes.contains(&dep.into())
   }
 }
 

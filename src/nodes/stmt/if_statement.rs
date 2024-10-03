@@ -1,6 +1,11 @@
 use std::usize;
 
-use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer,
+  ast::AstType2,
+  scope::{conditional::ConditionalData, CfScopeKind},
+  transformer::Transformer,
+};
 use oxc::{
   ast::ast::{IfStatement, Statement},
   span::GetSpan,
@@ -8,17 +13,18 @@ use oxc::{
 
 const AST_TYPE: AstType2 = AstType2::IfStatement;
 
-#[derive(Debug, Default, Clone)]
-pub struct Data {
+#[derive(Debug, Default)]
+pub struct Data<'a> {
   maybe_true: bool,
   maybe_false: bool,
+  conditional: ConditionalData<'a>,
 }
 
 impl<'a> Analyzer<'a> {
   pub fn exec_if_statement(&mut self, node: &'a IfStatement) {
     let labels = self.take_labels();
 
-    let test = self.exec_expression(&node.test);
+    let test = self.exec_expression(&node.test).get_to_boolean();
 
     let (maybe_true, maybe_false) = match test.test_truthy() {
       Some(true) => (true, false),
@@ -30,14 +36,29 @@ impl<'a> Analyzer<'a> {
     data.maybe_true |= maybe_true;
     data.maybe_false |= maybe_false;
 
-    let branch_exited = if maybe_true && maybe_false { None } else { Some(false) };
+    let historical_indeterminate = data.maybe_true && data.maybe_false;
+    let current_indeterminate = maybe_true && maybe_false;
+
     let mut should_exit = true;
     let mut exit_target_inner = 0;
     let mut exit_target_outer = usize::MAX;
 
-    self.push_exec_dep(test.get_to_boolean());
+    /*
+     dep is AstKind::IfStatement
+
+     Then,
+     - If only one case is possible, collect `test` value
+     - If both cases are possible (data.maybe_true && data.maybe_false),
+       then, if dep is referred, consume all collected `test` values, then clear them.
+    */
+
     if maybe_true {
-      self.push_cf_scope(CfScopeKind::If, None, branch_exited);
+      self.push_conditional_cf_scope(
+        &mut data.conditional,
+        test.clone(),
+        historical_indeterminate,
+        current_indeterminate,
+      );
       self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
       self.exec_statement(&node.consequent);
       self.pop_cf_scope();
@@ -50,7 +71,12 @@ impl<'a> Analyzer<'a> {
     }
     if maybe_false {
       if let Some(alternate) = &node.alternate {
-        self.push_cf_scope(CfScopeKind::If, None, branch_exited);
+        self.push_conditional_cf_scope(
+          &mut data.conditional,
+          test,
+          historical_indeterminate,
+          current_indeterminate,
+        );
         self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
         self.exec_statement(alternate);
         self.pop_cf_scope();
@@ -64,7 +90,6 @@ impl<'a> Analyzer<'a> {
         should_exit = false;
       }
     }
-    self.pop_exec_dep();
 
     if should_exit {
       self.exit_to(exit_target_inner);

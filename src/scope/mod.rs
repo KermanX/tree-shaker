@@ -1,5 +1,6 @@
 pub mod call_scope;
 pub mod cf_scope;
+pub mod conditional;
 pub mod exhaustive;
 mod scope_tree;
 pub mod try_scope;
@@ -28,13 +29,12 @@ pub struct ScopeContext<'a> {
 impl<'a> ScopeContext<'a> {
   pub fn new() -> Self {
     let mut cf = ScopeTree::new();
-    let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Function, None, Some(false)));
+    let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Function, None, None, Some(false)));
     let mut variable = ScopeTree::new();
-    let body_variable_scope = variable.push(VariableScope::new(None, cf_scope_0));
+    let body_variable_scope = variable.push(VariableScope::new(cf_scope_0, 0));
     ScopeContext {
       call: vec![CallScope::new(
         EntityDepNode::Environment,
-        ().into(),
         vec![],
         0,
         0,
@@ -97,22 +97,18 @@ impl<'a> Analyzer<'a> {
     is_generator: bool,
   ) {
     let call_dep = call_dep.into();
-    let mut call_stack_deps: Vec<_> =
-      self.scope_context.call.iter().map(|scope| scope.get_exec_dep()).collect();
-    call_stack_deps.push(call_dep.clone());
+    let mut exec_dep: Vec<_> =
+      self.scope_context.cf.iter_stack().filter_map(|scope| scope.dep.clone()).collect();
+    exec_dep.push(call_dep.clone());
 
     // FIXME: no clone
     let variable_scope_stack = variable_scope_stack.as_ref().clone();
     let old_variable_scope_stack = self.scope_context.variable.replace_stack(variable_scope_stack);
-    let body_variable_scope = self
-      .scope_context
-      .variable
-      .push(VariableScope::new(Some(call_stack_deps.into()), self.scope_context.cf.current_id()));
+    let body_variable_scope = self.push_variable_scope();
     let variable_scope_depth = self.scope_context.variable.current_depth();
     let cf_scope_depth = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
     self.scope_context.call.push(CallScope::new(
       source.into(),
-      call_dep,
       old_variable_scope_stack,
       cf_scope_depth,
       variable_scope_depth,
@@ -134,7 +130,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_variable_scope(&mut self) -> ScopeId {
-    self.scope_context.variable.push(VariableScope::new(None, self.scope_context.cf.current_id()))
+    self.scope_context.variable.push(VariableScope::new(
+      self.scope_context.cf.current_id(),
+      self.scope_context.cf.current_depth(),
+    ))
   }
 
   pub fn pop_variable_scope(&mut self) -> ScopeId {
@@ -142,11 +141,11 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_exec_dep(&mut self, dep: impl Into<Consumable<'a>>) {
-    self.call_scope_mut().exec_deps.push(dep.into());
+    // self.call_scope_mut().exec_deps.push(dep.into());
   }
 
   pub fn pop_exec_dep(&mut self) {
-    self.call_scope_mut().exec_deps.pop();
+    // self.call_scope_mut().exec_deps.pop();
   }
 
   pub fn take_labels(&mut self) -> Option<Rc<Vec<LabelEntity<'a>>>> {
@@ -163,7 +162,7 @@ impl<'a> Analyzer<'a> {
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
     exited: Option<bool>,
   ) -> usize {
-    self.scope_context.cf.push(CfScope::new(kind, labels, exited));
+    self.scope_context.cf.push(CfScope::new(kind, labels, None, exited));
     self.scope_context.cf.current_depth()
   }
 
@@ -203,7 +202,7 @@ impl<'a> Analyzer<'a> {
         // Stop exiting outer scopes if one inner scope is indeterminate.
         if is_indeterminate {
           must_exit = false;
-          if cf_scope.is_if() {
+          if cf_scope.is_conditional() {
             // For the `if` statement, do not mark the outer scopes as indeterminate here.
             // Instead, let the `if` statement handle it.
             debug_assert!(cf_scope.blocked_exit.is_none());

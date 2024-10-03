@@ -1,4 +1,7 @@
-use crate::{analyzer::Analyzer, entity::LabelEntity};
+use crate::{
+  analyzer::Analyzer,
+  entity::{Consumable, LabelEntity},
+};
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
 use std::rc::Rc;
@@ -9,7 +12,7 @@ pub enum CfScopeKind {
   BreakableWithoutLabel,
   Continuable,
   Exhaustive,
-  If,
+  Conditional,
   Function,
 }
 
@@ -23,6 +26,7 @@ pub struct ExhaustiveData {
 pub struct CfScope<'a> {
   pub kind: CfScopeKind,
   pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+  pub dep: Option<Consumable<'a>>,
   pub exited: Option<bool>,
   /// Exits that have been stopped by this scope's indeterminate state.
   /// Only available when `kind` is `If`.
@@ -34,11 +38,13 @@ impl<'a> CfScope<'a> {
   pub fn new(
     kind: CfScopeKind,
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+    dep: Option<Consumable<'a>>,
     exited: Option<bool>,
   ) -> Self {
     CfScope {
       kind,
       labels,
+      dep,
       exited,
       blocked_exit: None,
       exhaustive_data: if kind == CfScopeKind::Exhaustive {
@@ -73,8 +79,8 @@ impl<'a> CfScope<'a> {
     self.kind == CfScopeKind::Continuable
   }
 
-  pub fn is_if(&self) -> bool {
-    self.kind == CfScopeKind::If
+  pub fn is_conditional(&self) -> bool {
+    self.kind == CfScopeKind::Conditional
   }
 
   pub fn is_function(&self) -> bool {
@@ -124,5 +130,20 @@ impl<'a> Analyzer<'a> {
     let result = runner(self);
     self.pop_cf_scope();
     result
+  }
+
+  pub fn get_exec_dep(
+    &self,
+    target_depth: usize,
+    extra: impl Into<Consumable<'a>>,
+  ) -> Consumable<'a> {
+    let mut deps = self
+      .scope_context
+      .cf
+      .iter_stack_range(target_depth..)
+      .filter_map(|scope| scope.dep.clone())
+      .collect::<Vec<_>>();
+    deps.push(extra.into());
+    Consumable::from(deps)
   }
 }

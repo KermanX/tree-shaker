@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{Consumable, Entity, ForwardedEntity, UnknownEntity},
+  entity::{Entity, ForwardedEntity, UnknownEntity},
 };
 
 #[derive(Debug)]
@@ -54,11 +54,11 @@ impl<'a> Analyzer<'a> {
     self.explicit_throw_impl(value);
   }
 
-  pub fn forward_throw(&mut self, values: Vec<Entity<'a>>, dep: impl Into<Consumable<'a>>) {
+  pub fn forward_throw(&mut self, values: Vec<Entity<'a>>) {
     if values.is_empty() {
       self.may_throw();
     } else {
-      let thrown_val = UnknownEntity::new_computed_unknown((Consumable::from(values), dep.into()));
+      let thrown_val = UnknownEntity::new_computed_unknown(values);
       self.explicit_throw_impl(thrown_val);
     }
   }
