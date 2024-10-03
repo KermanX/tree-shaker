@@ -3,16 +3,18 @@ use crate::{
   ast::AstType2,
   build_effect,
   entity::{ComputedEntity, Entity, UnionEntity},
+  scope::conditional::ConditionalData,
   transformer::Transformer,
 };
 use oxc::ast::ast::{ConditionalExpression, Expression};
 
 const AST_TYPE: AstType2 = AstType2::ConditionalExpression;
 
-#[derive(Debug, Default, Clone)]
-pub struct Data {
+#[derive(Debug, Default)]
+pub struct Data<'a> {
   maybe_true: bool,
   maybe_false: bool,
+  conditional: ConditionalData<'a>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -29,18 +31,27 @@ impl<'a> Analyzer<'a> {
     data.maybe_true |= maybe_true;
     data.maybe_false |= maybe_false;
 
-    self.push_exec_dep(test.get_to_boolean());
+    let historical_indeterminate = data.maybe_true && data.maybe_false;
+    let current_indeterminate = maybe_true && maybe_false;
+
+    self.push_conditional_cf_scope(
+      &mut data.conditional,
+      test.clone(),
+      historical_indeterminate,
+      current_indeterminate,
+    );
     let result = match (maybe_true, maybe_false) {
       (true, false) => self.exec_expression(&node.consequent),
       (false, true) => self.exec_expression(&node.alternate),
-      (true, true) => self.exec_indeterminately(|analyzer| {
-        let consequent = analyzer.exec_expression(&node.consequent);
-        let alternate = analyzer.exec_expression(&node.alternate);
+      (true, true) => {
+        let consequent = self.exec_expression(&node.consequent);
+        self.cf_scope_mut().exited = None;
+        let alternate = self.exec_expression(&node.alternate);
         UnionEntity::new(vec![consequent, alternate])
-      }),
+      }
       _ => unreachable!(),
     };
-    self.pop_exec_dep();
+    self.pop_cf_scope();
 
     ComputedEntity::new(result, test)
   }
