@@ -74,10 +74,6 @@ impl<'a> Analyzer<'a> {
     self.call_scope_mut().try_scopes.last_mut().unwrap()
   }
 
-  pub fn variable_scope(&mut self) -> &VariableScope<'a> {
-    self.scope_context.variable.get_current()
-  }
-
   pub fn cf_scope(&self) -> &CfScope<'a> {
     self.scope_context.cf.get_current()
   }
@@ -133,14 +129,6 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_variable_scope(&mut self) -> ScopeId {
     self.scope_context.variable.pop()
-  }
-
-  pub fn push_exec_dep(&mut self, dep: impl Into<Consumable<'a>>) {
-    // self.call_scope_mut().exec_deps.push(dep.into());
-  }
-
-  pub fn pop_exec_dep(&mut self) {
-    // self.call_scope_mut().exec_deps.pop();
   }
 
   pub fn take_labels(&mut self) -> Option<Rc<Vec<LabelEntity<'a>>>> {
