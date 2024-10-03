@@ -29,7 +29,7 @@ pub struct ScopeContext<'a> {
 impl<'a> ScopeContext<'a> {
   pub fn new() -> Self {
     let mut cf = ScopeTree::new();
-    let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Function, None, None, Some(false)));
+    let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Function, None, vec![], Some(false)));
     let mut variable = ScopeTree::new();
     let body_variable_scope = variable.push(VariableScope::new(cf_scope_0, 0));
     ScopeContext {
@@ -107,7 +107,7 @@ impl<'a> Analyzer<'a> {
       self.scope_context.cf.push(CfScope::new(
         CfScopeKind::Function,
         None,
-        Some(call_dep),
+        vec![call_dep],
         Some(false),
       ));
       self.scope_context.cf.current_depth()
@@ -167,7 +167,7 @@ impl<'a> Analyzer<'a> {
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
     exited: Option<bool>,
   ) -> usize {
-    self.scope_context.cf.push(CfScope::new(kind, labels, None, exited));
+    self.scope_context.cf.push(CfScope::new(kind, labels, vec![], exited));
     self.scope_context.cf.current_depth()
   }
 
