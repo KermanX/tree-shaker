@@ -97,16 +97,21 @@ impl<'a> Analyzer<'a> {
     is_generator: bool,
   ) {
     let call_dep = call_dep.into();
-    let mut exec_dep: Vec<_> =
-      self.scope_context.cf.iter_stack().filter_map(|scope| scope.dep.clone()).collect();
-    exec_dep.push(call_dep.clone());
 
     // FIXME: no clone
     let variable_scope_stack = variable_scope_stack.as_ref().clone();
     let old_variable_scope_stack = self.scope_context.variable.replace_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
     let variable_scope_depth = self.scope_context.variable.current_depth();
-    let cf_scope_depth = self.push_cf_scope(CfScopeKind::Function, None, Some(false));
+    let cf_scope_depth = {
+      self.scope_context.cf.push(CfScope::new(
+        CfScopeKind::Function,
+        None,
+        Some(call_dep),
+        Some(false),
+      ));
+      self.scope_context.cf.current_depth()
+    };
     self.scope_context.call.push(CallScope::new(
       source.into(),
       old_variable_scope_stack,
