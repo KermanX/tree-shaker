@@ -29,7 +29,8 @@ impl<'a> Analyzer<'a> {
       self.get_exec_dep(0, extra)
     } else {
       let variable_scope = self.scope_context.variable.get_from_depth(target_depth - 1).unwrap();
-      self.get_exec_dep(variable_scope.cf_scope_depth + 1, extra)
+      let target_cf_depth = self.find_first_different_cf_scope(variable_scope.cf_scope);
+      self.get_exec_dep(target_cf_depth, extra)
     }
   }
 }

@@ -19,8 +19,7 @@ pub struct Variable<'a> {
 
 pub struct VariableScope<'a> {
   /// Cf scopes when the scope was created
-  pub cf_scope_id: ScopeId,
-  pub cf_scope_depth: usize,
+  pub cf_scope: ScopeId,
   pub variables: FxHashMap<SymbolId, Variable<'a>>,
   pub exhaustive_deps: FxHashMap<SymbolId, FxHashSet<TrackerRunner<'a>>>,
 }
@@ -36,13 +35,8 @@ impl fmt::Debug for VariableScope<'_> {
 }
 
 impl<'a> VariableScope<'a> {
-  pub fn new(cf_scope_id: ScopeId, cf_scope_depth: usize) -> Self {
-    Self {
-      cf_scope_id,
-      cf_scope_depth,
-      variables: Default::default(),
-      exhaustive_deps: Default::default(),
-    }
+  pub fn new(cf_scope: ScopeId) -> Self {
+    Self { cf_scope, variables: Default::default(), exhaustive_deps: Default::default() }
   }
 }
 
@@ -138,7 +132,7 @@ impl<'a> Analyzer<'a> {
       });
 
       let target_cf_scope =
-        self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope_id);
+        self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
       self.mark_exhaustive_read((id, symbol), target_cf_scope);
 
       if value.is_none() {
@@ -167,7 +161,7 @@ impl<'a> Analyzer<'a> {
         new_val.consume(self);
       } else {
         let target_cf_scope =
-          self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope_id);
+          self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
         let dep = self.get_assignment_deps(depth, variable.decl_dep.clone());
 
         if variable.exhausted {

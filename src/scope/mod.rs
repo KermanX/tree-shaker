@@ -31,7 +31,7 @@ impl<'a> ScopeContext<'a> {
     let mut cf = ScopeTree::new();
     let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
     let mut variable = ScopeTree::new();
-    let body_variable_scope = variable.push(VariableScope::new(cf_scope_0, 0));
+    let body_variable_scope = variable.push(VariableScope::new(cf_scope_0));
     ScopeContext {
       call: vec![CallScope::new(
         EntityDepNode::Environment,
@@ -128,10 +128,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_variable_scope(&mut self) -> ScopeId {
-    self.scope_context.variable.push(VariableScope::new(
-      self.scope_context.cf.current_id(),
-      self.scope_context.cf.current_depth(),
-    ))
+    self.scope_context.variable.push(VariableScope::new(self.scope_context.cf.current_id()))
   }
 
   pub fn pop_variable_scope(&mut self) -> ScopeId {
