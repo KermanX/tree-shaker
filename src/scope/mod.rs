@@ -103,15 +103,8 @@ impl<'a> Analyzer<'a> {
     let old_variable_scope_stack = self.scope_context.variable.replace_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
     let variable_scope_depth = self.scope_context.variable.current_depth();
-    let cf_scope_depth = {
-      self.scope_context.cf.push(CfScope::new(
-        CfScopeKind::Function,
-        None,
-        vec![call_dep],
-        Some(false),
-      ));
-      self.scope_context.cf.current_depth()
-    };
+    let cf_scope_depth =
+      self.push_cf_scope_with_deps(CfScopeKind::Function, None, vec![call_dep], Some(false));
     self.scope_context.call.push(CallScope::new(
       source.into(),
       old_variable_scope_stack,
@@ -167,12 +160,26 @@ impl<'a> Analyzer<'a> {
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
     exited: Option<bool>,
   ) -> usize {
-    self.scope_context.cf.push(CfScope::new(kind, labels, vec![], exited));
+    self.push_cf_scope_with_deps(kind, labels, vec![], exited)
+  }
+
+  pub fn push_cf_scope_with_deps(
+    &mut self,
+    kind: CfScopeKind,
+    labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+    deps: Vec<Consumable<'a>>,
+    exited: Option<bool>,
+  ) -> usize {
+    self.scope_context.cf.push(CfScope::new(kind, labels, deps, exited));
     self.scope_context.cf.current_depth()
   }
 
   pub fn push_cf_scope_normal(&mut self, exited: Option<bool>) {
     self.push_cf_scope(CfScopeKind::Normal, None, exited);
+  }
+
+  pub fn push_cf_scope_for_deps(&mut self, deps: Vec<Consumable<'a>>) {
+    self.push_cf_scope_with_deps(CfScopeKind::Normal, None, deps, Some(false));
   }
 
   pub fn pop_cf_scope(&mut self) -> ScopeId {
