@@ -96,8 +96,8 @@ impl<'a> Analyzer<'a> {
     let call_scope = self.call_scope_mut();
     call_scope.returned_values.push(value);
 
-    let cf_scope_id = call_scope.cf_scope_depth;
-    self.exit_to(cf_scope_id);
+    let target_depth = call_scope.cf_scope_depth;
+    self.exit_to(target_depth);
   }
 
   pub fn consume_arguments(&mut self, search: Option<EntityDepNode>) -> bool {

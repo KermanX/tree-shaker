@@ -31,7 +31,11 @@ impl<'a> From<AstKind<'a>> for Consumable<'a> {
 
 impl<'a, T: ConsumableTrait<'a> + 'a> From<Vec<T>> for Consumable<'a> {
   fn from(value: Vec<T>) -> Self {
-    RefCell::new(value).into()
+    if value.is_empty() {
+      ().into()
+    } else {
+      RefCell::new(value).into()
+    }
   }
 }
 
@@ -100,10 +104,6 @@ impl<'a> ConsumableInternal<'a> for Rc<dyn ConsumableInternal<'a> + 'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn consume(&mut self, dep: impl ConsumableTrait<'a>) {
-    dep.consume(self);
-  }
-
-  pub fn consume_ref(&mut self, dep: &impl ConsumableTrait<'a>) {
     dep.consume(self);
   }
 }

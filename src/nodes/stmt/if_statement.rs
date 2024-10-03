@@ -1,8 +1,7 @@
-use std::usize;
-
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
+  entity::Consumable,
   scope::{conditional::ConditionalData, CfScopeKind},
   transformer::Transformer,
 };
@@ -41,7 +40,7 @@ impl<'a> Analyzer<'a> {
 
     let mut should_exit = true;
     let mut exit_target_inner = 0;
-    let mut exit_target_outer = usize::MAX;
+    let mut exit_target_outer = self.scope_context.cf.stack.len();
 
     /*
      dep is AstKind::IfStatement
@@ -51,6 +50,8 @@ impl<'a> Analyzer<'a> {
      - If both cases are possible (data.maybe_true && data.maybe_false),
        then, if dep is referred, consume all collected `test` values, then clear them.
     */
+
+    let mut deps: Option<Vec<Consumable<'a>>> = None;
 
     if maybe_true {
       self.push_conditional_cf_scope(
@@ -62,12 +63,14 @@ impl<'a> Analyzer<'a> {
       self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
       self.exec_statement(&node.consequent);
       self.pop_cf_scope();
-      if let Some(stopped_exit) = self.pop_cf_scope_and_get().blocked_exit {
+      let conditional_scope = self.pop_cf_scope_and_get();
+      if let Some(stopped_exit) = conditional_scope.blocked_exit {
         exit_target_inner = exit_target_inner.max(stopped_exit);
         exit_target_outer = exit_target_outer.min(stopped_exit);
       } else {
         should_exit = false;
       }
+      deps.get_or_insert_with(|| conditional_scope.deps.clone());
     }
     if maybe_false {
       if let Some(alternate) = &node.alternate {
@@ -80,22 +83,26 @@ impl<'a> Analyzer<'a> {
         self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
         self.exec_statement(alternate);
         self.pop_cf_scope();
-        if let Some(stopped_exit) = self.pop_cf_scope_and_get().blocked_exit {
+        let conditional_scope = self.pop_cf_scope_and_get();
+        if let Some(stopped_exit) = conditional_scope.blocked_exit {
           exit_target_inner = exit_target_inner.max(stopped_exit);
           exit_target_outer = exit_target_outer.min(stopped_exit);
         } else {
           should_exit = false;
         }
+        deps.get_or_insert_with(|| conditional_scope.deps.clone());
       } else {
         should_exit = false;
       }
     }
 
+    let deps = deps.unwrap_or_default();
     if should_exit {
-      self.exit_to(exit_target_inner);
-      for id in self.scope_context.cf.stack[exit_target_outer..exit_target_inner].to_vec() {
-        self.scope_context.cf.get_mut(id).exited = None;
-      }
+      let deps =
+        self.exit_to_impl(exit_target_inner, self.scope_context.cf.stack.len(), true, deps);
+      self.exit_to_impl(exit_target_outer, exit_target_inner, false, deps);
+    } else {
+      self.exit_to_impl(exit_target_outer, self.scope_context.cf.stack.len(), false, deps);
     }
   }
 }

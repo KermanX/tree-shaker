@@ -14,6 +14,7 @@ pub enum CfScopeKind {
   Exhaustive,
   Conditional,
   Function,
+  Module,
 }
 
 #[derive(Debug)]
@@ -52,6 +53,13 @@ impl<'a> CfScope<'a> {
       } else {
         None
       },
+    }
+  }
+
+  pub fn update_exited(&mut self, exited: Option<bool>, dep: impl FnOnce() -> Consumable<'a>) {
+    if self.exited != Some(true) {
+      self.exited = exited;
+      self.deps.push(dep());
     }
   }
 
@@ -145,13 +153,24 @@ impl<'a> Analyzer<'a> {
     Consumable::from(deps)
   }
 
-  pub fn exit_to(&mut self, target_index: usize) {
-    let mut must_exit = true;
-    for (index, id) in self.scope_context.cf.stack.clone().into_iter().enumerate().rev() {
+  pub fn exit_to(&mut self, target_depth: usize) -> Vec<Consumable<'a>> {
+    self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), true, vec![])
+  }
+
+  pub fn exit_to_impl(
+    &mut self,
+    target_depth: usize,
+    from_depth: usize,
+    mut must_exit: bool,
+    mut deps: Vec<Consumable<'a>>,
+  ) -> Vec<Consumable<'a>> {
+    for id in self.scope_context.cf.stack[target_depth..from_depth].to_vec().into_iter().rev() {
       let cf_scope = self.scope_context.cf.get_mut(id);
+      let this_deps = cf_scope.deps.clone();
+      let dep = || Consumable::from(deps.clone());
       if must_exit {
         let is_indeterminate = cf_scope.is_indeterminate();
-        cf_scope.exited = Some(true);
+        cf_scope.update_exited(Some(true), dep);
 
         // Stop exiting outer scopes if one inner scope is indeterminate.
         if is_indeterminate {
@@ -160,23 +179,22 @@ impl<'a> Analyzer<'a> {
             // For the `if` statement, do not mark the outer scopes as indeterminate here.
             // Instead, let the `if` statement handle it.
             debug_assert!(cf_scope.blocked_exit.is_none());
-            cf_scope.blocked_exit = Some(target_index);
+            cf_scope.blocked_exit = Some(target_depth);
             break;
           }
         }
       } else {
-        cf_scope.exited = None;
+        cf_scope.update_exited(None, dep);
       }
-      if index == target_index {
-        break;
-      }
+      deps.extend(this_deps);
     }
+    deps
   }
 
   /// If the label is used, `true` is returned.
   pub fn break_to_label(&mut self, label: Option<&'a str>) -> bool {
     let mut is_closest_breakable = true;
-    let mut target_index = None;
+    let mut target_depth = None;
     let mut label_used = false;
     for (idx, cf_scope) in self.scope_context.cf.iter_stack().enumerate().rev() {
       if cf_scope.is_function() {
@@ -189,25 +207,25 @@ impl<'a> Analyzer<'a> {
             self.referred_nodes.insert(label_entity.dep_node());
             label_used = true;
           }
-          target_index = Some(idx);
+          target_depth = Some(idx);
           break;
         }
         if breakable_without_label {
           is_closest_breakable = false;
         }
       } else if breakable_without_label {
-        target_index = Some(idx);
+        target_depth = Some(idx);
         break;
       }
     }
-    self.exit_to(target_index.unwrap());
+    self.exit_to(target_depth.unwrap());
     label_used
   }
 
   /// If the label is used, `true` is returned.
   pub fn continue_to_label(&mut self, label: Option<&'a str>) -> bool {
     let mut is_closest_continuable = true;
-    let mut target_index = None;
+    let mut target_depth = None;
     let mut label_used = false;
     for (idx, cf_scope) in self.scope_context.cf.iter_stack().enumerate().rev() {
       if cf_scope.is_function() {
@@ -221,17 +239,17 @@ impl<'a> Analyzer<'a> {
               self.referred_nodes.insert(label_entity.dep_node());
               label_used = true;
             }
-            target_index = Some(idx);
+            target_depth = Some(idx);
             break;
           }
           is_closest_continuable = false;
         }
       } else if is_continuable {
-        target_index = Some(idx);
+        target_depth = Some(idx);
         break;
       }
     }
-    self.exit_to(target_index.unwrap());
+    self.exit_to(target_depth.unwrap());
     label_used
   }
 }

@@ -29,7 +29,7 @@ pub struct ScopeContext<'a> {
 impl<'a> ScopeContext<'a> {
   pub fn new() -> Self {
     let mut cf = ScopeTree::new();
-    let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Function, None, vec![], Some(false)));
+    let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
     let mut variable = ScopeTree::new();
     let body_variable_scope = variable.push(VariableScope::new(cf_scope_0, 0));
     ScopeContext {
