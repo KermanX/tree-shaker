@@ -37,7 +37,6 @@ impl<'a> ScopeContext<'a> {
         EntityDepNode::Environment,
         vec![],
         0,
-        0,
         body_variable_scope,
         // TODO: global this
         UnknownEntity::new_unknown(),
@@ -98,14 +97,12 @@ impl<'a> Analyzer<'a> {
     let variable_scope_stack = variable_scope_stack.as_ref().clone();
     let old_variable_scope_stack = self.scope_context.variable.replace_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
-    let variable_scope_depth = self.scope_context.variable.current_depth();
     let cf_scope_depth =
       self.push_cf_scope_with_deps(CfScopeKind::Function, None, vec![call_dep], Some(false));
     self.scope_context.call.push(CallScope::new(
       source.into(),
       old_variable_scope_stack,
       cf_scope_depth,
-      variable_scope_depth,
       body_variable_scope,
       this,
       args,
@@ -177,10 +174,9 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_try_scope(&mut self) {
-    let cf_scope_index = self.scope_context.cf.current_depth() - 1;
     self.push_cf_scope(CfScopeKind::Normal, None, None);
-    let variable_scope_index = self.scope_context.call.len() - 1;
-    self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_index, variable_scope_index));
+    let cf_scope_depth = self.scope_context.cf.current_depth();
+    self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_depth));
   }
 
   pub fn pop_try_scope(&mut self) -> TryScope<'a> {

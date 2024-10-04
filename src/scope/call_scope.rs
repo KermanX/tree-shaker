@@ -13,7 +13,6 @@ pub struct CallScope<'a> {
   pub source: EntityDepNode,
   pub old_variable_scope_stack: Vec<ScopeId>,
   pub cf_scope_depth: usize,
-  pub variable_scope_depth: usize,
   pub body_variable_scope: ScopeId,
   pub this: Entity<'a>,
   pub args: (Entity<'a>, Vec<SymbolId>),
@@ -29,7 +28,6 @@ impl<'a> CallScope<'a> {
     source: EntityDepNode,
     old_variable_scope_stack: Vec<ScopeId>,
     cf_scope_depth: usize,
-    variable_scope_depth: usize,
     body_variable_scope: ScopeId,
     this: Entity<'a>,
     args: (Entity<'a>, Vec<SymbolId>),
@@ -40,14 +38,13 @@ impl<'a> CallScope<'a> {
       source,
       old_variable_scope_stack,
       cf_scope_depth,
-      variable_scope_depth,
       body_variable_scope,
       this,
       args,
       returned_values: Vec::new(),
       is_async,
       is_generator,
-      try_scopes: vec![TryScope::new(cf_scope_depth, variable_scope_depth)],
+      try_scopes: vec![TryScope::new(cf_scope_depth)],
       need_consume_arguments: false,
     }
   }
@@ -90,8 +87,7 @@ impl<'a> CallScope<'a> {
 impl<'a> Analyzer<'a> {
   pub fn return_value(&mut self, value: Entity<'a>, dep: impl Into<Consumable<'a>>) {
     let call_scope = self.call_scope();
-    let value =
-      ForwardedEntity::new(value, self.get_assignment_deps(call_scope.variable_scope_depth, dep));
+    let value = ForwardedEntity::new(value, self.get_exec_dep(call_scope.cf_scope_depth, dep));
 
     let call_scope = self.call_scope_mut();
     call_scope.returned_values.push(value);

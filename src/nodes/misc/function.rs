@@ -68,9 +68,7 @@ impl<'a> Analyzer<'a> {
           );
 
           let body_variable_scope = analyzer.push_variable_scope();
-          let call_scope = analyzer.call_scope_mut();
-          call_scope.variable_scope_depth += 1;
-          call_scope.body_variable_scope = body_variable_scope;
+          analyzer.call_scope_mut().body_variable_scope = body_variable_scope;
         }
 
         analyzer.exec_formal_parameters(
