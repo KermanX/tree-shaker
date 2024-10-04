@@ -34,7 +34,8 @@ impl<'a> Analyzer<'a> {
   ) -> Option<(bool, Entity<'a>, Entity<'a>)> {
     let dep: EntityDepNode = (AST_TYPE, node).into();
     if let Some(member_expr) = unwrap_to_member_expression(node) {
-      let (short_circuit, callee, cache) = self.exec_member_expression_read_in_chain(member_expr);
+      let (short_circuit, callee, cache) =
+        self.exec_member_expression_read_in_chain(member_expr, false);
       cache.map(|(object, _)| {
         assert_ne!(short_circuit, Some(true));
         let indeterminate = short_circuit.is_none();

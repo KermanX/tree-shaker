@@ -8,7 +8,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_chain_expression(&mut self, node: &'a ChainExpression<'a>) -> Entity<'a> {
     match &node.expression {
       ChainElement::CallExpression(node) => self.exec_call_expression_in_chain(node).1,
-      node => self.exec_member_expression_read_in_chain(node.to_member_expression()).1,
+      node => self.exec_member_expression_read_in_chain(node.to_member_expression(), false).1,
     }
   }
 
@@ -19,7 +19,7 @@ impl<'a> Analyzer<'a> {
     match node {
       match_member_expression!(Expression) => {
         let (short_circuit, value, _cache) =
-          self.exec_member_expression_read_in_chain(node.to_member_expression());
+          self.exec_member_expression_read_in_chain(node.to_member_expression(), false);
         (short_circuit, value)
       }
       Expression::CallExpression(node) => self.exec_call_expression_in_chain(node),

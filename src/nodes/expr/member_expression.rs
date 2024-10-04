@@ -53,8 +53,9 @@ impl<'a> Analyzer<'a> {
   pub fn exec_member_expression_read(
     &mut self,
     node: &'a MemberExpression<'a>,
+    will_write: bool,
   ) -> (Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
-    let (short_circuit, value, cache) = self.exec_member_expression_read_in_chain(node);
+    let (short_circuit, value, cache) = self.exec_member_expression_read_in_chain(node, will_write);
     debug_assert_eq!(short_circuit, Some(false));
     (value, cache)
   }
@@ -63,6 +64,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_member_expression_read_in_chain(
     &mut self,
     node: &'a MemberExpression<'a>,
+    will_write: bool,
   ) -> (Option<bool>, Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
     let (short_circuit, object) = self.exec_expression_in_chain(node.object());
 
@@ -92,7 +94,14 @@ impl<'a> Analyzer<'a> {
       self.push_cf_scope_normal(None);
     }
 
+    if will_write {
+      self.push_cf_scope_for_deps(vec![object.clone().into()]);
+    }
     let key = self.exec_key(node);
+    if will_write {
+      self.pop_cf_scope();
+    }
+
     let key = data.collector.collect(self, key);
     let value = object.get_property(self, AstKind::MemberExpression(node), &key);
     let cache = Some((object, key));
