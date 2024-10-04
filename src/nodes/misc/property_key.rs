@@ -8,9 +8,15 @@ use oxc::{ast::ast::PropertyKey, span::GetSpan};
 
 const AST_TYPE: AstType2 = AstType2::PropertyKey;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Data<'a> {
   collector: LiteralCollector<'a>,
+}
+
+impl<'a> Default for Data<'a> {
+  fn default() -> Self {
+    Data { collector: LiteralCollector::new_property_key_collector() }
+  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -20,7 +26,7 @@ impl<'a> Analyzer<'a> {
       PropertyKey::PrivateIdentifier(node) => LiteralEntity::new_string(node.name.as_str()),
       node => {
         let node = node.to_expression();
-        self.exec_expression(node)
+        self.exec_expression(node).get_to_property_key()
       }
     };
 
@@ -46,22 +52,13 @@ impl<'a> Transformer<'a> {
         let data = self.get_data::<Data>(AST_TYPE, node);
         let span = node.span();
         let node = node.to_expression();
-        if let Some((r#static, s)) = data.collector.collected_property_key(&self.config) {
+        if let Some(LiteralEntity::String(s)) = data.collector.collected() {
           let effect = self.transform_expression(node, false);
           if effect.is_some() || need_val {
             let expr = self.transform_expression(node, true).unwrap();
             Some((true, self.ast_builder.property_key_expression(expr)))
           } else if need_val {
-            if r#static {
-              Some((false, self.ast_builder.property_key_identifier_name(span, s)))
-            } else {
-              Some((
-                false,
-                self
-                  .ast_builder
-                  .property_key_expression(self.ast_builder.expression_string_literal(span, s)),
-              ))
-            }
+            Some((false, self.ast_builder.property_key_identifier_name(span, s)))
           } else {
             None
           }
