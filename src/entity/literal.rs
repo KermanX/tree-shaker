@@ -74,7 +74,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
           .map(|(i, c)| {
             (
               true,
-              LiteralEntity::new_number(i as f64, analyzer.allocator.alloc(i.to_string())),
+              LiteralEntity::new_string(analyzer.allocator.alloc(i.to_string())),
               LiteralEntity::new_string(analyzer.allocator.alloc(c.to_string())),
             )
           })

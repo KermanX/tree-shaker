@@ -65,8 +65,8 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     } else if *self == UnknownEntity::String {
       vec![(
         false,
-        UnknownEntity::new_computed_unknown(rc.clone()),
-        UnknownEntity::new_computed_unknown(rc.clone()),
+        UnknownEntity::new_computed_string(rc.clone()),
+        UnknownEntity::new_computed_string(rc.clone()),
       )]
     } else {
       vec![]
