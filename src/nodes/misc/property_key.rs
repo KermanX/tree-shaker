@@ -21,17 +21,17 @@ impl<'a> Default for Data<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_property_key(&mut self, node: &'a PropertyKey<'a>) -> Entity<'a> {
-    let entity = match node {
+    match node {
       PropertyKey::StaticIdentifier(node) => LiteralEntity::new_string(node.name.as_str()),
       PropertyKey::PrivateIdentifier(node) => LiteralEntity::new_string(node.name.as_str()),
       node => {
         let node = node.to_expression();
-        self.exec_expression(node).get_to_property_key()
-      }
-    };
+        let value = self.exec_expression(node).get_to_property_key();
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
-    data.collector.collect(self, entity)
+        let data = self.load_data::<Data>(AST_TYPE, node);
+        data.collector.collect(self, value)
+      }
+    }
   }
 }
 

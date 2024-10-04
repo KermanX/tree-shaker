@@ -30,7 +30,7 @@ impl TreeShakeConfig {
       min_simple_number_value: -999,
       max_simple_number_value: 999,
       max_simple_string_length: 12,
-      static_property_key_regex: Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]+$").unwrap(),
+      static_property_key_regex: Regex::new(r"^[a-zA-Z_$][a-zA-Z0-9_$]*$").unwrap(),
     }
   }
 

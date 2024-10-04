@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, ArgumentsEntity, Consumable, Entity, EntityTrait, EntryEntity, ForwardedEntity,
-  LiteralEntity, TypeofResult, UnionEntity, UnknownEntity,
+  consumed_object, ArgumentsEntity, ComputedEntity, Consumable, Entity, EntityTrait, EntryEntity,
+  ForwardedEntity, LiteralEntity, TypeofResult, UnionEntity, UnknownEntity,
 };
 use crate::{analyzer::Analyzer, use_consumed_flag};
 use oxc::{ast::ast::PropertyKind, semantic::ScopeId};
@@ -176,6 +176,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
+    let value = ComputedEntity::new(value, key.clone());
     let indeterminate = analyzer.is_assignment_indeterminate(self.cf_scope);
     analyzer.exec_indeterminately(move |analyzer| {
       self.add_assignment_dep(analyzer, dep.clone());
@@ -421,7 +422,7 @@ impl<'a> ObjectEntity<'a> {
     value: Entity<'a>,
     definite: bool,
   ) {
-    let key = key.get_to_property_key();
+    let value = ComputedEntity::new(value, key.clone());
     if let Some(key_literals) = key.get_to_literals() {
       let definite = definite && key_literals.len() == 1;
       for key_literal in key_literals {

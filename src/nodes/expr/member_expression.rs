@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{Entity, ForwardedEntity, LiteralEntity, UnionEntity},
+  entity::{Entity, LiteralCollector, LiteralEntity, UnionEntity},
   transformer::Transformer,
 };
 use oxc::{
@@ -18,10 +18,34 @@ use oxc::{
 
 const AST_TYPE_READ: AstType2 = AstType2::MemberExpressionRead;
 
-#[derive(Debug, Default)]
-struct Data {
+#[derive(Debug)]
+struct DataRead<'a> {
   need_access: bool,
   need_optional: bool,
+  collector: LiteralCollector<'a>,
+}
+
+impl<'a> Default for DataRead<'a> {
+  fn default() -> Self {
+    Self {
+      need_access: false,
+      need_optional: false,
+      collector: LiteralCollector::new_property_key_collector(),
+    }
+  }
+}
+
+const AST_TYPE_WRITE: AstType2 = AstType2::MemberExpressionWrite;
+
+#[derive(Debug)]
+struct DataWrite<'a> {
+  collector: LiteralCollector<'a>,
+}
+
+impl<'a> Default for DataWrite<'a> {
+  fn default() -> Self {
+    Self { collector: LiteralCollector::new_property_key_collector() }
+  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -58,7 +82,7 @@ impl<'a> Analyzer<'a> {
       false
     };
 
-    let data = self.load_data::<Data>(AST_TYPE_READ, node);
+    let data = self.load_data::<DataRead>(AST_TYPE_READ, node);
     data.need_access = true;
     data.need_optional |= self_indeterminate;
 
@@ -69,6 +93,7 @@ impl<'a> Analyzer<'a> {
     }
 
     let key = self.exec_key(node);
+    let key = data.collector.collect(self, key);
     let value = object.get_property(self, AstKind::MemberExpression(node), &key);
     let cache = Some((object, key));
 
@@ -86,9 +111,6 @@ impl<'a> Analyzer<'a> {
     value: Entity<'a>,
     cache: Option<(Entity<'a>, Entity<'a>)>,
   ) {
-    let dep = AstKind::MemberExpression(node);
-    let value = ForwardedEntity::new(value, dep);
-
     let (object, key) = cache.unwrap_or_else(|| {
       let object = self.exec_expression(node.object());
 
@@ -99,7 +121,10 @@ impl<'a> Analyzer<'a> {
       (object, key)
     });
 
-    object.set_property(self, dep, &key, value);
+    let data = self.load_data::<DataWrite>(AST_TYPE_WRITE, node);
+    let key = data.collector.collect(self, key);
+
+    object.set_property(self, AstKind::MemberExpression(node), &key, value);
   }
 
   fn exec_key(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {
@@ -121,7 +146,7 @@ impl<'a> Transformer<'a> {
     node: &'a MemberExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE_READ, node);
+    let data = self.get_data::<DataRead>(AST_TYPE_READ, node);
 
     if !data.need_access {
       return if need_val {
@@ -147,15 +172,39 @@ impl<'a> Transformer<'a> {
         let ComputedMemberExpression { span, object, expression, .. } = node.as_ref();
 
         let object = self.transform_expression(object, need_read);
-        let key = self.transform_expression(expression, need_read);
         if need_read {
-          Some(self.ast_builder.expression_member(self.ast_builder.member_expression_computed(
-            *span,
-            object.unwrap(),
-            key.unwrap(),
-            data.need_optional,
-          )))
+          Some(self.ast_builder.expression_member(
+            if let Some(LiteralEntity::String(s)) = data.collector.collected() {
+              let key_span = expression.span();
+              let key = self.transform_expression(expression, false);
+              if key.is_none() {
+                self.ast_builder.member_expression_static(
+                  *span,
+                  object.unwrap(),
+                  self.ast_builder.identifier_name(key_span, s),
+                  data.need_optional,
+                )
+              } else {
+                let key = self.transform_expression(expression, true);
+                self.ast_builder.member_expression_computed(
+                  *span,
+                  object.unwrap(),
+                  key.unwrap(),
+                  data.need_optional,
+                )
+              }
+            } else {
+              let key = self.transform_expression(expression, true);
+              self.ast_builder.member_expression_computed(
+                *span,
+                object.unwrap(),
+                key.unwrap(),
+                data.need_optional,
+              )
+            },
+          ))
         } else {
+          let key = self.transform_expression(expression, false);
           build_effect!(&self.ast_builder, *span, object, key)
         }
       }
@@ -201,20 +250,48 @@ impl<'a> Transformer<'a> {
   ) -> Option<MemberExpression<'a>> {
     let need_write = self.is_referred(AstKind::MemberExpression(node));
 
+    let data = self.get_data::<DataWrite>(AST_TYPE_WRITE, node);
+
     match node {
       MemberExpression::ComputedMemberExpression(node) => {
         let ComputedMemberExpression { span, object, expression, .. } = node.as_ref();
 
         let transformed_object = self.transform_expression(object, need_write);
-        let transformed_key = self.transform_expression(expression, need_write);
-        if need_write {
-          Some(self.ast_builder.member_expression_computed(
-            *span,
-            transformed_object.unwrap(),
-            transformed_key.unwrap(),
-            false,
-          ))
-        } else if transformed_object.is_some() || transformed_key.is_some() {
+
+        let need_key_value = need_write || transformed_object.is_some();
+        let static_key = if need_key_value {
+          if let Some(LiteralEntity::String(s)) = data.collector.collected() {
+            if self.transform_expression(expression, false).is_none() {
+              Some(self.ast_builder.identifier_name(expression.span(), s))
+            } else {
+              None
+            }
+          } else {
+            None
+          }
+        } else {
+          None
+        };
+        let transformed_key =
+          self.transform_expression(expression, need_key_value && static_key.is_none());
+
+        if need_key_value {
+          if let Some(key) = static_key {
+            Some(self.ast_builder.member_expression_static(
+              *span,
+              transformed_object.unwrap(),
+              key,
+              false,
+            ))
+          } else {
+            Some(self.ast_builder.member_expression_computed(
+              *span,
+              transformed_object.unwrap(),
+              transformed_key.unwrap(),
+              false,
+            ))
+          }
+        } else if transformed_key.is_some() {
           Some(self.ast_builder.member_expression_computed(
             *span,
             self.transform_expression(object, true).unwrap(),
