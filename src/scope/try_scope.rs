@@ -34,8 +34,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn explicit_throw(&mut self, value: Entity<'a>) {
-    let try_scope = self.try_scope();
-    let value = ForwardedEntity::new(value, self.get_exec_dep(try_scope.cf_scope_depth, ()));
     self.explicit_throw_impl(value);
   }
 
@@ -44,10 +42,7 @@ impl<'a> Analyzer<'a> {
       self.add_diagnostic(message);
     }
 
-    let try_scope = self.try_scope();
-    let value =
-      UnknownEntity::new_computed_unknown(self.get_exec_dep(try_scope.cf_scope_depth, ()));
-    self.explicit_throw_impl(value);
+    self.explicit_throw_impl(UnknownEntity::new_unknown());
   }
 
   pub fn forward_throw(&mut self, values: Vec<Entity<'a>>) {
@@ -60,10 +55,13 @@ impl<'a> Analyzer<'a> {
   }
 
   fn explicit_throw_impl(&mut self, value: Entity<'a>) {
+    let try_scope = self.try_scope();
+    let exec_dep = self.get_exec_dep(try_scope.cf_scope_depth, ());
+
     let try_scope = self.try_scope_mut();
 
     try_scope.may_throw = true;
-    try_scope.thrown_values.push(value);
+    try_scope.thrown_values.push(ForwardedEntity::new(value, exec_dep));
 
     let cf_scope_depth = try_scope.cf_scope_depth;
     self.exit_to(cf_scope_depth);
