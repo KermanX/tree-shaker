@@ -46,7 +46,11 @@ impl<'a> Transformer<'a> {
     let Analyzer { config, allocator, semantic, data, referred_nodes, var_decls, logger, .. } =
       analyzer;
 
-    println!("referred_nodes: {:#?}", referred_nodes);
+    // for (key, v) in referred_nodes.iter() {
+    //   if *v > 100 {
+    //     println!("{key:?}: {v}");
+    //   }
+    // }
 
     Transformer {
       config,
