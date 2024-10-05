@@ -2,15 +2,17 @@
 import * as monaco from 'monaco-editor';
 import { watchEffect } from 'vue';
 import Editor from './Editor.vue';
-import { activeExprSpan, activeStmtSpan, input } from './states';
+import { activeCallScope, currentCallScopes, currentExprSpan, currentStmtSpan, input } from './states';
 
 function setupEditor(editor: monaco.editor.IStandaloneCodeEditor) {
   const model = editor.getModel()!;
 
   const activeStmtSpanDeco = editor.createDecorationsCollection();
   const activeExprSpanDeco = editor.createDecorationsCollection();
+  const activeCallScopeDeco = editor.createDecorationsCollection();
+
   watchEffect(() => {
-    let stmtSpan = activeStmtSpan.value;
+    let stmtSpan = currentStmtSpan.value;
     activeStmtSpanDeco.set([{
       range: stmtSpan ? monaco.Range.fromPositions(
         model.getPositionAt(stmtSpan[0]),
@@ -22,7 +24,7 @@ function setupEditor(editor: monaco.editor.IStandaloneCodeEditor) {
       },
     }])
 
-    const exprSpan = activeExprSpan.value;
+    const exprSpan = currentExprSpan.value;
     activeExprSpanDeco.set([{
       range: exprSpan ? monaco.Range.fromPositions(
         model.getPositionAt(exprSpan[0]),
@@ -30,6 +32,18 @@ function setupEditor(editor: monaco.editor.IStandaloneCodeEditor) {
       ) : new monaco.Range(0, 0, 0, 0),
       options: {
         className: "active-expr-span",
+      },
+    }])
+
+    const callSpan = currentCallScopes.value[activeCallScope.value].span;
+    activeCallScopeDeco.set([{
+      range: callSpan ? monaco.Range.fromPositions(
+        model.getPositionAt(callSpan[0]),
+        model.getPositionAt(callSpan[1])
+      ) : new monaco.Range(0, 0, 0, 0),
+      options: {
+        blockClassName: "active-call-scope",
+        blockPadding: [0, 0, 0, 2],
       },
     }])
   })

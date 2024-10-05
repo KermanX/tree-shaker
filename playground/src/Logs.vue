@@ -1,13 +1,22 @@
 <script setup lang="ts">
-import { watchEffect } from 'vue';
-import { activeLogIndex, logsRaw } from './states';
+import { useTemplateRef, watchEffect } from 'vue';
+import { activeCallScope, currentCallScopes, activeLogIndex, logsRaw } from './states';
 
-function getClass(index: number) {
-  const active = index === activeLogIndex.value;
+const logItems = useTemplateRef("logItems");
+
+function getLogItemClass(index: number) {
   return {
     'text-gray-200 bg-gray-800 bg-op-60': index < activeLogIndex.value,
     'bg-gray-600 bg-op-60': index === activeLogIndex.value,
     'text-gray-400 bg-gray-700 bg-op-0': index > activeLogIndex.value,
+  };
+}
+
+function getCallScopeClass(index: number) {
+  return {
+    'text-gray-200 bg-amber-900 bg-op-30': index > activeCallScope.value,
+    'bg-amber-700 bg-op-30': index === activeCallScope.value,
+    'text-gray-400 bg-amber-800 bg-op-0': index < activeCallScope.value,
   };
 }
 
@@ -26,25 +35,44 @@ watchEffect(() => {
   if (activeLogIndex.value < 0) {
     activeLogIndex.value = 0;
   }
+
+  logItems.value?.children[activeLogIndex.value]?.scrollIntoView({
+    block: 'nearest',
+    behavior: 'smooth',
+  });
 });
 </script>
 
 <template>
   <div flex flex-col gap-y-1 text-sm>
+    Events
     <div font-mono flex-grow h-0 overflow-auto scroll-hidden class="no-scrollbar">
-      <div my-2>
-        <div v-for="log, index in logsRaw" flex class="hover:bg-op-100" :class="getClass(index)" @click="activeLogIndex = index">
-          <div w-2rem>
-
-          </div>
-          <div flex-grow>
+      <div ref="logItems" my-2>
+        <div v-for="log, index in logsRaw" class="hover:bg-op-100" :class="getLogItemClass(index)"
+          @click="activeLogIndex = index">
+          <div ml-2>
             {{ log }}
           </div>
         </div>
       </div>
     </div>
 
-    <div flex gap-x-2 b-t-1 border-gray-600 b-solid pt-3 px-1>
+    <div font-mono flex-grow h-0 overflow-auto scroll-hidden b-t-1 border-gray-600 b-solid class="no-scrollbar">
+      <div my-.5>
+        Call Scopes
+      </div>
+      <div>
+        <div v-for="scope, index in currentCallScopes" flex class="hover:bg-op-40" :class="getCallScopeClass(index)"
+          @click="activeCallScope = index">
+          <div flex-grow ml-2>
+            cf_scope[{{ scope.cf_scope_depth }}]
+            variable_scope={{ scope.body_variable_scope }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div flex gap-x-2 b-t-1 border-gray-600 b-solid pt-2 px-1 text-xs>
       <div flex-grow />
       <button @click="prev" :disabled="activeLogIndex <= 0">Prev</button>
       <button @click="next" :disabled="activeLogIndex >= logsRaw.length - 1">Next</button>
@@ -54,6 +82,6 @@ watchEffect(() => {
 
 <style scoped>
 button {
-  @apply px-2 py-.5 rounded text-white b-1 b-gray-400 hover:bg-white hover:bg-op-10 active:bg-op-20 disabled:op-40 disabled:cursor-not-allowed disabled:pointer-events-none disabled:user-select-none user-select-none;
+  @apply px-2 py-.5 rounded text-white b-1 b-gray-400 hover:bg-white hover:bg-op-10 active:bg-op-20 disabled:op-40 user-select-none;
 }
 </style>

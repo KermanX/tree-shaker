@@ -1,6 +1,5 @@
+use oxc::{index::Idx, semantic::ScopeId, span::Span};
 use std::cell::RefCell;
-
-use oxc::span::Span;
 
 #[derive(Debug)]
 pub enum DebuggerEvent {
@@ -8,6 +7,8 @@ pub enum DebuggerEvent {
   PopStmtSpan,
   PushExprSpan(Span),
   PopExprSpan,
+  PushCallScope(Span, Vec<ScopeId>, usize, ScopeId),
+  PopCallScope,
 }
 
 pub struct Logger {
@@ -37,10 +38,33 @@ impl Logger {
       DebuggerEvent::PopStmtSpan => "PopStmtSpan".to_string(),
       DebuggerEvent::PushExprSpan(span) => format!("PushExprSpan {}", Self::serialize_span(span)),
       DebuggerEvent::PopExprSpan => "PopExprSpan".to_string(),
+      DebuggerEvent::PushCallScope(
+        span,
+        old_variable_scope_stack,
+        cf_scope_depth,
+        body_variable_scope,
+      ) => {
+        format!(
+          "PushCallScope {} {} {} {}",
+          Self::serialize_span(span),
+          old_variable_scope_stack
+            .iter()
+            .map(Self::serialize_scope_id)
+            .collect::<Vec<_>>()
+            .join(","),
+          cf_scope_depth,
+          Self::serialize_scope_id(body_variable_scope),
+        )
+      }
+      DebuggerEvent::PopCallScope => "PopCallScope".to_string(),
     }
   }
 
   fn serialize_span(span: &Span) -> String {
     format!("{}-{}", span.start, span.end)
+  }
+
+  fn serialize_scope_id(scope_id: &ScopeId) -> String {
+    scope_id.index().to_string()
   }
 }

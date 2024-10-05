@@ -10,11 +10,15 @@ pub mod variable_scope;
 use crate::{
   analyzer::Analyzer,
   entity::{Consumable, Entity, FunctionEntitySource, LabelEntity, UnknownEntity},
+  logger::DebuggerEvent,
 };
 use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::{
+  semantic::{ScopeId, SymbolId},
+  span::GetSpan,
+};
 use scope_tree::ScopeTree;
 use std::{mem, rc::Rc};
 use try_scope::TryScope;
@@ -99,6 +103,16 @@ impl<'a> Analyzer<'a> {
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth =
       self.push_cf_scope_with_deps(CfScopeKind::Function, None, vec![call_dep], Some(false));
+
+    if let Some(logger) = self.logger {
+      logger.push_event(DebuggerEvent::PushCallScope(
+        source.span(),
+        old_variable_scope_stack.clone(),
+        cf_scope_depth,
+        body_variable_scope,
+      ));
+    }
+
     self.scope_context.call.push(CallScope::new(
       source.into(),
       old_variable_scope_stack,
@@ -113,6 +127,11 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_call_scope(&mut self) -> Entity<'a> {
     let scope = self.scope_context.call.pop().unwrap();
+
+    if let Some(logger) = self.logger {
+      logger.push_event(DebuggerEvent::PopCallScope);
+    }
+
     let (old_variable_scope_stack, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
     self.pop_variable_scope();

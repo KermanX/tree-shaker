@@ -24,3 +24,7 @@
 .active-expr-span {
   @apply bg-blue-300 bg-op-20;
 }
+
+.active-call-scope {
+  box-shadow: -4px 0px 0px 0px #92400eDD;
+}

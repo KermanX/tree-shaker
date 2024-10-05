@@ -49,31 +49,57 @@ export const diagnostics = computed(() => result.value.diagnostics.join('\n'))
 export const logsRaw = computed(() => result.value.logs)
 
 export const activeLogIndex = ref(5)
+export const currentStmtSpan = ref<[number, number]>([0, 0])
+export const currentExprSpan = ref<[number, number]>([0, 0])
 
-export const activeStmtSpan = computed(() => {
-  let t = 0;
-  for (let i = activeLogIndex.value; i >= 0; i--) {
-    if (logsRaw.value[i].startsWith('PopStmtSpan')) {
-      t++;
-      continue;
-    }
-    let match = logsRaw.value[i].match(/^PushStmtSpan (\d+)-(\d+)$/);
-    if (match && (t-- === 0)) {
-      return [Number(match[1]), Number(match[2])] as [number, number]
+export interface CallScope {
+  span: [number, number]
+  old_variable_scope_stack: number[]
+  cf_scope_depth: number
+  body_variable_scope: number
+}
+export const activeCallScope = ref(0);
+export const currentCallScopes = ref<CallScope[]>([])
+
+watchEffect(() => {
+  const stmtSpans = []
+  const exprSpans = []
+  const callScopes: CallScope[] = [{
+    span: [0, 0],
+    old_variable_scope_stack: [],
+    cf_scope_depth: 0,
+    body_variable_scope: 0,
+  }]
+
+  function parseSpan(span: string) {
+    return span.split('-').map(Number) as [number, number]
+  }
+
+  for (const log of logsRaw.value.slice(0, activeLogIndex.value + 1)) {
+    const [type, ...data] = log.split(' ')
+    if (type === "PushStmtSpan") {
+      stmtSpans.push(parseSpan(data[0]))
+    } else if (type === "PopStmtSpan") {
+      stmtSpans.pop()
+    } else if (type === "PushExprSpan") {
+      exprSpans.push(parseSpan(data[0]))
+    } else if (type === "PopExprSpan") {
+      exprSpans.pop()
+    } else if (type === "PushCallScope") {
+      const [span, old_variable_scope_stack, cf_scope_depth, body_variable_scope] = data
+      callScopes.push({
+        span: parseSpan(span),
+        old_variable_scope_stack: old_variable_scope_stack.split(',').map(Number),
+        cf_scope_depth: Number(cf_scope_depth),
+        body_variable_scope: Number(body_variable_scope),
+      })
+    } else if (type === "PopCallScope") {
+      callScopes.pop()
     }
   }
-})
 
-export const activeExprSpan = computed(() => {
-  let t = 0;
-  for (let i = activeLogIndex.value; i >= 0; i--) {
-    if (logsRaw.value[i].startsWith('PopExprSpan')) {
-      t++;
-      continue;
-    }
-    let match = logsRaw.value[i].match(/^PushExprSpan (\d+)-(\d+)$/);
-    if (match && (t-- === 0)) {
-      return [Number(match[1]), Number(match[2])] as [number, number]
-    }
-  }
+  currentStmtSpan.value = stmtSpans.at(-1) ?? [0, 0]
+  currentExprSpan.value = exprSpans.at(-1) ?? [0, 0]
+  currentCallScopes.value = callScopes.reverse()
+  activeCallScope.value = 0
 })

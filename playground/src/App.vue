@@ -34,7 +34,7 @@ import { doMinify, doTreeShake, diagnostics, output } from './states';
       </div>
     </div>
     <div flex-grow h-0 flex flex-col md:flex-row gap-x-2 gap-y-2>
-      <div flex-grow h-0 md:h-full md:w-0 flex flex-col>
+      <div flex-grow-2 h-0 md:h-full md:w-0 flex flex-col>
         <div flex items-center>
           <h2 md:text-xl pb-2 pl-4 select-none>
             Input
@@ -42,7 +42,7 @@ import { doMinify, doTreeShake, diagnostics, output } from './states';
         </div>
         <Input class="flex-grow h-0 max-h-full" />
       </div>
-      <div flex-grow h-0 md:h-full md:w-0 flex flex-col>
+      <div flex-grow-3 h-0 md:h-full md:w-0 flex flex-col>
         <h2 md:text-xl pb-2 pl-4 select-none flex items-end>
           Logs
         </h2>
