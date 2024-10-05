@@ -6,7 +6,7 @@ use crate::{
   scope::{conditional::ConditionalData, CfScopeKind},
   transformer::Transformer,
 };
-use oxc::ast::ast::{ConditionalExpression, Expression};
+use oxc::ast::ast::{ConditionalExpression, Expression, LogicalOperator};
 
 const AST_TYPE: AstType2 = AstType2::ConditionalExpression;
 
@@ -68,23 +68,35 @@ impl<'a> Transformer<'a> {
 
     let ConditionalExpression { span, test, consequent, alternate, .. } = node;
 
-    let consequent =
-      data.maybe_true.then(|| self.transform_expression(consequent, need_val)).flatten();
-    let alternate =
-      data.maybe_false.then(|| self.transform_expression(alternate, need_val)).flatten();
-
-    let need_test_val = consequent.is_some() && alternate.is_some();
-    let test = self.transform_expression(test, need_test_val);
-
-    match (test, consequent, alternate) {
-      (Some(test), Some(consequent), Some(alternate)) => {
-        Some(self.ast_builder.expression_conditional(*span, test, consequent, alternate))
+    match (data.maybe_true, data.maybe_false) {
+      (true, true) => {
+        let left = self.transform_expression(consequent, need_val);
+        let right = self.transform_expression(alternate, need_val);
+        let test = self.transform_expression(test, left.is_some() || right.is_some());
+        match (test, left, right) {
+          (Some(test), Some(left), Some(right)) => {
+            Some(self.ast_builder.expression_conditional(*span, test, left, right))
+          }
+          (Some(test), Some(consequent), None) => {
+            Some(self.ast_builder.expression_logical(*span, test, LogicalOperator::And, consequent))
+          }
+          (Some(test), None, Some(alternate)) => {
+            Some(self.ast_builder.expression_logical(*span, test, LogicalOperator::Or, alternate))
+          }
+          (test, None, None) => test,
+          _ => unreachable!(),
+        }
       }
-      (test, Some(branch), None) | (test, None, Some(branch)) => {
-        Some(build_effect!(self.ast_builder, *span, test; branch))
+      (true, false) => {
+        let test = self.transform_expression(test, false);
+        let consequent = self.transform_expression(consequent, need_val);
+        build_effect!(self.ast_builder, *span, test, consequent)
       }
-      (Some(test), None, None) => Some(test),
-      (None, None, None) => None,
+      (false, true) => {
+        let test = self.transform_expression(test, false);
+        let alternate = self.transform_expression(alternate, need_val);
+        build_effect!(self.ast_builder, *span, test, alternate)
+      }
       _ => unreachable!(),
     }
   }
