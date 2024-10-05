@@ -78,8 +78,7 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
 
   if tree_shake {
     // Step 1: Analyze the program
-    let mut analyzer =
-      Analyzer::new(config, allocator, semantic, &mut diagnostics, logger);
+    let mut analyzer = Analyzer::new(config, allocator, semantic, &mut diagnostics, logger);
     analyzer.exec_program(ast);
 
     // Step 2: Remove dead code (transform)
