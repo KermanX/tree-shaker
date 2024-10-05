@@ -26,12 +26,13 @@ pub fn tree_shake(
     source_type: SourceType::default(),
     source_text: input,
     tree_shake: do_tree_shake,
-    minify: do_minify.then(|| MinifierOptions::default()),
-    code_gen: CodegenOptions { single_quote: true, minify: true },
+    minify: do_minify.then(MinifierOptions::default),
+    code_gen: CodegenOptions { single_quote: true, minify: do_minify },
     eval_mode,
+    logging: false,
   });
   TreeShakeResultBinding {
     output: result.codegen_return.source_text,
-    diagnostics: result.diagnostics.iter().map(|d| d.to_string()).collect(),
+    diagnostics: result.diagnostics.into_iter().collect(),
   }
 }

@@ -1,4 +1,26 @@
 :root {
-  background-color: rgb(24,24,24);
+  background-color: rgb(24, 24, 24);
   color: white;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.active-stmt-indicator:first-child {
+  @apply i-carbon-arrow-right bg-blue-300;
+}
+
+.active-stmt-span {
+  @apply bg-blue-300 bg-op-20;
+}
+
+.active-expr-span {
+  @apply bg-blue-300 bg-op-20;
 }

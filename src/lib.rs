@@ -5,6 +5,7 @@ mod config;
 mod data;
 mod effect_builder;
 mod entity;
+pub mod logger;
 mod nodes;
 mod scope;
 mod transformer;
@@ -16,6 +17,7 @@ mod tests;
 use analyzer::Analyzer;
 pub use config::TreeShakeConfig;
 use data::Diagnostics;
+use logger::Logger;
 use oxc::{
   allocator::Allocator,
   ast::AstBuilder,
@@ -37,12 +39,14 @@ pub struct TreeShakeOptions<'a> {
   pub minify: Option<MinifierOptions>,
   pub code_gen: CodegenOptions,
   pub eval_mode: bool,
+  pub logging: bool,
 }
 
 pub struct TreeShakeReturn {
   pub minifier_return: Option<MinifierReturn>,
   pub codegen_return: CodegenReturn,
   pub diagnostics: Diagnostics,
+  pub logs: Vec<String>,
 }
 
 pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
@@ -55,9 +59,11 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
     minify,
     code_gen,
     eval_mode,
+    logging,
   } = options;
 
   let ast_builder = AstBuilder::new(allocator);
+  let logger = logging.then(|| &*allocator.alloc(Logger::new()));
 
   let parser = Parser::new(&allocator, source_text.as_str(), source_type);
   let mut ast = allocator.alloc(parser.parse().program);
@@ -72,7 +78,8 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
 
   if tree_shake {
     // Step 1: Analyze the program
-    let mut analyzer = Analyzer::new(config, allocator, semantic, &mut diagnostics);
+    let mut analyzer =
+      Analyzer::new(config, allocator, semantic, &mut diagnostics, logger);
     analyzer.exec_program(ast);
 
     // Step 2: Remove dead code (transform)
@@ -94,5 +101,10 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
   let codegen = CodeGenerator::new().with_options(code_gen);
   let codegen_return = codegen.build(ast);
 
-  TreeShakeReturn { minifier_return, codegen_return, diagnostics }
+  TreeShakeReturn {
+    minifier_return,
+    codegen_return,
+    diagnostics,
+    logs: logger.map(|l| l.serialize()).unwrap_or_default(),
+  }
 }

@@ -1,51 +1,8 @@
 <script setup lang="ts">
-import { compressToBase64, decompressFromBase64 } from 'lz-string'
-import { tree_shake } from '@kermanx/tree-shaker'
-import { computed, ref, toRef, watch, watchEffect } from 'vue'
-import Editor from './Editor.vue'
-import { DEMO } from './examples';
-
-const input = ref('')
-const doTreeShake = ref(true)
-const doMinify = ref(false)
-
-const debouncedInput = ref('')
-let debounceTimeout = Number.NaN
-watch(input, (input) => {
-  clearInterval(debounceTimeout)
-  debounceTimeout = setTimeout(() => {
-    debouncedInput.value = input
-  }, 300)
-})
-
-function load() {
-  let parsed
-  if (window.location.hash) {
-    try {
-      parsed = JSON.parse(decompressFromBase64(window.location.hash.slice(1)) || '{}')
-    }
-    catch (e) { console.error(e) }
-  }
-  parsed ||= {}
-  debouncedInput.value = input.value = parsed.input ?? DEMO
-  doTreeShake.value = parsed.doTreeShake ?? true
-  doMinify.value = parsed.doMinify ?? false
-}
-
-function save() {
-  window.location.hash = compressToBase64(JSON.stringify({
-    input: input.value,
-    doTreeShake: doTreeShake.value,
-    doMinify: doMinify.value,
-  }))
-}
-
-load()
-watchEffect(save)
-
-const result = computed(() => tree_shake(debouncedInput.value, doTreeShake.value, doMinify.value, false))
-const output = computed(() => result.value.output.trim() || `// Empty output or error`)
-const diagnostics = computed(() => result.value.diagnostics.join('\n'))
+import Input from './Input.vue';
+import Logs from './Logs.vue';
+import Editor from './Editor.vue';
+import { doMinify, doTreeShake, diagnostics, output } from './states';
 </script>
 
 <template>
@@ -56,7 +13,8 @@ const diagnostics = computed(() => result.value.diagnostics.join('\n'))
         Tree Shaker
         <div text-sm self-end flex items-center gap-1 op-80>
           Experimental Tree Shaker for JS Based on Oxc
-          <a i-carbon-logo-github flex-grow inline-block w-1.2em h-1.2em hover:op-80 href="https://github.com/KermanX/tree-shaker" target="_blank" />
+          <a i-carbon-logo-github flex-grow inline-block w-1.2em h-1.2em hover:op-80
+            href="https://github.com/KermanX/tree-shaker" target="_blank" />
         </div>
       </h1>
       <div flex-grow />
@@ -75,14 +33,20 @@ const diagnostics = computed(() => result.value.diagnostics.join('\n'))
         </label>
       </div>
     </div>
-    <div flex-grow flex flex-col md:flex-row gap-x-6 gap-y-2>
+    <div flex-grow h-0 flex flex-col md:flex-row gap-x-2 gap-y-2>
       <div flex-grow h-0 md:h-full md:w-0 flex flex-col>
         <div flex items-center>
           <h2 md:text-xl pb-2 pl-4 select-none>
             Input
           </h2>
         </div>
-        <Editor v-model="input" lang="javascript" class="flex-grow h-0 max-h-full" />
+        <Input class="flex-grow h-0 max-h-full" />
+      </div>
+      <div flex-grow h-0 md:h-full md:w-0 flex flex-col>
+        <h2 md:text-xl pb-2 pl-4 select-none flex items-end>
+          Logs
+        </h2>
+        <Logs class="flex-grow relative h-full" />
       </div>
       <div flex-grow h-0 md:h-full md:w-0 flex flex-col>
         <h2 md:text-xl pb-2 pl-4 select-none flex items-end>
@@ -90,7 +54,8 @@ const diagnostics = computed(() => result.value.diagnostics.join('\n'))
         </h2>
         <div flex-grow relative max-h-full>
           <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
-          <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex flex-col gap-2>
+          <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex
+            flex-col gap-2>
             <div v-if="diagnostics" relative text-red-200 bg-red-900 bg-op-80 b-red-500>
               <h3 text-lg pb-1>
                 Error

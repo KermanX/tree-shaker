@@ -27,7 +27,7 @@ use oxc::{
 
 impl<'a> Analyzer<'a> {
   pub fn declare_statement(&mut self, node: &'a Statement) {
-    self.current_span.push(node.span());
+    self.push_stmt_span(node, true);
     match node {
       match_declaration!(Statement) => {
         let node = node.to_declaration();
@@ -40,11 +40,11 @@ impl<'a> Analyzer<'a> {
       Statement::LabeledStatement(node) => self.declare_labeled_statement(node),
       _ => {}
     }
-    self.current_span.pop();
+    self.pop_stmt_span(true);
   }
 
   pub fn init_statement(&mut self, node: &'a Statement) {
-    self.current_span.push(node.span());
+    self.push_stmt_span(node, false);
     if !matches!(
       node,
       Statement::BlockStatement(_)
@@ -90,7 +90,7 @@ impl<'a> Analyzer<'a> {
       Statement::DebuggerStatement(_node) => {}
       Statement::WithStatement(_node) => unreachable!(),
     }
-    self.current_span.pop();
+    self.pop_stmt_span(false);
   }
 
   pub fn exec_statement(&mut self, node: &'a Statement) {

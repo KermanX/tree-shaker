@@ -5,6 +5,7 @@ use crate::{
     get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData, VarDeclarations,
   },
   entity::EntityDepNode,
+  logger::Logger,
   TreeShakeConfig,
 };
 use oxc::{
@@ -34,6 +35,7 @@ pub struct Transformer<'a> {
   pub data: ExtraData<'a>,
   pub referred_nodes: RefCell<ReferredNodes<'a>>,
   pub var_decls: RefCell<VarDeclarations<'a>>,
+  pub logger: Option<&'a Logger>,
 
   pub call_stack: RefCell<Vec<EntityDepNode>>,
   pub need_unused_assignment_target: Cell<bool>,
@@ -41,7 +43,8 @@ pub struct Transformer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn new(analyzer: Analyzer<'a>) -> Self {
-    let Analyzer { config, allocator, semantic, data, referred_nodes, var_decls, .. } = analyzer;
+    let Analyzer { config, allocator, semantic, data, referred_nodes, var_decls, logger, .. } =
+      analyzer;
 
     Transformer {
       config,
@@ -51,6 +54,7 @@ impl<'a> Transformer<'a> {
       data,
       referred_nodes: RefCell::new(referred_nodes),
       var_decls: RefCell::new(var_decls),
+      logger,
 
       call_stack: RefCell::new(vec![EntityDepNode::Environment]),
       need_unused_assignment_target: Cell::new(false),

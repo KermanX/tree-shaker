@@ -3,6 +3,7 @@ use crate::{
   builtins::Builtins,
   data::{get_node_ptr, Diagnostics, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
   entity::{Entity, EntityOpHost, LabelEntity},
+  logger::{DebuggerEvent, Logger},
   scope::ScopeContext,
   TreeShakeConfig,
 };
@@ -29,6 +30,7 @@ pub struct Analyzer<'a> {
   pub pending_labels: Vec<LabelEntity<'a>>,
   pub builtins: Builtins<'a>,
   pub entity_op: EntityOpHost<'a>,
+  pub logger: Option<&'a Logger>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -37,6 +39,7 @@ impl<'a> Analyzer<'a> {
     allocator: &'a Allocator,
     semantic: Semantic<'a>,
     diagnostics: &'a mut Diagnostics,
+    logger: Option<&'a Logger>,
   ) -> Self {
     Analyzer {
       config,
@@ -53,6 +56,7 @@ impl<'a> Analyzer<'a> {
       pending_labels: Vec::new(),
       builtins: Builtins::new(),
       entity_op: EntityOpHost::new(allocator),
+      logger,
     }
   }
 
@@ -95,5 +99,39 @@ impl<'a> Analyzer<'a> {
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {
     let span = self.current_span.last().unwrap();
     self.diagnostics.insert(message.into() + format!(" at {}-{}", span.start, span.end).as_str());
+  }
+
+  pub fn push_stmt_span(&mut self, node: &'a impl GetSpan, decl: bool) {
+    let span = node.span();
+    self.current_span.push(span);
+    if !decl {
+      if let Some(debugger) = &mut self.logger {
+        debugger.push_event(DebuggerEvent::PushStmtSpan(span));
+      }
+    }
+  }
+
+  pub fn push_expr_span(&mut self, node: &'a impl GetSpan) {
+    let span = node.span();
+    self.current_span.push(span);
+    if let Some(debugger) = &mut self.logger {
+      debugger.push_event(DebuggerEvent::PushExprSpan(span));
+    }
+  }
+
+  pub fn pop_stmt_span(&mut self, decl: bool) {
+    self.current_span.pop();
+    if !decl {
+      if let Some(debugger) = &mut self.logger {
+        debugger.push_event(DebuggerEvent::PopStmtSpan);
+      }
+    }
+  }
+
+  pub fn pop_expr_span(&mut self) {
+    self.current_span.pop();
+    if let Some(debugger) = &mut self.logger {
+      debugger.push_event(DebuggerEvent::PopExprSpan);
+    }
   }
 }

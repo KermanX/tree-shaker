@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref, watchEffect } from 'vue'
 import * as monaco from 'monaco-editor'
-import { setupShiki } from './shiki'
 
 const props = defineProps<{
-  lang: 'javascript' | 'rust'
-  readonly?: boolean
+  lang: 'javascript' | 'rust' | 'markdown'
+  readonly?: boolean,
+  options?: Partial<monaco.editor.IStandaloneEditorConstructionOptions>
+}>()
+
+const emits = defineEmits<{
+  'update:editor': [monaco.editor.IStandaloneCodeEditor]
 }>()
 
 const value = defineModel<string>({ required: true })
@@ -13,8 +17,6 @@ const value = defineModel<string>({ required: true })
 const container = ref<HTMLElement | null>(null)
 
 onMounted(async () => {
-  await setupShiki()
-
   const editor = monaco.editor.create(container.value!, {
     value: value.value,
     language: props.lang,
@@ -27,7 +29,10 @@ onMounted(async () => {
       top: 16,
     },
     tabSize: 2,
+    ...props.options,
   })
+
+  emits('update:editor', editor)
 
   if (props.readonly) {
     watchEffect(() => {
