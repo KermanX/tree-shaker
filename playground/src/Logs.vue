@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef, watchEffect } from 'vue';
-import { activeCallScope, currentCallScopes, activeLogIndex, logsRaw, currentCfScopes, activeCfScope } from './states';
+import { activeCallScope, currentCallScopes, activeLogIndex, logsRaw, currentCfScopes, activeCfScope, activeVarScope, currentVarScopes } from './states';
 
 const logItems = useTemplateRef("logItems");
 
@@ -25,6 +25,14 @@ function getCfScopeClass(index: number) {
     'text-gray-200 bg-green-900 bg-op-30': index > activeCfScope.value,
     'bg-green-700 bg-op-30': index === activeCfScope.value,
     'text-gray-400 bg-green-800 bg-op-0': index < activeCfScope.value,
+  };
+}
+
+function getVarScopeClass(index: number) {
+  return {
+    'text-gray-200 bg-blue-900 bg-op-30': index > activeVarScope.value,
+    'bg-blue-700 bg-op-30': index === activeVarScope.value,
+    'text-gray-400 bg-blue-800 bg-op-0': index < activeVarScope.value,
   };
 }
 
@@ -54,12 +62,29 @@ function setActiveCallScope(index: number) {
   const scope = currentCallScopes.value[index];
   activeCallScope.value = index;
   activeCfScope.value = currentCfScopes.value.length - 1 - scope.cf_scope_depth;
+  activeVarScope.value = currentVarScopes.value.findIndex(varScope => varScope.id === scope.body_variable_scope);
+}
+
+function setActiveCfScope(index: number) {
+  activeCfScope.value = index;
+  activeCallScope.value = currentCallScopes.value.findIndex(scope => scope.cf_scope_depth <= currentCfScopes.value.length - 1 - index);
+}
+
+function setActiveVarScope(index: number) {
+  const scope = currentVarScopes.value[index];
+  activeVarScope.value = index;
+  activeCfScope.value = currentCfScopes.value.findIndex(cfScope => cfScope.id === scope.cf_scope);
 }
 </script>
 
 <template>
   <div flex flex-col gap-y-1 text-sm>
-    Events
+    <div flex gap-x-2 b-t-1 border-gray-600 b-solid pt-2 px-1>
+      Events
+      <div flex-grow />
+      <button @click="prev" :disabled="activeLogIndex <= 0">Prev</button>
+      <button @click="next" :disabled="activeLogIndex >= logsRaw.length - 1">Next</button>
+    </div>
     <div font-mono flex-grow h-0 overflow-auto scroll-hidden>
       <div ref="logItems" my-2>
         <div v-for="log, index in logsRaw" class="hover:bg-op-100" :class="getLogItemClass(index)"
@@ -93,7 +118,7 @@ function setActiveCallScope(index: number) {
         </div>
         <div>
           <div v-for="scope, index in currentCfScopes" flex class="hover:bg-op-40" :class="getCfScopeClass(index)"
-            @click="activeCfScope = index">
+            @click="setActiveCfScope(index)">
             <div flex-grow ml-2>
               [{{ index }}]
               #{{ scope.id }}
@@ -108,28 +133,22 @@ function setActiveCallScope(index: number) {
           Var Scopes
         </div>
         <div>
-          <div v-for="scope, index in currentCallScopes" flex class="hover:bg-op-40" :class="getCallScopeClass(index)"
-            @click="activeCallScope = index">
+          <div v-for="scope, index in currentVarScopes" flex class="hover:bg-op-40" :class="getVarScopeClass(index)"
+            @click="setActiveVarScope(index)">
             <div flex-grow ml-2>
               [{{ index }}]
-              cf[{{ scope.cf_scope_depth }}]
-              var#{{ scope.body_variable_scope }}
+              #{{ scope.id }}
+              cf#{{ scope.cf_scope }}
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <div flex gap-x-2 b-t-1 border-gray-600 b-solid pt-2 px-1 text-xs>
-      <div flex-grow />
-      <button @click="prev" :disabled="activeLogIndex <= 0">Prev</button>
-      <button @click="next" :disabled="activeLogIndex >= logsRaw.length - 1">Next</button>
     </div>
   </div>
 </template>
 
 <style scoped>
 button {
-  @apply px-2 py-.5 rounded text-white b-1 b-gray-400 hover:bg-white hover:bg-op-10 active:bg-op-20 disabled:op-40 user-select-none;
+  @apply text-xs px-2 py-.5 rounded text-white b-1 b-gray-400 hover:bg-white hover:bg-op-10 active:bg-op-20 disabled:op-40 user-select-none;
 }
 </style>

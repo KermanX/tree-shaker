@@ -1,9 +1,7 @@
 import { compressToBase64, decompressFromBase64 } from 'lz-string'
 import { tree_shake } from '@kermanx/tree-shaker'
-import { computed, ref, shallowRef, toRef, watch, watchEffect } from 'vue'
-import Editor from './Editor.vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { DEMO } from './examples';
-import Debugger from './Logs.vue';
 
 export const input = ref('')
 export const doTreeShake = ref(true)
@@ -46,10 +44,12 @@ watchEffect(save)
 const result = computed(() => tree_shake(debouncedInput.value, doTreeShake.value, doMinify.value, true))
 export const output = computed(() => result.value.output.trim() || `// Empty output or error`)
 export const diagnostics = computed(() => result.value.diagnostics.join('\n'))
-export const logsRaw = computed(() => result.value.logs.filter(s =>
-  !s.startsWith('PushExprSpan') &&
-  !s.startsWith('PopExprSpan')
-).slice(0, 20000))
+export const logsRaw = computed(() => result.value.logs
+  // .filter(s =>
+  //   !s.startsWith('PushExprSpan') &&
+  //   !s.startsWith('PopExprSpan')
+  // )
+  .slice(0, 20000))
 
 export const activeLogIndex = ref(5)
 export const currentStmtSpan = ref<[number, number]>([0, 0])
@@ -72,6 +72,13 @@ export interface CfScope {
 export const activeCfScope = ref(0)
 export const currentCfScopes = ref<CfScope[]>([])
 
+export interface VarScope {
+  id: number
+  cf_scope: number
+}
+export const activeVarScope = ref(0)
+export const currentVarScopes = ref<VarScope[]>([])
+
 watchEffect(() => {
   const stmtSpans = []
   const exprSpans = []
@@ -85,6 +92,10 @@ watchEffect(() => {
     id: 0,
     kind: 'Module',
     exited: 'false',
+  }]
+  const varScopes: VarScope[] = [{
+    id: 0,
+    cf_scope: 0,
   }]
 
   function parseSpan(span: string) {
@@ -123,6 +134,14 @@ watchEffect(() => {
       cfScopes.find(scope => scope.id === Number(id))!.exited = exited
     } else if (type === "PopCfScope") {
       cfScopes.pop()
+    } else if (type === "PushVarScope") {
+      const [id, cf_scope] = data
+      varScopes.push({
+        id: Number(id),
+        cf_scope: Number(cf_scope),
+      })
+    } else if (type === "PopVarScope") {
+      varScopes.pop()
     }
   }
 
@@ -132,4 +151,6 @@ watchEffect(() => {
   activeCallScope.value = 0
   currentCfScopes.value = cfScopes.reverse()
   activeCfScope.value = 0
+  currentVarScopes.value = varScopes.reverse()
+  activeVarScope.value = 0
 })

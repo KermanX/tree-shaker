@@ -140,10 +140,21 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_variable_scope(&mut self) -> ScopeId {
-    self.scope_context.variable.push(VariableScope::new(self.scope_context.cf.current_id()))
+    let id =
+      self.scope_context.variable.push(VariableScope::new(self.scope_context.cf.current_id()));
+
+    if let Some(logger) = self.logger {
+      logger.push_event(DebuggerEvent::PushVarScope(id, self.scope_context.cf.current_id()));
+    }
+
+    id
   }
 
   pub fn pop_variable_scope(&mut self) -> ScopeId {
+    if let Some(logger) = self.logger {
+      logger.push_event(DebuggerEvent::PopVarScope);
+    }
+
     self.scope_context.variable.pop()
   }
 

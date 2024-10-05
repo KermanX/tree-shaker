@@ -13,6 +13,8 @@ pub enum DebuggerEvent {
   PushCfScope(ScopeId, CfScopeKind, Option<bool>),
   UpdateCfScopeExited(ScopeId, Option<bool>),
   PopCfScope,
+  PushVarScope(ScopeId, ScopeId),
+  PopVarScope,
 }
 
 pub struct Logger {
@@ -87,6 +89,14 @@ impl Logger {
         )
       }
       DebuggerEvent::PopCfScope => "PopCfScope".to_string(),
+      DebuggerEvent::PushVarScope(scope_id, cf_scope_id) => {
+        format!(
+          "PushVarScope {} {}",
+          Self::serialize_scope_id(scope_id),
+          Self::serialize_scope_id(cf_scope_id)
+        )
+      }
+      DebuggerEvent::PopVarScope => "PopVarScope".to_string(),
     }
   }
 
