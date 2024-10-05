@@ -53,20 +53,16 @@ impl<T: GetSpan> From<(AstType2, &T)> for EntityDepNode {
 
 impl<'a> Analyzer<'a> {
   pub fn refer_dep(&mut self, dep: impl Into<EntityDepNode>) {
-    self.referred_nodes.insert(dep.into());
+    self.referred_nodes.entry(dep.into()).and_modify(|v| *v += 1).or_insert(1);
   }
 
   pub fn is_referred(&self, dep: impl Into<EntityDepNode>) -> bool {
-    self.referred_nodes.contains(&dep.into())
+    self.referred_nodes.contains_key(&dep.into())
   }
 }
 
 impl<'a> Transformer<'a> {
-  pub fn refer_dep(&self, dep: impl Into<EntityDepNode>) {
-    self.referred_nodes.borrow_mut().insert(dep.into());
-  }
-
   pub fn is_referred(&self, dep: impl Into<EntityDepNode>) -> bool {
-    self.referred_nodes.borrow().contains(&dep.into())
+    self.referred_nodes.contains_key(&dep.into())
   }
 }

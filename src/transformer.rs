@@ -33,7 +33,7 @@ pub struct Transformer<'a> {
   pub semantic: Semantic<'a>,
   pub ast_builder: AstBuilder<'a>,
   pub data: ExtraData<'a>,
-  pub referred_nodes: RefCell<ReferredNodes<'a>>,
+  pub referred_nodes: ReferredNodes<'a>,
   pub var_decls: RefCell<VarDeclarations<'a>>,
   pub logger: Option<&'a Logger>,
 
@@ -46,13 +46,15 @@ impl<'a> Transformer<'a> {
     let Analyzer { config, allocator, semantic, data, referred_nodes, var_decls, logger, .. } =
       analyzer;
 
+    println!("referred_nodes: {:#?}", referred_nodes);
+
     Transformer {
       config,
       allocator,
       semantic,
       ast_builder: AstBuilder::new(allocator),
       data,
-      referred_nodes: RefCell::new(referred_nodes),
+      referred_nodes,
       var_decls: RefCell::new(var_decls),
       logger,
 

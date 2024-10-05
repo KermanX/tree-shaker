@@ -13,7 +13,7 @@ pub struct DataPlaceholder<'a> {
 
 pub type ExtraData<'a> = FxHashMap<(AstType2, usize), Box<DataPlaceholder<'a>>>;
 
-pub type ReferredNodes<'a> = FxHashSet<EntityDepNode>;
+pub type ReferredNodes<'a> = FxHashMap<EntityDepNode, usize>;
 
 pub type VarDeclarations<'a> = FxHashMap<FunctionEntitySource<'a>, FxHashSet<SymbolId>>;
 
