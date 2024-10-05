@@ -3,7 +3,7 @@ use crate::{
   ast::AstType2,
   build_effect,
   entity::{ComputedEntity, Entity, UnionEntity},
-  scope::conditional::ConditionalData,
+  scope::{conditional::ConditionalData, CfScopeKind},
   transformer::Transformer,
 };
 use oxc::ast::ast::{ConditionalExpression, Expression};
@@ -36,6 +36,7 @@ impl<'a> Analyzer<'a> {
 
     self.push_conditional_cf_scope(
       &mut data.conditional,
+      CfScopeKind::ConditionalExpression,
       test.clone(),
       historical_indeterminate,
       current_indeterminate,

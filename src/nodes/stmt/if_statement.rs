@@ -56,6 +56,7 @@ impl<'a> Analyzer<'a> {
     if maybe_true {
       self.push_conditional_cf_scope(
         &mut data.conditional,
+        CfScopeKind::IfStatement,
         test.clone(),
         historical_indeterminate,
         current_indeterminate,
@@ -76,6 +77,7 @@ impl<'a> Analyzer<'a> {
       if let Some(alternate) = &node.alternate {
         self.push_conditional_cf_scope(
           &mut data.conditional,
+          CfScopeKind::IfStatement,
           test,
           historical_indeterminate,
           current_indeterminate,

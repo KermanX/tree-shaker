@@ -14,6 +14,7 @@ impl<'a> Analyzer<'a> {
   pub fn push_conditional_cf_scope(
     &mut self,
     data: &mut ConditionalData<'a>,
+    kind: CfScopeKind,
     test: Entity<'a>,
     historical_indeterminate: bool,
     current_indeterminate: bool,
@@ -38,7 +39,7 @@ impl<'a> Analyzer<'a> {
       vec![dep_node.into()]
     };
     self.scope_context.cf.push(CfScope::new(
-      CfScopeKind::Conditional,
+      kind,
       None,
       deps,
       if current_indeterminate { None } else { Some(false) },

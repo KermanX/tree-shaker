@@ -12,7 +12,9 @@ pub enum CfScopeKind {
   BreakableWithoutLabel,
   Continuable,
   Exhaustive,
-  Conditional,
+  IfStatement,
+  ConditionalExpression,
+  LogicalExpression,
   Function,
   Module,
 }
@@ -87,8 +89,8 @@ impl<'a> CfScope<'a> {
     self.kind == CfScopeKind::Continuable
   }
 
-  pub fn is_conditional(&self) -> bool {
-    self.kind == CfScopeKind::Conditional
+  pub fn is_if_statement(&self) -> bool {
+    self.kind == CfScopeKind::IfStatement
   }
 
   pub fn is_function(&self) -> bool {
@@ -175,7 +177,7 @@ impl<'a> Analyzer<'a> {
         // Stop exiting outer scopes if one inner scope is indeterminate.
         if is_indeterminate {
           must_exit = false;
-          if cf_scope.is_conditional() {
+          if cf_scope.is_if_statement() {
             // For the `if` statement, do not mark the outer scopes as indeterminate here.
             // Instead, let the `if` statement handle it.
             debug_assert!(cf_scope.blocked_exit.is_none());
