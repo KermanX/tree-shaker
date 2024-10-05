@@ -9,13 +9,64 @@ use oxc::{
     AstKind,
   },
   semantic::ScopeId,
+  span::{GetSpan, Span},
 };
-use std::{cell::Cell, rc::Rc};
+use std::{
+  cell::Cell,
+  hash::{Hash, Hasher},
+  rc::Rc,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub enum FunctionEntitySource<'a> {
   Function(&'a Function<'a>),
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
+  Module,
+}
+
+impl GetSpan for FunctionEntitySource<'_> {
+  fn span(&self) -> Span {
+    match self {
+      FunctionEntitySource::Function(node) => node.span(),
+      FunctionEntitySource::ArrowFunctionExpression(node) => node.span(),
+      FunctionEntitySource::Module => Span::default(),
+    }
+  }
+}
+
+impl<'a> FunctionEntitySource<'a> {
+  pub fn into_dep_node(self) -> EntityDepNode {
+    match self {
+      FunctionEntitySource::Function(node) => AstKind::Function(node).into(),
+      FunctionEntitySource::ArrowFunctionExpression(node) => {
+        AstKind::ArrowFunctionExpression(node).into()
+      }
+      FunctionEntitySource::Module => EntityDepNode::Environment,
+    }
+  }
+}
+
+impl PartialEq for FunctionEntitySource<'_> {
+  fn eq(&self, other: &Self) -> bool {
+    match (self, other) {
+      (FunctionEntitySource::Function(a), FunctionEntitySource::Function(b)) => {
+        a.span() == b.span()
+      }
+      (
+        FunctionEntitySource::ArrowFunctionExpression(a),
+        FunctionEntitySource::ArrowFunctionExpression(b),
+      ) => a.span() == b.span(),
+      _ => false,
+    }
+  }
+}
+
+impl Eq for FunctionEntitySource<'_> {}
+
+impl Hash for FunctionEntitySource<'_> {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    self.span().hash(state)
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -30,10 +81,8 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    let dep = self.source_dep_node();
-
-    analyzer.consume(dep);
-    analyzer.consume_arguments(Some(dep));
+    analyzer.consume(self.source.into_dep_node());
+    analyzer.consume_arguments(Some(self.source));
 
     let self_cloned = self.clone();
     analyzer.exec_consumed_fn(move |analyzer| {
@@ -95,8 +144,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    let source = self.source_dep_node();
-    let recursed = analyzer.scope_context.call.iter().any(|scope| scope.source == source);
+    let recursed = analyzer.scope_context.call.iter().any(|scope| scope.source == self.source);
     if recursed {
       self.consume(analyzer);
       return consumed_object::call(analyzer, dep, this, args);
@@ -179,13 +227,6 @@ impl<'a> FunctionEntity<'a> {
     })
   }
 
-  pub fn source_dep_node(&self) -> EntityDepNode {
-    EntityDepNode::from(match self.source {
-      FunctionEntitySource::Function(node) => AstKind::Function(node),
-      FunctionEntitySource::ArrowFunctionExpression(node) => AstKind::ArrowFunctionExpression(node),
-    })
-  }
-
   pub fn call_impl(
     &self,
     rc: &Entity<'a>,
@@ -194,14 +235,12 @@ impl<'a> FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    let source = self.source_dep_node();
-    let call_dep: Consumable<'a> = (source, dep).into();
+    let call_dep: Consumable<'a> = (self.source.into_dep_node(), dep).into();
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.source {
       FunctionEntitySource::Function(node) => analyzer.call_function(
         rc.clone(),
-        self.source_dep_node().into(),
-        source,
+        self.source,
         self.is_expression,
         call_dep.clone(),
         node,
@@ -211,12 +250,13 @@ impl<'a> FunctionEntity<'a> {
       ),
       FunctionEntitySource::ArrowFunctionExpression(node) => analyzer
         .call_arrow_function_expression(
-          source,
+          self.source,
           call_dep.clone(),
           node,
           variable_scopes,
           args.clone(),
         ),
+      FunctionEntitySource::Module => unreachable!(),
     };
     ForwardedEntity::new(ret_val, call_dep)
   }

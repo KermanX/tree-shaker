@@ -2,15 +2,15 @@ use super::try_scope::TryScope;
 use crate::{
   analyzer::Analyzer,
   entity::{
-    Consumable, Entity, EntityDepNode, ForwardedEntity, LiteralEntity, PromiseEntity, UnionEntity,
-    UnknownEntity,
+    Consumable, Entity, ForwardedEntity, FunctionEntitySource, LiteralEntity, PromiseEntity,
+    UnionEntity, UnknownEntity,
   },
 };
 use oxc::semantic::{ScopeId, SymbolId};
 
 #[derive(Debug)]
 pub struct CallScope<'a> {
-  pub source: EntityDepNode,
+  pub source: FunctionEntitySource<'a>,
   pub old_variable_scope_stack: Vec<ScopeId>,
   pub cf_scope_depth: usize,
   pub body_variable_scope: ScopeId,
@@ -25,7 +25,7 @@ pub struct CallScope<'a> {
 
 impl<'a> CallScope<'a> {
   pub fn new(
-    source: EntityDepNode,
+    source: FunctionEntitySource<'a>,
     old_variable_scope_stack: Vec<ScopeId>,
     cf_scope_depth: usize,
     body_variable_scope: ScopeId,
@@ -96,7 +96,7 @@ impl<'a> Analyzer<'a> {
     self.exit_to(target_depth);
   }
 
-  pub fn consume_arguments(&mut self, search: Option<EntityDepNode>) -> bool {
+  pub fn consume_arguments(&mut self, search: Option<FunctionEntitySource<'a>>) -> bool {
     let call_scope = if let Some(source) = search {
       if let Some(call_scope) =
         self.scope_context.call.iter().rev().find(|scope| scope.source == source)

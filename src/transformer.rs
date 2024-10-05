@@ -4,7 +4,7 @@ use crate::{
   data::{
     get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData, VarDeclarations,
   },
-  entity::EntityDepNode,
+  entity::FunctionEntitySource,
   logger::Logger,
   TreeShakeConfig,
 };
@@ -37,7 +37,7 @@ pub struct Transformer<'a> {
   pub var_decls: RefCell<VarDeclarations<'a>>,
   pub logger: Option<&'a Logger>,
 
-  pub call_stack: RefCell<Vec<EntityDepNode>>,
+  pub call_stack: RefCell<Vec<FunctionEntitySource<'a>>>,
   pub need_unused_assignment_target: Cell<bool>,
 }
 
@@ -56,7 +56,7 @@ impl<'a> Transformer<'a> {
       var_decls: RefCell::new(var_decls),
       logger,
 
-      call_stack: RefCell::new(vec![EntityDepNode::Environment]),
+      call_stack: RefCell::new(vec![FunctionEntitySource::Module]),
       need_unused_assignment_target: Cell::new(false),
     }
   }

@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{Consumable, Entity, EntityDepNode, FunctionEntity, FunctionEntitySource},
+  entity::{Consumable, Entity, FunctionEntity, FunctionEntitySource},
   transformer::Transformer,
 };
 use oxc::{
@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_arrow_function_expression(
     &mut self,
-    source: EntityDepNode,
+    source: FunctionEntitySource<'a>,
     call_dep: Consumable<'a>,
     node: &'a ArrowFunctionExpression<'a>,
     variable_scopes: Rc<Vec<ScopeId>>,
@@ -64,7 +64,7 @@ impl<'a> Transformer<'a> {
     if need_val || self.is_referred(AstKind::ArrowFunctionExpression(node)) {
       let ArrowFunctionExpression { span, expression, r#async, params, body, .. } = node;
 
-      self.call_stack.borrow_mut().push(AstKind::ArrowFunctionExpression(node).into());
+      self.call_stack.borrow_mut().push(FunctionEntitySource::ArrowFunctionExpression(node));
 
       let params = self.transform_formal_parameters(params);
       let body = if *expression {

@@ -1,9 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{
-    Consumable, Entity, EntityDepNode, FunctionEntity, FunctionEntitySource, UnknownEntity,
-  },
+  entity::{Consumable, Entity, FunctionEntity, FunctionEntitySource, UnknownEntity},
   transformer::Transformer,
 };
 use oxc::{
@@ -35,8 +33,7 @@ impl<'a> Analyzer<'a> {
   pub fn call_function(
     &mut self,
     fn_entity: Entity<'a>,
-    decl_dep: Consumable<'a>,
-    source: EntityDepNode,
+    source: FunctionEntitySource<'a>,
     is_expression: bool,
     call_dep: Consumable<'a>,
     node: &'a Function<'a>,
@@ -61,7 +58,7 @@ impl<'a> Analyzer<'a> {
           let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
           analyzer.declare_symbol(
             symbol,
-            decl_dep.clone(),
+            source.into_dep_node(),
             false,
             DeclarationKind::NamedFunctionInBody,
             Some(fn_entity.clone()),
@@ -102,7 +99,7 @@ impl<'a> Transformer<'a> {
     if need_val || self.is_referred(AstKind::Function(&node)) {
       let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
 
-      self.call_stack.borrow_mut().push(AstKind::Function(node).into());
+      self.call_stack.borrow_mut().push(FunctionEntitySource::Function(node));
 
       let params = self.transform_formal_parameters(params);
       let body = self.transform_function_body(body.as_ref().unwrap());

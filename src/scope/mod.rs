@@ -9,7 +9,7 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  entity::{Consumable, Entity, EntityDepNode, LabelEntity, UnknownEntity},
+  entity::{Consumable, Entity, FunctionEntitySource, LabelEntity, UnknownEntity},
 };
 use call_scope::CallScope;
 use cf_scope::CfScope;
@@ -34,7 +34,7 @@ impl<'a> ScopeContext<'a> {
     let body_variable_scope = variable.push(VariableScope::new(cf_scope_0));
     ScopeContext {
       call: vec![CallScope::new(
-        EntityDepNode::Environment,
+        FunctionEntitySource::Module,
         vec![],
         0,
         body_variable_scope,
@@ -83,7 +83,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_call_scope(
     &mut self,
-    source: impl Into<EntityDepNode>,
+    source: FunctionEntitySource<'a>,
     call_dep: impl Into<Consumable<'a>>,
     variable_scope_stack: Rc<Vec<ScopeId>>,
     this: Entity<'a>,
