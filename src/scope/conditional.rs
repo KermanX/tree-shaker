@@ -1,4 +1,4 @@
-use super::{cf_scope::CfScope, CfScopeKind};
+use super::CfScopeKind;
 use crate::{
   analyzer::Analyzer,
   entity::{Entity, EntityDepNode},
@@ -38,11 +38,11 @@ impl<'a> Analyzer<'a> {
       data.determinate_tests.push(test);
       vec![dep_node.into()]
     };
-    self.scope_context.cf.push(CfScope::new(
+    self.push_cf_scope_with_deps(
       kind,
       None,
       deps,
       if current_indeterminate { None } else { Some(false) },
-    ));
+    );
   }
 }

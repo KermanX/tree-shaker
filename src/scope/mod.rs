@@ -172,6 +172,15 @@ impl<'a> Analyzer<'a> {
     exited: Option<bool>,
   ) -> usize {
     self.scope_context.cf.push(CfScope::new(kind, labels, deps, exited));
+
+    if let Some(logger) = self.logger {
+      logger.push_event(DebuggerEvent::PushCfScope(
+        self.scope_context.cf.current_id(),
+        kind,
+        exited,
+      ));
+    }
+
     self.scope_context.cf.current_depth()
   }
 
@@ -184,6 +193,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn pop_cf_scope(&mut self) -> ScopeId {
+    if let Some(logger) = self.logger {
+      logger.push_event(DebuggerEvent::PopCfScope);
+    }
+
     self.scope_context.cf.pop()
   }
 

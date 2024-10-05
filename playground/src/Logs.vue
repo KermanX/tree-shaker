@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef, watchEffect } from 'vue';
-import { activeCallScope, currentCallScopes, activeLogIndex, logsRaw } from './states';
+import { activeCallScope, currentCallScopes, activeLogIndex, logsRaw, currentCfScopes, activeCfScope } from './states';
 
 const logItems = useTemplateRef("logItems");
 
@@ -17,6 +17,14 @@ function getCallScopeClass(index: number) {
     'text-gray-200 bg-amber-900 bg-op-30': index > activeCallScope.value,
     'bg-amber-700 bg-op-30': index === activeCallScope.value,
     'text-gray-400 bg-amber-800 bg-op-0': index < activeCallScope.value,
+  };
+}
+
+function getCfScopeClass(index: number) {
+  return {
+    'text-gray-200 bg-green-900 bg-op-30': index > activeCfScope.value,
+    'bg-green-700 bg-op-30': index === activeCfScope.value,
+    'text-gray-400 bg-green-800 bg-op-0': index < activeCfScope.value,
   };
 }
 
@@ -41,12 +49,18 @@ watchEffect(() => {
     behavior: 'smooth',
   });
 });
+
+function setActiveCallScope(index: number) {
+  const scope = currentCallScopes.value[index];
+  activeCallScope.value = index;
+  activeCfScope.value = currentCfScopes.value.length - 1 - scope.cf_scope_depth;
+}
 </script>
 
 <template>
   <div flex flex-col gap-y-1 text-sm>
     Events
-    <div font-mono flex-grow h-0 overflow-auto scroll-hidden class="no-scrollbar">
+    <div font-mono flex-grow h-0 overflow-auto scroll-hidden>
       <div ref="logItems" my-2>
         <div v-for="log, index in logsRaw" class="hover:bg-op-100" :class="getLogItemClass(index)"
           @click="activeLogIndex = index">
@@ -57,16 +71,50 @@ watchEffect(() => {
       </div>
     </div>
 
-    <div font-mono flex-grow h-0 overflow-auto scroll-hidden b-t-1 border-gray-600 b-solid class="no-scrollbar">
-      <div my-.5>
-        Call Scopes
+    <div font-mono flex-grow h-0 overflow-auto scroll-hidden b-t-1 border-gray-600 b-solid grid grid-cols-3 gap-x-2>
+      <div>
+        <div my-.5>
+          Call Scopes
+        </div>
+        <div>
+          <div v-for="scope, index in currentCallScopes" flex class="hover:bg-op-40" :class="getCallScopeClass(index)"
+            @click="setActiveCallScope(index)">
+            <div flex-grow ml-2>
+              [{{ index }}]
+              cf[{{ scope.cf_scope_depth }}]
+              var#{{ scope.body_variable_scope }}
+            </div>
+          </div>
+        </div>
       </div>
       <div>
-        <div v-for="scope, index in currentCallScopes" flex class="hover:bg-op-40" :class="getCallScopeClass(index)"
-          @click="activeCallScope = index">
-          <div flex-grow ml-2>
-            cf_scope[{{ scope.cf_scope_depth }}]
-            variable_scope={{ scope.body_variable_scope }}
+        <div my-.5>
+          Cf Scopes
+        </div>
+        <div>
+          <div v-for="scope, index in currentCfScopes" flex class="hover:bg-op-40" :class="getCfScopeClass(index)"
+            @click="activeCfScope = index">
+            <div flex-grow ml-2>
+              [{{ index }}]
+              #{{ scope.id }}
+              {{ scope.kind }}
+              {{ scope.exited }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div my-.5>
+          Var Scopes
+        </div>
+        <div>
+          <div v-for="scope, index in currentCallScopes" flex class="hover:bg-op-40" :class="getCallScopeClass(index)"
+            @click="activeCallScope = index">
+            <div flex-grow ml-2>
+              [{{ index }}]
+              cf[{{ scope.cf_scope_depth }}]
+              var#{{ scope.body_variable_scope }}
+            </div>
           </div>
         </div>
       </div>

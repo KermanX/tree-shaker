@@ -46,7 +46,10 @@ watchEffect(save)
 const result = computed(() => tree_shake(debouncedInput.value, doTreeShake.value, doMinify.value, true))
 export const output = computed(() => result.value.output.trim() || `// Empty output or error`)
 export const diagnostics = computed(() => result.value.diagnostics.join('\n'))
-export const logsRaw = computed(() => result.value.logs)
+export const logsRaw = computed(() => result.value.logs.filter(s =>
+  !s.startsWith('PushExprSpan') &&
+  !s.startsWith('PopExprSpan')
+).slice(0, 20000))
 
 export const activeLogIndex = ref(5)
 export const currentStmtSpan = ref<[number, number]>([0, 0])
@@ -61,6 +64,14 @@ export interface CallScope {
 export const activeCallScope = ref(0);
 export const currentCallScopes = ref<CallScope[]>([])
 
+export interface CfScope {
+  id: number
+  kind: string
+  exited: string
+}
+export const activeCfScope = ref(0)
+export const currentCfScopes = ref<CfScope[]>([])
+
 watchEffect(() => {
   const stmtSpans = []
   const exprSpans = []
@@ -69,6 +80,11 @@ watchEffect(() => {
     old_variable_scope_stack: [],
     cf_scope_depth: 0,
     body_variable_scope: 0,
+  }]
+  const cfScopes: CfScope[] = [{
+    id: 0,
+    kind: 'Module',
+    exited: 'false',
   }]
 
   function parseSpan(span: string) {
@@ -95,6 +111,18 @@ watchEffect(() => {
       })
     } else if (type === "PopCallScope") {
       callScopes.pop()
+    } else if (type === "PushCfScope") {
+      const [id, kind, exited] = data
+      cfScopes.push({
+        id: Number(id),
+        kind,
+        exited,
+      })
+    } else if (type === "UpdateCfScopeExited") {
+      const [id, exited] = data
+      cfScopes.find(scope => scope.id === Number(id))!.exited = exited
+    } else if (type === "PopCfScope") {
+      cfScopes.pop()
     }
   }
 
@@ -102,4 +130,6 @@ watchEffect(() => {
   currentExprSpan.value = exprSpans.at(-1) ?? [0, 0]
   currentCallScopes.value = callScopes.reverse()
   activeCallScope.value = 0
+  currentCfScopes.value = cfScopes.reverse()
+  activeCfScope.value = 0
 })

@@ -1,3 +1,4 @@
+use crate::scope::CfScopeKind;
 use oxc::{index::Idx, semantic::ScopeId, span::Span};
 use std::cell::RefCell;
 
@@ -9,6 +10,9 @@ pub enum DebuggerEvent {
   PopExprSpan,
   PushCallScope(Span, Vec<ScopeId>, usize, ScopeId),
   PopCallScope,
+  PushCfScope(ScopeId, CfScopeKind, Option<bool>),
+  UpdateCfScopeExited(ScopeId, Option<bool>),
+  PopCfScope,
 }
 
 pub struct Logger {
@@ -57,6 +61,32 @@ impl Logger {
         )
       }
       DebuggerEvent::PopCallScope => "PopCallScope".to_string(),
+      DebuggerEvent::PushCfScope(scope_id, kind, exited) => {
+        format!(
+          "PushCfScope {} {} {}",
+          Self::serialize_scope_id(scope_id),
+          match kind {
+            CfScopeKind::BreakableWithoutLabel => "Breakable",
+            CfScopeKind::ConditionalExpression => "CondExpr",
+            CfScopeKind::Exhaustive => "Exhaustive",
+            CfScopeKind::IfStatement => "IfStmt",
+            CfScopeKind::Normal => "Normal",
+            CfScopeKind::Function => "Function",
+            CfScopeKind::Module => "Module",
+            CfScopeKind::Continuable => "Continuable",
+            CfScopeKind::LogicalExpression => "LogicalExpr",
+          },
+          Self::serialize_exited(exited),
+        )
+      }
+      DebuggerEvent::UpdateCfScopeExited(scope_id, exited) => {
+        format!(
+          "UpdateCfScopeExited {} {}",
+          Self::serialize_scope_id(scope_id),
+          Self::serialize_exited(exited)
+        )
+      }
+      DebuggerEvent::PopCfScope => "PopCfScope".to_string(),
     }
   }
 
@@ -66,5 +96,13 @@ impl Logger {
 
   fn serialize_scope_id(scope_id: &ScopeId) -> String {
     scope_id.index().to_string()
+  }
+
+  fn serialize_exited(exited: &Option<bool>) -> String {
+    match exited {
+      Some(true) => "true".to_string(),
+      Some(false) => "false".to_string(),
+      None => "unknown".to_string(),
+    }
   }
 }

@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   entity::{Consumable, LabelEntity},
+  logger::{DebuggerEvent, Logger},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
@@ -58,10 +59,20 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn update_exited(&mut self, exited: Option<bool>, dep: impl FnOnce() -> Consumable<'a>) {
+  pub fn update_exited(
+    &mut self,
+    id: ScopeId,
+    logger: &Option<&Logger>,
+    exited: Option<bool>,
+    dep: impl FnOnce() -> Consumable<'a>,
+  ) {
     if self.exited != Some(true) {
       self.exited = exited;
       self.deps.push(dep());
+
+      if let Some(logger) = logger {
+        logger.push_event(DebuggerEvent::UpdateCfScopeExited(id, exited));
+      }
     }
   }
 
@@ -172,7 +183,7 @@ impl<'a> Analyzer<'a> {
       let dep = || Consumable::from(deps.clone());
       if must_exit {
         let is_indeterminate = cf_scope.is_indeterminate();
-        cf_scope.update_exited(Some(true), dep);
+        cf_scope.update_exited(id, &self.logger, Some(true), dep);
 
         // Stop exiting outer scopes if one inner scope is indeterminate.
         if is_indeterminate {
@@ -186,7 +197,7 @@ impl<'a> Analyzer<'a> {
           }
         }
       } else {
-        cf_scope.update_exited(None, dep);
+        cf_scope.update_exited(id, &self.logger, None, dep);
       }
       deps.extend(this_deps);
     }

@@ -24,6 +24,8 @@ function setupEditor(editor: monaco.editor.IStandaloneCodeEditor) {
       },
     }])
 
+    editor.revealLineInCenter(model.getPositionAt(stmtSpan[0]).lineNumber, monaco.editor.ScrollType.Smooth);
+
     const exprSpan = currentExprSpan.value;
     activeExprSpanDeco.set([{
       range: exprSpan ? monaco.Range.fromPositions(
