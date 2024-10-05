@@ -96,11 +96,19 @@ function setActiveVarScope(index: number) {
       </div>
     </div>
 
-    <div font-mono flex-grow h-0 overflow-auto scroll-hidden b-t-1 border-gray-600 b-solid grid grid-cols-3 gap-x-2>
-      <div>
-        <div my-.5>
+    <div font-mono flex-grow h-0 b-t-1 border-gray-600 b-solid flex flex-col>
+      <div grid grid-cols-3 gap-x-2 my-.5>
+        <div>
           Call Scopes
         </div>
+        <div>
+          Cf Scopes
+        </div>
+        <div>
+          Var Scopes
+        </div>
+      </div>
+      <div h-0 flex-grow grid grid-cols-3 gap-x-2 class="scopes-lists">
         <div>
           <div v-for="scope, index in currentCallScopes" flex class="hover:bg-op-40" :class="getCallScopeClass(index)"
             @click="setActiveCallScope(index)">
@@ -110,11 +118,6 @@ function setActiveVarScope(index: number) {
               var#{{ scope.body_variable_scope }}
             </div>
           </div>
-        </div>
-      </div>
-      <div>
-        <div my-.5>
-          Cf Scopes
         </div>
         <div>
           <div v-for="scope, index in currentCfScopes" flex class="hover:bg-op-40" :class="getCfScopeClass(index)"
@@ -126,11 +129,6 @@ function setActiveVarScope(index: number) {
               {{ scope.exited }}
             </div>
           </div>
-        </div>
-      </div>
-      <div>
-        <div my-.5>
-          Var Scopes
         </div>
         <div>
           <div v-for="scope, index in currentVarScopes" flex class="hover:bg-op-40" :class="getVarScopeClass(index)"
@@ -150,5 +148,10 @@ function setActiveVarScope(index: number) {
 <style scoped>
 button {
   @apply text-xs px-2 py-.5 rounded text-white b-1 b-gray-400 hover:bg-white hover:bg-op-10 active:bg-op-20 disabled:op-40 user-select-none;
+}
+
+.scopes-lists>* {
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 </style>
