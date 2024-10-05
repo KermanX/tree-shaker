@@ -252,10 +252,14 @@ impl<'a> Transformer<'a> {
 
         let left_span = left.span();
         let transformed_left = self.transform_binding_pattern(left, false);
-        let transformed_right = data
-          .need_right
-          .then(|| self.transform_expression(right, transformed_left.is_some()))
-          .flatten();
+        let transformed_right = if self.declaration_only.get() {
+          None
+        } else {
+          data
+            .need_right
+            .then(|| self.transform_expression(right, transformed_left.is_some()))
+            .flatten()
+        };
 
         if let Some(right) = transformed_right {
           Some(self.ast_builder.binding_pattern(

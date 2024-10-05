@@ -43,6 +43,13 @@ impl<'a> Transformer<'a> {
     node: &'a PropertyKey<'a>,
     need_val: bool,
   ) -> Option<(bool, PropertyKey<'a>)> {
+    if self.declaration_only.get() {
+      return need_val.then_some((
+        false,
+        self.ast_builder.property_key_expression(self.build_unused_expression(node.span())),
+      ));
+    }
+
     match node {
       // Reuse the node
       PropertyKey::StaticIdentifier(_) | PropertyKey::PrivateIdentifier(_) => {

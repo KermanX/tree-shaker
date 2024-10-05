@@ -64,7 +64,7 @@ impl<'a> Transformer<'a> {
     node: &'a ConditionalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data2::<Data>(AST_TYPE, node);
 
     let ConditionalExpression { span, test, consequent, alternate, .. } = node;
 

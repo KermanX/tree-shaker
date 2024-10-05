@@ -38,6 +38,8 @@ pub struct Transformer<'a> {
   pub logger: Option<&'a Logger>,
 
   pub call_stack: RefCell<Vec<FunctionEntitySource<'a>>>,
+  /// The block statement has already exited, so we can and only can transform declarations themselves
+  pub declaration_only: Cell<bool>,
   pub need_unused_assignment_target: Cell<bool>,
 }
 
@@ -63,6 +65,7 @@ impl<'a> Transformer<'a> {
       logger,
 
       call_stack: RefCell::new(vec![FunctionEntitySource::Module]),
+      declaration_only: Cell::new(false),
       need_unused_assignment_target: Cell::new(false),
     }
   }
@@ -234,6 +237,14 @@ impl<'a> Transformer<'a> {
     match existing {
       Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },
       None => self.allocator.alloc(D::default()),
+    }
+  }
+  pub fn get_data2<D: Default + 'a>(&self, ast_type: AstType2, node: &impl GetSpan) -> &'a D {
+    let key = (ast_type, get_node_ptr(node));
+    let existing = self.data.get(&key);
+    match existing {
+      Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },
+      None => panic!("Data not found @{:?}", node.span()),
     }
   }
 }

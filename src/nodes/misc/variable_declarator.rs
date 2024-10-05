@@ -53,9 +53,13 @@ impl<'a> Transformer<'a> {
     let id_span = id.span();
     let id = self.transform_binding_pattern(id, false);
 
-    let transformed_init = init.as_ref().and_then(|init| {
-      self.transform_expression(init, self.is_referred(AstKind::VariableDeclarator(node)))
-    });
+    let transformed_init = if self.declaration_only.get() {
+      None
+    } else {
+      init.as_ref().and_then(|init| {
+        self.transform_expression(init, self.is_referred(AstKind::VariableDeclarator(node)))
+      })
+    };
 
     match (id, transformed_init) {
       (None, None) => None,

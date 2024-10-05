@@ -45,10 +45,16 @@ impl<'a> Transformer<'a> {
 
     let mut exited = false;
     for (index, statement) in statements.iter().enumerate() {
-      if !exited || self.is_declaration(statement) {
+      if !exited {
         if let Some(statement) = self.transform_statement(statement) {
           result.push(statement);
         }
+      } else if self.is_declaration(statement) {
+        self.declaration_only.set(true);
+        if let Some(statement) = self.transform_statement(statement) {
+          result.push(statement);
+        }
+        self.declaration_only.set(false);
       }
 
       if data.last_stmt == Some(index) {
