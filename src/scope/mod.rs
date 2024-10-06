@@ -119,6 +119,7 @@ impl<'a> Analyzer<'a> {
         cf_scope_depth,
         body_variable_scope,
       ));
+      logger.push_fn_call(source.span(), source.get_name());
     }
 
     self.scope_context.call.push(CallScope::new(

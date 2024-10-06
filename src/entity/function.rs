@@ -44,6 +44,16 @@ impl<'a> FunctionEntitySource<'a> {
       FunctionEntitySource::Module => EntityDepNode::Environment,
     }
   }
+
+  pub fn get_name(&self) -> String {
+    match self {
+      FunctionEntitySource::Function(node) => {
+        node.id.as_ref().map_or("<anonymous>", |id| &id.name).to_string()
+      }
+      FunctionEntitySource::ArrowFunctionExpression(_) => "<anonymous>".to_string(),
+      FunctionEntitySource::Module => "<Module>".to_string(),
+    }
+  }
 }
 
 impl PartialEq for FunctionEntitySource<'_> {

@@ -1,5 +1,6 @@
 use crate::scope::CfScopeKind;
 use oxc::{index::Idx, semantic::ScopeId, span::Span};
+use rustc_hash::FxHashMap;
 use std::cell::RefCell;
 
 #[derive(Debug)]
@@ -18,17 +19,23 @@ pub enum DebuggerEvent {
   PopVarScope,
 }
 
+#[derive(Debug, Default)]
 pub struct Logger {
   events: RefCell<Vec<DebuggerEvent>>,
+  fn_calls: RefCell<FxHashMap<Span, (String, usize)>>,
 }
 
 impl Logger {
   pub fn new() -> Self {
-    Logger { events: Default::default() }
+    Self::default()
   }
 
   pub fn push_event(&self, event: DebuggerEvent) {
     self.events.borrow_mut().push(event);
+  }
+
+  pub fn push_fn_call(&self, span: Span, name: String) {
+    self.fn_calls.borrow_mut().entry(span).or_insert((name, 0)).1 += 1;
   }
 
   pub fn serialize(&self) -> Vec<String> {
@@ -120,6 +127,12 @@ impl Logger {
       Some(true) => "true".to_string(),
       Some(false) => "false".to_string(),
       None => "unknown".to_string(),
+    }
+  }
+
+  pub fn print_fn_calls(&self) {
+    for (span, (name, count)) in self.fn_calls.borrow().iter() {
+      println!("{}-{} {} x{}", span.start, span.end, name, count);
     }
   }
 }
