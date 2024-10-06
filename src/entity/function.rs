@@ -249,6 +249,10 @@ impl<'a> FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
+    if let Some(logger) = analyzer.logger {
+      logger.push_fn_call(self.source.span(), self.source.get_name());
+    }
+
     let call_dep: Consumable<'a> = (self.source.into_dep_node(), dep).into();
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.source {
