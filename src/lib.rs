@@ -5,7 +5,7 @@ mod config;
 mod data;
 mod effect_builder;
 mod entity;
-pub mod logger;
+mod logger;
 mod nodes;
 mod scope;
 mod transformer;

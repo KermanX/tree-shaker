@@ -78,6 +78,7 @@ export interface VarScope {
 }
 export const activeVarScope = ref(0)
 export const currentVarScopes = ref<VarScope[]>([])
+export const currentVarStack = ref<number[]>([])
 
 watchEffect(() => {
   const stmtSpans = []
@@ -97,6 +98,7 @@ watchEffect(() => {
     id: 0,
     cf_scope: 0,
   }]
+  let varStack = [0]
 
   function parseSpan(span: string) {
     return span.split('-').map(Number) as [number, number]
@@ -134,13 +136,18 @@ watchEffect(() => {
       cfScopes.find(scope => scope.id === Number(id))!.exited = exited
     } else if (type === "PopCfScope") {
       cfScopes.pop()
+    } else if (type == "ReplaceVarScopeStack") {
+      const [stack] = data
+      varStack = stack.split(',').map(Number)
     } else if (type === "PushVarScope") {
       const [id, cf_scope] = data
+      varStack.push(varScopes.length)
       varScopes.push({
         id: Number(id),
         cf_scope: Number(cf_scope),
       })
     } else if (type === "PopVarScope") {
+      varStack.pop()
       varScopes.pop()
     }
   }
@@ -152,5 +159,6 @@ watchEffect(() => {
   currentCfScopes.value = cfScopes.reverse()
   activeCfScope.value = 0
   currentVarScopes.value = varScopes.reverse()
+  currentVarStack.value = varStack
   activeVarScope.value = 0
 })

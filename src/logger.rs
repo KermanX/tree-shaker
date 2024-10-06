@@ -13,6 +13,7 @@ pub enum DebuggerEvent {
   PushCfScope(ScopeId, CfScopeKind, Option<bool>),
   UpdateCfScopeExited(ScopeId, Option<bool>),
   PopCfScope,
+  ReplaceVarScopeStack(Vec<ScopeId>),
   PushVarScope(ScopeId, ScopeId),
   PopVarScope,
 }
@@ -89,6 +90,12 @@ impl Logger {
         )
       }
       DebuggerEvent::PopCfScope => "PopCfScope".to_string(),
+      DebuggerEvent::ReplaceVarScopeStack(scope_ids) => {
+        format!(
+          "ReplaceVarScopeStack {}",
+          scope_ids.iter().map(Self::serialize_scope_id).collect::<Vec<_>>().join(",")
+        )
+      }
       DebuggerEvent::PushVarScope(scope_id, cf_scope_id) => {
         format!(
           "PushVarScope {} {}",

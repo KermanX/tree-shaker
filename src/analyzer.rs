@@ -13,7 +13,7 @@ use oxc::{
   semantic::{Semantic, SymbolId},
   span::{GetSpan, Span},
 };
-use std::mem;
+use std::{mem, rc::Rc};
 
 pub struct Analyzer<'a> {
   pub config: TreeShakeConfig,
@@ -94,6 +94,14 @@ impl<'a> Analyzer<'a> {
     let boxed =
       self.data.entry(key).or_insert_with(|| unsafe { mem::transmute(Box::new(D::default())) });
     unsafe { mem::transmute(boxed.as_mut()) }
+  }
+
+  pub fn take_labels(&mut self) -> Option<Rc<Vec<LabelEntity<'a>>>> {
+    if self.pending_labels.is_empty() {
+      None
+    } else {
+      Some(Rc::new(mem::take(&mut self.pending_labels)))
+    }
   }
 
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef, watchEffect } from 'vue';
-import { activeCallScope, currentCallScopes, activeLogIndex, logsRaw, currentCfScopes, activeCfScope, activeVarScope, currentVarScopes } from './states';
+import { activeCallScope, currentCallScopes, activeLogIndex, logsRaw, currentCfScopes, activeCfScope, activeVarScope, currentVarScopes, currentVarStack } from './states';
 
 const logItems = useTemplateRef("logItems");
 
@@ -131,12 +131,11 @@ function setActiveVarScope(index: number) {
           </div>
         </div>
         <div>
-          <div v-for="scope, index in currentVarScopes" flex class="hover:bg-op-40" :class="getVarScopeClass(index)"
+          <div v-for="id, index in currentVarStack" flex class="hover:bg-op-40" :class="getVarScopeClass(index)"
             @click="setActiveVarScope(index)">
             <div flex-grow ml-2>
-              [{{ index }}]
-              #{{ scope.id }}
-              cf#{{ scope.cf_scope }}
+              #{{ id }}
+              cf#{{ currentVarScopes[id].cf_scope }}
             </div>
           </div>
         </div>

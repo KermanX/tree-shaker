@@ -20,7 +20,7 @@ use oxc::{
   span::GetSpan,
 };
 use scope_tree::ScopeTree;
-use std::{mem, rc::Rc};
+use std::rc::Rc;
 use try_scope::TryScope;
 use variable_scope::VariableScope;
 
@@ -85,6 +85,14 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf.get_current_mut()
   }
 
+  fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId> {
+    if let Some(logger) = self.logger {
+      logger.push_event(DebuggerEvent::ReplaceVarScopeStack(new_stack.clone()));
+    }
+
+    self.scope_context.variable.replace_stack(new_stack)
+  }
+
   pub fn push_call_scope(
     &mut self,
     source: FunctionEntitySource<'a>,
@@ -99,7 +107,7 @@ impl<'a> Analyzer<'a> {
 
     // FIXME: no clone
     let variable_scope_stack = variable_scope_stack.as_ref().clone();
-    let old_variable_scope_stack = self.scope_context.variable.replace_stack(variable_scope_stack);
+    let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth =
       self.push_cf_scope_with_deps(CfScopeKind::Function, None, vec![call_dep], Some(false));
@@ -135,7 +143,7 @@ impl<'a> Analyzer<'a> {
     let (old_variable_scope_stack, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
     self.pop_variable_scope();
-    self.scope_context.variable.replace_stack(old_variable_scope_stack);
+    self.replace_variable_scope_stack(old_variable_scope_stack);
     ret_val
   }
 
@@ -156,14 +164,6 @@ impl<'a> Analyzer<'a> {
     }
 
     self.scope_context.variable.pop()
-  }
-
-  pub fn take_labels(&mut self) -> Option<Rc<Vec<LabelEntity<'a>>>> {
-    if self.pending_labels.is_empty() {
-      None
-    } else {
-      Some(Rc::new(mem::take(&mut self.pending_labels)))
-    }
   }
 
   pub fn push_cf_scope(
