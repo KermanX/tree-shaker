@@ -37,7 +37,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     key: &Entity<'a>,
   ) -> Entity<'a> {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
-      analyzer.explicit_throw_unknown("Cannot get property of null or undefined");
+      analyzer.thrown_builtin_error("Cannot get property of null or undefined");
       consumed_object::get_property(analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
@@ -54,7 +54,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     value: Entity<'a>,
   ) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
-      analyzer.explicit_throw_unknown("Cannot set property of null or undefined");
+      analyzer.thrown_builtin_error("Cannot set property of null or undefined");
       consumed_object::set_property(analyzer, dep, key, value)
     } else {
       // No effect
@@ -90,7 +90,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _key: &Entity<'a>) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
-      analyzer.explicit_throw_unknown("Cannot delete property of null or undefined");
+      analyzer.thrown_builtin_error("Cannot delete property of null or undefined");
       analyzer.consume(dep);
     } else {
       // No effect
@@ -105,7 +105,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.explicit_throw_unknown(format!("Cannot call a non-function object {:?}", self));
+    analyzer.thrown_builtin_error(format!("Cannot call a non-function object {:?}", self));
     consumed_object::call(analyzer, dep, this, args)
   }
 
@@ -131,7 +131,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       ),
       _ => {
         self.consume(analyzer);
-        analyzer.explicit_throw_unknown("Cannot iterate over a non-iterable object");
+        analyzer.thrown_builtin_error("Cannot iterate over a non-iterable object");
         consumed_object::iterate(analyzer, dep)
       }
     }

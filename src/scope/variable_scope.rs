@@ -71,7 +71,7 @@ impl<'a> Analyzer<'a> {
       } else {
         let decl_dep = (old.decl_dep.clone(), decl_dep);
         let name = self.semantic.symbols().get_name(symbol);
-        self.explicit_throw_unknown(format!("Variable {name:?} already declared"));
+        self.thrown_builtin_error(format!("Variable {name:?} already declared"));
         self.consume(decl_dep);
       }
     } else {
@@ -156,7 +156,7 @@ impl<'a> Analyzer<'a> {
       if variable.kind.is_untracked() {
         self.consume(new_val);
       } else if variable.kind.is_const() {
-        self.explicit_throw_unknown("Cannot assign to const variable");
+        self.thrown_builtin_error("Cannot assign to const variable");
         self.consume(variable.decl_dep);
         new_val.consume(self);
       } else {
@@ -320,7 +320,7 @@ impl<'a> Analyzer<'a> {
       let id = self.get_variable_scope(true);
       self.mark_untracked_on_scope(id, symbol);
     } else {
-      self.explicit_throw_unknown("Unresolved identifier reference");
+      self.thrown_builtin_error("Unresolved identifier reference");
     }
   }
 
@@ -333,7 +333,7 @@ impl<'a> Analyzer<'a> {
     if self.has_exhaustive_scope_since(target_cf_scope) {
       self.may_throw();
     } else {
-      self.explicit_throw_unknown("Cannot access variable before initialization");
+      self.thrown_builtin_error("Cannot access variable before initialization");
     }
     self.refer_global();
   }

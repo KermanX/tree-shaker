@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
         let is_nullish = value.test_nullish();
         if is_nullish != Some(false) {
           if is_nullish == Some(true) {
-            self.explicit_throw_unknown("Cannot destructure nullish value");
+            self.thrown_builtin_error("Cannot destructure nullish value");
           } else {
             self.may_throw();
           }

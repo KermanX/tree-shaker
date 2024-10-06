@@ -35,14 +35,20 @@ impl<'a> Analyzer<'a> {
 
   pub fn explicit_throw(&mut self, value: Entity<'a>) {
     self.explicit_throw_impl(value);
+
+    let try_scope = self.try_scope();
+    self.exit_to(try_scope.cf_scope_depth);
   }
 
-  pub fn explicit_throw_unknown(&mut self, message: impl Into<String>) {
-    if self.scope_context.cf.iter_stack().rev().all(|scope| scope.exited == Some(false)) {
+  pub fn thrown_builtin_error(&mut self, message: impl Into<String>) {
+    if self.scope_context.cf.iter_stack().all(|scope| scope.exited == Some(false)) {
       self.add_diagnostic(message);
     }
 
     self.explicit_throw_impl(UnknownEntity::new_unknown());
+
+    let try_scope = self.try_scope();
+    self.exit_to(try_scope.cf_scope_depth);
   }
 
   pub fn forward_throw(&mut self, values: Vec<Entity<'a>>) {
@@ -59,11 +65,7 @@ impl<'a> Analyzer<'a> {
     let exec_dep = self.get_exec_dep(try_scope.cf_scope_depth, ());
 
     let try_scope = self.try_scope_mut();
-
     try_scope.may_throw = true;
     try_scope.thrown_values.push(ForwardedEntity::new(value, exec_dep));
-
-    let cf_scope_depth = try_scope.cf_scope_depth;
-    self.exit_to(cf_scope_depth);
   }
 }

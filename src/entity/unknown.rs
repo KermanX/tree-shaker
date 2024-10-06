@@ -90,7 +90,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     args: &Entity<'a>,
   ) -> Entity<'a> {
     if !self.maybe_object() {
-      analyzer.explicit_throw_unknown("Cannot call non-object");
+      analyzer.thrown_builtin_error("Cannot call non-object");
     }
     self.consume(analyzer);
     consumed_object::call(analyzer, dep, this, args)
@@ -120,7 +120,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
       return (vec![], Some(UnknownEntity::new_computed_unknown(rc.clone())));
     }
     if !self.maybe_object() {
-      analyzer.explicit_throw_unknown("Cannot iterate non-object");
+      analyzer.thrown_builtin_error("Cannot iterate non-object");
     }
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)

@@ -81,7 +81,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    analyzer.explicit_throw_unknown("Cannot iterate over function");
+    analyzer.thrown_builtin_error("Cannot iterate over function");
     consumed_object::iterate(analyzer, dep)
   }
 
