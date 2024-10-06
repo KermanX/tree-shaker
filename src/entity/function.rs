@@ -114,7 +114,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     key: &Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_property(analyzer, dep, key);
+      return consumed_object::get_property(rc, analyzer, dep, key);
     }
     analyzer.builtins.prototypes.function.get_property(rc, key, dep)
   }
@@ -138,12 +138,14 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn enumerate_properties(
     &self,
-    _rc: &Entity<'a>,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-    self.consume(analyzer);
-    consumed_object::enumerate_properties(analyzer, dep)
+    if analyzer.config.unknown_property_read_side_effects {
+      self.consume(analyzer);
+    }
+    consumed_object::enumerate_properties(rc, analyzer, dep)
   }
 
   fn call(

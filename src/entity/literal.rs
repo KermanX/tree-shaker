@@ -38,7 +38,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   ) -> Entity<'a> {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       analyzer.thrown_builtin_error("Cannot get property of null or undefined");
-      consumed_object::get_property(analyzer, dep, key)
+      consumed_object::get_property(rc, analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
       prototype.get_property(rc, key, dep)

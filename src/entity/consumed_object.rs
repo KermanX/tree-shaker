@@ -2,15 +2,20 @@ use super::{Consumable, Entity, UnknownEntity};
 use crate::analyzer::Analyzer;
 
 pub fn get_property<'a>(
+  rc: &Entity<'a>,
   analyzer: &mut Analyzer<'a>,
   dep: Consumable<'a>,
   key: &Entity<'a>,
 ) -> Entity<'a> {
-  analyzer.may_throw();
-  analyzer.consume(dep);
-  analyzer.refer_global();
-  key.get_to_property_key().consume(analyzer);
-  UnknownEntity::new_unknown()
+  if analyzer.config.unknown_property_read_side_effects {
+    analyzer.may_throw();
+    analyzer.consume(dep);
+    analyzer.refer_global();
+    key.consume(analyzer);
+    UnknownEntity::new_unknown()
+  } else {
+    UnknownEntity::new_computed_unknown((rc.clone(), dep, key.clone()))
+  }
 }
 
 pub fn set_property<'a>(
@@ -27,13 +32,19 @@ pub fn set_property<'a>(
 }
 
 pub fn enumerate_properties<'a>(
+  rc: &Entity<'a>,
   analyzer: &mut Analyzer<'a>,
   dep: Consumable<'a>,
 ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-  analyzer.may_throw();
-  analyzer.consume(dep);
-  analyzer.refer_global();
-  vec![(false, UnknownEntity::new_unknown(), UnknownEntity::new_unknown())]
+  if analyzer.config.unknown_property_read_side_effects {
+    analyzer.may_throw();
+    analyzer.consume(dep);
+    analyzer.refer_global();
+    vec![(false, UnknownEntity::new_unknown(), UnknownEntity::new_unknown())]
+  } else {
+    let unknown = UnknownEntity::new_computed_unknown((rc.clone(), dep));
+    vec![(false, unknown.clone(), unknown)]
+  }
 }
 
 pub fn delete_property<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {

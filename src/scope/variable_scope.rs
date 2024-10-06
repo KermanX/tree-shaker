@@ -339,14 +339,12 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn refer_global(&mut self) {
-    if self.config.unknown_global_side_effects {
-      self.may_throw();
-      for id in self.scope_context.cf.stack.clone() {
-        let scope = self.scope_context.cf.get_mut(id);
-        let deps = mem::take(&mut scope.deps);
-        for dep in deps {
-          self.consume(dep);
-        }
+    self.may_throw();
+    for id in self.scope_context.cf.stack.clone() {
+      let scope = self.scope_context.cf.get_mut(id);
+      let deps = mem::take(&mut scope.deps);
+      for dep in deps {
+        self.consume(dep);
       }
     }
   }

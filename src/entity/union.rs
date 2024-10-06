@@ -55,13 +55,15 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 
   fn enumerate_properties(
     &self,
-    _rc: &Entity<'a>,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     // FIXME:
-    self.consume(analyzer);
-    consumed_object::enumerate_properties(analyzer, dep)
+    if analyzer.config.unknown_property_read_side_effects {
+      self.consume(analyzer);
+    }
+    consumed_object::enumerate_properties(rc, analyzer, dep)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {

@@ -29,8 +29,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     key: &Entity<'a>,
   ) -> Entity<'a> {
     if self.maybe_object() {
-      self.consume(analyzer);
-      consumed_object::get_property(analyzer, dep, key)
+      if analyzer.config.unknown_property_read_side_effects {
+        self.consume(analyzer);
+      }
+      consumed_object::get_property(rc, analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
       prototype.get_property(rc, key, dep)
@@ -60,8 +62,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     if self.maybe_object() {
-      self.consume(analyzer);
-      consumed_object::enumerate_properties(analyzer, dep)
+      if analyzer.config.unknown_property_read_side_effects {
+        self.consume(analyzer);
+      }
+      consumed_object::enumerate_properties(rc, analyzer, dep)
     } else if *self == UnknownEntity::String {
       vec![(
         false,

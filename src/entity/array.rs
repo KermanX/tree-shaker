@@ -50,13 +50,13 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
   fn get_property(
     &self,
-    _rc: &Entity<'a>,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_property(analyzer, dep, key);
+      return consumed_object::get_property(rc, analyzer, dep, key);
     }
     let mut deps = self.deps.borrow().clone();
     deps.push(dep);
@@ -196,12 +196,12 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
   fn enumerate_properties(
     &self,
-    _rc: &Entity<'a>,
+    rc: &Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     if self.consumed.get() {
-      return consumed_object::enumerate_properties(analyzer, dep);
+      return consumed_object::enumerate_properties(rc, analyzer, dep);
     }
     let mut deps = self.deps.borrow().clone();
     deps.push(dep.clone());

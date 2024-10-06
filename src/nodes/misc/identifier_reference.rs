@@ -22,6 +22,7 @@ impl<'a> Analyzer<'a> {
     let symbol = reference.symbol_id();
 
     if let Some(symbol) = symbol {
+      // Known symbol
       if let Some(value) = self.read_symbol(symbol) {
         value
       } else {
@@ -29,15 +30,20 @@ impl<'a> Analyzer<'a> {
         UnknownEntity::new_unknown()
       }
     } else if node.name == "arguments" {
+      // The `arguments` object
       let arguments_consumed = self.consume_arguments(None);
       self.call_scope_mut().need_consume_arguments = !arguments_consumed;
       UnknownEntity::new_unknown()
     } else if let Some(global) = self.builtins.globals.get(node.name.as_str()).cloned() {
+      // Known global
       global
     } else {
-      self.set_data(AST_TYPE, node, Data { has_effect: true });
-      self.refer_global();
-      self.may_throw();
+      // Unknown global
+      if self.config.unknown_global_side_effects {
+        self.set_data(AST_TYPE, node, Data { has_effect: true });
+        self.refer_global();
+        self.may_throw();
+      }
       UnknownEntity::new_unknown()
     }
   }

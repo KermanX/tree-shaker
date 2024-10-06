@@ -6,6 +6,7 @@ pub struct TreeShakeConfig {
   pub preserve_function_name: bool,
   pub preserve_function_length: bool,
   pub iterate_side_effects: bool,
+  pub unknown_property_read_side_effects: bool,
 
   pub min_simple_number_value: i64,
   pub max_simple_number_value: i64,
@@ -26,6 +27,7 @@ impl TreeShakeConfig {
       preserve_function_name: true,
       preserve_function_length: true,
       iterate_side_effects: true,
+      unknown_property_read_side_effects: true,
 
       min_simple_number_value: -999,
       max_simple_number_value: 999,
@@ -44,6 +46,7 @@ impl TreeShakeConfig {
       preserve_function_name: false,
       preserve_function_length: false,
       iterate_side_effects: false,
+      unknown_property_read_side_effects: false,
 
       ..Default::default()
     }

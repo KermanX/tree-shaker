@@ -111,7 +111,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     key: &Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_property(analyzer, dep, key);
+      return consumed_object::get_property(rc, analyzer, dep, key);
     }
     analyzer.exec_indeterminately(move |analyzer| {
       let this = rc.clone();
@@ -159,8 +159,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         )
       } else {
         // TODO: like set_property, call getters and collect all possible values
+        // FIXME: if analyzer.config.unknown_property_read_side_effects {
         self.consume(analyzer);
-        consumed_object::get_property(analyzer, dep, key)
+        // }
+        consumed_object::get_property(rc, analyzer, dep, key)
       }
     })
   }
@@ -264,7 +266,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     if self.consumed.get() {
-      return consumed_object::enumerate_properties(analyzer, dep);
+      return consumed_object::enumerate_properties(rc, analyzer, dep);
     }
     let mut deps = self.deps.borrow().clone();
     deps.push(dep.clone());
