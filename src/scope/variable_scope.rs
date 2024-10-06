@@ -6,7 +6,7 @@ use crate::{
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::fmt;
+use std::{fmt, mem};
 
 /// It's not good to clone, but it's fine for now
 #[derive(Debug, Clone)]
@@ -341,16 +341,18 @@ impl<'a> Analyzer<'a> {
   pub fn refer_global(&mut self) {
     if self.config.unknown_global_side_effects {
       self.may_throw();
-      self.refer_to_variable_scope(0);
+      for id in self.scope_context.cf.stack.clone() {
+        let scope = self.scope_context.cf.get_mut(id);
+        let deps = mem::take(&mut scope.deps);
+        for dep in deps {
+          self.consume(dep);
+        }
+      }
     }
   }
 
   pub fn refer_to_diff_variable_scope(&mut self, another: ScopeId) {
     let target_depth = self.find_first_different_variable_scope(another);
-    self.refer_to_variable_scope(target_depth);
-  }
-
-  fn refer_to_variable_scope(&mut self, target_depth: usize) {
     self.consume(self.get_assignment_deps(target_depth, ()));
   }
 }
