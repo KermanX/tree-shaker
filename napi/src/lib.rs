@@ -16,20 +16,26 @@ pub struct TreeShakeResultBinding {
 #[napi]
 pub fn tree_shake(
   input: String,
-  do_tree_shake: bool,
+  tree_shake: Option<String>,
   do_minify: bool,
   eval_mode: bool,
 ) -> TreeShakeResultBinding {
   let result = tree_shake::tree_shake(tree_shake::TreeShakeOptions {
-    config: tree_shake::TreeShakeConfig::default(),
+    config: match tree_shake.as_deref() {
+      Some("safest") => tree_shake::TreeShakeConfig::safest(),
+      Some("recommended") => tree_shake::TreeShakeConfig::recommended(),
+      Some("smallest") => tree_shake::TreeShakeConfig::smallest(),
+      None => tree_shake::TreeShakeConfig::default(),
+      _ => panic!("Invalid tree shake option"),
+    },
     allocator: &Allocator::default(),
     source_type: SourceType::default(),
     source_text: input,
-    tree_shake: do_tree_shake,
+    tree_shake: tree_shake.is_some(),
     minify: do_minify.then(MinifierOptions::default),
     code_gen: CodegenOptions { single_quote: true, minify: do_minify },
     eval_mode,
-    logging: false,
+    logging: true,
   });
   TreeShakeResultBinding {
     output: result.codegen_return.source_text,

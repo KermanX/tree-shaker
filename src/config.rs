@@ -37,4 +37,15 @@ impl TreeShakeConfig {
   pub fn recommended() -> Self {
     Self { preserve_function_name: false, preserve_function_length: false, ..Default::default() }
   }
+
+  pub fn smallest() -> Self {
+    Self {
+      unknown_global_side_effects: false,
+      preserve_function_name: false,
+      preserve_function_length: false,
+      iterate_side_effects: false,
+
+      ..Default::default()
+    }
+  }
 }
