@@ -154,6 +154,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
+    if self.consumed.get() {
+      return consumed_object::call(analyzer, dep, this, args);
+    }
+
     let recursed = analyzer.scope_context.call.iter().any(|scope| scope.source == self.source);
     if recursed {
       self.consume(analyzer);
