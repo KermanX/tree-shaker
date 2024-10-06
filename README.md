@@ -1,4 +1,4 @@
-# Tree Shaker Prototype
+# Tree Shaker
 
 \[WIP\] This is an experimental tree shaker for JS based on [Oxc](https://oxc.rs).
 
@@ -34,10 +34,13 @@ export function f() {
 
 ## Todo
 
-- Pass all reasonable test262 tests
+- Performance!
 - Test against fixtures from other tree shakers like Rollup
 - Implement built-in objects and properties
+- Rollup-like try-scope optimization/de-optimization
+- Reuse code with oxc_minifier for JS computation logics
 - Type narrowing
+- Multiple-module support
 
 ## Approach
 
@@ -52,4 +55,9 @@ export function f() {
 ### Concepts
 
 - `Entity`: Represents the analyzed information of a JS value.
-- `EntityDep`: Nodes or some other things that the runtime value of `Entity` depends on.
+- `Consumable`: Entity or AST Nodes or some other things that the runtime value of `Entity` depends on.
+- Scopes:
+    - Call Scope: Function call scope.
+    - Cf Scope: Control flow scope.
+    - Variable Scope: Variable scope.
+    - Try Scope: Try statement or function.
