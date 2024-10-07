@@ -22,5 +22,7 @@ export function deletion() {
 	delete obj1.a;
 	delete obj1["b"];
 	if (unknown) delete obj1.c;
+	const c = unknown;
+	delete unknown[c];
 	effect(void 0, void 0, obj1.c, 4);
 }

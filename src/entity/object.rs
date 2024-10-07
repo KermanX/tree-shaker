@@ -320,14 +320,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         }
       }
       if deleted {
-        self.add_assignment_dep(analyzer, dep);
+        self.add_assignment_dep(analyzer, (dep, key).into());
       }
     } else {
       let mut string_keyed = self.string_keyed.borrow_mut();
       for property in string_keyed.values_mut() {
         property.definite = false;
       }
-      self.add_assignment_dep(analyzer, dep);
+      self.add_assignment_dep(analyzer, (dep, key).into());
     }
   }
 
