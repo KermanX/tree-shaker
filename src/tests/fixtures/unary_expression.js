@@ -26,5 +26,8 @@ export function deletion() {
     delete obj1.c
   }
 
+  const c = unknown
+  delete unknown[c]
+
   effect(obj1.a, obj1.b, obj1.c, obj1.d)
 }
