@@ -26,11 +26,7 @@ fn tree_shake(input: String) -> String {
 fn test() {
   glob!("fixtures/**/*.js", |path| {
     let input = fs::read_to_string(path).unwrap();
-    let mut filename: &str = "";
-    if let Some(basename) = path.file_name() {
-      filename = basename.to_str().unwrap();
-    };
-
+    let filename = path.file_name().unwrap().to_str().unwrap();
     assert_snapshot!(format!("test@{filename}"), tree_shake(input));
   });
 }
