@@ -7,6 +7,7 @@ use crate::{
   },
 };
 use oxc::semantic::{ScopeId, SymbolId};
+use std::mem;
 
 #[derive(Debug)]
 pub struct CallScope<'a> {
@@ -119,5 +120,13 @@ impl<'a> Analyzer<'a> {
       }
     }
     arguments_consumed
+  }
+
+  pub fn consume_return_values(&mut self) {
+    let call_scope = self.call_scope_mut();
+    let values = mem::take(&mut call_scope.returned_values);
+    for value in values {
+      self.consume(value);
+    }
   }
 }

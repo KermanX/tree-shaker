@@ -40,6 +40,7 @@ impl<'a> Analyzer<'a> {
     variable_scopes: Rc<Vec<ScopeId>>,
     this: Entity<'a>,
     args: Entity<'a>,
+    consume_return: bool,
   ) -> Entity<'a> {
     let runner: Box<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a> =
       Box::new(move |analyzer: &mut Analyzer<'a>| {
@@ -77,6 +78,10 @@ impl<'a> Analyzer<'a> {
 
         if declare_in_body {
           analyzer.pop_variable_scope();
+        }
+
+        if consume_return {
+          analyzer.consume_return_values();
         }
 
         analyzer.pop_call_scope()
