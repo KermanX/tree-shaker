@@ -45,10 +45,10 @@ impl<'a> FunctionEntitySource<'a> {
     }
   }
 
-  pub fn get_name(&self) -> String {
+  pub fn name(&self) -> String {
     match self {
       FunctionEntitySource::Function(node) => {
-        node.id.as_ref().map_or("<anonymous>", |id| &id.name).to_string()
+        node.id.as_ref().map_or("<unknown>", |id| &id.name).to_string()
       }
       FunctionEntitySource::ArrowFunctionExpression(_) => "<anonymous>".to_string(),
       FunctionEntitySource::Module => "<Module>".to_string(),
@@ -82,6 +82,7 @@ impl Hash for FunctionEntitySource<'_> {
 #[derive(Debug, Clone)]
 pub struct FunctionEntity<'a> {
   consumed: Rc<Cell<bool>>,
+  body_consumed: Rc<Cell<bool>>,
   pub source: FunctionEntitySource<'a>,
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
   pub is_expression: bool,
@@ -91,32 +92,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    // FIXME: This is not guaranteed to be correct
-    // Handle case that a closure is created recursively
-    let mut recursion = 0;
-    for scope in analyzer.scope_context.call.iter().rev() {
-      if scope.source == self.source {
-        recursion += 1;
-        if recursion > 1 {
-          return;
-        }
-      }
-    }
-
-    analyzer.consume(self.source.into_dep_node());
-    analyzer.consume_arguments(Some(self.source));
-
-    let self_cloned = self.clone();
-    analyzer.exec_consumed_fn(move |analyzer| {
-      self_cloned.call_impl(
-        &UnknownEntity::new_unknown(),
-        analyzer,
-        ().into(),
-        &UnknownEntity::new_unknown(),
-        &UnknownEntity::new_unknown(),
-        true,
-      )
-    });
+    self.call_in_recursion(analyzer);
   }
 
   fn get_property(
@@ -175,9 +151,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
     let recursed = analyzer.scope_context.call.iter().any(|scope| scope.source == self.source);
     if recursed {
-      self.consume(analyzer);
+      self.call_in_recursion(analyzer);
       return consumed_object::call(analyzer, dep, this, args);
     }
+
     self.call_impl(rc, analyzer, dep, this, args, false)
   }
 
@@ -250,6 +227,7 @@ impl<'a> FunctionEntity<'a> {
   ) -> Entity<'a> {
     Entity::new(Self {
       consumed: Rc::new(Cell::new(false)),
+      body_consumed: Rc::new(Cell::new(false)),
       source,
       variable_scope_stack: Rc::new(variable_scope_stack),
       is_expression,
@@ -266,7 +244,7 @@ impl<'a> FunctionEntity<'a> {
     consume_return: bool,
   ) -> Entity<'a> {
     if let Some(logger) = analyzer.logger {
-      logger.push_fn_call(self.source.span(), self.source.get_name());
+      logger.push_fn_call(self.source.span(), self.source.name());
     }
 
     let call_dep: Consumable<'a> = (self.source.into_dep_node(), dep).into();
@@ -295,5 +273,39 @@ impl<'a> FunctionEntity<'a> {
       FunctionEntitySource::Module => unreachable!(),
     };
     ForwardedEntity::new(ret_val, call_dep)
+  }
+
+  pub fn call_in_recursion(&self, analyzer: &mut Analyzer<'a>) {
+    if self.body_consumed.get() {
+      return;
+    }
+    self.body_consumed.set(true);
+
+    // FIXME: This is not guaranteed to be correct
+    // Handle case that a closure is created recursively
+    let mut recursion = 0;
+    for scope in analyzer.scope_context.call.iter().rev() {
+      if scope.source == self.source {
+        recursion += 1;
+        if recursion > 1 {
+          return;
+        }
+      }
+    }
+
+    analyzer.consume(self.source.into_dep_node());
+    analyzer.consume_arguments(Some(self.source));
+
+    let self_cloned = self.clone();
+    analyzer.exec_consumed_fn(move |analyzer| {
+      self_cloned.call_impl(
+        &UnknownEntity::new_unknown(),
+        analyzer,
+        ().into(),
+        &UnknownEntity::new_unknown(),
+        &UnknownEntity::new_unknown(),
+        true,
+      )
+    });
   }
 }
