@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, entity::UnknownEntity, scope::CfScopeKind,
+  analyzer::Analyzer, ast::AstType2, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::{
@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
     let right = if node.r#await {
       right.consume(self);
       self.refer_dep(dep);
-      UnknownEntity::new_unknown()
+      self.factory.unknown
     } else {
       right
     };

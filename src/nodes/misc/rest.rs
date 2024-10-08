@@ -15,13 +15,13 @@ impl<'a> Analyzer<'a> {
 
     let rest = self.new_empty_object();
     for (definite, key, value) in properties {
-      rest.init_property(PropertyKind::Init, key, value, definite);
+      rest.init_property(self, PropertyKind::Init, key, value, definite);
     }
 
     for key in enumerated {
-      rest.delete_property(self, ().into(), &key);
+      rest.delete_property(self, ().into(), key);
     }
 
-    Entity::new(rest)
+    self.factory.new_entity(rest)
   }
 }

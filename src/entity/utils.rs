@@ -1,12 +1,14 @@
-use super::{ComputedEntity, Consumable, Entity, LiteralEntity, UnknownEntity};
+use super::{Consumable, Entity};
+use crate::analyzer::Analyzer;
 
 pub fn boolean_from_test_result<'a, T: Into<Consumable<'a>>>(
+  analyzer: &Analyzer<'a>,
   result: Option<bool>,
   deps: impl FnOnce() -> T,
 ) -> Entity<'a> {
   match result {
-    Some(value) => LiteralEntity::new_boolean(value),
-    None => ComputedEntity::new(UnknownEntity::new_boolean(), deps()),
+    Some(value) => analyzer.factory.new_boolean(value),
+    None => analyzer.factory.new_computed(analyzer.factory.unknown_boolean, deps()),
   }
 }
 

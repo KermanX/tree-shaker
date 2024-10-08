@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{Entity, ForwardedEntity, UnknownEntity},
+  entity::Entity,
 };
 
 #[derive(Debug)]
@@ -16,9 +16,9 @@ impl<'a> TryScope<'a> {
     TryScope { may_throw: false, thrown_values: Vec::new(), cf_scope_depth }
   }
 
-  pub fn thrown_val(self) -> Option<Entity<'a>> {
+  pub fn thrown_val(self, analyzer: &Analyzer<'a>) -> Option<Entity<'a>> {
     // Always unknown here
-    self.may_throw.then(|| UnknownEntity::new_computed_unknown(self.thrown_values))
+    self.may_throw.then(|| analyzer.factory.new_computed_unknown(self.thrown_values))
   }
 }
 
@@ -45,7 +45,7 @@ impl<'a> Analyzer<'a> {
       self.add_diagnostic(message);
     }
 
-    self.explicit_throw_impl(UnknownEntity::new_unknown());
+    self.explicit_throw_impl(self.factory.unknown);
 
     let try_scope = self.try_scope();
     self.exit_to(try_scope.cf_scope_depth);
@@ -55,7 +55,7 @@ impl<'a> Analyzer<'a> {
     if values.is_empty() {
       self.may_throw();
     } else {
-      let thrown_val = UnknownEntity::new_computed_unknown(values);
+      let thrown_val = self.factory.new_computed_unknown(values);
       self.explicit_throw_impl(thrown_val);
     }
   }
@@ -63,9 +63,10 @@ impl<'a> Analyzer<'a> {
   fn explicit_throw_impl(&mut self, value: Entity<'a>) {
     let try_scope = self.try_scope();
     let exec_dep = self.get_exec_dep(try_scope.cf_scope_depth, ());
+    let forwarded = self.factory.new_computed(value, exec_dep);
 
     let try_scope = self.try_scope_mut();
     try_scope.may_throw = true;
-    try_scope.thrown_values.push(ForwardedEntity::new(value, exec_dep));
+    try_scope.thrown_values.push(forwarded);
   }
 }

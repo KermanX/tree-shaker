@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{Consumable, Entity, FunctionEntity, FunctionEntitySource, UnknownEntity},
+  entity::{Consumable, Entity, FunctionEntitySource},
   transformer::Transformer,
 };
 use oxc::{
@@ -15,7 +15,7 @@ use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function(&mut self, node: &'a Function<'a>, is_expression: bool) -> Entity<'a> {
-    FunctionEntity::new(
+    self.factory.new_function(
       FunctionEntitySource::Function(node),
       self.scope_context.variable.stack.clone(),
       is_expression,
@@ -92,7 +92,7 @@ impl<'a> Analyzer<'a> {
       self.exec_async_or_generator_fn(move |analyzer| {
         runner(analyzer).consume(analyzer);
       });
-      UnknownEntity::new_unknown()
+      self.factory.unknown
     } else {
       runner(self)
     }

@@ -2,7 +2,7 @@ use crate::{
   ast::AstType2,
   builtins::Builtins,
   data::{get_node_ptr, Diagnostics, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
-  entity::{Entity, EntityOpHost, LabelEntity},
+  entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
   logger::{DebuggerEvent, Logger},
   scope::ScopeContext,
   TreeShakeConfig,
@@ -18,6 +18,7 @@ use std::{mem, rc::Rc};
 pub struct Analyzer<'a> {
   pub config: TreeShakeConfig,
   pub allocator: &'a Allocator,
+  pub factory: EntityFactory<'a>,
   pub semantic: Semantic<'a>,
   pub diagnostics: &'a mut Diagnostics,
   pub current_span: Vec<Span>,
@@ -41,6 +42,8 @@ impl<'a> Analyzer<'a> {
     diagnostics: &'a mut Diagnostics,
     logger: Option<&'a Logger>,
   ) -> Self {
+    let factory = EntityFactory::new(allocator);
+
     Analyzer {
       config,
       allocator,
@@ -52,11 +55,12 @@ impl<'a> Analyzer<'a> {
       var_decls: Default::default(),
       named_exports: Vec::new(),
       default_export: None,
-      scope_context: ScopeContext::new(),
+      scope_context: ScopeContext::new(&factory),
       pending_labels: Vec::new(),
-      builtins: Builtins::new(),
+      builtins: Builtins::new(&factory),
       entity_op: EntityOpHost::new(allocator),
       logger,
+      factory,
     }
   }
 
@@ -71,7 +75,7 @@ impl<'a> Analyzer<'a> {
       entity.consume(self);
     }
     // Consume uncaught thrown values
-    self.call_scope_mut().try_scopes.pop().unwrap().thrown_val().map(|entity| {
+    self.call_scope_mut().try_scopes.pop().unwrap().thrown_val(self).map(|entity| {
       entity.consume(self);
     });
 
@@ -141,5 +145,11 @@ impl<'a> Analyzer<'a> {
     if let Some(debugger) = &mut self.logger {
       debugger.push_event(DebuggerEvent::PopExprSpan);
     }
+  }
+}
+
+impl<'a> Into<&'a Allocator> for Analyzer<'a> {
+  fn into(self) -> &'a Allocator {
+    self.allocator
   }
 }

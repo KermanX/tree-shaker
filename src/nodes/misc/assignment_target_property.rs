@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  entity::{Entity, EntityDepNode, LiteralEntity},
+  entity::{Entity, EntityDepNode},
   transformer::Transformer,
 };
 use oxc::{
@@ -26,9 +26,9 @@ impl<'a> Analyzer<'a> {
     let dep = EntityDepNode::from((AstType2::AssignmentTargetProperty, node));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
-        let key = LiteralEntity::new_string(node.binding.name.as_str());
+        let key = self.factory.new_string(node.binding.name.as_str());
 
-        let value = value.get_property(self, dep, &key);
+        let value = value.get_property(self, dep, key);
 
         let (need_init, value) = if let Some(init) = &node.init {
           self.exec_with_default(init, value)
@@ -49,7 +49,7 @@ impl<'a> Analyzer<'a> {
         let key = self.exec_property_key(&node.name);
         self.pop_cf_scope();
 
-        let value = value.get_property(self, dep, &key);
+        let value = value.get_property(self, dep, key);
         self.exec_assignment_target_maybe_default(&node.binding, value);
         key
       }

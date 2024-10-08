@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{Entity, UnknownEntity},
+  entity::Entity,
   transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, YieldExpression};
@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
       let argument = self.exec_expression(argument);
       argument.consume(self);
     }
-    UnknownEntity::new_unknown()
+    self.factory.unknown
   }
 }
 

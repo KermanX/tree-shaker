@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   build_effect_from_arr,
-  entity::{Entity, LiteralEntity},
+  entity::Entity,
   transformer::Transformer,
 };
 use oxc::{
@@ -12,14 +12,13 @@ use std::mem;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_template_literal(&mut self, node: &'a TemplateLiteral<'a>) -> Entity<'a> {
-    let mut result = LiteralEntity::new_string(node.quasi().unwrap().as_str());
+    let mut result = self.factory.new_string(node.quasi().unwrap().as_str());
     for (index, expression) in node.expressions.iter().enumerate() {
       let expression = self.exec_expression(expression);
-      let quasi = LiteralEntity::new_string(
-        node.quasis.get(index + 1).unwrap().value.cooked.as_ref().unwrap(),
-      );
-      result = self.entity_op.add(&result, &expression);
-      result = self.entity_op.add(&result, &quasi);
+      let quasi =
+        self.factory.new_string(node.quasis.get(index + 1).unwrap().value.cooked.as_ref().unwrap());
+      result = self.entity_op.add(self, result, expression);
+      result = self.entity_op.add(self, result, quasi);
     }
     result
   }

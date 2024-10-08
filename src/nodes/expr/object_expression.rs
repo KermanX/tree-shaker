@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   build_effect,
-  entity::{Entity, EntityTrait, ForwardedEntity},
+  entity::{Entity, EntityTrait},
   transformer::Transformer,
 };
 use oxc::{
@@ -26,7 +26,7 @@ impl<'a> Analyzer<'a> {
         ObjectPropertyKind::ObjectProperty(node) => {
           let key = self.exec_property_key(&node.key);
           let value = self.exec_expression(&node.value);
-          let value = ForwardedEntity::new(value, AstKind::ObjectProperty(node));
+          let value = self.factory.new_computed(value, AstKind::ObjectProperty(node));
 
           match &node.key {
             PropertyKey::StaticIdentifier(node) if node.name == "__proto__" => {
@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
               self.consume(value);
             }
             _ => {
-              object.init_property(node.kind, key, value, true);
+              object.init_property(self, node.kind, key, value, true);
             }
           };
         }
@@ -51,7 +51,7 @@ impl<'a> Analyzer<'a> {
       object.consume(self);
     }
 
-    Entity::new(object)
+    self.factory.new_entity(object)
   }
 }
 

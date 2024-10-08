@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  entity::{Entity, EntityDepNode, ForwardedEntity, LiteralEntity},
+  entity::{Entity, EntityDepNode},
   transformer::Transformer,
 };
 use oxc::{
@@ -39,7 +39,7 @@ impl<'a> Analyzer<'a> {
       cache.map(|(object, _)| {
         assert_ne!(short_circuit, Some(true));
         let indeterminate = short_circuit.is_none();
-        (indeterminate, callee, ForwardedEntity::new(object, dep))
+        (indeterminate, callee, self.factory.new_computed(object, dep))
       })
     } else {
       let (short_circuit, callee) = self.exec_expression_in_chain(node);
@@ -49,7 +49,7 @@ impl<'a> Analyzer<'a> {
         Some((
           short_circuit.is_none(),
           callee,
-          ForwardedEntity::new(LiteralEntity::new_undefined(), dep),
+          self.factory.new_computed(self.factory.undefined, dep),
         ))
       }
     }

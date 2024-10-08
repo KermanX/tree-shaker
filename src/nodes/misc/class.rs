@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{Entity, UnknownEntity},
+  entity::Entity,
   transformer::Transformer,
 };
 use oxc::ast::ast::{Class, ClassBody, TSTypeParameterDeclaration, TSTypeParameterInstantiation};
@@ -31,7 +31,7 @@ impl<'a> Analyzer<'a> {
 
     self.pop_variable_scope();
 
-    UnknownEntity::new_unknown()
+    self.factory.unknown
   }
 
   pub fn declare_class(&mut self, node: &'a Class<'a>, exporting: bool) {

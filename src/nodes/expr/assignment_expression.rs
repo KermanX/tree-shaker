@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{Entity, EntityDepNode, UnionEntity},
+  entity::{Entity, EntityDepNode},
   scope::{conditional::ConditionalData, CfScopeKind},
   transformer::Transformer,
 };
@@ -70,7 +70,10 @@ impl<'a> Analyzer<'a> {
       let value = match (need_left_val, need_right) {
         (false, true) => self.exec_expression(&node.right),
         (true, false) => left,
-        (true, true) => UnionEntity::new(vec![left, self.exec_expression(&node.right)]),
+        (true, true) => {
+          let right = self.exec_expression(&node.right);
+          self.factory.new_union(vec![left, right])
+        }
         (false, false) => unreachable!(),
       };
 
@@ -85,7 +88,7 @@ impl<'a> Analyzer<'a> {
     } else {
       let (lhs, cache) = self.exec_assignment_target_read(&node.left);
       let rhs = self.exec_expression(&node.right);
-      let value = self.entity_op.binary_op(to_binary_operator(node.operator), &lhs, &rhs);
+      let value = self.entity_op.binary_op(self, to_binary_operator(node.operator), lhs, rhs);
       self.exec_assignment_target_write(&node.left, value.clone(), cache);
       value
     }

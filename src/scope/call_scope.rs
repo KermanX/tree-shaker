@@ -1,10 +1,7 @@
 use super::try_scope::TryScope;
 use crate::{
   analyzer::Analyzer,
-  entity::{
-    Consumable, Entity, ForwardedEntity, FunctionEntitySource, LiteralEntity, PromiseEntity,
-    UnionEntity, UnknownEntity,
-  },
+  entity::{Consumable, Entity, FunctionEntitySource},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use std::mem;
@@ -58,10 +55,11 @@ impl<'a> CallScope<'a> {
     let mut promise_error = None;
     if try_scope.may_throw {
       if self.is_generator {
+        let unknown = analyzer.factory.unknown;
         let parent_try_scope = analyzer.try_scope_mut();
         parent_try_scope.may_throw = true;
         if !try_scope.thrown_values.is_empty() {
-          parent_try_scope.thrown_values.push(UnknownEntity::new_unknown());
+          parent_try_scope.thrown_values.push(unknown);
         }
         for value in try_scope.thrown_values {
           value.consume(analyzer);
@@ -74,13 +72,13 @@ impl<'a> CallScope<'a> {
     }
 
     let value = if self.returned_values.is_empty() {
-      LiteralEntity::new_undefined()
+      analyzer.factory.undefined
     } else {
-      UnionEntity::new(self.returned_values)
+      analyzer.factory.new_union(self.returned_values)
     };
     (
       self.old_variable_scope_stack,
-      if self.is_async { PromiseEntity::new(value, promise_error) } else { value },
+      if self.is_async { analyzer.factory.new_promise(value, promise_error) } else { value },
     )
   }
 }
@@ -88,7 +86,7 @@ impl<'a> CallScope<'a> {
 impl<'a> Analyzer<'a> {
   pub fn return_value(&mut self, value: Entity<'a>, dep: impl Into<Consumable<'a>>) {
     let call_scope = self.call_scope();
-    let value = ForwardedEntity::new(value, self.get_exec_dep(call_scope.cf_scope_depth, dep));
+    let value = self.factory.new_computed(value, self.get_exec_dep(call_scope.cf_scope_depth, dep));
 
     let call_scope = self.call_scope_mut();
     call_scope.returned_values.push(value);

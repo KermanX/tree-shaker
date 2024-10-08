@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{ComputedEntity, Entity, UnionEntity},
+  entity::Entity,
 };
 use oxc::ast::ast::Expression;
 
@@ -14,11 +14,15 @@ impl<'a> Analyzer<'a> {
 
     self.push_cf_scope_for_deps(vec![value.clone().into()]);
     let binding_val = match is_undefined {
-      Some(true) => ComputedEntity::new(self.exec_expression(default), value),
+      Some(true) => {
+        let default_val = self.exec_expression(default);
+        self.factory.new_computed(default_val, value)
+      }
       Some(false) => value,
       None => {
         self.push_cf_scope_normal(None);
-        let value = UnionEntity::new(vec![self.exec_expression(default), value]);
+        let default_val = self.exec_expression(default);
+        let value = self.factory.new_union(vec![default_val, value]);
         self.pop_cf_scope();
         value
       }

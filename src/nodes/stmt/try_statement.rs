@@ -1,6 +1,4 @@
-use crate::{
-  analyzer::Analyzer, entity::UnknownEntity, scope::CfScopeKind, transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{Statement, TryStatement},
   span::SPAN,
@@ -22,7 +20,7 @@ impl<'a> Analyzer<'a> {
         // does not throw any value, so we should skip the `catch` block.
         // However, we can guarantee that all possible exceptions tracked.
         // For example, KeyboardInterrupt, which is not tracked, can be thrown.
-        try_scope.thrown_val().unwrap_or_else(|| UnknownEntity::new_unknown()),
+        try_scope.thrown_val(self).unwrap_or_else(|| self.factory.unknown),
       );
       None
     } else {

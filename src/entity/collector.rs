@@ -1,4 +1,4 @@
-use super::{CollectedEntity, Entity, LiteralEntity};
+use super::{Entity, LiteralEntity};
 use crate::analyzer::Analyzer;
 use oxc::{
   ast::{ast::Expression, AstBuilder},
@@ -8,7 +8,7 @@ use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug)]
 pub struct LiteralCollector<'a> {
-  try_collect: fn(&Analyzer<'a>, &Entity<'a>) -> Option<LiteralEntity<'a>>,
+  try_collect: fn(&Analyzer<'a>, Entity<'a>) -> Option<LiteralEntity<'a>>,
 
   /// None if no literal is collected
   literal: Option<LiteralEntity<'a>>,
@@ -21,7 +21,7 @@ impl<'a> LiteralCollector<'a> {
   pub fn new_expr_collector() -> Self {
     Self {
       try_collect: |analyzer, entity| {
-        entity.get_literal().and_then(|lit| lit.can_build_expr(analyzer).then_some(lit))
+        entity.get_literal(analyzer).and_then(|lit| lit.can_build_expr(analyzer).then_some(lit))
       },
       literal: None,
       collected: Rc::new(RefCell::new(Vec::new())),
@@ -31,7 +31,7 @@ impl<'a> LiteralCollector<'a> {
 
   pub fn new_property_key_collector() -> Self {
     Self {
-      try_collect: |analyzer, entity| match entity.get_literal() {
+      try_collect: |analyzer, entity| match entity.get_literal(analyzer) {
         Some(lit @ LiteralEntity::String(str))
           if str.len() <= analyzer.config.max_simple_string_length
             && analyzer.config.static_property_key_regex.is_match(str) =>
@@ -49,32 +49,32 @@ impl<'a> LiteralCollector<'a> {
   pub fn collect(&mut self, analyzer: &Analyzer<'a>, entity: Entity<'a>) -> Entity<'a> {
     if self.invalid {
       entity
-    } else if let Some(literal) = (self.try_collect)(analyzer, &entity) {
+    } else if let Some(literal) = (self.try_collect)(analyzer, entity) {
       if let Some(collected) = &self.literal {
         if collected != &literal {
           self.invalid = true;
-          self.get_entity_on_invalid(entity)
+          self.get_entity_on_invalid(entity, analyzer)
         } else {
           self.collected.borrow_mut().push(entity);
-          Entity::new(literal)
+          analyzer.factory.new_entity(literal)
         }
       } else {
         self.literal = Some(literal);
         self.collected.borrow_mut().push(entity);
-        Entity::new(literal)
+        analyzer.factory.new_entity(literal)
       }
     } else {
       self.invalid = true;
-      self.get_entity_on_invalid(entity)
+      self.get_entity_on_invalid(entity, analyzer)
     }
   }
 
   #[inline]
-  pub fn get_entity_on_invalid(&self, entity: Entity<'a>) -> Entity<'a> {
+  pub fn get_entity_on_invalid(&self, entity: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.collected.borrow().is_empty() {
       entity
     } else {
-      CollectedEntity::new(entity, self.collected.clone())
+      analyzer.factory.new_collected(entity, self.collected.clone())
     }
   }
 

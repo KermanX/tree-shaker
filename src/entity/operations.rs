@@ -1,13 +1,12 @@
 use super::{
-  utils::boolean_from_test_result, CollectedEntity, Entity, LiteralEntity, TypeofResult,
-  UnknownEntity,
+  utils::boolean_from_test_result, Entity, LiteralEntity, TypeofResult,
 };
-use crate::entity::union::UnionEntity;
+use crate::analyzer::Analyzer;
 use oxc::{
   allocator::Allocator,
   ast::ast::{BinaryOperator, UpdateOperator},
 };
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
 
 pub struct EntityOpHost<'a> {
   allocator: &'a Allocator,
@@ -18,8 +17,8 @@ impl<'a> EntityOpHost<'a> {
     Self { allocator }
   }
 
-  pub fn eq(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Option<bool> {
-    if self.strict_eq(lhs, rhs) == Some(true) {
+  pub fn eq(&self, analyzer: &Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Option<bool> {
+    if self.strict_eq(analyzer, lhs, rhs) == Some(true) {
       return Some(true);
     }
 
@@ -30,12 +29,17 @@ impl<'a> EntityOpHost<'a> {
     None
   }
 
-  pub fn neq(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Option<bool> {
-    self.eq(lhs, rhs).map(|v| !v)
+  pub fn neq(&self, analyzer: &Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Option<bool> {
+    self.eq(analyzer, lhs, rhs).map(|v| !v)
   }
 
-  pub fn strict_eq(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Option<bool> {
-    if Rc::ptr_eq(&lhs.0, &rhs.0) {
+  pub fn strict_eq(
+    &self,
+    analyzer: &Analyzer<'a>,
+    lhs: Entity<'a>,
+    rhs: Entity<'a>,
+  ) -> Option<bool> {
+    if Entity::ptr_eq(lhs, rhs) {
       return Some(true);
     }
 
@@ -45,8 +49,8 @@ impl<'a> EntityOpHost<'a> {
       return Some(false);
     }
 
-    let lhs_lit = lhs.get_to_literals();
-    let rhs_lit = rhs.get_to_literals();
+    let lhs_lit = lhs.get_to_literals(analyzer);
+    let rhs_lit = rhs.get_to_literals(analyzer);
     if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit) {
       if lhs_lit.len() == 1 && rhs_lit.len() == 1 {
         let lhs_lit = lhs_lit.iter().next().unwrap();
@@ -70,11 +74,22 @@ impl<'a> EntityOpHost<'a> {
     None
   }
 
-  pub fn strict_neq(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Option<bool> {
-    self.strict_eq(lhs, rhs).map(|v| !v)
+  pub fn strict_neq(
+    &self,
+    analyzer: &Analyzer<'a>,
+    lhs: Entity<'a>,
+    rhs: Entity<'a>,
+  ) -> Option<bool> {
+    self.strict_eq(analyzer, lhs, rhs).map(|v| !v)
   }
 
-  pub fn lt(&self, lhs: &Entity<'a>, rhs: &Entity<'a>, eq: bool) -> Option<bool> {
+  pub fn lt(
+    &self,
+    analyzer: &Analyzer<'a>,
+    lhs: Entity<'a>,
+    rhs: Entity<'a>,
+    eq: bool,
+  ) -> Option<bool> {
     fn literal_lt(lhs: &LiteralEntity, rhs: &LiteralEntity, eq: bool) -> Option<bool> {
       match (lhs, rhs) {
         (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) => {
@@ -98,7 +113,7 @@ impl<'a> EntityOpHost<'a> {
       }
     }
 
-    if let (Some(lhs), Some(rhs)) = (lhs.get_to_literals(), rhs.get_to_literals()) {
+    if let (Some(lhs), Some(rhs)) = (lhs.get_to_literals(analyzer), rhs.get_to_literals(analyzer)) {
       let mut result = None;
       for lhs in lhs.iter() {
         for rhs in rhs.iter() {
@@ -122,15 +137,21 @@ impl<'a> EntityOpHost<'a> {
     }
   }
 
-  pub fn gt(&self, lhs: &Entity<'a>, rhs: &Entity<'a>, eq: bool) -> Option<bool> {
-    self.lt(rhs, lhs, eq)
+  pub fn gt(
+    &self,
+    analyzer: &Analyzer<'a>,
+    lhs: Entity<'a>,
+    rhs: Entity<'a>,
+    eq: bool,
+  ) -> Option<bool> {
+    self.lt(analyzer, rhs, lhs, eq)
   }
 
-  pub fn add(&self, lhs: &Entity<'a>, rhs: &Entity<'a>) -> Entity<'a> {
+  pub fn add(&self, analyzer: &Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Entity<'a> {
     let lhs_t = lhs.test_typeof();
     let rhs_t = rhs.test_typeof();
-    let lhs_lit = lhs.get_literal();
-    let rhs_lit = rhs.get_literal();
+    let lhs_lit = lhs.get_literal(analyzer);
+    let rhs_lit = rhs.get_literal(analyzer);
 
     let mut values = vec![];
 
@@ -148,63 +169,68 @@ impl<'a> EntityOpHost<'a> {
         (Some(l), Some(r)) => match (l, r) {
           (Some(l), Some(r)) => {
             let val = l.0 + r.0;
-            values.push(LiteralEntity::new_number(val, self.allocator.alloc(val.to_string())));
+            values.push(analyzer.factory.new_number(val, self.allocator.alloc(val.to_string())));
           }
           _ => {
-            values.push(LiteralEntity::new_nan());
+            values.push(analyzer.factory.nan);
           }
         },
         _ => {
-          values.push(UnknownEntity::new_computed_number((lhs.clone(), rhs.clone())));
+          values.push(analyzer.factory.new_computed_unknown_number((lhs.clone(), rhs.clone())));
         }
       }
     }
     if lhs_t.contains(TypeofResult::BigInt) && rhs_t.contains(TypeofResult::BigInt) {
       // Possibly bigint
-      values.push(UnknownEntity::new_computed_bigint((lhs.clone(), rhs.clone())));
+      values.push(analyzer.factory.new_computed_unknown_bigint((lhs.clone(), rhs.clone())));
     }
     if !lhs_t.difference(must_not_convert_to_str).is_empty()
       || !rhs_t.difference(must_not_convert_to_str).is_empty()
     {
-      let lhs_str = lhs.get_to_string();
-      let rhs_str = rhs.get_to_string();
+      let lhs_str = lhs.get_to_string(analyzer);
+      let rhs_str = rhs.get_to_string(analyzer);
 
-      let lhs_str_lit = lhs_str.get_literal();
-      let rhs_str_lit = rhs_str.get_literal();
+      let lhs_str_lit = lhs_str.get_literal(analyzer);
+      let rhs_str_lit = rhs_str.get_literal(analyzer);
 
       match (lhs_str_lit, rhs_str_lit) {
         (Some(LiteralEntity::String(l)), Some(LiteralEntity::String(r))) => {
           let val = l.to_string() + r;
-          values.push(LiteralEntity::new_string(self.allocator.alloc(val)));
+          values.push(analyzer.factory.new_string(self.allocator.alloc(val)));
         }
         _ => {
-          values.push(UnknownEntity::new_computed_string((lhs_str, rhs_str)));
+          values.push(analyzer.factory.new_computed_unknown_string((lhs_str, rhs_str)));
         }
       }
     }
 
     if values.is_empty() {
       // TODO: throw warning
-      UnknownEntity::new_computed_unknown((lhs.clone(), rhs.clone()))
+      analyzer.factory.new_computed_unknown((lhs.clone(), rhs.clone()))
     } else {
-      UnionEntity::new_computed(values, (lhs.clone(), rhs.clone()))
+      analyzer.factory.new_computed_union(values, (lhs.clone(), rhs.clone()))
     }
   }
 
-  pub fn update(&self, input: &Entity<'a>, operator: &UpdateOperator) -> Entity<'a> {
+  pub fn update(
+    &self,
+    analyzer: &Analyzer<'a>,
+    input: Entity<'a>,
+    operator: UpdateOperator,
+  ) -> Entity<'a> {
     let apply_update = |v: f64| {
       let val = match operator {
         UpdateOperator::Increment => v + 1.0,
         UpdateOperator::Decrement => v - 1.0,
       };
-      LiteralEntity::new_number(val, self.allocator.alloc(val.to_string()))
+      analyzer.factory.new_number(val, self.allocator.alloc(val.to_string()))
     };
 
-    if let Some(num) = input.get_literal().and_then(|lit| lit.to_number()) {
-      return CollectedEntity::new(
+    if let Some(num) = input.get_literal(analyzer).and_then(|lit| lit.to_number()) {
+      return analyzer.factory.new_collected(
         match num {
           Some(num) => apply_update(num.0),
-          None => LiteralEntity::new_nan(),
+          None => analyzer.factory.nan,
         },
         RefCell::new(vec![input.clone()]),
       );
@@ -214,38 +240,40 @@ impl<'a> EntityOpHost<'a> {
 
     let mut values = vec![];
     if input_t.contains(TypeofResult::BigInt) {
-      values.push(UnknownEntity::new_computed_bigint(input.clone()));
+      values.push(analyzer.factory.new_computed_unknown_bigint(input.clone()));
     }
     if input_t.contains(TypeofResult::Number) {
-      values.push(UnknownEntity::new_computed_number(input.clone()));
+      values.push(analyzer.factory.new_computed_unknown_number(input.clone()));
     }
 
     if values.is_empty() {
-      UnknownEntity::new_computed_unknown(input.clone())
+      analyzer.factory.new_computed_unknown(input.clone())
     } else {
-      UnionEntity::new_computed(values, input.clone())
+      analyzer.factory.new_computed_union(values, input.clone())
     }
   }
 
   pub fn binary_op(
     &self,
+    analyzer: &Analyzer<'a>,
     operator: BinaryOperator,
-    lhs: &Entity<'a>,
-    rhs: &Entity<'a>,
+    lhs: Entity<'a>,
+    rhs: Entity<'a>,
   ) -> Entity<'a> {
-    let to_result =
-      |result: Option<bool>| boolean_from_test_result(result, || (lhs.clone(), rhs.clone()));
+    let to_result = |result: Option<bool>| {
+      boolean_from_test_result(analyzer, result, || (lhs.clone(), rhs.clone()))
+    };
 
     match operator {
-      BinaryOperator::Equality => to_result(self.eq(lhs, rhs)),
-      BinaryOperator::Inequality => to_result(self.neq(lhs, rhs)),
-      BinaryOperator::StrictEquality => to_result(self.strict_eq(lhs, rhs)),
-      BinaryOperator::StrictInequality => to_result(self.strict_neq(lhs, rhs)),
-      BinaryOperator::LessThan => to_result(self.lt(lhs, rhs, false)),
-      BinaryOperator::LessEqualThan => to_result(self.lt(lhs, rhs, true)),
-      BinaryOperator::GreaterThan => to_result(self.gt(lhs, rhs, false)),
-      BinaryOperator::GreaterEqualThan => to_result(self.gt(lhs, rhs, true)),
-      BinaryOperator::Addition => self.add(lhs, rhs),
+      BinaryOperator::Equality => to_result(self.eq(analyzer, lhs, rhs)),
+      BinaryOperator::Inequality => to_result(self.neq(analyzer, lhs, rhs)),
+      BinaryOperator::StrictEquality => to_result(self.strict_eq(analyzer, lhs, rhs)),
+      BinaryOperator::StrictInequality => to_result(self.strict_neq(analyzer, lhs, rhs)),
+      BinaryOperator::LessThan => to_result(self.lt(analyzer, lhs, rhs, false)),
+      BinaryOperator::LessEqualThan => to_result(self.lt(analyzer, lhs, rhs, true)),
+      BinaryOperator::GreaterThan => to_result(self.gt(analyzer, lhs, rhs, false)),
+      BinaryOperator::GreaterEqualThan => to_result(self.gt(analyzer, lhs, rhs, true)),
+      BinaryOperator::Addition => self.add(analyzer, lhs, rhs),
       BinaryOperator::Subtraction
       | BinaryOperator::ShiftLeft
       | BinaryOperator::ShiftRight
@@ -258,10 +286,10 @@ impl<'a> EntityOpHost<'a> {
       | BinaryOperator::BitwiseAnd
       | BinaryOperator::Exponential => {
         // Can be number or bigint
-        UnknownEntity::new_computed_unknown((lhs.clone(), rhs.clone()))
+        analyzer.factory.new_computed_unknown((lhs.clone(), rhs.clone()))
       }
       BinaryOperator::In | BinaryOperator::Instanceof => {
-        UnknownEntity::new_computed_boolean((lhs.clone(), rhs.clone()))
+        analyzer.factory.new_computed_unknown_boolean((lhs.clone(), rhs.clone()))
       }
     }
   }

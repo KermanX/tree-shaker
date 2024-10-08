@@ -1,6 +1,6 @@
 use crate::{
   ast::{AstType2, DeclarationKind},
-  entity::{Entity, EntityDepNode, UnknownEntity},
+  entity::{Entity, EntityDepNode},
   transformer::Transformer,
   Analyzer,
 };
@@ -68,7 +68,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.thrown_builtin_error("Missing initializer in destructuring declaration");
-          UnknownEntity::new_unknown()
+          self.factory.unknown
         });
 
         let is_nullish = init.test_nullish();
@@ -92,7 +92,7 @@ impl<'a> Analyzer<'a> {
           self.pop_cf_scope();
 
           enumerated.push(key.clone());
-          let init = init.get_property(self, dep, &key);
+          let init = init.get_property(self, dep, key);
           self.init_binding_pattern(&property.value, Some(init));
         }
         if let Some(rest) = &node.rest {
@@ -104,7 +104,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ArrayPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.thrown_builtin_error("Missing initializer in destructuring declaration");
-          UnknownEntity::new_unknown()
+          self.factory.unknown
         });
 
         let (element_values, rest_value) =

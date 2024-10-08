@@ -1,5 +1,5 @@
 use super::{
-  consumed_object, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult, UnknownEntity,
+  consumed_object, Consumable, Entity, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::analyzer::Analyzer;
 
@@ -21,20 +21,20 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
 
   fn get_property(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    key: &Entity<'a>,
+    key: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.builtins.prototypes.promise.get_property(rc, key, dep)
+    analyzer.builtins.prototypes.promise.get_property(analyzer, rc, key, dep)
   }
 
   fn set_property(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    key: &Entity<'a>,
+    key: Entity<'a>,
     value: Entity<'a>,
   ) {
     self.consume(analyzer);
@@ -43,7 +43,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
 
   fn enumerate_properties(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
@@ -53,18 +53,18 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     consumed_object::enumerate_properties(rc, analyzer, dep)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     self.consume(analyzer);
     consumed_object::delete_property(analyzer, dep, key)
   }
 
   fn call(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
+    this: Entity<'a>,
+    args: Entity<'a>,
   ) -> Entity<'a> {
     self.consume(analyzer);
     consumed_object::call(analyzer, dep, this, args)
@@ -72,7 +72,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
 
   fn r#await(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
@@ -84,7 +84,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
 
   fn iterate(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
@@ -92,24 +92,24 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_typeof(&self) -> Entity<'a> {
-    LiteralEntity::new_string("object")
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_string("object")
   }
 
-  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_computed_string(self.value.clone())
+  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_computed_unknown_string(self.value.clone())
   }
 
-  fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_computed_unknown(vec![rc.clone()])
+  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_computed_unknown(vec![rc])
   }
 
-  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    LiteralEntity::new_boolean(true)
+  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_boolean(true)
   }
 
-  fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_computed_string(self.value.clone())
+  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_computed_unknown_string(self.value.clone())
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -125,8 +125,8 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   }
 }
 
-impl<'a> PromiseEntity<'a> {
-  pub fn new(value: Entity<'a>, errors: Option<Vec<Entity<'a>>>) -> Entity<'a> {
-    Entity::new(Self { value, errors })
+impl<'a> EntityFactory<'a> {
+  pub fn new_promise(&self, value: Entity<'a>, errors: Option<Vec<Entity<'a>>>) -> Entity<'a> {
+    self.new_entity(PromiseEntity { value, errors })
   }
 }

@@ -34,7 +34,7 @@ impl<'a> Analyzer<'a> {
       if let Some(test) = &case.test {
         let test_val = self.exec_expression(test);
 
-        let test_result = self.entity_op.strict_eq(&discriminant, &test_val);
+        let test_result = self.entity_op.strict_eq(self, discriminant, test_val);
         test_results.push(test_result);
 
         if test_result != Some(false) {
