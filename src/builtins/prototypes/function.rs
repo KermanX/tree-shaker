@@ -1,7 +1,5 @@
 use super::{object::create_object_prototype, Prototype};
-use crate::entity::{
-  ArrayEntity, EntityFactory,
-};
+use crate::entity::{ArrayEntity, EntityFactory};
 
 pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
   let mut prototype = create_object_prototype(factory);

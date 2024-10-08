@@ -1,6 +1,5 @@
 use super::{
-  consumed_object, Consumable, Entity, EntityDepNode, EntityFactory, EntityTrait,
-  TypeofResult,
+  consumed_object, Consumable, Entity, EntityDepNode, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{analyzer::Analyzer, use_consumed_flag};
 use oxc::{

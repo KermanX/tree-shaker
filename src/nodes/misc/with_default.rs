@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::Entity,
-};
+use crate::{analyzer::Analyzer, entity::Entity};
 use oxc::ast::ast::Expression;
 
 impl<'a> Analyzer<'a> {

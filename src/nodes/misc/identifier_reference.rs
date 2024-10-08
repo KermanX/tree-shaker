@@ -1,9 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  entity::Entity,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstType2, entity::Entity, transformer::Transformer};
 use oxc::ast::{ast::IdentifierReference, AstKind};
 
 const AST_TYPE: AstType2 = AstType2::IdentifierReference;

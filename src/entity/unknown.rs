@@ -1,7 +1,4 @@
-use super::{
-  consumed_object, Consumable, Entity, EntityFactory, EntityTrait,
-  TypeofResult,
-};
+use super::{consumed_object, Consumable, Entity, EntityFactory, EntityTrait, TypeofResult};
 use crate::{analyzer::Analyzer, builtins::Prototype};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

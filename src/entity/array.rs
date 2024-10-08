@@ -1,6 +1,4 @@
-use super::{
-  consumed_object, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult,
-};
+use super::{consumed_object, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult};
 use crate::{analyzer::Analyzer, use_consumed_flag};
 use oxc::{semantic::ScopeId, syntax::number::ToJsInt32};
 use std::{

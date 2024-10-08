@@ -2,9 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect_from_arr,
-  entity::{
-    Entity, EntityDepNode,
-  },
+  entity::{Entity, EntityDepNode},
   transformer::Transformer,
 };
 use oxc::{

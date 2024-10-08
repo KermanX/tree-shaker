@@ -1,8 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  build_effect_from_arr,
-  entity::Entity,
+  analyzer::Analyzer, ast::AstType2, build_effect_from_arr, entity::Entity,
   transformer::Transformer,
 };
 use oxc::ast::{

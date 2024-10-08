@@ -1,9 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  build_effect_from_arr,
-  entity::Entity,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, build_effect_from_arr, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{Expression, TemplateElementValue, TemplateLiteral},
   span::{GetSpan, SPAN},

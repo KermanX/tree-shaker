@@ -1,6 +1,5 @@
 use super::{
-  consumed_object, Consumable, Entity, EntityFactory, EntityTrait, LiteralEntity,
-  TypeofResult,
+  consumed_object, Consumable, Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{analyzer::Analyzer, use_consumed_flag};
 use rustc_hash::FxHashSet;

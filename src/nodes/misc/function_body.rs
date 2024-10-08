@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstType2, data::StatementVecData, 
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstType2, data::StatementVecData, transformer::Transformer};
 use oxc::ast::{
   ast::{ExpressionStatement, FunctionBody, Statement},
   AstKind,

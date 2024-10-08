@@ -1,8 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  entity::TypeofResult,
-  scope::CfScopeKind,
+  analyzer::Analyzer, ast::AstType2, entity::TypeofResult, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::{

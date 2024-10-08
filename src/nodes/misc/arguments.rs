@@ -1,9 +1,4 @@
-use crate::{
-  ast::Arguments,
-  entity::Entity,
-  transformer::Transformer,
-  Analyzer,
-};
+use crate::{ast::Arguments, entity::Entity, transformer::Transformer, Analyzer};
 use oxc::{
   ast::{
     ast::{Argument, Expression},

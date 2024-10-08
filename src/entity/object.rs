@@ -1,7 +1,4 @@
-use super::{
-  consumed_object, Consumable, Entity, EntityTrait, LiteralEntity,
-  TypeofResult,
-};
+use super::{consumed_object, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult};
 use crate::{analyzer::Analyzer, use_consumed_flag};
 use oxc::{ast::ast::PropertyKind, semantic::ScopeId};
 use rustc_hash::FxHashMap;

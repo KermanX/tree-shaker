@@ -1,6 +1,4 @@
-use super::{
-  utils::boolean_from_test_result, Entity, LiteralEntity, TypeofResult,
-};
+use super::{utils::boolean_from_test_result, Entity, LiteralEntity, TypeofResult};
 use crate::analyzer::Analyzer;
 use oxc::{
   allocator::Allocator,

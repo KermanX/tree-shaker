@@ -1,9 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::DeclarationKind,
-  entity::{Entity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{ast::VariableDeclarator, AstKind},
   span::GetSpan,
