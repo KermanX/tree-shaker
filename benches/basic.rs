@@ -29,7 +29,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     Ok(content) => content,
   };
 
-  c.bench_function("fib 20", |b| b.iter(|| run_tree_shaker(black_box(source_text.clone()))));
+  c.bench_function("vue-starter", |b| b.iter(|| run_tree_shaker(black_box(source_text.clone()))));
 }
 
 criterion_group!(benches, criterion_benchmark);
