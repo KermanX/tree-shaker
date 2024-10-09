@@ -35,6 +35,8 @@ export function f() {
 ## Todo
 
 - Performance!
+- JS Builtins metadata
+- Pure notation support
 - Test against fixtures from other tree shakers like Rollup
 - Implement built-in objects and properties
 - Rollup-like try-scope optimization/de-optimization
