@@ -20,6 +20,9 @@ importers:
       picocolors:
         specifier: ^1.1.0
         version: 1.1.0
+      prettier:
+        specifier: ^3.3.3
+        version: 3.3.3
       test262-harness:
         specifier: ^10.0.0
         version: 10.0.0
@@ -278,6 +281,11 @@ packages:
 
   picocolors@1.1.0:
     resolution: {integrity: sha512-TQ92mBOW0l3LeMeyLV6mzy/kWr8lkd/hp3mTg7wYK7zJhuBStmGMBG0BdeDZS/dZx1IukaX6Bk11zcln25o1Aw==}
+
+  prettier@3.3.3:
+    resolution: {integrity: sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==}
+    engines: {node: '>=14'}
+    hasBin: true
 
   private@0.1.8:
     resolution: {integrity: sha512-VvivMrbvd2nKkiG38qjULzlc+4Vx4wm/whI9pQD35YrARNnhxeiRktSOhSukRLFNlzg6Br/cJPet5J/u19r/mg==}
@@ -670,6 +678,8 @@ snapshots:
   path-exists@3.0.0: {}
 
   picocolors@1.1.0: {}
+
+  prettier@3.3.3: {}
 
   private@0.1.8: {}
 

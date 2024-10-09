@@ -5,6 +5,7 @@
 		"@kermanx/tree-shaker": "link:..\\napi",
 		"diff": "^6.0.0",
 		"picocolors": "^1.1.0",
+		"prettier": "^3.3.3",
 		"test262-harness": "^10.0.0"
 	},
 	"packageManager": "pnpm@9.7.1",
