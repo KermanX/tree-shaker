@@ -37,9 +37,10 @@ impl<'a> EntityOpHost<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> Option<bool> {
-    if Entity::ptr_eq(lhs, rhs) {
-      return Some(true);
-    }
+    // TODO: Find another way to do this
+    // if Entity::ptr_eq(lhs, rhs) {
+    //   return Some(true);
+    // }
 
     let lhs_t = lhs.test_typeof();
     let rhs_t = rhs.test_typeof();
