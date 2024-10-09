@@ -30,7 +30,7 @@ fn main() {
     minify: None,
     code_gen: Default::default(),
     eval_mode: false,
-    logging: true,
+    logging: false,
   });
 
   let elapsed = start_time.elapsed();
@@ -39,7 +39,7 @@ fn main() {
     eprintln!("{}", diagnostic);
   }
 
-  eprintln!("Finished in {:?}", elapsed);
+  eprintln!("[tree-shaker] Finished in {:?}", elapsed);
 
   // If the input file is dir/a.js, the output file will be dir/a.out.js
   let mut output_path = path.to_path_buf();
