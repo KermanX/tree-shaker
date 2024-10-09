@@ -294,7 +294,8 @@ impl<'a> Analyzer<'a> {
 
   /// `None` for TDZ
   pub fn read_symbol(&mut self, symbol: SymbolId) -> Option<Entity<'a>> {
-    for id in self.scope_context.variable.stack.clone().into_iter().rev() {
+    for depth in (0..self.scope_context.variable.stack.len()).rev() {
+      let id = self.scope_context.variable.stack[depth];
       if let Some(value) = self.read_on_scope(id, symbol) {
         return value;
       }
@@ -304,8 +305,9 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
-    for id in self.scope_context.variable.stack.clone().into_iter().enumerate().rev() {
-      if self.write_on_scope(id, symbol, new_val) {
+    for depth in (0..self.scope_context.variable.stack.len()).rev() {
+      let id = self.scope_context.variable.stack[depth];
+      if self.write_on_scope((depth, id), symbol, new_val) {
         return;
       }
     }
@@ -339,8 +341,8 @@ impl<'a> Analyzer<'a> {
 
   pub fn refer_global(&mut self) {
     self.may_throw();
-    for id in self.scope_context.cf.stack.clone() {
-      let scope = self.scope_context.cf.get_mut(id);
+    for depth in 0..self.scope_context.cf.stack.len() {
+      let scope = self.scope_context.cf.get_mut_from_depth(depth);
       let deps = mem::take(&mut scope.deps);
       for dep in deps {
         self.consume(dep);
