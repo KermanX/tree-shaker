@@ -1,19 +1,22 @@
 use super::{Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult};
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use rustc_hash::FxHashSet;
-use std::{cell::RefCell, rc::Rc};
+use std::{
+  cell::{Cell, RefCell},
+  rc::Rc,
+};
 
 #[derive(Debug)]
 pub struct CollectedEntity<'a> {
   val: Entity<'a>,
   deps: Rc<RefCell<Vec<Entity<'a>>>>,
+  consumed: Cell<bool>,
 }
 
 impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    for entity in self.deps.borrow().iter() {
-      entity.consume(analyzer);
-    }
+    use_consumed_flag!(self);
+    self.consume_deps(analyzer);
     self.val.consume(analyzer)
   }
 
@@ -36,9 +39,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    for entity in self.deps.borrow().iter() {
-      entity.consume(analyzer);
-    }
+    self.consume_deps(analyzer);
     self.val.set_property(analyzer, dep, key, value)
   }
 
@@ -48,16 +49,12 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-    for entity in self.deps.borrow().iter() {
-      entity.consume(analyzer);
-    }
+    self.consume_deps(analyzer);
     self.val.enumerate_properties(analyzer, dep)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-    for entity in self.deps.borrow().iter() {
-      entity.consume(analyzer);
-    }
+    self.consume_deps(analyzer);
     self.val.delete_property(analyzer, dep, key)
   }
 
@@ -141,6 +138,12 @@ impl<'a> CollectedEntity<'a> {
   fn forward(&self, val: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.new_collected(val, self.deps.clone())
   }
+
+  fn consume_deps(&self, analyzer: &mut Analyzer<'a>) {
+    for entity in self.deps.take().iter() {
+      entity.consume(analyzer);
+    }
+  }
 }
 
 impl<'a> EntityFactory<'a> {
@@ -149,6 +152,6 @@ impl<'a> EntityFactory<'a> {
     val: Entity<'a>,
     collected: impl Into<Rc<RefCell<Vec<Entity<'a>>>>>,
   ) -> Entity<'a> {
-    self.new_entity(CollectedEntity { val, deps: collected.into() })
+    self.new_entity(CollectedEntity { val, deps: collected.into(), consumed: Cell::new(false) })
   }
 }
