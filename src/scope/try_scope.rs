@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::box_consumable,
+  consumable::{box_consumable, ConsumableNode},
   entity::{Entity, ForwardedEntity, UnknownEntity},
 };
 
@@ -56,7 +56,8 @@ impl<'a> Analyzer<'a> {
     if values.is_empty() {
       self.may_throw();
     } else {
-      let thrown_val = UnknownEntity::new_computed_unknown(box_consumable(values));
+      let thrown_val =
+        UnknownEntity::new_computed_unknown(box_consumable(ConsumableNode::new_box(values)));
       self.explicit_throw_impl(thrown_val);
     }
   }
