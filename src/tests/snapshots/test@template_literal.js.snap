@@ -1,0 +1,14 @@
+---
+source: src/tests/mod.rs
+assertion_line: 32
+expression: tree_shake(input)
+input_file: src/tests/fixtures/template_literal.js
+---
+export function main(a) {
+	test1(`a${a}b`);
+	test2(`a7b${a}6d`);
+	test3((effect, effect, "a2b3"));
+	test3(`a2b3c${effect, a}`);
+	test3(`a2b${effect, a}c3`);
+	test3(`a2b${effect, a}c${effect, 3}`);
+}

@@ -1,0 +1,9 @@
+---
+source: src/tests/mod.rs
+assertion_line: 32
+expression: tree_shake(input)
+input_file: src/tests/fixtures/demo_in_readme.js
+---
+export function f() {
+	return 1;
+}

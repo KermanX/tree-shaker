@@ -1,0 +1,23 @@
+---
+source: src/tests/mod.rs
+assertion_line: 32
+expression: tree_shake(input)
+input_file: src/tests/fixtures/binary_expression.js
+---
+export const strict_equality = (__unused_E053, __unused_DF89) => ({
+	s1: !0,
+	s2: !1,
+	s3: unknown === 1,
+	s4: !0,
+	s5: (unknown, "boolean")
+});
+export const add = {
+	s1: 2,
+	s2: "1a",
+	s3: 2,
+	s4: 1,
+	s5: "a1",
+	s6: "aa",
+	s7: "atrue",
+	s8: {} + {}
+};
