@@ -1,4 +1,4 @@
-use super::{cf_scope::CfScope, exhaustive::TrackerRunner};
+use super::exhaustive::TrackerRunner;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
