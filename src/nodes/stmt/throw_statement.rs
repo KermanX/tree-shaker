@@ -1,6 +1,4 @@
-use crate::{
-  analyzer::Analyzer, consumable::box_consumable, entity::ForwardedEntity, transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{Statement, ThrowStatement},
@@ -15,7 +13,7 @@ impl<'a> Analyzer<'a> {
 
     let dep = box_consumable(AstKind::ThrowStatement(node));
 
-    self.explicit_throw(ForwardedEntity::new(value, dep));
+    self.explicit_throw(self.factory.new_computed(value, dep));
   }
 }
 

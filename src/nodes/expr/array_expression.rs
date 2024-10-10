@@ -1,9 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  consumable::box_consumable,
-  entity::{Entity, ForwardedEntity, LiteralEntity, UnionEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{ArrayExpression, ArrayExpressionElement, Expression, SpreadElement},
@@ -27,14 +22,15 @@ impl<'a> Analyzer<'a> {
         }
         ArrayExpressionElement::Elision(_node) => {
           if rest.is_empty() {
-            array.push_element(LiteralEntity::new_undefined());
+            array.push_element(self.factory.undefined);
           } else {
-            rest.push(LiteralEntity::new_undefined());
+            rest.push(self.factory.undefined);
           }
         }
         _ => {
           let dep = box_consumable(AstKind::ArrayExpressionElement(element));
-          let element = ForwardedEntity::new(self.exec_expression(element.to_expression()), dep);
+          let value = self.exec_expression(element.to_expression());
+          let element = self.factory.new_computed(value, dep);
           if rest.is_empty() {
             array.push_element(element);
           } else {
@@ -45,10 +41,10 @@ impl<'a> Analyzer<'a> {
     }
 
     if !rest.is_empty() {
-      array.init_rest(UnionEntity::new(rest));
+      array.init_rest(self.factory.new_union(rest));
     }
 
-    Entity::new(array)
+    self.factory.new_entity(array)
   }
 }
 

@@ -1,17 +1,11 @@
-use crate::{
-  analyzer::Analyzer,
-  build_effect_from_arr,
-  consumable::{box_consumable, ConsumableNode},
-  entity::{Entity, UnknownEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, build_effect_from_arr, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{Expression, ImportExpression};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_import_expression(&mut self, node: &'a ImportExpression<'a>) -> Entity<'a> {
     let mut deps = vec![];
 
-    deps.push(self.exec_expression(&node.source).get_to_string());
+    deps.push(self.exec_expression(&node.source).get_to_string(self));
 
     for argument in &node.arguments {
       deps.push(self.exec_expression(argument));
@@ -19,7 +13,7 @@ impl<'a> Analyzer<'a> {
 
     // FIXME: if have side effects, then consume all deps
 
-    UnknownEntity::new_computed_unknown(box_consumable(ConsumableNode::new_box(deps)))
+    self.factory.new_computed_unknown(box_consumable(ConsumableNode::new_box(deps)))
   }
 }
 

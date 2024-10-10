@@ -1,8 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{EntityDepNode, LiteralEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::{
   ast::{ReturnStatement, Statement},
   AstKind,
@@ -10,10 +6,8 @@ use oxc::ast::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_return_statement(&mut self, node: &'a ReturnStatement) {
-    let value = node
-      .argument
-      .as_ref()
-      .map_or_else(|| LiteralEntity::new_undefined(), |expr| self.exec_expression(expr));
+    let value =
+      node.argument.as_ref().map_or(self.factory.undefined, |expr| self.exec_expression(expr));
     let dep = EntityDepNode::from(AstKind::ReturnStatement(node));
     self.return_value(value, dep);
   }

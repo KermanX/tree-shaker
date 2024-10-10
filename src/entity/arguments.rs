@@ -1,5 +1,5 @@
-use super::{Entity, EntityTrait, TypeofResult, UnionEntity};
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use super::{Consumable, Entity, EntityFactory, EntityTrait, TypeofResult};
+use crate::analyzer::Analyzer;
 
 #[derive(Debug)]
 pub struct ArgumentsEntity<'a> {
@@ -15,20 +15,20 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
   fn get_property(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
-    _key: &Entity<'a>,
+    _key: Entity<'a>,
   ) -> Entity<'a> {
     unreachable!()
   }
 
   fn set_property(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
-    _key: &Entity<'a>,
+    _key: Entity<'a>,
     _value: Entity<'a>,
   ) {
     unreachable!()
@@ -36,31 +36,31 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
   fn enumerate_properties(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
     unreachable!()
   }
 
-  fn delete_property(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>, _key: &Entity<'a>) {
+  fn delete_property(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>, _key: Entity<'a>) {
     unreachable!()
   }
 
   fn call(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
-    _this: &Entity<'a>,
-    _args: &Entity<'a>,
+    _this: Entity<'a>,
+    _args: Entity<'a>,
   ) -> Entity<'a> {
     unreachable!()
   }
 
   fn r#await(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
   ) -> Entity<'a> {
@@ -69,7 +69,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
   fn iterate(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
@@ -92,26 +92,26 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
         }
       }
     }
-    (elements, rest.map(UnionEntity::new))
+    (elements, rest.map(|val| analyzer.factory.new_union(val)))
   }
 
-  fn get_typeof(&self) -> Entity<'a> {
+  fn get_typeof(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_string(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_numeric(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_property_key(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
@@ -128,8 +128,8 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   }
 }
 
-impl<'a> ArgumentsEntity<'a> {
-  pub fn new(arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
-    Entity::new(Self { arguments })
+impl<'a> EntityFactory<'a> {
+  pub fn new_arguments(&self, arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
+    self.new_entity(ArgumentsEntity { arguments })
   }
 }

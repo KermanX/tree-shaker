@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{ComputedEntity, Entity, UnionEntity},
+  entity::Entity,
   scope::{conditional::ConditionalData, CfScopeKind},
   transformer::Transformer,
 };
@@ -48,13 +48,13 @@ impl<'a> Analyzer<'a> {
         let consequent = self.exec_expression(&node.consequent);
         self.cf_scope_mut().exited = None;
         let alternate = self.exec_expression(&node.alternate);
-        UnionEntity::new(vec![consequent, alternate])
+        self.factory.new_union(vec![consequent, alternate])
       }
       _ => unreachable!(),
     };
     self.pop_cf_scope();
 
-    ComputedEntity::new(result, test.to_consumable())
+    self.factory.new_computed(result, test.to_consumable())
   }
 }
 

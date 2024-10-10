@@ -1,4 +1,4 @@
-use crate::{ast::DeclarationKind, entity::UnknownEntity, transformer::Transformer, Analyzer};
+use crate::{ast::DeclarationKind, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{
   ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
   ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,
@@ -13,7 +13,7 @@ impl<'a> Analyzer<'a> {
           for specifier in specifiers {
             let local = specifier.local();
             self.declare_binding_identifier(local, false, DeclarationKind::Import);
-            self.init_binding_identifier(local, Some(UnknownEntity::new_unknown()));
+            self.init_binding_identifier(local, Some(self.factory.unknown));
           }
         }
       }

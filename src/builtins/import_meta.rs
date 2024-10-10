@@ -1,9 +1,6 @@
-use crate::entity::{
-  Entity, ImplementedBuiltinFnEntity, ObjectEntity, ObjectProperty, ObjectPropertyValue,
-  UnknownEntity,
-};
+use crate::entity::{Entity, EntityFactory, ObjectEntity, ObjectProperty, ObjectPropertyValue};
 
-pub fn create_import_meta<'a>() -> Entity<'a> {
+pub fn create_import_meta<'a>(factory: &EntityFactory<'a>) -> Entity<'a> {
   let object = ObjectEntity::new();
 
   // import.meta.url
@@ -12,16 +9,19 @@ pub fn create_import_meta<'a>() -> Entity<'a> {
     ObjectProperty {
       definite: true,
       values: vec![ObjectPropertyValue::Property(
-        Some(ImplementedBuiltinFnEntity::new(|_, _, _, _| UnknownEntity::new_string()).into()),
+        Some(
+          factory.new_implemented_builtin_fn(|analyzer, _, _, _| analyzer.factory.unknown_string),
+        ),
         None,
       )],
     },
   );
 
-  object.rest.borrow_mut().values.push(ObjectPropertyValue::Property(
-    Some(UnknownEntity::new_unknown()),
-    Some(UnknownEntity::new_unknown()),
-  ));
+  object
+    .rest
+    .borrow_mut()
+    .values
+    .push(ObjectPropertyValue::Property(Some(factory.unknown), Some(factory.unknown)));
 
-  Entity::new(object)
+  factory.new_entity(object)
 }

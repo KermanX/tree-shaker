@@ -2,8 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  consumable::box_consumable,
-  entity::{Entity, LiteralCollector, LiteralEntity, UnionEntity},
+  entity::{Entity, LiteralCollector, LiteralEntity},
   transformer::Transformer,
 };
 use oxc::{
@@ -70,14 +69,14 @@ impl<'a> Analyzer<'a> {
     let (short_circuit, object) = self.exec_expression_in_chain(node.object());
 
     let object_indeterminate = match short_circuit {
-      Some(true) => return (Some(true), LiteralEntity::new_undefined(), None),
+      Some(true) => return (Some(true), self.factory.undefined, None),
       Some(false) => false,
       None => true,
     };
 
     let self_indeterminate = if node.optional() {
       match object.test_nullish() {
-        Some(true) => return (Some(true), LiteralEntity::new_undefined(), None),
+        Some(true) => return (Some(true), self.factory.undefined, None),
         Some(false) => false,
         None => true,
       }
@@ -104,12 +103,12 @@ impl<'a> Analyzer<'a> {
     }
 
     let key = data.collector.collect(self, key);
-    let value = object.get_property(self, box_consumable(AstKind::MemberExpression(node)), &key);
+    let value = object.get_property(self, box_consumable(AstKind::MemberExpression(node)), key);
     let cache = Some((object, key));
 
     if indeterminate {
       self.pop_cf_scope();
-      (None, UnionEntity::new(vec![value, LiteralEntity::new_undefined()]), cache)
+      (None, self.factory.new_union(vec![value, self.factory.undefined]), cache)
     } else {
       (Some(false), value, cache)
     }
@@ -134,17 +133,17 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<DataWrite>(AST_TYPE_WRITE, node);
     let key = data.collector.collect(self, key);
 
-    object.set_property(self, box_consumable(AstKind::MemberExpression(node)), &key, value);
+    object.set_property(self, box_consumable(AstKind::MemberExpression(node)), key, value);
   }
 
   fn exec_key(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {
     match node {
       MemberExpression::ComputedMemberExpression(node) => self.exec_expression(&node.expression),
       MemberExpression::StaticMemberExpression(node) => {
-        LiteralEntity::new_string(node.property.name.as_str())
+        self.factory.new_string(node.property.name.as_str())
       }
       MemberExpression::PrivateFieldExpression(node) => {
-        LiteralEntity::new_string(node.field.name.as_str())
+        self.factory.new_string(node.field.name.as_str())
       }
     }
   }

@@ -1,13 +1,9 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{Entity, UnknownEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{Expression, Super};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_super(&mut self, _node: &'a Super) -> Entity<'a> {
-    UnknownEntity::new_unknown()
+    self.factory.unknown
   }
 }
 

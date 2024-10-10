@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_if_statement(&mut self, node: &'a IfStatement) {
     let labels = self.take_labels();
 
-    let test = self.exec_expression(&node.test).get_to_boolean();
+    let test = self.exec_expression(&node.test).get_to_boolean(self);
 
     let (maybe_true, maybe_false) = match test.test_truthy() {
       Some(true) => (true, false),

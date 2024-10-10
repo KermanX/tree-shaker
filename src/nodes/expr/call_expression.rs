@@ -1,9 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  build_effect_from_arr,
-  consumable::box_consumable,
-  entity::{Entity, LiteralEntity, UnionEntity},
+  analyzer::Analyzer, ast::AstType2, build_effect_from_arr, entity::Entity,
   transformer::Transformer,
 };
 use oxc::ast::{
@@ -31,7 +27,7 @@ impl<'a> Analyzer<'a> {
     if let Some((callee_indeterminate, callee, this)) = self.exec_callee(&node.callee) {
       let self_indeterminate = if node.optional {
         match callee.test_nullish() {
-          Some(true) => return (Some(true), LiteralEntity::new_undefined()),
+          Some(true) => return (Some(true), self.factory.undefined),
           Some(false) => false,
           None => true,
         }
@@ -49,16 +45,16 @@ impl<'a> Analyzer<'a> {
       }
 
       let args = self.exec_arguments(&node.arguments);
-      let ret_val = callee.call(self, box_consumable(AstKind::CallExpression(node)), &this, &args);
+      let ret_val = callee.call(self, box_consumable(AstKind::CallExpression(node)), this, args);
 
       if indeterminate {
         self.pop_cf_scope();
-        (None, UnionEntity::new(vec![ret_val, LiteralEntity::new_undefined()]))
+        (None, self.factory.new_union(vec![ret_val, self.factory.undefined]))
       } else {
         (Some(false), ret_val)
       }
     } else {
-      (Some(true), LiteralEntity::new_undefined())
+      (Some(true), self.factory.undefined)
     }
   }
 }

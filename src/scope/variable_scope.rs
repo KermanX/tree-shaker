@@ -2,8 +2,7 @@ use super::exhaustive::TrackerRunner;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  consumable::{box_consumable, Consumable, ConsumableTrait},
-  entity::{Entity, ForwardedEntity, LiteralEntity, UnionEntity, UnknownEntity},
+  entity::{Consumable, Entity, UNDEFINED_ENTITY},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -78,7 +77,7 @@ impl<'a> Analyzer<'a> {
         // TODO: Sometimes this is not necessary
         variable.decl_dep = box_consumable((variable.decl_dep.cloned(), decl_dep));
         if let Some(new_val) = fn_value {
-          self.write_on_scope((self.scope_context.variable.current_depth(), id), symbol, &new_val);
+          self.write_on_scope((self.scope_context.variable.current_depth(), id), symbol, new_val);
         }
       } else {
         let decl_dep = (old.decl_dep.cloned(), decl_dep);
@@ -119,14 +118,14 @@ impl<'a> Analyzer<'a> {
         self.write_on_scope(
           (self.scope_context.variable.current_depth(), id),
           symbol,
-          &ForwardedEntity::new(value, init_dep),
+          self.factory.new_computed(value, init_dep),
         );
       } else {
         // Do nothing
       }
     } else {
       variable.value =
-        Some(ForwardedEntity::new(value.unwrap_or_else(LiteralEntity::new_undefined), init_dep));
+        Some(self.factory.new_computed(value.unwrap_or(self.factory.undefined), init_dep));
       self.exec_exhaustive_deps(false, (id, symbol));
     }
   }
@@ -140,7 +139,7 @@ impl<'a> Analyzer<'a> {
         variable
           .kind
           .is_var()
-          .then(|| ForwardedEntity::new(LiteralEntity::new_undefined(), variable.decl_dep.cloned()))
+          .then(|| self.factory.new_computed(self.factory.undefined, variable.decl_dep.cloned()))
       });
 
       let target_cf_scope =
@@ -161,10 +160,9 @@ impl<'a> Analyzer<'a> {
     &mut self,
     (depth, id): (usize, ScopeId),
     symbol: SymbolId,
-    new_val: &Entity<'a>,
+    new_val: Entity<'a>,
   ) -> bool {
     if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).cloned() {
-      let new_val = new_val.clone();
       if variable.kind.is_untracked() {
         self.consume(new_val);
       } else if variable.kind.is_const() {
@@ -203,16 +201,16 @@ impl<'a> Analyzer<'a> {
             let variable =
               self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
             variable.exhausted = true;
-            variable.value = Some(UnknownEntity::new_unknown());
+            variable.value = Some(self.factory.unknown);
           } else {
             let indeterminate = self.is_relatively_indeterminate(target_cf_scope);
 
             let variable =
               self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
-            variable.value = Some(ForwardedEntity::new(
+            variable.value = Some(self.factory.new_computed(
               if indeterminate {
-                UnionEntity::new(vec![
-                  old_val.unwrap_or_else(LiteralEntity::new_undefined),
+                self.factory.new_union(vec![
+                  old_val.unwrap_or(unsafe { mem::transmute(UNDEFINED_ENTITY) }),
                   new_val,
                 ])
               } else {
@@ -240,7 +238,7 @@ impl<'a> Analyzer<'a> {
         }
         let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
         variable.exhausted = true;
-        variable.value = Some(UnknownEntity::new_unknown());
+        variable.value = Some(self.factory.unknown);
       }
       true
     } else {
@@ -254,7 +252,7 @@ impl<'a> Analyzer<'a> {
       Variable {
         exhausted: true,
         kind: DeclarationKind::UntrackedVar,
-        value: Some(UnknownEntity::new_unknown()),
+        value: Some(self.factory.unknown),
         decl_dep: box_consumable(()),
       },
     );
@@ -307,18 +305,20 @@ impl<'a> Analyzer<'a> {
 
   /// `None` for TDZ
   pub fn read_symbol(&mut self, symbol: SymbolId) -> Option<Entity<'a>> {
-    for id in self.scope_context.variable.stack.clone().into_iter().rev() {
+    for depth in (0..self.scope_context.variable.stack.len()).rev() {
+      let id = self.scope_context.variable.stack[depth];
       if let Some(value) = self.read_on_scope(id, symbol) {
         return value;
       }
     }
     self.mark_unresolved_reference(symbol);
-    Some(UnknownEntity::new_unknown())
+    Some(self.factory.unknown)
   }
 
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
-    for id in self.scope_context.variable.stack.clone().into_iter().enumerate().rev() {
-      if self.write_on_scope(id, symbol, &new_val) {
+    for depth in (0..self.scope_context.variable.stack.len()).rev() {
+      let id = self.scope_context.variable.stack[depth];
+      if self.write_on_scope((depth, id), symbol, new_val) {
         return;
       }
     }

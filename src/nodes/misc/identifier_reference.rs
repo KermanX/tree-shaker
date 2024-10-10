@@ -1,10 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  consumable::box_consumable,
-  entity::{Entity, ForwardedEntity, UnknownEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstType2, entity::Entity, transformer::Transformer};
 use oxc::ast::{ast::IdentifierReference, AstKind};
 
 const AST_TYPE: AstType2 = AstType2::IdentifierReference;
@@ -28,13 +22,13 @@ impl<'a> Analyzer<'a> {
         value
       } else {
         self.set_data(AST_TYPE, node, Data { has_effect: true });
-        UnknownEntity::new_unknown()
+        self.factory.unknown
       }
     } else if node.name == "arguments" {
       // The `arguments` object
       let arguments_consumed = self.consume_arguments(None);
       self.call_scope_mut().need_consume_arguments = !arguments_consumed;
-      UnknownEntity::new_unknown()
+      self.factory.unknown
     } else if let Some(global) = self.builtins.globals.get(node.name.as_str()).cloned() {
       // Known global
       global
@@ -45,7 +39,7 @@ impl<'a> Analyzer<'a> {
         self.refer_global();
         self.may_throw();
       }
-      UnknownEntity::new_unknown()
+      self.factory.unknown
     }
   }
 
@@ -54,7 +48,8 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
     value: Entity<'a>,
   ) {
-    let value = ForwardedEntity::new(value, box_consumable(AstKind::IdentifierReference(node)));
+    let dep =box_consumable(AstKind::IdentifierReference(node));
+    let value = self.factory.new_computed(value, dep);
 
     let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
     debug_assert!(reference.is_write());

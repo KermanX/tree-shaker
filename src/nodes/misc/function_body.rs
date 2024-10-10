@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, data::StatementVecData,
-  entity::ForwardedEntity, transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstType2, data::StatementVecData, transformer::Transformer};
 use oxc::ast::{
   ast::{ExpressionStatement, FunctionBody, Statement},
   AstKind,
@@ -21,8 +18,9 @@ impl<'a> Analyzer<'a> {
     if let Some(Statement::ExpressionStatement(expr)) = node.statements.first() {
       let dep = box_consumable(AstKind::FunctionBody(node));
       let value = self.exec_expression(&expr.expression);
+      let value = self.factory.new_computed(value, dep);
       let call_scope = self.call_scope_mut();
-      call_scope.returned_values.push(ForwardedEntity::new(value, dep));
+      call_scope.returned_values.push(value);
     } else {
       unreachable!();
     }

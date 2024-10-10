@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
       analyzer.push_try_scope();
       let ret_val = runner(analyzer);
       ret_val.consume(analyzer);
-      analyzer.pop_try_scope().thrown_val().map(|thrown_val| {
+      analyzer.pop_try_scope().thrown_val(analyzer).map(|thrown_val| {
         thrown_val.consume(analyzer);
       });
       analyzer.pop_cf_scope();

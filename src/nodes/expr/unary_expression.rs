@@ -1,10 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  build_effect,
-  consumable::box_consumable,
-  entity::{Entity, LiteralEntity, UnknownEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{Expression, UnaryExpression, UnaryOperator},
@@ -21,8 +15,8 @@ impl<'a> Analyzer<'a> {
       match &node.argument {
         Expression::StaticMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
-          let property = LiteralEntity::new_string(&node.property.name);
-          object.delete_property(self, box_consumable(dep), &property)
+          let property = self.factory.new_string(&node.property.name);
+          object.delete_property(self, box_consumable(dep), property)
         }
         Expression::PrivateFieldExpression(node) => {
           self.add_diagnostic("SyntaxError: private fields can't be deleted");
@@ -32,7 +26,7 @@ impl<'a> Analyzer<'a> {
         Expression::ComputedMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
           let property = self.exec_expression(&node.expression);
-          object.delete_property(self, box_consumable(dep), &property)
+          object.delete_property(self, box_consumable(dep), property)
         }
         Expression::Identifier(_node) => {
           self.add_diagnostic("SyntaxError: Delete of an unqualified identifier in strict mode");
@@ -43,34 +37,34 @@ impl<'a> Analyzer<'a> {
         }
       };
 
-      return LiteralEntity::new_boolean(true);
+      return self.factory.r#true;
     }
 
     let argument = self.exec_expression(&node.argument);
 
     match &node.operator {
       UnaryOperator::UnaryNegation => {
-        if let Some(num) = argument.get_literal().and_then(|lit| lit.to_number()) {
+        if let Some(num) = argument.get_literal(self).and_then(|lit| lit.to_number()) {
           if let Some(num) = num {
             let num = -num.0;
-            LiteralEntity::new_number(num, self.allocator.alloc(num.to_string()))
+            self.factory.new_number(num, self.allocator.alloc(num.to_string()))
           } else {
-            LiteralEntity::new_nan()
+            self.factory.nan
           }
         } else {
           // Maybe number or bigint
-          UnknownEntity::new_computed_unknown(argument.to_consumable())
+          self.factory.new_computed_unknown(argument.to_consumable())
         }
       }
-      UnaryOperator::UnaryPlus => argument.get_to_numeric(),
+      UnaryOperator::UnaryPlus => argument.get_to_numeric(self),
       UnaryOperator::LogicalNot => match argument.test_truthy() {
-        Some(true) => LiteralEntity::new_boolean(false),
-        Some(false) => LiteralEntity::new_boolean(true),
-        None => UnknownEntity::new_computed_boolean(argument.to_consumable()),
+        Some(true) => self.factory.r#false,
+        Some(false) => self.factory.r#true,
+        None => self.factory.new_computed_unknown_boolean(argument.to_consumable()),
       },
-      UnaryOperator::BitwiseNot => UnknownEntity::new_computed_unknown(argument.to_consumable()),
-      UnaryOperator::Typeof => argument.get_typeof(),
-      UnaryOperator::Void => LiteralEntity::new_undefined(),
+      UnaryOperator::BitwiseNot => self.factory.new_computed_unknown(argument),
+      UnaryOperator::Typeof => argument.get_typeof(self),
+      UnaryOperator::Void => self.factory.undefined,
       UnaryOperator::Delete => unreachable!(),
     }
   }

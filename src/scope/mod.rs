@@ -9,8 +9,7 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
-  entity::{Entity, FunctionEntitySource, LabelEntity, UnknownEntity},
+  entity::{Consumable, Entity, EntityFactory, FunctionEntitySource, LabelEntity},
   logger::DebuggerEvent,
 };
 use call_scope::CallScope;
@@ -32,7 +31,7 @@ pub struct ScopeContext<'a> {
 }
 
 impl<'a> ScopeContext<'a> {
-  pub fn new() -> Self {
+  pub fn new(factory: &EntityFactory<'a>) -> Self {
     let mut cf = ScopeTree::new();
     let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
     let mut variable = ScopeTree::new();
@@ -44,8 +43,8 @@ impl<'a> ScopeContext<'a> {
         0,
         body_variable_scope,
         // TODO: global this
-        UnknownEntity::new_unknown(),
-        (UnknownEntity::new_unknown(), vec![]),
+        factory.unknown,
+        (factory.unknown, vec![]),
         true,
         false,
       )],

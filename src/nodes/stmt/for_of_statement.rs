@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, entity::UnknownEntity,
-  scope::CfScopeKind, transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{ForOfStatement, Statement},
@@ -27,7 +24,7 @@ impl<'a> Analyzer<'a> {
     let right = if node.r#await {
       right.consume(self);
       self.refer_dep(dep);
-      UnknownEntity::new_unknown()
+      self.factory.unknown
     } else {
       right
     };

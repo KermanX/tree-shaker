@@ -1,6 +1,5 @@
 use super::{
-  consumed_object, ComputedEntity, Entity, EntityDepNode, EntityTrait, ForwardedEntity,
-  LiteralEntity, TypeofResult, UnknownEntity,
+  consumed_object, Consumable, Entity, EntityDepNode, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -101,37 +100,37 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn get_property(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    key: &Entity<'a>,
+    key: Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_property(rc, analyzer, dep, key);
     }
-    analyzer.builtins.prototypes.function.get_property(rc, key, dep)
+    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
   }
 
   fn set_property(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    key: &Entity<'a>,
+    key: Entity<'a>,
     value: Entity<'a>,
   ) {
     self.consume(analyzer);
     consumed_object::set_property(analyzer, dep, key, value)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     self.consume(analyzer);
     consumed_object::delete_property(analyzer, dep, key)
   }
 
   fn enumerate_properties(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
@@ -143,11 +142,11 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn call(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
+    this: Entity<'a>,
+    args: Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::call(analyzer, dep, this, args);
@@ -164,19 +163,19 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
   fn r#await(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer, dep);
     }
-    ComputedEntity::new(rc.clone(), dep)
+    analyzer.factory.new_computed(rc, dep)
   }
 
   fn iterate(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
@@ -184,30 +183,30 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_typeof(&self) -> Entity<'a> {
-    LiteralEntity::new_string("function")
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_string("function")
   }
 
-  fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_to_string();
+      return consumed_object::get_to_string(analyzer);
     }
-    UnknownEntity::new_computed_string(rc.to_consumable())
+    analyzer.factory.new_computed_unknown_string(rc.to_consumable())
   }
 
-  fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_to_numeric();
+      return consumed_object::get_to_numeric(analyzer);
     }
-    LiteralEntity::new_nan()
+    analyzer.factory.nan
   }
 
-  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    LiteralEntity::new_boolean(true)
+  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_boolean(true)
   }
 
-  fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
-    self.get_to_string(rc)
+  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.get_to_string(rc, analyzer)
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -224,27 +223,13 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 }
 
 impl<'a> FunctionEntity<'a> {
-  pub fn new(
-    source: FunctionEntitySource<'a>,
-    variable_scope_stack: Vec<ScopeId>,
-    is_expression: bool,
-  ) -> Entity<'a> {
-    Entity::new(Self {
-      consumed: Rc::new(Cell::new(false)),
-      body_consumed: Rc::new(Cell::new(false)),
-      source,
-      variable_scope_stack: Rc::new(variable_scope_stack),
-      is_expression,
-    })
-  }
-
   pub fn call_impl(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
+    this: Entity<'a>,
+    args: Entity<'a>,
     consume_return: bool,
   ) -> Entity<'a> {
     if let Some(logger) = analyzer.logger {
@@ -255,7 +240,7 @@ impl<'a> FunctionEntity<'a> {
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.source {
       FunctionEntitySource::Function(node) => analyzer.call_function(
-        rc.clone(),
+        rc,
         self.source,
         self.is_expression,
         call_dep.cloned(),
@@ -276,7 +261,7 @@ impl<'a> FunctionEntity<'a> {
         ),
       FunctionEntitySource::Module => unreachable!(),
     };
-    ForwardedEntity::new(ret_val, call_dep)
+    analyzer.factory.new_computed(ret_val, call_dep)
   }
 
   pub fn call_in_recursion(&self, analyzer: &mut Analyzer<'a>) {
@@ -303,13 +288,30 @@ impl<'a> FunctionEntity<'a> {
     let self_cloned = self.clone();
     analyzer.exec_consumed_fn(move |analyzer| {
       self_cloned.call_impl(
-        &UnknownEntity::new_unknown(),
+        analyzer.factory.unknown,
         analyzer,
         box_consumable(()),
-        &UnknownEntity::new_unknown(),
-        &UnknownEntity::new_unknown(),
+        analyzer.factory.unknown,
+        analyzer.factory.unknown,
         true,
       )
     });
+  }
+}
+
+impl<'a> EntityFactory<'a> {
+  pub fn new_function(
+    &self,
+    source: FunctionEntitySource<'a>,
+    variable_scope_stack: Vec<ScopeId>,
+    is_expression: bool,
+  ) -> Entity<'a> {
+    self.new_entity(FunctionEntity {
+      consumed: Rc::new(Cell::new(false)),
+      body_consumed: Rc::new(Cell::new(false)),
+      source,
+      variable_scope_stack: Rc::new(variable_scope_stack),
+      is_expression,
+    })
   }
 }
