@@ -353,8 +353,12 @@ impl<'a> Analyzer<'a> {
 
   pub fn refer_global(&mut self) {
     self.may_throw();
-    for id in self.scope_context.cf.stack.clone() {
-      let mut deps = mem::take(&mut self.scope_context.cf.get_mut(id).deps);
+    for depth in (0..self.scope_context.cf.stack.len()).rev() {
+      let scope = self.scope_context.cf.get_mut_from_depth(depth);
+      if scope.deps.is_empty() {
+        break;
+      }
+      let mut deps = mem::take(&mut scope.deps);
       deps.consume_all(self);
     }
   }
