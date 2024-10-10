@@ -1,0 +1,20 @@
+---
+source: src/tests/mod.rs
+assertion_line: 32
+expression: tree_shake(input)
+input_file: src/tests/fixtures/labeled_statement.js
+---
+export function main() {
+	a: {
+		effect1();
+		c: {
+			effect2();
+			break c;
+		}
+		effect4();
+		{
+			effect5();
+			break a;
+		}
+	}
+}

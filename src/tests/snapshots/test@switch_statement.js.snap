@@ -1,0 +1,28 @@
+---
+source: src/tests/mod.rs
+assertion_line: 32
+expression: tree_shake(input)
+input_file: src/tests/fixtures/switch_statement.js
+---
+export function main() {
+	switch (2) {
+		case 2:
+			effect2();
+			effect3();
+	}
+	switch (2) {
+		case 2:
+			effect3();
+			break;
+	}
+	switch ("1" + unknown) {
+		default:
+			effect1();
+			effect1();
+		case "a":
+			effect2();
+			break;
+			effect3();
+	}
+	unknown;
+}

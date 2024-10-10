@@ -1,0 +1,42 @@
+---
+source: src/tests/mod.rs
+assertion_line: 32
+expression: tree_shake(input)
+input_file: src/tests/fixtures/recursion.js
+---
+export function simple() {
+	let t = 0;
+	function main(x) {
+		if (t) {
+			sideeffect(2);
+		}
+		t++;
+		return x > 100 ? x : main(2 * x + 1);
+	}
+	return main(1);
+}
+export function complex1() {
+	function main(__unused_30CF) {
+		return () => g();
+	}
+	function g(__unused_ACC8) {
+		return () => main();
+	}
+	t = main();
+}
+export function complex2() {
+	function main() {
+		enterHooks = resolveTransitionHooks((hooks) => enterHooks = hooks);
+	}
+	function resolveTransitionHooks(postClone) {
+		const hooks = { clone() {
+			const hooks2 = resolveTransitionHooks(postClone);
+			{
+				postClone(hooks2);
+			}
+			return hooks2;
+		} };
+		return hooks;
+	}
+	return main;
+}

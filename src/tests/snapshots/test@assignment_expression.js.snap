@@ -1,0 +1,34 @@
+---
+source: src/tests/mod.rs
+assertion_line: 32
+expression: tree_shake(input)
+input_file: src/tests/fixtures/assignment_expression.js
+---
+export function f1() {
+	return 2;
+}
+export function f2(__unused_E8B5) {
+	return 2;
+}
+export function f3(a, b) {
+	if (b) a = 2;
+	return a;
+}
+export function f4(__unused_7C4F, __unused_9371) {
+	return 3;
+}
+export function f5(a, b) {
+	a = b;
+	return a;
+}
+export function f6(a, b) {
+	a.p = b;
+	global.p = 1;
+	effect;
+	return a;
+}
+export function f7(a) {
+	({x: __unused__, a: __unused__, b: {c: __unused__},...__unused__} = a);
+	effect("a");
+}
+var __unused__;
