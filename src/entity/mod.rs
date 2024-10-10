@@ -23,7 +23,6 @@ mod utils;
 pub use array::ArrayEntity;
 pub use builtin_fn::PureBuiltinFnEntity;
 pub use collector::LiteralCollector;
-pub use computed::ComputedEntity;
 pub use dep::EntityDepNode;
 pub use entity::{Entity, EntityTrait};
 pub use factory::EntityFactory;

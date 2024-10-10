@@ -1,7 +1,8 @@
 use super::try_scope::TryScope;
 use crate::{
   analyzer::Analyzer,
-  entity::{Consumable, Entity, FunctionEntitySource},
+  consumable::{box_consumable, ConsumableTrait},
+  entity::{Entity, FunctionEntitySource},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use std::mem;
@@ -86,9 +87,8 @@ impl<'a> CallScope<'a> {
 impl<'a> Analyzer<'a> {
   pub fn return_value(&mut self, value: Entity<'a>, dep: impl ConsumableTrait<'a> + 'a) {
     let call_scope = self.call_scope();
-    let value = self
-      .factory
-      .new_computed(value, box_consumable((self.get_exec_dep(call_scope.cf_scope_depth), dep)));
+    let dep = box_consumable((self.get_exec_dep(call_scope.cf_scope_depth), dep));
+    let value = self.factory.new_computed(value, dep);
 
     let call_scope = self.call_scope_mut();
     call_scope.returned_values.push(value);

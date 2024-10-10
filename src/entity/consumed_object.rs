@@ -1,5 +1,8 @@
-use super::{Consumable, Entity};
-use crate::analyzer::Analyzer;
+use super::Entity;
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable},
+};
 
 pub fn get_property<'a>(
   rc: Entity<'a>,

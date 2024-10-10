@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::{analyzer::Analyzer, consumable::box_consumable, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{Statement, ThrowStatement},

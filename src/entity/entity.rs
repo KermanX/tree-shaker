@@ -1,5 +1,8 @@
-use super::{Consumable, EntityFactory, LiteralEntity, TypeofResult};
-use crate::analyzer::Analyzer;
+use super::{EntityFactory, LiteralEntity, TypeofResult};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable},
+};
 use oxc::allocator::Allocator;
 use rustc_hash::FxHashSet;
 use std::fmt::Debug;

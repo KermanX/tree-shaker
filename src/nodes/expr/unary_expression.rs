@@ -1,4 +1,7 @@
-use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, build_effect, consumable::box_consumable, entity::Entity,
+  transformer::Transformer,
+};
 use oxc::{
   ast::{
     ast::{Expression, UnaryExpression, UnaryOperator},
@@ -62,7 +65,7 @@ impl<'a> Analyzer<'a> {
         Some(false) => self.factory.r#true,
         None => self.factory.new_computed_unknown_boolean(argument.to_consumable()),
       },
-      UnaryOperator::BitwiseNot => self.factory.new_computed_unknown(argument),
+      UnaryOperator::BitwiseNot => self.factory.new_computed_unknown(argument.to_consumable()),
       UnaryOperator::Typeof => argument.get_typeof(self),
       UnaryOperator::Void => self.factory.undefined,
       UnaryOperator::Delete => unreachable!(),

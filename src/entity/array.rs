@@ -1,5 +1,9 @@
-use super::{consumed_object, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult};
-use crate::{analyzer::Analyzer, use_consumed_flag};
+use super::{consumed_object, Entity, EntityTrait, LiteralEntity, TypeofResult};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode},
+  use_consumed_flag,
+};
 use oxc::{semantic::ScopeId, syntax::number::ToJsInt32};
 use std::{
   cell::{Cell, RefCell},
@@ -54,7 +58,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return consumed_object::get_property(rc, analyzer, dep, key);
     }
     let dep = ConsumableNode::new_box((self.deps.borrow_mut().collect(), dep, key.clone()));
-    let key = key.get_to_property_key();
+    let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut result = vec![];
       let mut rest_added = false;

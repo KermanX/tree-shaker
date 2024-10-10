@@ -1,5 +1,5 @@
-use super::{consumed_object, Consumable, Entity, EntityFactory, EntityTrait, TypeofResult};
-use crate::{analyzer::Analyzer, builtins::Prototype};
+use super::{consumed_object, Entity, EntityFactory, EntityTrait, TypeofResult};
+use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnknownEntity {

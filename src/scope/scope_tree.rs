@@ -47,11 +47,6 @@ impl<T> ScopeTree<T> {
     self.get_mut(id)
   }
 
-  pub fn get_mut_from_depth(&mut self, depth: usize) -> &mut T {
-    let id = self.stack[depth];
-    self.get_mut(id)
-  }
-
   pub fn get_current(&self) -> &T {
     self.get(*self.stack.last().unwrap())
   }

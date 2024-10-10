@@ -2,7 +2,8 @@ use super::exhaustive::TrackerRunner;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{Consumable, Entity, UNDEFINED_ENTITY},
+  consumable::{box_consumable, Consumable},
+  entity::{Entity, UNDEFINED_ENTITY},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};

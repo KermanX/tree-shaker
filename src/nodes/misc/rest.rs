@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
     }
 
     for key in enumerated {
-      rest.delete_property(self,box_consumable(()), key);
+      rest.delete_property(self, box_consumable(()), key);
     }
 
     self.factory.new_entity(rest)

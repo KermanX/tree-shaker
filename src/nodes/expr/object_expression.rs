@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   build_effect,
+  consumable::box_consumable,
   entity::{Entity, EntityTrait},
   transformer::Transformer,
 };

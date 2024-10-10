@@ -1,5 +1,5 @@
-use super::{Consumable, Entity, EntityFactory, EntityTrait, TypeofResult};
-use crate::analyzer::Analyzer;
+use super::{Entity, EntityFactory, EntityTrait, TypeofResult};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 
 #[derive(Debug)]
 pub struct ArgumentsEntity<'a> {

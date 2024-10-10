@@ -1,4 +1,7 @@
-use crate::{analyzer::Analyzer, ast::AstType2, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, entity::Entity,
+  transformer::Transformer,
+};
 use oxc::ast::{ast::IdentifierReference, AstKind};
 
 const AST_TYPE: AstType2 = AstType2::IdentifierReference;
@@ -48,7 +51,7 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
     value: Entity<'a>,
   ) {
-    let dep =box_consumable(AstKind::IdentifierReference(node));
+    let dep = box_consumable(AstKind::IdentifierReference(node));
     let value = self.factory.new_computed(value, dep);
 
     let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());

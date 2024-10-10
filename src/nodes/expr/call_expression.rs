@@ -1,6 +1,6 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, build_effect_from_arr, entity::Entity,
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstType2, build_effect_from_arr, consumable::box_consumable,
+  entity::Entity, transformer::Transformer,
 };
 use oxc::ast::{
   ast::{CallExpression, Expression},

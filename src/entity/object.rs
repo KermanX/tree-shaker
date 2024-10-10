@@ -1,5 +1,9 @@
-use super::{consumed_object,  Entity, EntityTrait, LiteralEntity, TypeofResult};
-use crate::{analyzer::Analyzer, consumable::{Consumable, ConsumableCollector}, use_consumed_flag};
+use super::{consumed_object, Entity, EntityTrait, LiteralEntity, TypeofResult};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
+  use_consumed_flag,
+};
 use oxc::{ast::ast::PropertyKind, semantic::ScopeId};
 use rustc_hash::FxHashMap;
 use std::{
@@ -149,7 +153,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           }
         }
         analyzer.factory.new_computed(
-          analyzer.factory.new_union(values),( box_consumable((dep, key.clone(), self.deps.borrow_mut().collect()))),
+          analyzer.factory.new_union(values),
+          box_consumable((dep, key.clone(), self.deps.borrow_mut().collect())),
         )
       } else {
         // TODO: like set_property, call getters and collect all possible values
@@ -172,10 +177,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
-    let value = analyzer.factory.new_computed(value, key.clone());
+    let value = analyzer.factory.new_computed(value, key.to_consumable());
     let indeterminate = analyzer.is_assignment_indeterminate(self.cf_scope);
     analyzer.exec_indeterminately(move |analyzer| {
-      self.add_assignment_dep(analyzer, dep.clone());
+      self.add_assignment_dep(analyzer, dep.cloned());
       let this = rc;
       let key = key.get_to_property_key(analyzer);
       if let Some(key_literals) = key.get_to_literals(analyzer) {
@@ -243,11 +248,9 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           }
         }
       } else {
-        self
-          .unknown_keyed
-          .borrow_mut()
-          .values
-          .push(ObjectPropertyValue::Field(analyzer.factory.new_computed(value, key.to_consumable())));
+        self.unknown_keyed.borrow_mut().values.push(ObjectPropertyValue::Field(
+          analyzer.factory.new_computed(value, key.to_consumable()),
+        ));
         self.apply_unknown_to_possible_setters(analyzer, dep)
       }
     })
@@ -281,7 +284,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       result.push((
         properties.definite,
         analyzer.factory.new_string(key),
-        analyzer.factory.new_computed_union(values, self_dep.clone()),
+        analyzer.factory.new_computed_union(values, self_dep.cloned()),
       ));
     }
     result
@@ -513,7 +516,7 @@ impl<'a> ObjectEntity<'a> {
       &mut self.unknown_keyed.borrow(),
       analyzer.factory.unknown,
     );
-    apply_unknown_to_vec(analyzer, dep.clone(), &mut self.rest.borrow(), analyzer.factory.unknown);
+    apply_unknown_to_vec(analyzer, dep.cloned(), &mut self.rest.borrow(), analyzer.factory.unknown);
   }
 
   fn add_assignment_dep(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {

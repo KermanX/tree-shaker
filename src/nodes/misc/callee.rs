@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
+  consumable::box_consumable,
   entity::{Entity, EntityDepNode},
   transformer::Transformer,
 };

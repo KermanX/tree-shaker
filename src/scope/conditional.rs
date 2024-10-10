@@ -1,7 +1,8 @@
 use super::CfScopeKind;
 use crate::{
   analyzer::Analyzer,
-  entity::{Consumable, Entity, EntityDepNode},
+  consumable::{box_consumable, Consumable},
+  entity::{Entity, EntityDepNode},
 };
 
 #[derive(Debug, Default)]
@@ -27,15 +28,15 @@ impl<'a> Analyzer<'a> {
         vec![]
       } else {
         let mut deps = vec![];
-        data.determinate_tests.push(test.into());
+        data.determinate_tests.push(test.to_consumable());
         for val in &data.determinate_tests {
-          deps.push(val.to_consumable());
+          deps.push(val.cloned());
         }
         deps.push(box_consumable(dep_node));
         deps
       }
     } else {
-      data.determinate_tests.push(test.into());
+      data.determinate_tests.push(test.to_consumable());
       vec![box_consumable(dep_node)]
     };
     self.push_cf_scope_with_dep(

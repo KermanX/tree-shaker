@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{Entity, EntityDepNode},
+  entity::Entity,
   scope::{conditional::ConditionalData, CfScopeKind},
   transformer::Transformer,
 };

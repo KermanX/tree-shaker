@@ -1,5 +1,5 @@
 use super::{utils::boolean_from_test_result, Entity, LiteralEntity, TypeofResult};
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, consumable::box_consumable};
 use oxc::{
   allocator::Allocator,
   ast::ast::{BinaryOperator, UpdateOperator},

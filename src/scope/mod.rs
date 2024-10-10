@@ -9,7 +9,8 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  entity::{Consumable, Entity, EntityFactory, FunctionEntitySource, LabelEntity},
+  consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
+  entity::{Entity, EntityFactory, FunctionEntitySource, LabelEntity},
   logger::DebuggerEvent,
 };
 use call_scope::CallScope;

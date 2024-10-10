@@ -1,6 +1,4 @@
-use super::{
-  consumed_object, Consumable, Entity, EntityDepNode, EntityFactory, EntityTrait, TypeofResult,
-};
+use super::{consumed_object, Entity, EntityDepNode, EntityFactory, EntityTrait, TypeofResult};
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},

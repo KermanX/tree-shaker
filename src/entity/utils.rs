@@ -1,5 +1,5 @@
-use super::{Consumable, Entity};
-use crate::analyzer::Analyzer;
+use super::Entity;
+use crate::{analyzer::Analyzer, consumable::Consumable};
 
 pub fn boolean_from_test_result<'a>(
   analyzer: &Analyzer<'a>,

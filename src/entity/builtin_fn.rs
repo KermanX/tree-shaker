@@ -1,5 +1,5 @@
-use super::{consumed_object, Consumable, Entity, EntityFactory, EntityTrait, TypeofResult};
-use crate::analyzer::Analyzer;
+use super::{consumed_object, Entity, EntityFactory, EntityTrait, TypeofResult};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
 
 pub trait BuiltinFnEntity<'a>: Debug {

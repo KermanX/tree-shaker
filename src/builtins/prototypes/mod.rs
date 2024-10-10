@@ -12,7 +12,8 @@ mod symbol;
 
 use crate::{
   analyzer::Analyzer,
-  entity::{Consumable, Entity, EntityFactory, LiteralEntity},
+  consumable::{box_consumable, Consumable},
+  entity::{Entity, EntityFactory, LiteralEntity},
 };
 use rustc_hash::FxHashMap;
 

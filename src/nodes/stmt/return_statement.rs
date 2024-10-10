@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::{analyzer::Analyzer, entity::EntityDepNode, transformer::Transformer};
 use oxc::ast::{
   ast::{ReturnStatement, Statement},
   AstKind,

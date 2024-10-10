@@ -1,4 +1,7 @@
-use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, scope::CfScopeKind,
+  transformer::Transformer,
+};
 use oxc::{
   ast::{
     ast::{ForOfStatement, Statement},

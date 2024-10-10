@@ -1,4 +1,6 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, consumable::box_consumable, entity::Entity, transformer::Transformer,
+};
 use oxc::{
   ast::{
     ast::{ArrayExpression, ArrayExpressionElement, Expression, SpreadElement},

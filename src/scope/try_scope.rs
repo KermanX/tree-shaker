@@ -1,4 +1,8 @@
-use crate::{analyzer::Analyzer, entity::Entity};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, ConsumableNode},
+  entity::Entity,
+};
 
 #[derive(Debug)]
 pub struct TryScope<'a> {

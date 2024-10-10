@@ -1,5 +1,5 @@
-use super::{consumed_object, Consumable, Entity, EntityFactory, EntityTrait, TypeofResult};
-use crate::{analyzer::Analyzer, builtins::Prototype, utils::F64WithEq};
+use super::{consumed_object, Entity, EntityFactory, EntityTrait, TypeofResult};
+use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable, utils::F64WithEq};
 use oxc::{
   ast::{
     ast::{BigintBase, Expression, NumberBase, UnaryOperator},
@@ -78,7 +78,10 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
           })
           .collect()
       } else {
-        analyzer.factory.new_computed_unknown_string(rc.to_consumable()).enumerate_properties(analyzer, dep)
+        analyzer
+          .factory
+          .new_computed_unknown_string(rc.to_consumable())
+          .enumerate_properties(analyzer, dep)
       }
     } else {
       // No effect

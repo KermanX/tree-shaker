@@ -1,5 +1,9 @@
-use super::{Consumable, Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult};
-use crate::{analyzer::Analyzer, use_consumed_flag};
+use super::{Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable, ConsumableTrait},
+  use_consumed_flag,
+};
 use rustc_hash::FxHashSet;
 use std::cell::Cell;
 

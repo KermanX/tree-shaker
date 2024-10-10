@@ -2,6 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect_from_arr,
+  consumable::box_consumable,
   entity::{Entity, EntityDepNode},
   transformer::Transformer,
 };
