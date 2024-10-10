@@ -91,7 +91,7 @@ impl<'a> Analyzer<'a> {
     let call_scope = self.call_scope();
     let value = ForwardedEntity::new(
       value,
-      box_consumable((self.get_exec_deps(call_scope.cf_scope_depth), dep)),
+      box_consumable((self.get_exec_dep(call_scope.cf_scope_depth), dep)),
     );
 
     let call_scope = self.call_scope_mut();

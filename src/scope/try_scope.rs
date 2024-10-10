@@ -63,7 +63,7 @@ impl<'a> Analyzer<'a> {
 
   fn explicit_throw_impl(&mut self, value: Entity<'a>) {
     let try_scope = self.try_scope();
-    let exec_dep = self.get_exec_deps(try_scope.cf_scope_depth);
+    let exec_dep = self.get_exec_dep(try_scope.cf_scope_depth);
 
     let try_scope = self.try_scope_mut();
     try_scope.may_throw = true;

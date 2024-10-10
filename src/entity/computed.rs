@@ -127,7 +127,7 @@ impl<'a> ComputedEntity<'a> {
     Entity::new(Self { val, dep, consumed: Cell::new(false) })
   }
 
-  pub fn forward(&self, val: Entity<'a>) -> Entity<'a> {
+  fn forward(&self, val: Entity<'a>) -> Entity<'a> {
     ComputedEntity::new(val, self.dep.cloned())
   }
 }

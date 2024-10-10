@@ -156,7 +156,7 @@ impl<'a> Analyzer<'a> {
     result
   }
 
-  pub fn get_exec_deps(&mut self, target_depth: usize) -> Vec<ConsumableNode<'a>> {
+  pub fn get_exec_dep(&mut self, target_depth: usize) -> ConsumableNode<'a> {
     let mut deps = vec![];
     for id in target_depth..self.scope_context.cf.stack.len() {
       let scope = self.scope_context.cf.get_mut_from_depth(id);
@@ -164,7 +164,7 @@ impl<'a> Analyzer<'a> {
         deps.push(dep);
       }
     }
-    deps
+    ConsumableNode::new_box(deps)
   }
 
   pub fn exit_to(&mut self, target_depth: usize) {

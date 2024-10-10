@@ -25,6 +25,7 @@ fn tree_shake(input: String) -> String {
 #[test]
 fn test() {
   glob!("fixtures/**/*.js", |path| {
+    println!("{}", path.display());
     let input = fs::read_to_string(path).unwrap();
     assert_snapshot!(tree_shake(input));
   });

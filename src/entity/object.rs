@@ -532,7 +532,7 @@ impl<'a> ObjectEntity<'a> {
   fn add_assignment_dep(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     let target_depth = analyzer.find_first_different_variable_scope(self.variable_scope);
     let mut deps = self.deps.borrow_mut();
-    deps.push(box_consumable(analyzer.get_assignment_deps(target_depth)));
+    deps.push(box_consumable(analyzer.get_assignment_dep(target_depth)));
     deps.push(dep);
   }
 }

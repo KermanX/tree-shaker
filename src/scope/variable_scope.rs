@@ -174,7 +174,7 @@ impl<'a> Analyzer<'a> {
       } else {
         let target_cf_scope =
           self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
-        let dep = (self.get_assignment_deps(depth), variable.decl_dep.cloned());
+        let dep = (self.get_assignment_dep(depth), variable.decl_dep.cloned());
 
         if variable.exhausted {
           self.consume(dep);
@@ -360,7 +360,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn refer_to_diff_variable_scope(&mut self, another: ScopeId) {
     let target_depth = self.find_first_different_variable_scope(another);
-    let deps = self.get_assignment_deps(target_depth);
-    self.consume(deps);
+    let dep = self.get_assignment_dep(target_depth);
+    self.consume(dep);
   }
 }
