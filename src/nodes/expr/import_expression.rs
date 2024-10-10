@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   build_effect_from_arr,
+  consumable::box_consumable,
   entity::{Entity, UnknownEntity},
   transformer::Transformer,
 };
@@ -18,7 +19,7 @@ impl<'a> Analyzer<'a> {
 
     // FIXME: if have side effects, then consume all deps
 
-    UnknownEntity::new_computed_unknown(deps)
+    UnknownEntity::new_computed_unknown(box_consumable(deps))
   }
 }
 

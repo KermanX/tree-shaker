@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{Consumable, LabelEntity},
+  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableVec},
+  entity::LabelEntity,
   logger::{DebuggerEvent, Logger},
 };
 use oxc::semantic::{ScopeId, SymbolId};
@@ -30,7 +31,7 @@ pub struct ExhaustiveData {
 pub struct CfScope<'a> {
   pub kind: CfScopeKind,
   pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
-  pub deps: Vec<Consumable<'a>>,
+  pub deps: ConsumableCollector<'a>,
   pub exited: Option<bool>,
   /// Exits that have been stopped by this scope's indeterminate state.
   /// Only available when `kind` is `If`.
@@ -42,13 +43,13 @@ impl<'a> CfScope<'a> {
   pub fn new(
     kind: CfScopeKind,
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
-    deps: Vec<Consumable<'a>>,
+    deps: ConsumableVec<'a>,
     exited: Option<bool>,
   ) -> Self {
     CfScope {
       kind,
       labels,
-      deps,
+      deps: ConsumableCollector::new(deps),
       exited,
       blocked_exit: None,
       exhaustive_data: if kind == CfScopeKind::Exhaustive {
@@ -64,11 +65,13 @@ impl<'a> CfScope<'a> {
     id: ScopeId,
     logger: &Option<&Logger>,
     exited: Option<bool>,
-    dep: impl FnOnce() -> Consumable<'a>,
+    dep: impl FnOnce() -> Option<Consumable<'a>>,
   ) {
     if self.exited != Some(true) {
       self.exited = exited;
-      self.deps.push(dep());
+      if let Some(dep) = dep() {
+        self.deps.push(dep);
+      }
 
       if let Some(logger) = logger {
         logger.push_event(DebuggerEvent::UpdateCfScopeExited(id, exited));
@@ -153,21 +156,19 @@ impl<'a> Analyzer<'a> {
     result
   }
 
-  pub fn get_exec_dep(
-    &self,
-    target_depth: usize,
-    extra: impl Into<Consumable<'a>>,
-  ) -> Consumable<'a> {
+  pub fn get_exec_deps(&mut self, target_depth: usize) -> Vec<ConsumableNode<'a>> {
     let mut deps = vec![];
-    for scope in self.scope_context.cf.iter_stack_range(target_depth..) {
-      deps.extend(scope.deps.iter().cloned());
+    for id in target_depth..self.scope_context.cf.stack.len() {
+      let scope = self.scope_context.cf.get_mut_from_depth(id);
+      if let Some(dep) = scope.deps.try_collect() {
+        deps.push(dep);
+      }
     }
-    deps.push(extra.into());
-    Consumable::from(deps)
+    deps
   }
 
-  pub fn exit_to(&mut self, target_depth: usize) -> Vec<Consumable<'a>> {
-    self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), true, vec![])
+  pub fn exit_to(&mut self, target_depth: usize) {
+    self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), true, None);
   }
 
   pub fn exit_to_impl(
@@ -175,12 +176,12 @@ impl<'a> Analyzer<'a> {
     target_depth: usize,
     from_depth: usize,
     mut must_exit: bool,
-    mut deps: Vec<Consumable<'a>>,
-  ) -> Vec<Consumable<'a>> {
+    mut acc_dep: Option<ConsumableNode<'a>>,
+  ) -> Option<ConsumableNode<'a>> {
     for id in self.scope_context.cf.stack[target_depth..from_depth].to_vec().into_iter().rev() {
       let cf_scope = self.scope_context.cf.get_mut(id);
-      let this_deps = cf_scope.deps.clone();
-      let dep = || Consumable::from(deps.clone());
+      let this_dep = cf_scope.deps.collect();
+      let dep = || acc_dep.clone().map(box_consumable);
       if must_exit {
         let is_indeterminate = cf_scope.is_indeterminate();
         cf_scope.update_exited(id, &self.logger, Some(true), dep);
@@ -199,9 +200,14 @@ impl<'a> Analyzer<'a> {
       } else {
         cf_scope.update_exited(id, &self.logger, None, dep);
       }
-      deps.extend(this_deps);
+      // deps.push(this_dep);
+      acc_dep = if let Some(acc_dep) = acc_dep {
+        Some(ConsumableNode::new_box((this_dep, acc_dep)))
+      } else {
+        Some(this_dep)
+      };
     }
-    deps
+    acc_dep
   }
 
   /// If the label is used, `true` is returned.

@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
 
     // 1. discriminant
     let discriminant = self.exec_expression(&node.discriminant);
-    self.push_cf_scope_for_deps(vec![discriminant.clone().into()]);
+    self.push_cf_scope_for_dep(discriminant.clone());
 
     // 2. tests
     let mut default_case = None;

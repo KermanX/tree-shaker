@@ -1,7 +1,9 @@
-use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult,
+use super::{consumed_object, ComputedEntity, Entity, EntityTrait, LiteralEntity, TypeofResult};
+use crate::{
+  analyzer::Analyzer,
+  builtins::Prototype,
+  consumable::{Consumable, ConsumableTrait},
 };
-use crate::{analyzer::Analyzer, builtins::Prototype};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnknownEntity {
@@ -69,8 +71,8 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     } else if *self == UnknownEntity::String {
       vec![(
         false,
-        UnknownEntity::new_computed_string(rc.clone()),
-        UnknownEntity::new_computed_string(rc.clone()),
+        UnknownEntity::new_computed_string(rc.to_consumable()),
+        UnknownEntity::new_computed_string(rc.to_consumable()),
       )]
     } else {
       vec![]
@@ -121,7 +123,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     if *self == UnknownEntity::String {
-      return (vec![], Some(UnknownEntity::new_computed_unknown(rc.clone())));
+      return (vec![], Some(UnknownEntity::new_computed_unknown(rc.to_consumable())));
     }
     if !self.maybe_object() {
       analyzer.thrown_builtin_error("Cannot iterate non-object");
@@ -203,7 +205,7 @@ macro_rules! unknown_entity_ctors {
       }
 
       #[allow(unused)]
-      pub fn $computed(dep: impl Into<Consumable<'a>>) -> Entity<'a> {
+      pub fn $computed(dep: Consumable<'a>) -> Entity<'a> {
         ComputedEntity::new(Self::$name(), dep)
       }
     )*

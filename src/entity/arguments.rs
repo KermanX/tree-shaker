@@ -1,5 +1,5 @@
-use super::{Consumable, Entity, EntityTrait, TypeofResult, UnionEntity};
-use crate::analyzer::Analyzer;
+use super::{Entity, EntityTrait, TypeofResult, UnionEntity};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 
 #[derive(Debug)]
 pub struct ArgumentsEntity<'a> {
@@ -7,7 +7,7 @@ pub struct ArgumentsEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
-  fn consume(&self, analyzer: &mut crate::analyzer::Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     for (_, entity) in &self.arguments {
       entity.consume(analyzer);
     }
@@ -77,7 +77,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     let mut rest: Option<Vec<Entity<'a>>> = None;
     for (spread, entity) in &self.arguments {
       if *spread {
-        if let Some(iterated) = entity.iterate_result_union(analyzer, dep.clone()) {
+        if let Some(iterated) = entity.iterate_result_union(analyzer, dep.cloned()) {
           if let Some(rest) = &mut rest {
             rest.push(iterated);
           } else {

@@ -1,4 +1,6 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, consumable::box_consumable, entity::Entity, transformer::Transformer,
+};
 use oxc::ast::ast::{AwaitExpression, Expression};
 
 impl<'a> Analyzer<'a> {
@@ -9,7 +11,7 @@ impl<'a> Analyzer<'a> {
     }
 
     let value = self.exec_expression(&node.argument);
-    value.r#await(self, ())
+    value.r#await(self, box_consumable(()))
   }
 }
 

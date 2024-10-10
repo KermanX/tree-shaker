@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
     };
     self.pop_cf_scope();
 
-    ComputedEntity::new(result, test)
+    ComputedEntity::new(result, test.to_consumable())
   }
 }
 

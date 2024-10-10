@@ -1,7 +1,5 @@
-use super::{
-  consumed_object, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult, UnknownEntity,
-};
-use crate::analyzer::Analyzer;
+use super::{consumed_object, Entity, EntityTrait, LiteralEntity, TypeofResult, UnknownEntity};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
 
 pub trait BuiltinFnEntity<'a>: Debug {
@@ -90,7 +88,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_computed_string(rc.clone())
+    UnknownEntity::new_computed_string(rc.to_consumable())
   }
 
   fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {

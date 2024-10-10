@@ -1,8 +1,9 @@
-use super::{ComputedEntity, Consumable, Entity, LiteralEntity, UnknownEntity};
+use super::{ComputedEntity, Entity, LiteralEntity, UnknownEntity};
+use crate::consumable::Consumable;
 
-pub fn boolean_from_test_result<'a, T: Into<Consumable<'a>>>(
+pub fn boolean_from_test_result<'a>(
   result: Option<bool>,
-  deps: impl FnOnce() -> T,
+  deps: impl FnOnce() -> Consumable<'a>,
 ) -> Entity<'a> {
   match result {
     Some(value) => LiteralEntity::new_boolean(value),

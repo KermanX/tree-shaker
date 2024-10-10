@@ -1,9 +1,10 @@
 use super::try_scope::TryScope;
 use crate::{
   analyzer::Analyzer,
+  consumable::{box_consumable, ConsumableTrait},
   entity::{
-    Consumable, Entity, ForwardedEntity, FunctionEntitySource, LiteralEntity, PromiseEntity,
-    UnionEntity, UnknownEntity,
+    Entity, ForwardedEntity, FunctionEntitySource, LiteralEntity, PromiseEntity, UnionEntity,
+    UnknownEntity,
   },
 };
 use oxc::semantic::{ScopeId, SymbolId};
@@ -86,9 +87,12 @@ impl<'a> CallScope<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn return_value(&mut self, value: Entity<'a>, dep: impl Into<Consumable<'a>>) {
+  pub fn return_value(&mut self, value: Entity<'a>, dep: impl ConsumableTrait<'a> + 'a) {
     let call_scope = self.call_scope();
-    let value = ForwardedEntity::new(value, self.get_exec_dep(call_scope.cf_scope_depth, dep));
+    let value = ForwardedEntity::new(
+      value,
+      box_consumable((self.get_exec_deps(call_scope.cf_scope_depth), dep)),
+    );
 
     let call_scope = self.call_scope_mut();
     call_scope.returned_values.push(value);

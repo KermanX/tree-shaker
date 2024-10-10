@@ -1,5 +1,6 @@
 use crate::{
   analyzer::Analyzer,
+  consumable::box_consumable,
   entity::{Entity, ForwardedEntity, LiteralEntity, UnionEntity},
   transformer::Transformer,
 };
@@ -32,7 +33,7 @@ impl<'a> Analyzer<'a> {
           }
         }
         _ => {
-          let dep = AstKind::ArrayExpressionElement(element);
+          let dep = box_consumable(AstKind::ArrayExpressionElement(element));
           let element = ForwardedEntity::new(self.exec_expression(element.to_expression()), dep);
           if rest.is_empty() {
             array.push_element(element);

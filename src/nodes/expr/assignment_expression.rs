@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
-  entity::{Entity, EntityDepNode, UnionEntity},
+  entity::{Entity, UnionEntity},
   scope::{conditional::ConditionalData, CfScopeKind},
   transformer::Transformer,
 };
@@ -63,9 +63,7 @@ impl<'a> Analyzer<'a> {
         historical_indeterminate,
         current_indeterminate,
       );
-      self.push_cf_scope_for_deps(vec![
-        EntityDepNode::from(AstKind::AssignmentExpression(node)).into()
-      ]);
+      self.push_cf_scope_for_dep(AstKind::AssignmentExpression(node));
 
       let value = match (need_left_val, need_right) {
         (false, true) => self.exec_expression(&node.right),

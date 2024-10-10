@@ -1,5 +1,8 @@
-use super::{Consumable, Entity, UnknownEntity};
-use crate::analyzer::Analyzer;
+use super::{Entity, UnknownEntity};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable},
+};
 
 pub fn get_property<'a>(
   rc: &Entity<'a>,
@@ -14,7 +17,7 @@ pub fn get_property<'a>(
     key.consume(analyzer);
     UnknownEntity::new_unknown()
   } else {
-    UnknownEntity::new_computed_unknown((rc.clone(), dep, key.clone()))
+    UnknownEntity::new_computed_unknown(box_consumable((rc.clone(), dep, key.clone())))
   }
 }
 
@@ -42,7 +45,7 @@ pub fn enumerate_properties<'a>(
     analyzer.refer_global();
     vec![(false, UnknownEntity::new_unknown(), UnknownEntity::new_unknown())]
   } else {
-    let unknown = UnknownEntity::new_computed_unknown((rc.clone(), dep));
+    let unknown = UnknownEntity::new_computed_unknown(box_consumable((rc.clone(), dep)));
     vec![(false, unknown.clone(), unknown)]
   }
 }

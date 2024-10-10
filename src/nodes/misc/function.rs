@@ -1,7 +1,8 @@
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{Consumable, Entity, FunctionEntity, FunctionEntitySource, UnknownEntity},
+  consumable::{box_consumable, Consumable},
+  entity::{Entity, FunctionEntity, FunctionEntitySource, UnknownEntity},
   transformer::Transformer,
 };
 use oxc::{
@@ -23,7 +24,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
-    let dep = AstKind::Function(node);
+    let dep = box_consumable(AstKind::Function(node));
     let entity = self.exec_function(node, false);
 
     let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
@@ -46,7 +47,7 @@ impl<'a> Analyzer<'a> {
       Box::new(move |analyzer: &mut Analyzer<'a>| {
         analyzer.push_call_scope(
           source,
-          call_dep.clone(),
+          call_dep.cloned(),
           variable_scopes.clone(),
           this.clone(),
           (args.clone(), vec![ /* later filled by formal parameters */]),
@@ -59,7 +60,7 @@ impl<'a> Analyzer<'a> {
           let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
           analyzer.declare_symbol(
             symbol,
-            source.into_dep_node(),
+            box_consumable(source.into_dep_node()),
             false,
             DeclarationKind::NamedFunctionInBody,
             Some(fn_entity.clone()),

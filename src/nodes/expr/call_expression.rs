@@ -2,6 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect_from_arr,
+  consumable::box_consumable,
   entity::{Entity, LiteralEntity, UnionEntity},
   transformer::Transformer,
 };
@@ -48,7 +49,7 @@ impl<'a> Analyzer<'a> {
       }
 
       let args = self.exec_arguments(&node.arguments);
-      let ret_val = callee.call(self, AstKind::CallExpression(node), &this, &args);
+      let ret_val = callee.call(self, box_consumable(AstKind::CallExpression(node)), &this, &args);
 
       if indeterminate {
         self.pop_cf_scope();

@@ -1,5 +1,5 @@
-use super::{Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult};
-use crate::analyzer::Analyzer;
+use super::{Entity, EntityTrait, LiteralEntity, TypeofResult};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 use rustc_hash::FxHashSet;
 use std::{cell::RefCell, rc::Rc};
 

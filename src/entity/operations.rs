@@ -2,7 +2,7 @@ use super::{
   utils::boolean_from_test_result, CollectedEntity, Entity, LiteralEntity, TypeofResult,
   UnknownEntity,
 };
-use crate::entity::union::UnionEntity;
+use crate::{consumable::box_consumable, entity::union::UnionEntity};
 use oxc::{
   allocator::Allocator,
   ast::ast::{BinaryOperator, UpdateOperator},
@@ -155,13 +155,13 @@ impl<'a> EntityOpHost<'a> {
           }
         },
         _ => {
-          values.push(UnknownEntity::new_computed_number((lhs.clone(), rhs.clone())));
+          values.push(UnknownEntity::new_number());
         }
       }
     }
     if lhs_t.contains(TypeofResult::BigInt) && rhs_t.contains(TypeofResult::BigInt) {
       // Possibly bigint
-      values.push(UnknownEntity::new_computed_bigint((lhs.clone(), rhs.clone())));
+      values.push(UnknownEntity::new_bigint());
     }
     if !lhs_t.difference(must_not_convert_to_str).is_empty()
       || !rhs_t.difference(must_not_convert_to_str).is_empty()
@@ -178,16 +178,17 @@ impl<'a> EntityOpHost<'a> {
           values.push(LiteralEntity::new_string(self.allocator.alloc(val)));
         }
         _ => {
-          values.push(UnknownEntity::new_computed_string((lhs_str, rhs_str)));
+          values.push(UnknownEntity::new_string());
         }
       }
     }
 
+    let dep = box_consumable((lhs.clone(), rhs.clone()));
     if values.is_empty() {
       // TODO: throw warning
-      UnknownEntity::new_computed_unknown((lhs.clone(), rhs.clone()))
+      UnknownEntity::new_computed_unknown(dep)
     } else {
-      UnionEntity::new_computed(values, (lhs.clone(), rhs.clone()))
+      UnionEntity::new_computed(values, dep)
     }
   }
 
@@ -214,16 +215,16 @@ impl<'a> EntityOpHost<'a> {
 
     let mut values = vec![];
     if input_t.contains(TypeofResult::BigInt) {
-      values.push(UnknownEntity::new_computed_bigint(input.clone()));
+      values.push(UnknownEntity::new_bigint());
     }
     if input_t.contains(TypeofResult::Number) {
-      values.push(UnknownEntity::new_computed_number(input.clone()));
+      values.push(UnknownEntity::new_number());
     }
 
     if values.is_empty() {
-      UnknownEntity::new_computed_unknown(input.clone())
+      UnknownEntity::new_computed_unknown(input.to_consumable())
     } else {
-      UnionEntity::new_computed(values, input.clone())
+      UnionEntity::new_computed(values, input.to_consumable())
     }
   }
 
@@ -233,8 +234,9 @@ impl<'a> EntityOpHost<'a> {
     lhs: &Entity<'a>,
     rhs: &Entity<'a>,
   ) -> Entity<'a> {
-    let to_result =
-      |result: Option<bool>| boolean_from_test_result(result, || (lhs.clone(), rhs.clone()));
+    let to_result = |result: Option<bool>| {
+      boolean_from_test_result(result, || box_consumable((lhs.clone(), rhs.clone())))
+    };
 
     match operator {
       BinaryOperator::Equality => to_result(self.eq(lhs, rhs)),
@@ -258,10 +260,10 @@ impl<'a> EntityOpHost<'a> {
       | BinaryOperator::BitwiseAnd
       | BinaryOperator::Exponential => {
         // Can be number or bigint
-        UnknownEntity::new_computed_unknown((lhs.clone(), rhs.clone()))
+        UnknownEntity::new_computed_unknown(box_consumable((lhs.clone(), rhs.clone())))
       }
       BinaryOperator::In | BinaryOperator::Instanceof => {
-        UnknownEntity::new_computed_boolean((lhs.clone(), rhs.clone()))
+        UnknownEntity::new_computed_boolean(box_consumable((lhs.clone(), rhs.clone())))
       }
     }
   }

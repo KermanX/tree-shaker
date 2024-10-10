@@ -2,6 +2,7 @@ mod analyzer;
 mod ast;
 mod builtins;
 mod config;
+mod consumable;
 mod data;
 mod effect_builder;
 mod entity;

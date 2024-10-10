@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  entity::Consumable,
+  consumable::ConsumableNode,
   scope::{conditional::ConditionalData, CfScopeKind},
   transformer::Transformer,
 };
@@ -51,7 +51,7 @@ impl<'a> Analyzer<'a> {
        then, if dep is referred, consume all collected `test` values, then clear them.
     */
 
-    let mut deps: Option<Vec<Consumable<'a>>> = None;
+    let mut acc_dep: Option<ConsumableNode<'a>> = None;
 
     if maybe_true {
       self.push_conditional_cf_scope(
@@ -64,14 +64,14 @@ impl<'a> Analyzer<'a> {
       self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
       self.exec_statement(&node.consequent);
       self.pop_cf_scope();
-      let conditional_scope = self.pop_cf_scope_and_get();
+      let conditional_scope = self.pop_cf_scope_and_get_mut();
       if let Some(stopped_exit) = conditional_scope.blocked_exit {
         exit_target_inner = exit_target_inner.max(stopped_exit);
         exit_target_outer = exit_target_outer.min(stopped_exit);
       } else {
         should_exit = false;
       }
-      deps.get_or_insert_with(|| conditional_scope.deps.clone());
+      acc_dep.get_or_insert_with(|| conditional_scope.deps.collect());
     }
     if maybe_false {
       if let Some(alternate) = &node.alternate {
@@ -85,26 +85,25 @@ impl<'a> Analyzer<'a> {
         self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
         self.exec_statement(alternate);
         self.pop_cf_scope();
-        let conditional_scope = self.pop_cf_scope_and_get();
+        let conditional_scope = self.pop_cf_scope_and_get_mut();
         if let Some(stopped_exit) = conditional_scope.blocked_exit {
           exit_target_inner = exit_target_inner.max(stopped_exit);
           exit_target_outer = exit_target_outer.min(stopped_exit);
         } else {
           should_exit = false;
         }
-        deps.get_or_insert_with(|| conditional_scope.deps.clone());
+        acc_dep.get_or_insert_with(|| conditional_scope.deps.collect());
       } else {
         should_exit = false;
       }
     }
 
-    let deps = deps.unwrap_or_default();
     if should_exit {
-      let deps =
-        self.exit_to_impl(exit_target_inner, self.scope_context.cf.stack.len(), true, deps);
-      self.exit_to_impl(exit_target_outer, exit_target_inner, false, deps);
+      let acc_dep =
+        self.exit_to_impl(exit_target_inner, self.scope_context.cf.stack.len(), true, acc_dep);
+      self.exit_to_impl(exit_target_outer, exit_target_inner, false, acc_dep);
     } else {
-      self.exit_to_impl(exit_target_outer, self.scope_context.cf.stack.len(), false, deps);
+      self.exit_to_impl(exit_target_outer, self.scope_context.cf.stack.len(), false, acc_dep);
     }
   }
 }

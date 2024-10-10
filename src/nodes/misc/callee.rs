@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
+  consumable::box_consumable,
   entity::{Entity, EntityDepNode, ForwardedEntity, LiteralEntity},
   transformer::Transformer,
 };
@@ -32,7 +33,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a Expression<'a>,
   ) -> Option<(bool, Entity<'a>, Entity<'a>)> {
-    let dep: EntityDepNode = (AST_TYPE, node).into();
+    let dep = box_consumable(EntityDepNode::from((AST_TYPE, node)));
     if let Some(member_expr) = unwrap_to_member_expression(node) {
       let (short_circuit, callee, cache) =
         self.exec_member_expression_read_in_chain(member_expr, false);

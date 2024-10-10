@@ -1,5 +1,5 @@
 use super::cf_scope::CfScope;
-use crate::{analyzer::Analyzer, entity::Consumable};
+use crate::{analyzer::Analyzer, consumable::ConsumableNode};
 use oxc::semantic::ScopeId;
 
 impl<'a> Analyzer<'a> {
@@ -20,17 +20,13 @@ impl<'a> Analyzer<'a> {
     self.is_relatively_indeterminate(first_different)
   }
 
-  pub fn get_assignment_deps(
-    &self,
-    target_depth: usize,
-    extra: impl Into<Consumable<'a>>,
-  ) -> Consumable<'a> {
+  pub fn get_assignment_deps(&mut self, target_depth: usize) -> Vec<ConsumableNode<'a>> {
     if target_depth == 0 {
-      self.get_exec_dep(0, extra)
+      self.get_exec_deps(0)
     } else {
       let variable_scope = self.scope_context.variable.get_from_depth(target_depth - 1).unwrap();
       let target_cf_depth = self.find_first_different_cf_scope(variable_scope.cf_scope);
-      self.get_exec_dep(target_cf_depth, extra)
+      self.get_exec_deps(target_cf_depth)
     }
   }
 }

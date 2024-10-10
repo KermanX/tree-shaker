@@ -1,7 +1,5 @@
-use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, TypeofResult, UnknownEntity,
-};
-use crate::{analyzer::Analyzer, builtins::Prototype, utils::F64WithEq};
+use super::{consumed_object, ComputedEntity, Entity, EntityTrait, TypeofResult, UnknownEntity};
+use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable, utils::F64WithEq};
 use oxc::{
   ast::{
     ast::{BigintBase, Expression, NumberBase, UnaryOperator},
@@ -80,7 +78,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
           })
           .collect()
       } else {
-        UnknownEntity::new_computed_string(rc.clone()).enumerate_properties(analyzer, dep)
+        UnknownEntity::new_computed_string(rc.to_consumable()).enumerate_properties(analyzer, dep)
       }
     } else {
       // No effect
@@ -127,7 +125,11 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     match self {
       LiteralEntity::String(value) => (
         vec![],
-        if value.is_empty() { None } else { Some(UnknownEntity::new_computed_string(rc.clone())) },
+        if value.is_empty() {
+          None
+        } else {
+          Some(UnknownEntity::new_computed_string(rc.to_consumable()))
+        },
       ),
       _ => {
         self.consume(analyzer);
@@ -182,7 +184,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn get_to_boolean(&self, rc: &Entity<'a>) -> Entity<'a> {
     match self.test_truthy() {
       Some(value) => Self::new_boolean(value),
-      None => UnknownEntity::new_computed_boolean(rc.clone()),
+      None => UnknownEntity::new_computed_boolean(rc.to_consumable()),
     }
   }
 

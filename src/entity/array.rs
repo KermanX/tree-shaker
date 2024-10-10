@@ -1,8 +1,12 @@
 use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, ForwardedEntity, LiteralEntity,
+  consumed_object, ComputedEntity, Entity, EntityTrait, ForwardedEntity, LiteralEntity,
   TypeofResult, UnionEntity, UnknownEntity,
 };
-use crate::{analyzer::Analyzer, use_consumed_flag};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode},
+  use_consumed_flag,
+};
 use oxc::{semantic::ScopeId, syntax::number::ToJsInt32};
 use std::{
   cell::{Cell, RefCell},
@@ -11,7 +15,7 @@ use std::{
 
 pub struct ArrayEntity<'a> {
   consumed: Cell<bool>,
-  pub deps: RefCell<Vec<Consumable<'a>>>,
+  pub deps: RefCell<ConsumableCollector<'a>>,
   cf_scope: ScopeId,
   variable_scope: ScopeId,
   pub elements: RefCell<Vec<Entity<'a>>>,
@@ -35,9 +39,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
     analyzer.refer_to_diff_variable_scope(self.variable_scope);
 
-    for dep in self.deps.take() {
-      analyzer.consume(dep);
-    }
+    self.deps.borrow_mut().consume_all(analyzer);
 
     for element in self.elements.borrow().iter() {
       element.consume(analyzer);
@@ -58,9 +60,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_property(rc, analyzer, dep, key);
     }
-    let mut deps = self.deps.borrow().clone();
-    deps.push(dep);
-    deps.push(key.clone().into());
+    let dep = ConsumableNode::new_box((self.deps.borrow_mut().collect(), dep, key.clone()));
     let key = key.get_to_property_key();
     if let Some(key_literals) = key.get_to_literals() {
       let mut result = vec![];
@@ -84,7 +84,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               result.push(self.get_length().map_or_else(
                 || {
                   let dep: Vec<_> = self.rest.borrow().iter().cloned().collect();
-                  UnknownEntity::new_computed_number(dep)
+                  UnknownEntity::new_computed_number(box_consumable(dep))
                 },
                 |length| {
                   LiteralEntity::new_number(
@@ -104,18 +104,20 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
           _ => unreachable!(),
         }
       }
-      UnionEntity::new_computed(result, deps)
+      UnionEntity::new_computed(result, box_consumable(dep))
     } else {
-      UnknownEntity::new_computed_unknown(
-        self
-          .elements
-          .borrow()
-          .iter()
-          .chain(self.rest.borrow().iter())
-          .map(|v| Consumable::from(v.clone()))
-          .chain(deps)
-          .collect::<Vec<_>>(),
-      )
+      UnknownEntity::new_computed_unknown(box_consumable((
+        ConsumableNode::new_box(
+          self
+            .elements
+            .borrow()
+            .iter()
+            .chain(self.rest.borrow().iter())
+            .cloned()
+            .collect::<Vec<_>>(),
+        ),
+        dep,
+      )))
     }
   }
 
@@ -203,16 +205,14 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::enumerate_properties(rc, analyzer, dep);
     }
-    let mut deps = self.deps.borrow().clone();
-    deps.push(dep.clone());
-    let self_dep = Consumable::from(deps);
+    let self_dep = box_consumable((self.deps.borrow_mut().collect(), dep.cloned()));
 
     let mut entries = Vec::new();
     for (i, element) in self.elements.borrow().iter().enumerate() {
       entries.push((
         true,
         LiteralEntity::new_string(analyzer.allocator.alloc(i.to_string())),
-        ForwardedEntity::new(element.clone(), self_dep.clone()),
+        ForwardedEntity::new(element.clone(), self_dep.cloned()),
       ));
     }
     let rest = self.rest.borrow();
@@ -220,7 +220,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       entries.push((
         true,
         UnknownEntity::new_string(),
-        ForwardedEntity::new(UnionEntity::new(rest.iter().cloned().collect()), self_dep.clone()),
+        ForwardedEntity::new(UnionEntity::new(rest.iter().cloned().collect()), self_dep.cloned()),
       ));
     }
     entries
@@ -270,7 +270,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         .elements
         .borrow()
         .iter()
-        .map(|val| ComputedEntity::new(val.clone(), dep.clone()))
+        .map(|val| ComputedEntity::new(val.clone(), dep.cloned()))
         .collect(),
       if rest.is_empty() {
         None
@@ -288,14 +288,14 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string();
     }
-    UnknownEntity::new_computed_string(rc.clone())
+    UnknownEntity::new_computed_string(rc.to_consumable())
   }
 
   fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric();
     }
-    UnknownEntity::new_computed_unknown(rc.clone())
+    UnknownEntity::new_computed_unknown(rc.to_consumable())
   }
 
   fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
@@ -323,7 +323,7 @@ impl<'a> ArrayEntity<'a> {
   pub fn new(cf_scope: ScopeId, variable_scope: ScopeId) -> Self {
     ArrayEntity {
       consumed: Cell::new(false),
-      deps: RefCell::new(Vec::new()),
+      deps: Default::default(),
       cf_scope,
       variable_scope,
       elements: RefCell::new(Vec::new()),
@@ -347,9 +347,11 @@ impl<'a> ArrayEntity<'a> {
     }
   }
 
-  fn add_dep(&self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) {
+  fn add_dep(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     let target_depth = analyzer.find_first_different_variable_scope(self.variable_scope);
-    self.deps.borrow_mut().push(analyzer.get_assignment_deps(target_depth, dep));
+    let mut deps = self.deps.borrow_mut();
+    deps.push(box_consumable(analyzer.get_assignment_deps(target_depth)));
+    deps.push(dep);
   }
 }
 

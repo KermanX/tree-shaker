@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   build_effect,
+  consumable::box_consumable,
   entity::{Entity, LiteralEntity, UnknownEntity},
   transformer::Transformer,
 };
@@ -21,7 +22,7 @@ impl<'a> Analyzer<'a> {
         Expression::StaticMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
           let property = LiteralEntity::new_string(&node.property.name);
-          object.delete_property(self, dep, &property)
+          object.delete_property(self, box_consumable(dep), &property)
         }
         Expression::PrivateFieldExpression(node) => {
           self.add_diagnostic("SyntaxError: private fields can't be deleted");
@@ -31,7 +32,7 @@ impl<'a> Analyzer<'a> {
         Expression::ComputedMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
           let property = self.exec_expression(&node.expression);
-          object.delete_property(self, dep, &property)
+          object.delete_property(self, box_consumable(dep), &property)
         }
         Expression::Identifier(_node) => {
           self.add_diagnostic("SyntaxError: Delete of an unqualified identifier in strict mode");
@@ -58,16 +59,16 @@ impl<'a> Analyzer<'a> {
           }
         } else {
           // Maybe number or bigint
-          UnknownEntity::new_computed_unknown(argument)
+          UnknownEntity::new_computed_unknown(argument.to_consumable())
         }
       }
       UnaryOperator::UnaryPlus => argument.get_to_numeric(),
       UnaryOperator::LogicalNot => match argument.test_truthy() {
         Some(true) => LiteralEntity::new_boolean(false),
         Some(false) => LiteralEntity::new_boolean(true),
-        None => UnknownEntity::new_computed_boolean(argument),
+        None => UnknownEntity::new_computed_boolean(argument.to_consumable()),
       },
-      UnaryOperator::BitwiseNot => UnknownEntity::new_computed_unknown(argument),
+      UnaryOperator::BitwiseNot => UnknownEntity::new_computed_unknown(argument.to_consumable()),
       UnaryOperator::Typeof => argument.get_typeof(),
       UnaryOperator::Void => LiteralEntity::new_undefined(),
       UnaryOperator::Delete => unreachable!(),

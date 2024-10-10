@@ -9,7 +9,8 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  entity::{Consumable, Entity, FunctionEntitySource, LabelEntity, UnknownEntity},
+  consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
+  entity::{Entity, FunctionEntitySource, LabelEntity, UnknownEntity},
   logger::DebuggerEvent,
 };
 use call_scope::CallScope;
@@ -96,21 +97,19 @@ impl<'a> Analyzer<'a> {
   pub fn push_call_scope(
     &mut self,
     source: FunctionEntitySource<'a>,
-    call_dep: impl Into<Consumable<'a>>,
+    call_dep: Consumable<'a>,
     variable_scope_stack: Rc<Vec<ScopeId>>,
     this: Entity<'a>,
     args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
     is_generator: bool,
   ) {
-    let call_dep = call_dep.into();
-
     // FIXME: no clone
     let variable_scope_stack = variable_scope_stack.as_ref().clone();
     let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth =
-      self.push_cf_scope_with_deps(CfScopeKind::Function, None, vec![call_dep], Some(false));
+      self.push_cf_scope_with_dep(CfScopeKind::Function, None, vec![call_dep], Some(false));
 
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::PushCallScope(
@@ -172,14 +171,14 @@ impl<'a> Analyzer<'a> {
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
     exited: Option<bool>,
   ) -> usize {
-    self.push_cf_scope_with_deps(kind, labels, vec![], exited)
+    self.push_cf_scope_with_dep(kind, labels, vec![], exited)
   }
 
-  pub fn push_cf_scope_with_deps(
+  pub fn push_cf_scope_with_dep(
     &mut self,
     kind: CfScopeKind,
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
-    deps: Vec<Consumable<'a>>,
+    deps: ConsumableVec<'a>,
     exited: Option<bool>,
   ) -> usize {
     self.scope_context.cf.push(CfScope::new(kind, labels, deps, exited));
@@ -199,8 +198,8 @@ impl<'a> Analyzer<'a> {
     self.push_cf_scope(CfScopeKind::Normal, None, exited);
   }
 
-  pub fn push_cf_scope_for_deps(&mut self, deps: Vec<Consumable<'a>>) {
-    self.push_cf_scope_with_deps(CfScopeKind::Normal, None, deps, Some(false));
+  pub fn push_cf_scope_for_dep(&mut self, dep: impl ConsumableTrait<'a> + 'a) {
+    self.push_cf_scope_with_dep(CfScopeKind::Normal, None, vec![box_consumable(dep)], Some(false));
   }
 
   pub fn pop_cf_scope(&mut self) -> ScopeId {
@@ -211,9 +210,9 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf.pop()
   }
 
-  pub fn pop_cf_scope_and_get(&mut self) -> &CfScope<'a> {
+  pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {
     let id = self.pop_cf_scope();
-    self.scope_context.cf.get(id)
+    self.scope_context.cf.get_mut(id)
   }
 
   pub fn push_try_scope(&mut self) {

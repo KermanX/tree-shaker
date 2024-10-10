@@ -1,5 +1,6 @@
 use crate::{
   analyzer::Analyzer,
+  consumable::box_consumable,
   entity::{Entity, EntityDepNode, EntityTrait},
 };
 use oxc::ast::ast::PropertyKind;
@@ -11,7 +12,7 @@ impl<'a> Analyzer<'a> {
     object: Entity<'a>,
     enumerated: Vec<Entity<'a>>,
   ) -> Entity<'a> {
-    let properties = object.enumerate_properties(self, dep.into());
+    let properties = object.enumerate_properties(self, box_consumable(dep.into()));
 
     let rest = self.new_empty_object();
     for (definite, key, value) in properties {
@@ -19,7 +20,7 @@ impl<'a> Analyzer<'a> {
     }
 
     for key in enumerated {
-      rest.delete_property(self, ().into(), &key);
+      rest.delete_property(self, box_consumable(()), &key);
     }
 
     Entity::new(rest)

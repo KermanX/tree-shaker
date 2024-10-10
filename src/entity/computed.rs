@@ -1,5 +1,9 @@
-use super::{Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult};
-use crate::{analyzer::Analyzer, use_consumed_flag};
+use super::{Entity, EntityTrait, LiteralEntity, TypeofResult};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable, ConsumableTrait},
+  use_consumed_flag,
+};
 use rustc_hash::FxHashSet;
 use std::cell::Cell;
 
@@ -25,7 +29,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     dep: Consumable<'a>,
     key: &Entity<'a>,
   ) -> Entity<'a> {
-    self.val.get_property(analyzer, (self.dep.clone(), dep), key)
+    self.val.get_property(analyzer, box_consumable((self.dep.cloned(), dep)), key)
   }
 
   fn set_property(
@@ -36,7 +40,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     key: &Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.val.set_property(analyzer, (self.dep.clone(), dep), key, value);
+    self.val.set_property(analyzer, box_consumable((self.dep.cloned(), dep)), key, value);
   }
 
   fn enumerate_properties(
@@ -45,11 +49,11 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-    self.val.enumerate_properties(analyzer, (self.dep.clone(), dep))
+    self.val.enumerate_properties(analyzer, box_consumable((self.dep.cloned(), dep)))
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
-    self.val.delete_property(analyzer, (self.dep.clone(), dep), key)
+    self.val.delete_property(analyzer, box_consumable((self.dep.cloned(), dep)), key)
   }
 
   fn call(
@@ -60,7 +64,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     this: &Entity<'a>,
     args: &Entity<'a>,
   ) -> Entity<'a> {
-    self.val.call(analyzer, (self.dep.clone(), dep), this, args)
+    self.val.call(analyzer, box_consumable((self.dep.cloned(), dep)), this, args)
   }
 
   fn r#await(
@@ -69,7 +73,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
-    self.val.r#await(analyzer, (self.dep.clone(), dep))
+    self.val.r#await(analyzer, box_consumable((self.dep.cloned(), dep)))
   }
 
   fn iterate(
@@ -78,7 +82,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    self.val.iterate(analyzer, (self.dep.clone(), dep))
+    self.val.iterate(analyzer, box_consumable((self.dep.cloned(), dep)))
   }
 
   fn get_typeof(&self) -> Entity<'a> {
@@ -119,11 +123,11 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
 }
 
 impl<'a> ComputedEntity<'a> {
-  pub fn new(val: Entity<'a>, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
-    Entity::new(Self { val, dep: dep.into(), consumed: Cell::new(false) })
+  pub fn new(val: Entity<'a>, dep: Consumable<'a>) -> Entity<'a> {
+    Entity::new(Self { val, dep, consumed: Cell::new(false) })
   }
 
   pub fn forward(&self, val: Entity<'a>) -> Entity<'a> {
-    ComputedEntity::new(val, self.dep.clone())
+    ComputedEntity::new(val, self.dep.cloned())
   }
 }

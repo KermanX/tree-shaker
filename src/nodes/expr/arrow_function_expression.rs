@@ -1,7 +1,8 @@
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{Consumable, Entity, FunctionEntity, FunctionEntitySource},
+  consumable::Consumable,
+  entity::{Entity, FunctionEntity, FunctionEntitySource},
   transformer::Transformer,
 };
 use oxc::{

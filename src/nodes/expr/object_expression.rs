@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   build_effect,
+  consumable::box_consumable,
   entity::{Entity, EntityTrait, ForwardedEntity},
   transformer::Transformer,
 };
@@ -26,7 +27,7 @@ impl<'a> Analyzer<'a> {
         ObjectPropertyKind::ObjectProperty(node) => {
           let key = self.exec_property_key(&node.key);
           let value = self.exec_expression(&node.value);
-          let value = ForwardedEntity::new(value, AstKind::ObjectProperty(node));
+          let value = ForwardedEntity::new(value, box_consumable(AstKind::ObjectProperty(node)));
 
           match &node.key {
             PropertyKey::StaticIdentifier(node) if node.name == "__proto__" => {
@@ -41,7 +42,7 @@ impl<'a> Analyzer<'a> {
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(self, AstKind::SpreadElement(node), argument);
+          object.init_spread(self, box_consumable(AstKind::SpreadElement(node)), argument);
         }
       }
     }

@@ -10,7 +10,10 @@ mod regexp;
 mod string;
 mod symbol;
 
-use crate::entity::{Consumable, Entity, LiteralEntity, UnionEntity, UnknownEntity};
+use crate::{
+  consumable::{box_consumable, Consumable},
+  entity::{Entity, LiteralEntity, UnionEntity, UnknownEntity},
+};
 use rustc_hash::FxHashMap;
 
 pub struct Prototype<'a>(FxHashMap<&'static str, Entity<'a>>);
@@ -29,7 +32,7 @@ impl<'a> Prototype<'a> {
   }
 
   pub fn get_property(&self, rc: &Entity<'a>, key: &Entity<'a>, dep: Consumable<'a>) -> Entity<'a> {
-    let key = key.get_to_property_key();
+    let dep = box_consumable((dep, rc.clone(), key.clone()));
     'known: {
       if let Some(key_literals) = key.get_to_literals() {
         let mut values = vec![];
@@ -46,10 +49,10 @@ impl<'a> Prototype<'a> {
             _ => unreachable!(),
           }
         }
-        return UnionEntity::new_computed(values, (dep, rc.clone(), key.clone()));
+        return UnionEntity::new_computed(values, dep);
       }
     }
-    UnknownEntity::new_computed_unknown((dep, rc.clone(), key.clone()))
+    UnknownEntity::new_computed_unknown(dep)
   }
 }
 

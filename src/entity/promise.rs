@@ -1,7 +1,5 @@
-use super::{
-  consumed_object, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult, UnknownEntity,
-};
-use crate::analyzer::Analyzer;
+use super::{consumed_object, Entity, EntityTrait, LiteralEntity, TypeofResult, UnknownEntity};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 
 #[derive(Debug, Clone)]
 pub struct PromiseEntity<'a> {
@@ -97,11 +95,11 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   }
 
   fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_computed_string(self.value.clone())
+    UnknownEntity::new_computed_string(self.value.to_consumable())
   }
 
   fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_computed_unknown(vec![rc.clone()])
+    UnknownEntity::new_computed_unknown(rc.to_consumable())
   }
 
   fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
@@ -109,7 +107,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   }
 
   fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_computed_string(self.value.clone())
+    UnknownEntity::new_computed_string(self.value.to_consumable())
   }
 
   fn test_typeof(&self) -> TypeofResult {

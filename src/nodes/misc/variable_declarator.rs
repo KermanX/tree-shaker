@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
+  consumable::box_consumable,
   entity::{Entity, ForwardedEntity},
   transformer::Transformer,
 };
@@ -35,7 +36,7 @@ impl<'a> Analyzer<'a> {
       }
       None => node.init.as_ref().map(|init| {
         let val = self.exec_expression(init);
-        ForwardedEntity::new(val, AstKind::VariableDeclarator(node))
+        ForwardedEntity::new(val, box_consumable(AstKind::VariableDeclarator(node)))
       }),
     };
 

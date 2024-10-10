@@ -1,5 +1,8 @@
-use super::{ComputedEntity, Consumable, LiteralEntity, TypeofResult, UnionEntity};
-use crate::analyzer::Analyzer;
+use super::{ComputedEntity, LiteralEntity, TypeofResult, UnionEntity};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable},
+};
 use rustc_hash::FxHashSet;
 use std::{fmt::Debug, rc::Rc};
 
@@ -206,7 +209,7 @@ impl<'a> Entity<'a> {
   pub fn destruct_as_array(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<Consumable<'a>>,
+    dep: Consumable<'a>,
     length: usize,
   ) -> (Vec<Entity<'a>>, Entity<'a>) {
     let (elements, rest) = self.iterate(analyzer, dep);
@@ -218,7 +221,7 @@ impl<'a> Entity<'a> {
       if let Some(rest) = rest.clone() {
         result.push(rest.clone());
       } else {
-        result.push(ComputedEntity::new(LiteralEntity::new_undefined(), self.clone()));
+        result.push(ComputedEntity::new(LiteralEntity::new_undefined(), self.to_consumable()));
       }
     }
     let rest_arr = analyzer.new_empty_array();
@@ -234,7 +237,7 @@ impl<'a> Entity<'a> {
       rest_arr_is_empty = false;
     }
     if rest_arr_is_empty {
-      rest_arr.deps.borrow_mut().push(self.clone().into());
+      rest_arr.deps.borrow_mut().push(self.to_consumable());
     }
     (result, Entity::new(rest_arr))
   }
@@ -242,7 +245,7 @@ impl<'a> Entity<'a> {
   pub fn iterate_result_union(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl Into<Consumable<'a>>,
+    dep: Consumable<'a>,
   ) -> Option<Entity<'a>> {
     let (elements, rest) = self.iterate(analyzer, dep);
     if let Some(rest) = rest {
@@ -254,6 +257,10 @@ impl<'a> Entity<'a> {
     } else {
       None
     }
+  }
+
+  pub fn to_consumable(&self) -> Consumable<'a> {
+    box_consumable(self.clone())
   }
 }
 

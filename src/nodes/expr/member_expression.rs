@@ -2,6 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect,
+  consumable::box_consumable,
   entity::{Entity, LiteralCollector, LiteralEntity, UnionEntity},
   transformer::Transformer,
 };
@@ -95,7 +96,7 @@ impl<'a> Analyzer<'a> {
     }
 
     if will_write {
-      self.push_cf_scope_for_deps(vec![object.clone().into()]);
+      self.push_cf_scope_for_dep(object.clone());
     }
     let key = self.exec_key(node);
     if will_write {
@@ -103,7 +104,7 @@ impl<'a> Analyzer<'a> {
     }
 
     let key = data.collector.collect(self, key);
-    let value = object.get_property(self, AstKind::MemberExpression(node), &key);
+    let value = object.get_property(self, box_consumable(AstKind::MemberExpression(node)), &key);
     let cache = Some((object, key));
 
     if indeterminate {
@@ -123,7 +124,7 @@ impl<'a> Analyzer<'a> {
     let (object, key) = cache.unwrap_or_else(|| {
       let object = self.exec_expression(node.object());
 
-      self.push_cf_scope_for_deps(vec![object.clone().into()]);
+      self.push_cf_scope_for_dep(object.clone());
       let key = self.exec_key(node);
       self.pop_cf_scope();
 
@@ -133,7 +134,7 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<DataWrite>(AST_TYPE_WRITE, node);
     let key = data.collector.collect(self, key);
 
-    object.set_property(self, AstKind::MemberExpression(node), &key, value);
+    object.set_property(self, box_consumable(AstKind::MemberExpression(node)), &key, value);
   }
 
   fn exec_key(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {

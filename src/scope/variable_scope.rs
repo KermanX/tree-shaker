@@ -1,20 +1,32 @@
-use super::exhaustive::TrackerRunner;
+use super::{cf_scope::CfScope, exhaustive::TrackerRunner};
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{Consumable, Entity, ForwardedEntity, LiteralEntity, UnionEntity, UnknownEntity},
+  consumable::{box_consumable, Consumable, ConsumableTrait},
+  entity::{Entity, ForwardedEntity, LiteralEntity, UnionEntity, UnknownEntity},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::{fmt, mem};
 
-/// It's not good to clone, but it's fine for now
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Variable<'a> {
   pub kind: DeclarationKind,
   pub exhausted: bool,
   pub value: Option<Entity<'a>>,
   pub decl_dep: Consumable<'a>,
+}
+
+/// It's not good to clone, but it's fine for now
+impl Clone for Variable<'_> {
+  fn clone(&self) -> Self {
+    Self {
+      kind: self.kind,
+      exhausted: self.exhausted,
+      value: self.value.clone(),
+      decl_dep: self.decl_dep.cloned(),
+    }
+  }
 }
 
 pub struct VariableScope<'a> {
@@ -64,12 +76,12 @@ impl<'a> Analyzer<'a> {
         let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
         variable.kind = kind;
         // TODO: Sometimes this is not necessary
-        variable.decl_dep = (variable.decl_dep.clone(), decl_dep).into();
+        variable.decl_dep = box_consumable((variable.decl_dep.cloned(), decl_dep));
         if let Some(new_val) = fn_value {
           self.write_on_scope((self.scope_context.variable.current_depth(), id), symbol, &new_val);
         }
       } else {
-        let decl_dep = (old.decl_dep.clone(), decl_dep);
+        let decl_dep = (old.decl_dep.cloned(), decl_dep);
         let name = self.semantic.symbols().get_name(symbol);
         self.thrown_builtin_error(format!("Variable {name:?} already declared"));
         self.consume(decl_dep);
@@ -128,7 +140,7 @@ impl<'a> Analyzer<'a> {
         variable
           .kind
           .is_var()
-          .then(|| ForwardedEntity::new(LiteralEntity::new_undefined(), variable.decl_dep.clone()))
+          .then(|| ForwardedEntity::new(LiteralEntity::new_undefined(), variable.decl_dep.cloned()))
       });
 
       let target_cf_scope =
@@ -137,7 +149,7 @@ impl<'a> Analyzer<'a> {
 
       if value.is_none() {
         // TDZ
-        self.consume(variable.decl_dep.clone());
+        self.consume(variable.decl_dep.cloned());
         self.handle_tdz(target_cf_scope);
       }
 
@@ -162,7 +174,7 @@ impl<'a> Analyzer<'a> {
       } else {
         let target_cf_scope =
           self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
-        let dep = self.get_assignment_deps(depth, variable.decl_dep.clone());
+        let dep = (self.get_assignment_deps(depth), variable.decl_dep.cloned());
 
         if variable.exhausted {
           self.consume(dep);
@@ -206,7 +218,7 @@ impl<'a> Analyzer<'a> {
               } else {
                 new_val
               },
-              dep,
+              box_consumable(dep),
             ));
           };
 
@@ -243,7 +255,7 @@ impl<'a> Analyzer<'a> {
         exhausted: true,
         kind: DeclarationKind::UntrackedVar,
         value: Some(UnknownEntity::new_unknown()),
-        decl_dep: ().into(),
+        decl_dep: box_consumable(()),
       },
     );
     debug_assert!(old.is_none());
@@ -254,7 +266,7 @@ impl<'a> Analyzer<'a> {
   pub fn declare_symbol(
     &mut self,
     symbol: SymbolId,
-    decl_dep: impl Into<Consumable<'a>>,
+    decl_dep: Consumable<'a>,
     exporting: bool,
     kind: DeclarationKind,
     fn_value: Option<Entity<'a>>,
@@ -270,19 +282,19 @@ impl<'a> Analyzer<'a> {
     }
 
     let variable_scope = self.get_variable_scope(kind.is_var());
-    self.declare_on_scope(variable_scope, kind, symbol, decl_dep.into(), fn_value);
+    self.declare_on_scope(variable_scope, kind, symbol, decl_dep, fn_value);
   }
 
   pub fn init_symbol(
     &mut self,
     symbol: SymbolId,
     value: Option<Entity<'a>>,
-    init_dep: impl Into<Consumable<'a>>,
+    init_dep: Consumable<'a>,
   ) {
     let flags = self.semantic.symbols().get_flags(symbol);
     let is_function_scope = flags.is_function_scoped_declaration() && !flags.is_catch_variable();
     let variable_scope = self.get_variable_scope(is_function_scope);
-    self.init_on_scope(variable_scope, symbol, value, init_dep.into());
+    self.init_on_scope(variable_scope, symbol, value, init_dep);
   }
 
   fn get_variable_scope(&self, is_function_scope: bool) -> ScopeId {
@@ -341,16 +353,14 @@ impl<'a> Analyzer<'a> {
   pub fn refer_global(&mut self) {
     self.may_throw();
     for id in self.scope_context.cf.stack.clone() {
-      let scope = self.scope_context.cf.get_mut(id);
-      let deps = mem::take(&mut scope.deps);
-      for dep in deps {
-        self.consume(dep);
-      }
+      let scope: &mut CfScope<'a> = unsafe { mem::transmute(self.scope_context.cf.get_mut(id)) };
+      scope.deps.consume_all(self);
     }
   }
 
   pub fn refer_to_diff_variable_scope(&mut self, another: ScopeId) {
     let target_depth = self.find_first_different_variable_scope(another);
-    self.consume(self.get_assignment_deps(target_depth, ()));
+    let deps = self.get_assignment_deps(target_depth);
+    self.consume(deps);
   }
 }

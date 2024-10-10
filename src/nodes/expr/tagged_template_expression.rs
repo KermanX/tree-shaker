@@ -2,6 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect_from_arr,
+  consumable::box_consumable,
   entity::{
     ArgumentsEntity, Entity, EntityDepNode, ForwardedEntity, LiteralEntity, UnionEntity,
     UnknownEntity,
@@ -31,12 +32,12 @@ impl<'a> Analyzer<'a> {
       for expr in &node.quasi.expressions {
         let value = self.exec_expression(expr);
         let dep: EntityDepNode = (AstType2::ExpressionInTaggedTemplate, expr).into();
-        arguments.push((false, ForwardedEntity::new(value, dep)));
+        arguments.push((false, ForwardedEntity::new(value, box_consumable(dep))));
       }
 
       let value = tag.call(
         self,
-        AstKind::TaggedTemplateExpression(node),
+        box_consumable(AstKind::TaggedTemplateExpression(node)),
         &this,
         &ArgumentsEntity::new(arguments),
       );

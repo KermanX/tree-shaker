@@ -9,7 +9,7 @@ pub fn create_function_prototype<'a>() -> Prototype<'a> {
   prototype.insert(
     "apply",
     ImplementedBuiltinFnEntity::new(|analyzer, dep, this, args| {
-      let mut args = args.destruct_as_array(analyzer, dep.clone(), 2).0;
+      let mut args = args.destruct_as_array(analyzer, dep.cloned(), 2).0;
       let args_arg = {
         let arg = args.pop().unwrap();
         let cf_scope = analyzer.scope_context.cf.current_id();
@@ -29,7 +29,7 @@ pub fn create_function_prototype<'a>() -> Prototype<'a> {
   prototype.insert(
     "call",
     ImplementedBuiltinFnEntity::new(|analyzer, dep, this, args| {
-      let (this_arg, args_arg) = args.destruct_as_array(analyzer, dep.clone(), 1);
+      let (this_arg, args_arg) = args.destruct_as_array(analyzer, dep.cloned(), 1);
       this.call(analyzer, dep, &this_arg[0], &args_arg)
     }),
   );

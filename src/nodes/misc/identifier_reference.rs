@@ -1,6 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
+  consumable::box_consumable,
   entity::{Entity, ForwardedEntity, UnknownEntity},
   transformer::Transformer,
 };
@@ -53,8 +54,7 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
     value: Entity<'a>,
   ) {
-    let dep = AstKind::IdentifierReference(node);
-    let value = ForwardedEntity::new(value, dep);
+    let value = ForwardedEntity::new(value, box_consumable(AstKind::IdentifierReference(node)));
 
     let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
     debug_assert!(reference.is_write());

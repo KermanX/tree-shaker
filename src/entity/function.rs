@@ -1,8 +1,12 @@
 use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityDepNode, EntityTrait, ForwardedEntity,
+  consumed_object, ComputedEntity, Entity, EntityDepNode, EntityTrait, ForwardedEntity,
   LiteralEntity, TypeofResult, UnknownEntity,
 };
-use crate::{analyzer::Analyzer, use_consumed_flag};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable},
+  use_consumed_flag,
+};
 use oxc::{
   ast::{
     ast::{ArrowFunctionExpression, Function},
@@ -188,7 +192,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string();
     }
-    UnknownEntity::new_computed_string(rc.clone())
+    UnknownEntity::new_computed_string(rc.to_consumable())
   }
 
   fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
@@ -247,14 +251,14 @@ impl<'a> FunctionEntity<'a> {
       logger.push_fn_call(self.source.span(), self.source.name());
     }
 
-    let call_dep: Consumable<'a> = (self.source.into_dep_node(), dep).into();
+    let call_dep = box_consumable((self.source.into_dep_node(), dep));
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.source {
       FunctionEntitySource::Function(node) => analyzer.call_function(
         rc.clone(),
         self.source,
         self.is_expression,
-        call_dep.clone(),
+        call_dep.cloned(),
         node,
         variable_scopes,
         this.clone(),
@@ -264,7 +268,7 @@ impl<'a> FunctionEntity<'a> {
       FunctionEntitySource::ArrowFunctionExpression(node) => analyzer
         .call_arrow_function_expression(
           self.source,
-          call_dep.clone(),
+          call_dep.cloned(),
           node,
           variable_scopes,
           args.clone(),
@@ -301,7 +305,7 @@ impl<'a> FunctionEntity<'a> {
       self_cloned.call_impl(
         &UnknownEntity::new_unknown(),
         analyzer,
-        ().into(),
+        box_consumable(()),
         &UnknownEntity::new_unknown(),
         &UnknownEntity::new_unknown(),
         true,

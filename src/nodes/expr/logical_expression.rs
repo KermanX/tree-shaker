@@ -57,7 +57,7 @@ impl<'a> Analyzer<'a> {
       historical_indeterminate,
       current_indeterminate,
     );
-    self.push_cf_scope_for_deps(vec![EntityDepNode::from(AstKind::LogicalExpression(node)).into()]);
+    self.push_cf_scope_for_dep(EntityDepNode::from(AstKind::LogicalExpression(node)));
 
     let value = match (need_left_val, need_right) {
       (false, true) => self.exec_expression(&node.right),

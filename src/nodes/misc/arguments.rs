@@ -1,5 +1,6 @@
 use crate::{
   ast::Arguments,
+  consumable::box_consumable,
   entity::{ArgumentsEntity, Entity, ForwardedEntity},
   transformer::Transformer,
   Analyzer,
@@ -21,7 +22,7 @@ impl<'a> Analyzer<'a> {
         node => (false, self.exec_expression(node.to_expression())),
       };
       let dep = AstKind::Argument(argument);
-      arguments.push((spread, ForwardedEntity::new(val, dep)));
+      arguments.push((spread, ForwardedEntity::new(val, box_consumable(dep))));
     }
     ArgumentsEntity::new(arguments)
   }
