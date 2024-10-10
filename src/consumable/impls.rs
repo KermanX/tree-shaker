@@ -76,7 +76,7 @@ impl<'a> ConsumableTrait<'a> for Entity<'a> {
     self.consume(analyzer)
   }
   fn cloned(&self) -> Consumable<'a> {
-    Box::new(self.clone())
+    Box::new(*self)
   }
 }
 

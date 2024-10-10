@@ -1,13 +1,13 @@
 use super::CfScopeKind;
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable},
+  consumable::box_consumable,
   entity::{Entity, EntityDepNode},
 };
 
 #[derive(Debug, Default)]
 pub struct ConditionalData<'a> {
-  pub determinate_tests: Vec<Consumable<'a>>,
+  pub determinate_tests: Vec<Entity<'a>>,
   pub referred: bool,
 }
 
@@ -27,16 +27,11 @@ impl<'a> Analyzer<'a> {
         self.consume(test);
         vec![]
       } else {
-        let mut deps = vec![];
-        data.determinate_tests.push(test.to_consumable());
-        for val in &data.determinate_tests {
-          deps.push(val.cloned());
-        }
-        deps.push(box_consumable(dep_node));
-        deps
+        data.determinate_tests.push(test);
+        vec![box_consumable((dep_node, data.determinate_tests.clone()))]
       }
     } else {
-      data.determinate_tests.push(test.to_consumable());
+      data.determinate_tests.push(test);
       vec![box_consumable(dep_node)]
     };
     self.push_cf_scope_with_dep(
