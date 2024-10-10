@@ -23,9 +23,9 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Box<T> {
   }
 }
 
-impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Rc<RefCell<T>> {
+impl<'a, T: Default + ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Rc<RefCell<T>> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    self.borrow().consume(analyzer)
+    self.take().consume(analyzer)
   }
   fn cloned(&self) -> Consumable<'a> {
     Box::new(self.clone())
