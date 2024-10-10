@@ -4,10 +4,11 @@ use crate::{
   consumable::box_consumable,
   entity::{Entity, EntityDepNode},
 };
+use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug, Default)]
 pub struct ConditionalData<'a> {
-  pub determinate_tests: Vec<Entity<'a>>,
+  pub determinate_tests: Rc<RefCell<Vec<Entity<'a>>>>,
   pub referred: bool,
 }
 
@@ -27,11 +28,11 @@ impl<'a> Analyzer<'a> {
         self.consume(test);
         vec![]
       } else {
-        data.determinate_tests.push(test);
+        data.determinate_tests.borrow_mut().push(test);
         vec![box_consumable((dep_node, data.determinate_tests.clone()))]
       }
     } else {
-      data.determinate_tests.push(test);
+      data.determinate_tests.borrow_mut().push(test);
       vec![box_consumable(dep_node)]
     };
     self.push_cf_scope_with_dep(

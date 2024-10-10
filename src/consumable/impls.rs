@@ -1,3 +1,4 @@
+use std::{cell::RefCell, rc::Rc};
 use oxc::ast::AstKind;
 
 use super::{Consumable, ConsumableTrait};
@@ -19,6 +20,15 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Box<T> {
   }
   fn cloned(&self) -> Consumable<'a> {
     Box::new(self.as_ref().cloned())
+  }
+}
+
+impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Rc<RefCell<T>> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    self.borrow().consume(analyzer)
+  }
+  fn cloned(&self) -> Consumable<'a> {
+    Box::new(self.clone())
   }
 }
 
