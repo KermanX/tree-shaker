@@ -4,8 +4,8 @@ use std::mem;
 
 #[derive(Debug, Default)]
 pub struct ConsumableCollector<'a> {
-  current: ConsumableVec<'a>,
-  node: Option<ConsumableNode<'a>>,
+  pub current: ConsumableVec<'a>,
+  pub node: Option<ConsumableNode<'a>>,
 }
 
 impl<'a> ConsumableCollector<'a> {

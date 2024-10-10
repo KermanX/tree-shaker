@@ -353,8 +353,8 @@ impl<'a> Analyzer<'a> {
   pub fn refer_global(&mut self) {
     self.may_throw();
     for id in self.scope_context.cf.stack.clone() {
-      let scope: &mut CfScope<'a> = unsafe { mem::transmute(self.scope_context.cf.get_mut(id)) };
-      scope.deps.consume_all(self);
+      let mut deps = mem::take(&mut self.scope_context.cf.get_mut(id).deps);
+      deps.consume_all(self);
     }
   }
 
