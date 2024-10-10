@@ -1,0 +1,17 @@
+---
+source: src/tests/mod.rs
+assertion_line: 32
+expression: tree_shake(input)
+input_file: src/tests/fixtures/this.js
+---
+const obj1 = { getThis() {
+	return this;
+} };
+test1(obj1.getThis());
+test1(obj1.getThis());
+test1((0, obj1.getThis)());
+test1(obj1.getThis());
+test2(1);
+test2(1);
+test2(2);
+test2(1);

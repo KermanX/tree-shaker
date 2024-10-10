@@ -1,8 +1,0 @@
----
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/returned_closure.js
----
-test(5);
-test(15);
-test(22);

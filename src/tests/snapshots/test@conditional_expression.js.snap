@@ -1,0 +1,21 @@
+---
+source: src/tests/mod.rs
+assertion_line: 32
+expression: tree_shake(input)
+input_file: src/tests/fixtures/conditional_expression.js
+---
+export function main(a, b) {
+	t1 = b;
+	t1 = a;
+	t2 = e;
+	t2 = a;
+	t3 = b;
+	t3 = e;
+	t4 = (e, b);
+	e2;
+	e3;
+	e5, e6;
+	e7;
+	a && e9;
+	a || e10;
+}

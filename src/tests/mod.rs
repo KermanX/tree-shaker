@@ -26,6 +26,10 @@ fn tree_shake(input: String) -> String {
 fn test() {
   glob!("fixtures/**/*.js", |path| {
     let input = fs::read_to_string(path).unwrap();
-    assert_snapshot!(tree_shake(input));
+    let mut settings = insta::Settings::clone_current();
+    settings.set_prepend_module_to_snapshot(false);
+    settings.bind(|| {
+      assert_snapshot!(tree_shake(input));
+    })
   });
 }
