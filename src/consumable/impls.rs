@@ -1,5 +1,5 @@
-use std::{cell::RefCell, rc::Rc};
 use oxc::ast::AstKind;
+use std::{cell::RefCell, rc::Rc};
 
 use super::{Consumable, ConsumableTrait};
 use crate::{
