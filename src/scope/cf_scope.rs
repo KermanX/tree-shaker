@@ -39,7 +39,7 @@ pub struct CfScope<'a> {
   pub kind: CfScopeKind,
   pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
   pub deps: ConsumableCollector<'a>,
-  pub referred_state: ReferredState,
+  referred_state: ReferredState,
   pub exited: Option<bool>,
   /// Exits that have been stopped by this scope's indeterminate state.
   /// Only available when `kind` is `If`.
@@ -80,6 +80,7 @@ impl<'a> CfScope<'a> {
       self.exited = exited;
       if let Some(dep) = dep() {
         self.deps.push(dep);
+        self.referred_state = ReferredState::ReferredDirty;
       }
 
       if let Some(logger) = logger {
@@ -209,7 +210,6 @@ impl<'a> Analyzer<'a> {
       } else {
         cf_scope.update_exited(id, &self.logger, None, dep);
       }
-      // deps.push(this_dep);
       acc_dep = if let Some(acc_dep) = acc_dep {
         Some(ConsumableNode::new_box((this_dep, acc_dep)))
       } else {
@@ -288,6 +288,8 @@ impl<'a> Analyzer<'a> {
       match scope.referred_state {
         ReferredState::Never => {
           scope.referred_state = ReferredState::ReferredClean;
+          let mut deps = mem::take(&mut scope.deps);
+          deps.consume_all(self);
         }
         ReferredState::ReferredClean => break,
         ReferredState::ReferredDirty => {
