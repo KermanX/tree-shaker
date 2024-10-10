@@ -19,7 +19,11 @@ impl<'a> TryScope<'a> {
 
   pub fn thrown_val(self) -> Option<Entity<'a>> {
     // Always unknown here
-    self.may_throw.then(|| UnknownEntity::new_computed_unknown(box_consumable(self.thrown_values)))
+    self.may_throw.then(|| {
+      UnknownEntity::new_computed_unknown(box_consumable(ConsumableNode::new_box(
+        self.thrown_values,
+      )))
+    })
   }
 }
 
