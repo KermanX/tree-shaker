@@ -49,8 +49,4 @@ impl<'a> ConsumableCollector<'a> {
       node.consume(analyzer);
     }
   }
-
-  pub fn is_empty(&self) -> bool {
-    self.current.is_empty() && self.node.is_none()
-  }
 }

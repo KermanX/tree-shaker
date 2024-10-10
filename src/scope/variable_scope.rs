@@ -351,18 +351,6 @@ impl<'a> Analyzer<'a> {
     self.refer_global();
   }
 
-  pub fn refer_global(&mut self) {
-    self.may_throw();
-    for depth in (0..self.scope_context.cf.stack.len()).rev() {
-      let scope = self.scope_context.cf.get_mut_from_depth(depth);
-      if scope.deps.is_empty() {
-        break;
-      }
-      let mut deps = mem::take(&mut scope.deps);
-      deps.consume_all(self);
-    }
-  }
-
   pub fn refer_to_diff_variable_scope(&mut self, another: ScopeId) {
     let target_depth = self.find_first_different_variable_scope(another);
     let dep = self.get_assignment_dep(target_depth);
