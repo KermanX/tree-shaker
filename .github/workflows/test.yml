@@ -56,8 +56,6 @@ jobs:
         pnpm i
         pnpm test
       working-directory: ./test
-      env:
-        RUST_BACKTRACE: 1
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.2.1-node20
       with:
@@ -123,8 +121,6 @@ jobs:
         pnpm i
         pnpm test
       working-directory: ./test
-      env:
-        RUST_BACKTRACE: 1
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.2.1-node20
       with:
