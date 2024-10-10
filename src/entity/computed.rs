@@ -8,13 +8,13 @@ use rustc_hash::FxHashSet;
 use std::cell::Cell;
 
 #[derive(Debug)]
-pub struct ComputedEntity<'a> {
+pub struct ComputedEntity<'a, T: ConsumableTrait<'a> + 'a> {
   val: Entity<'a>,
-  dep: Consumable<'a>,
+  dep: T,
   consumed: Cell<bool>,
 }
 
-impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
+impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
@@ -122,8 +122,8 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
   }
 }
 
-impl<'a> ComputedEntity<'a> {
-  pub fn new(val: Entity<'a>, dep: Consumable<'a>) -> Entity<'a> {
+impl<'a, T: ConsumableTrait<'a> + 'a> ComputedEntity<'a, T> {
+  pub fn new(val: Entity<'a>, dep: T) -> Entity<'a> {
     Entity::new(Self { val, dep, consumed: Cell::new(false) })
   }
 

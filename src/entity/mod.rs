@@ -37,5 +37,5 @@ pub use typeof_result::TypeofResult;
 pub use union::UnionEntity;
 pub use unknown::UnknownEntity;
 
-pub type EntryEntity<'a> = ComputedEntity<'a>;
-pub type ForwardedEntity<'a> = ComputedEntity<'a>;
+pub type EntryEntity<'a, T> = ComputedEntity<'a, T>;
+pub type ForwardedEntity<'a, T> = ComputedEntity<'a, T>;
