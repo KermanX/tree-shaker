@@ -32,6 +32,7 @@ impl<'a> Prototype<'a> {
   }
 
   pub fn get_property(&self, rc: &Entity<'a>, key: &Entity<'a>, dep: Consumable<'a>) -> Entity<'a> {
+    let key = key.get_to_property_key();
     let dep = box_consumable((dep, rc.clone(), key.clone()));
     'known: {
       if let Some(key_literals) = key.get_to_literals() {
