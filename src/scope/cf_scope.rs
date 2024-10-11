@@ -181,6 +181,10 @@ impl<'a> Analyzer<'a> {
     self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), true, None);
   }
 
+  pub fn exit_to_not_must(&mut self, target_depth: usize) {
+    self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), false, None);
+  }
+
   pub fn exit_to_impl(
     &mut self,
     target_depth: usize,

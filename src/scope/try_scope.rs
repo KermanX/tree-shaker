@@ -62,6 +62,9 @@ impl<'a> Analyzer<'a> {
     } else {
       let thrown_val = self.factory.new_computed_unknown(ConsumableNode::new_box(values));
       self.explicit_throw_impl(thrown_val);
+
+      let try_scope = self.try_scope();
+      self.exit_to_not_must(try_scope.cf_scope_depth);
     }
   }
 
