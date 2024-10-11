@@ -1,7 +1,8 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  entity::{Entity, EntityDepNode, LiteralEntity},
+  consumable::box_consumable,
+  entity::{Entity, EntityDepNode},
   transformer::Transformer,
 };
 use oxc::{
@@ -23,12 +24,12 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
-    let dep = EntityDepNode::from((AstType2::AssignmentTargetProperty, node));
+    let dep = box_consumable(EntityDepNode::from((AstType2::AssignmentTargetProperty, node)));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
-        let key = LiteralEntity::new_string(node.binding.name.as_str());
+        let key = self.factory.new_string(node.binding.name.as_str());
 
-        let value = value.get_property(self, dep, &key);
+        let value = value.get_property(self, dep, key);
 
         let (need_init, value) = if let Some(init) = &node.init {
           self.exec_with_default(init, value)
@@ -45,11 +46,11 @@ impl<'a> Analyzer<'a> {
         key
       }
       AssignmentTargetProperty::AssignmentTargetPropertyProperty(node) => {
-        self.push_cf_scope_for_deps(vec![value.clone().into()]);
+        self.push_cf_scope_for_dep(value.clone());
         let key = self.exec_property_key(&node.name);
         self.pop_cf_scope();
 
-        let value = value.get_property(self, dep, &key);
+        let value = value.get_property(self, dep, key);
         self.exec_assignment_target_maybe_default(&node.binding, value);
         key
       }

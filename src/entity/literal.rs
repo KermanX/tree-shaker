@@ -1,7 +1,5 @@
-use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, TypeofResult, UnknownEntity,
-};
-use crate::{analyzer::Analyzer, builtins::Prototype, utils::F64WithEq};
+use super::{consumed_object, Entity, EntityFactory, EntityTrait, TypeofResult};
+use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable, utils::F64WithEq};
 use oxc::{
   ast::{
     ast::{BigintBase, Expression, NumberBase, UnaryOperator},
@@ -31,26 +29,26 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn get_property(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    key: &Entity<'a>,
+    key: Entity<'a>,
   ) -> Entity<'a> {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       analyzer.thrown_builtin_error("Cannot get property of null or undefined");
       consumed_object::get_property(rc, analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
-      prototype.get_property(rc, key, dep)
+      prototype.get_property(analyzer, rc, key, dep)
     }
   }
 
   fn set_property(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    key: &Entity<'a>,
+    key: Entity<'a>,
     value: Entity<'a>,
   ) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
@@ -63,7 +61,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn enumerate_properties(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
@@ -74,13 +72,16 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
           .map(|(i, c)| {
             (
               true,
-              LiteralEntity::new_string(analyzer.allocator.alloc(i.to_string())),
-              LiteralEntity::new_string(analyzer.allocator.alloc(c.to_string())),
+              analyzer.factory.new_string(analyzer.allocator.alloc(i.to_string())),
+              analyzer.factory.new_string(analyzer.allocator.alloc(c.to_string())),
             )
           })
           .collect()
       } else {
-        UnknownEntity::new_computed_string(rc.clone()).enumerate_properties(analyzer, dep)
+        analyzer
+          .factory
+          .new_computed_unknown_string(rc.to_consumable())
+          .enumerate_properties(analyzer, dep)
       }
     } else {
       // No effect
@@ -88,7 +89,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _key: Entity<'a>) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       analyzer.thrown_builtin_error("Cannot delete property of null or undefined");
       analyzer.consume(dep);
@@ -99,11 +100,11 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn call(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
+    this: Entity<'a>,
+    args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error(format!("Cannot call a non-function object {:?}", self));
     consumed_object::call(analyzer, dep, this, args)
@@ -111,23 +112,27 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn r#await(
     &self,
-    rc: &Entity<'a>,
-    _analyzer: &mut Analyzer<'a>,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
-    ComputedEntity::new(rc.clone(), dep)
+    analyzer.factory.new_computed(rc, dep)
   }
 
   fn iterate(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     match self {
       LiteralEntity::String(value) => (
         vec![],
-        if value.is_empty() { None } else { Some(UnknownEntity::new_computed_string(rc.clone())) },
+        if value.is_empty() {
+          None
+        } else {
+          Some(analyzer.factory.new_computed_unknown_string(rc.to_consumable()))
+        },
       ),
       _ => {
         self.consume(analyzer);
@@ -137,69 +142,73 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn get_typeof(&self) -> Entity<'a> {
-    LiteralEntity::new_string(self.test_typeof().to_string().unwrap())
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_string(self.test_typeof().to_string().unwrap())
   }
 
-  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    LiteralEntity::new_string(self.to_string())
+  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_string(self.to_string())
   }
 
-  fn get_to_numeric(&self, rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self {
       LiteralEntity::Number(_, _)
       | LiteralEntity::BigInt(_)
       | LiteralEntity::NaN
-      | LiteralEntity::Infinity(_) => rc.clone(),
+      | LiteralEntity::Infinity(_) => rc,
       LiteralEntity::Boolean(value) => {
         if *value {
-          Self::new_number(1.0, "1")
+          analyzer.factory.new_number(1.0, "1")
         } else {
-          Self::new_number(0.0, "0")
+          analyzer.factory.new_number(0.0, "0")
         }
       }
       LiteralEntity::String(str) => {
         let str = str.trim();
         if str.is_empty() {
-          Self::new_number(0.0, "0")
+          analyzer.factory.new_number(0.0, "0")
         } else {
           if let Ok(value) = str.parse::<f64>() {
-            Self::new_number(value, str)
+            analyzer.factory.new_number(value, str)
           } else {
-            Self::new_nan()
+            analyzer.factory.nan
           }
         }
       }
-      LiteralEntity::Null => Self::new_number(0.0, "0"),
+      LiteralEntity::Null => analyzer.factory.new_number(0.0, "0"),
       LiteralEntity::Symbol(_, _) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
-        UnknownEntity::new_unknown()
+        analyzer.factory.unknown
       }
-      LiteralEntity::Undefined => Self::new_nan(),
+      LiteralEntity::Undefined => analyzer.factory.nan,
     }
   }
 
-  fn get_to_boolean(&self, rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
-      Some(value) => Self::new_boolean(value),
-      None => UnknownEntity::new_computed_boolean(rc.clone()),
+      Some(value) => analyzer.factory.new_boolean(value),
+      None => analyzer.factory.new_computed_unknown_boolean(rc.to_consumable()),
     }
   }
 
-  fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self {
-      LiteralEntity::Symbol(_, _) => Entity::new(*self),
-      _ => self.get_to_string(rc),
+      LiteralEntity::Symbol(_, _) => rc,
+      _ => self.get_to_string(rc, analyzer),
     }
   }
 
-  fn get_to_literals(&self) -> Option<FxHashSet<LiteralEntity<'a>>> {
+  fn get_to_literals(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+  ) -> Option<FxHashSet<LiteralEntity<'a>>> {
     let mut result = FxHashSet::default();
     result.insert(*self);
     Some(result)
   }
 
-  fn get_literal(&self) -> Option<LiteralEntity<'a>> {
+  fn get_literal(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
     Some(*self)
   }
 
@@ -275,42 +284,6 @@ impl<'a> Hash for LiteralEntity<'a> {
 }
 
 impl<'a> LiteralEntity<'a> {
-  pub fn new_string(value: &'a str) -> Entity<'a> {
-    Entity::new(LiteralEntity::String(value))
-  }
-
-  pub fn new_number(value: impl Into<F64WithEq>, str_rep: &'a str) -> Entity<'a> {
-    Entity::new(LiteralEntity::Number(value.into(), str_rep))
-  }
-
-  pub fn new_big_int(value: &'a str) -> Entity<'a> {
-    Entity::new(LiteralEntity::BigInt(value))
-  }
-
-  pub fn new_boolean(value: bool) -> Entity<'a> {
-    Entity::new(LiteralEntity::Boolean(value))
-  }
-
-  pub fn new_infinity(positive: bool) -> Entity<'a> {
-    Entity::new(LiteralEntity::Infinity(positive))
-  }
-
-  pub fn new_nan() -> Entity<'a> {
-    Entity::new(LiteralEntity::NaN)
-  }
-
-  pub fn new_null() -> Entity<'a> {
-    Entity::new(LiteralEntity::Null)
-  }
-
-  pub fn new_undefined() -> Entity<'a> {
-    Entity::new(LiteralEntity::Undefined)
-  }
-
-  pub fn new_symbol(id: SymbolId, str_rep: &'a str) -> Entity<'a> {
-    Entity::new(LiteralEntity::Symbol(id, str_rep))
-  }
-
   pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Expression<'a> {
     match self {
       LiteralEntity::String(value) => ast_builder.expression_string_literal(span, *value),
@@ -426,7 +399,7 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
-  fn get_prototype<'b>(&self, analyzer: &'b mut Analyzer<'a>) -> &'b Prototype<'a> {
+  fn get_prototype<'b>(&self, analyzer: &mut Analyzer<'a>) -> &'a Prototype<'a> {
     match self {
       LiteralEntity::String(_) => &analyzer.builtins.prototypes.string,
       LiteralEntity::Number(_, _) => &analyzer.builtins.prototypes.number,
@@ -437,5 +410,31 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::NaN => &analyzer.builtins.prototypes.number,
       LiteralEntity::Null | LiteralEntity::Undefined => unreachable!(),
     }
+  }
+}
+
+impl<'a> EntityFactory<'a> {
+  pub fn new_string(&self, value: &'a str) -> Entity<'a> {
+    self.new_entity(LiteralEntity::String(value))
+  }
+
+  pub fn new_number(&self, value: impl Into<F64WithEq>, str_rep: &'a str) -> Entity<'a> {
+    self.new_entity(LiteralEntity::Number(value.into(), str_rep))
+  }
+
+  pub fn new_big_int(&self, value: &'a str) -> Entity<'a> {
+    self.new_entity(LiteralEntity::BigInt(value))
+  }
+
+  pub fn new_boolean(&self, value: bool) -> Entity<'a> {
+    self.new_entity(LiteralEntity::Boolean(value))
+  }
+
+  pub fn new_infinity(&self, positive: bool) -> Entity<'a> {
+    self.new_entity(LiteralEntity::Infinity(positive))
+  }
+
+  pub fn new_symbol(&self, id: SymbolId, str_rep: &'a str) -> Entity<'a> {
+    self.new_entity(LiteralEntity::Symbol(id, str_rep))
   }
 }

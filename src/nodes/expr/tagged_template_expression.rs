@@ -2,10 +2,8 @@ use crate::{
   analyzer::Analyzer,
   ast::AstType2,
   build_effect_from_arr,
-  entity::{
-    ArgumentsEntity, Entity, EntityDepNode, ForwardedEntity, LiteralEntity, UnionEntity,
-    UnknownEntity,
-  },
+  consumable::box_consumable,
+  entity::{Entity, EntityDepNode},
   transformer::Transformer,
 };
 use oxc::{
@@ -26,29 +24,29 @@ impl<'a> Analyzer<'a> {
         self.push_cf_scope_normal(None);
       }
 
-      let mut arguments = vec![(false, UnknownEntity::new_unknown())];
+      let mut arguments = vec![(false, self.factory.unknown)];
 
       for expr in &node.quasi.expressions {
         let value = self.exec_expression(expr);
         let dep: EntityDepNode = (AstType2::ExpressionInTaggedTemplate, expr).into();
-        arguments.push((false, ForwardedEntity::new(value, dep)));
+        arguments.push((false, self.factory.new_computed(value, box_consumable(dep))));
       }
 
       let value = tag.call(
         self,
-        AstKind::TaggedTemplateExpression(node),
-        &this,
-        &ArgumentsEntity::new(arguments),
+        box_consumable(AstKind::TaggedTemplateExpression(node)),
+        this,
+        self.factory.new_arguments(arguments),
       );
 
       if indeterminate {
         self.pop_cf_scope();
-        UnionEntity::new(vec![value, LiteralEntity::new_undefined()])
+        self.factory.new_union(vec![value, self.factory.undefined])
       } else {
         value
       }
     } else {
-      LiteralEntity::new_undefined()
+      self.factory.undefined
     }
   }
 }

@@ -1,7 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::DeclarationKind,
-  entity::{Entity, ForwardedEntity},
+  analyzer::Analyzer, ast::DeclarationKind, consumable::box_consumable, entity::Entity,
   transformer::Transformer,
 };
 use oxc::{
@@ -35,7 +33,7 @@ impl<'a> Analyzer<'a> {
       }
       None => node.init.as_ref().map(|init| {
         let val = self.exec_expression(init);
-        ForwardedEntity::new(val, AstKind::VariableDeclarator(node))
+        self.factory.new_computed(val, box_consumable(AstKind::VariableDeclarator(node)))
       }),
     };
 

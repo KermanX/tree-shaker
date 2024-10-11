@@ -1,8 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{Entity, UnknownEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{Expression, MetaProperty};
 
 impl<'a> Analyzer<'a> {
@@ -13,7 +9,7 @@ impl<'a> Analyzer<'a> {
     if meta == "import" && property == "meta" {
       self.builtins.get_import_meta()
     } else {
-      UnknownEntity::new_unknown()
+      self.factory.unknown
     }
   }
 }

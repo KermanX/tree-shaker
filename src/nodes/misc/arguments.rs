@@ -1,8 +1,5 @@
 use crate::{
-  ast::Arguments,
-  entity::{ArgumentsEntity, Entity, ForwardedEntity},
-  transformer::Transformer,
-  Analyzer,
+  ast::Arguments, consumable::box_consumable, entity::Entity, transformer::Transformer, Analyzer,
 };
 use oxc::{
   ast::{
@@ -21,9 +18,9 @@ impl<'a> Analyzer<'a> {
         node => (false, self.exec_expression(node.to_expression())),
       };
       let dep = AstKind::Argument(argument);
-      arguments.push((spread, ForwardedEntity::new(val, dep)));
+      arguments.push((spread, self.factory.new_computed(val, box_consumable(dep))));
     }
-    ArgumentsEntity::new(arguments)
+    self.factory.new_arguments(arguments)
   }
 }
 

@@ -1,4 +1,7 @@
-use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::DeclarationKind, consumable::box_consumable, entity::Entity,
+  transformer::Transformer,
+};
 use oxc::ast::{ast::BindingIdentifier, AstKind};
 
 impl<'a> Analyzer<'a> {
@@ -9,7 +12,7 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
   ) {
     let symbol = node.symbol_id.get().unwrap();
-    let dep = AstKind::BindingIdentifier(node);
+    let dep = box_consumable(AstKind::BindingIdentifier(node));
     self.declare_symbol(symbol, dep, exporting, kind, None);
   }
 
@@ -19,7 +22,7 @@ impl<'a> Analyzer<'a> {
     init: Option<Entity<'a>>,
   ) {
     let symbol = node.symbol_id.get().unwrap();
-    let dep = AstKind::BindingIdentifier(node);
+    let dep = box_consumable(AstKind::BindingIdentifier(node));
     self.init_symbol(symbol, init, dep);
   }
 }

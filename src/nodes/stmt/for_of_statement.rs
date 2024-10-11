@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, entity::UnknownEntity, scope::CfScopeKind,
+  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::{
@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
     let right = if node.r#await {
       right.consume(self);
       self.refer_dep(dep);
-      UnknownEntity::new_unknown()
+      self.factory.unknown
     } else {
       right
     };
@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
     self.push_variable_scope();
     self.declare_for_statement_left(&node.left);
 
-    let iterated_0 = right.iterate_result_union(self, dep);
+    let iterated_0 = right.iterate_result_union(self, box_consumable(dep));
     if iterated_0.is_none() {
       self.pop_variable_scope();
       return;
@@ -46,7 +46,7 @@ impl<'a> Analyzer<'a> {
 
     self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
     self.exec_loop(move |analyzer| {
-      if let Some(iterated) = right.iterate_result_union(analyzer, dep) {
+      if let Some(iterated) = right.iterate_result_union(analyzer, box_consumable(dep)) {
         analyzer.push_variable_scope();
         analyzer.declare_for_statement_left(&node.left);
         analyzer.init_for_statement_left(&node.left, iterated);
