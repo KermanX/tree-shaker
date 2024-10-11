@@ -1,3 +1,4 @@
 [profile.profiling]
 inherits = "release"
+strip = false
 debug = true
