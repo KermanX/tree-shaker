@@ -4,7 +4,10 @@ use crate::{
   use_consumed_flag,
 };
 
-use super::{consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult};
+use super::{
+  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, LiteralEntity,
+  TypeofResult,
+};
 use rustc_hash::FxHashSet;
 use std::cell::Cell;
 

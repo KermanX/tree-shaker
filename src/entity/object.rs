@@ -3,7 +3,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
+  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableTrait},
   use_consumed_flag,
 };
 use oxc::{ast::ast::PropertyKind, semantic::ScopeId};
