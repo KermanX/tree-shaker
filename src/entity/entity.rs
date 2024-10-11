@@ -93,7 +93,7 @@ pub trait EntityTrait<'a>: Debug {
 pub struct Entity<'a>(pub &'a (dyn EntityTrait<'a> + 'a));
 
 impl<'a> EntityFactory<'a> {
-  pub fn new_entity(&self, entity: impl EntityTrait<'a> + 'a) -> Entity<'a> {
+  pub fn entity(&self, entity: impl EntityTrait<'a> + 'a) -> Entity<'a> {
     Entity::new_in(entity, self.allocator)
   }
 }
@@ -232,8 +232,7 @@ impl<'a> Entity<'a> {
       if let Some(rest) = rest.clone() {
         result.push(rest.clone());
       } else {
-        result
-          .push(analyzer.factory.new_computed(analyzer.factory.undefined, self.to_consumable()));
+        result.push(analyzer.factory.computed(analyzer.factory.undefined, self.to_consumable()));
       }
     }
     let rest_arr = analyzer.new_empty_array();
@@ -251,7 +250,7 @@ impl<'a> Entity<'a> {
     if rest_arr_is_empty {
       rest_arr.deps.borrow_mut().push(self.to_consumable());
     }
-    (result, analyzer.factory.new_entity(rest_arr))
+    (result, analyzer.factory.entity(rest_arr))
   }
 
   pub fn iterate_result_union(
@@ -263,9 +262,9 @@ impl<'a> Entity<'a> {
     if let Some(rest) = rest {
       let mut result = elements;
       result.push(rest);
-      Some(analyzer.factory.new_union(result))
+      Some(analyzer.factory.union(result))
     } else if !elements.is_empty() {
-      Some(analyzer.factory.new_union(elements))
+      Some(analyzer.factory.union(elements))
     } else {
       None
     }

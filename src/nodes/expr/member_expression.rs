@@ -109,7 +109,7 @@ impl<'a> Analyzer<'a> {
 
     if indeterminate {
       self.pop_cf_scope();
-      (None, self.factory.new_union(vec![value, self.factory.undefined]), cache)
+      (None, self.factory.union(vec![value, self.factory.undefined]), cache)
     } else {
       (Some(false), value, cache)
     }
@@ -141,10 +141,10 @@ impl<'a> Analyzer<'a> {
     match node {
       MemberExpression::ComputedMemberExpression(node) => self.exec_expression(&node.expression),
       MemberExpression::StaticMemberExpression(node) => {
-        self.factory.new_string(node.property.name.as_str())
+        self.factory.string(node.property.name.as_str())
       }
       MemberExpression::PrivateFieldExpression(node) => {
-        self.factory.new_string(node.field.name.as_str())
+        self.factory.string(node.field.name.as_str())
       }
     }
   }

@@ -64,7 +64,7 @@ impl<'a> Analyzer<'a> {
       (true, false) => left,
       (true, true) => {
         let right = self.exec_expression(&node.right);
-        self.factory.new_union(vec![left, right])
+        self.factory.union(vec![left, right])
       }
       (false, false) => unreachable!(),
     };

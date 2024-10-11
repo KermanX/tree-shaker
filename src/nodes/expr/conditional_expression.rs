@@ -48,13 +48,13 @@ impl<'a> Analyzer<'a> {
         let consequent = self.exec_expression(&node.consequent);
         self.cf_scope_mut().exited = None;
         let alternate = self.exec_expression(&node.alternate);
-        self.factory.new_union(vec![consequent, alternate])
+        self.factory.union(vec![consequent, alternate])
       }
       _ => unreachable!(),
     };
     self.pop_cf_scope();
 
-    self.factory.new_computed(result, test.to_consumable())
+    self.factory.computed(result, test.to_consumable())
   }
 }
 

@@ -17,6 +17,6 @@ impl<'a> Analyzer<'a> {
       rest.delete_property(self, box_consumable(()), key);
     }
 
-    self.factory.new_entity(rest)
+    self.factory.entity(rest)
   }
 }

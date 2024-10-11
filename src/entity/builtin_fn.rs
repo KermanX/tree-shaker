@@ -86,11 +86,11 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_string("function")
+    analyzer.factory.string("function")
   }
 
   fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_computed_unknown_string(rc.to_consumable())
+    analyzer.factory.computed_unknown_string(rc.to_consumable())
   }
 
   fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -98,7 +98,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_boolean(true)
+    analyzer.factory.boolean(true)
   }
 
   fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -139,11 +139,8 @@ impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn new_implemented_builtin_fn(
-    &self,
-    implementation: BuiltinFnImplementation<'a>,
-  ) -> Entity<'a> {
-    self.new_entity(ImplementedBuiltinFnEntity { implementation })
+  pub fn implemented_builtin_fn(&self, implementation: BuiltinFnImplementation<'a>) -> Entity<'a> {
+    self.entity(ImplementedBuiltinFnEntity { implementation })
   }
 }
 

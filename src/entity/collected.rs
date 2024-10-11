@@ -138,7 +138,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
 impl<'a> CollectedEntity<'a> {
   fn forward(&self, val: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_collected(val, self.deps.clone())
+    analyzer.factory.collected(val, self.deps.clone())
   }
 
   fn consume_deps(&self, analyzer: &mut Analyzer<'a>) {
@@ -149,11 +149,11 @@ impl<'a> CollectedEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn new_collected(
+  pub fn collected(
     &self,
     val: Entity<'a>,
     collected: impl Into<Rc<RefCell<Vec<Entity<'a>>>>>,
   ) -> Entity<'a> {
-    self.new_entity(CollectedEntity { val, deps: collected.into(), consumed: Cell::new(false) })
+    self.entity(CollectedEntity { val, deps: collected.into(), consumed: Cell::new(false) })
   }
 }

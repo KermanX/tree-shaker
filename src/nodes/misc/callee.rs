@@ -40,18 +40,14 @@ impl<'a> Analyzer<'a> {
       cache.map(|(object, _)| {
         assert_ne!(short_circuit, Some(true));
         let indeterminate = short_circuit.is_none();
-        (indeterminate, callee, self.factory.new_computed(object, dep))
+        (indeterminate, callee, self.factory.computed(object, dep))
       })
     } else {
       let (short_circuit, callee) = self.exec_expression_in_chain(node);
       if short_circuit == Some(true) {
         None
       } else {
-        Some((
-          short_circuit.is_none(),
-          callee,
-          self.factory.new_computed(self.factory.undefined, dep),
-        ))
+        Some((short_circuit.is_none(), callee, self.factory.computed(self.factory.undefined, dep)))
       }
     }
   }

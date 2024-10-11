@@ -13,7 +13,7 @@ impl<'a> Analyzer<'a> {
 
     let dep = box_consumable(AstKind::ThrowStatement(node));
 
-    self.explicit_throw(self.factory.new_computed(value, dep));
+    self.explicit_throw(self.factory.computed(value, dep));
   }
 }
 

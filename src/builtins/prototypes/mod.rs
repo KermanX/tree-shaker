@@ -57,10 +57,10 @@ impl<'a> Prototype<'a> {
             _ => unreachable!(),
           }
         }
-        return analyzer.factory.new_computed_union(values, dep);
+        return analyzer.factory.computed_union(values, dep);
       }
     }
-    analyzer.factory.new_computed_unknown(dep)
+    analyzer.factory.computed_unknown(dep)
   }
 }
 

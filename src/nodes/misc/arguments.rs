@@ -18,9 +18,9 @@ impl<'a> Analyzer<'a> {
         node => (false, self.exec_expression(node.to_expression())),
       };
       let dep = AstKind::Argument(argument);
-      arguments.push((spread, self.factory.new_computed(val, box_consumable(dep))));
+      arguments.push((spread, self.factory.computed(val, box_consumable(dep))));
     }
-    self.factory.new_arguments(arguments)
+    self.factory.arguments(arguments)
   }
 }
 

@@ -75,11 +75,11 @@ impl<'a> CallScope<'a> {
     let value = if self.returned_values.is_empty() {
       analyzer.factory.undefined
     } else {
-      analyzer.factory.new_union(self.returned_values)
+      analyzer.factory.union(self.returned_values)
     };
     (
       self.old_variable_scope_stack,
-      if self.is_async { analyzer.factory.new_promise(value, promise_error) } else { value },
+      if self.is_async { analyzer.factory.promise(value, promise_error) } else { value },
     )
   }
 }
@@ -88,7 +88,7 @@ impl<'a> Analyzer<'a> {
   pub fn return_value(&mut self, value: Entity<'a>, dep: impl ConsumableTrait<'a> + 'a) {
     let call_scope = self.call_scope();
     let dep = box_consumable((self.get_exec_dep(call_scope.cf_scope_depth), dep));
-    let value = self.factory.new_computed(value, dep);
+    let value = self.factory.computed(value, dep);
 
     let call_scope = self.call_scope_mut();
     call_scope.returned_values.push(value);

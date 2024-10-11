@@ -53,7 +53,7 @@ impl<'a> ObjectPropertyValue<'a> {
     match self {
       ObjectPropertyValue::Field(value) => value.clone(),
       ObjectPropertyValue::Property(Some(getter), _) => {
-        getter.call(analyzer, dep, this, analyzer.factory.new_arguments(vec![]))
+        getter.call(analyzer, dep, this, analyzer.factory.arguments(vec![]))
       }
       _ => analyzer.factory.undefined,
     }
@@ -154,8 +154,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
             _ => unreachable!(),
           }
         }
-        analyzer.factory.new_computed(
-          analyzer.factory.new_union(values),
+        analyzer.factory.computed(
+          analyzer.factory.union(values),
           box_consumable((dep, key.clone(), self.deps.borrow_mut().collect())),
         )
       } else {
@@ -179,7 +179,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
-    let value = analyzer.factory.new_computed(value, key.to_consumable());
+    let value = analyzer.factory.computed(value, key.to_consumable());
     let indeterminate = analyzer.is_assignment_indeterminate(self.cf_scope);
     analyzer.exec_indeterminately(move |analyzer| {
       self.add_assignment_dep(analyzer, dep.cloned());
@@ -212,7 +212,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                       analyzer,
                       dep.cloned(),
                       this,
-                      analyzer.factory.new_arguments(vec![(false, value.clone())]),
+                      analyzer.factory.arguments(vec![(false, value.clone())]),
                     );
                   }
                 }
@@ -232,7 +232,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                         analyzer,
                         dep.cloned(),
                         this,
-                        analyzer.factory.new_arguments(vec![(false, value.clone())]),
+                        analyzer.factory.arguments(vec![(false, value.clone())]),
                       );
                     }
                   }
@@ -250,9 +250,11 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           }
         }
       } else {
-        self.unknown_keyed.borrow_mut().values.push(ObjectPropertyValue::Field(
-          analyzer.factory.new_computed(value, key.to_consumable()),
-        ));
+        self
+          .unknown_keyed
+          .borrow_mut()
+          .values
+          .push(ObjectPropertyValue::Field(analyzer.factory.computed(value, key.to_consumable())));
         self.apply_unknown_to_possible_setters(analyzer, dep)
       }
     })
@@ -274,14 +276,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     unknown_keyed.extend(self.rest.borrow().get_value(analyzer, dep.cloned(), this));
     let mut result = Vec::new();
     if unknown_keyed.len() > 0 {
-      result.push((false, analyzer.factory.unknown, analyzer.factory.new_union(unknown_keyed)));
+      result.push((false, analyzer.factory.unknown, analyzer.factory.union(unknown_keyed)));
     }
     for (key, properties) in self.string_keyed.borrow().iter() {
       let values = properties.get_value(analyzer, dep.cloned(), this);
       result.push((
         properties.definite,
-        analyzer.factory.new_string(key),
-        analyzer.factory.new_union(values),
+        analyzer.factory.string(key),
+        analyzer.factory.union(values),
       ));
     }
 
@@ -357,7 +359,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_string("object")
+    analyzer.factory.string("object")
   }
 
   fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -365,7 +367,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
-    analyzer.factory.new_computed_unknown_string(rc.to_consumable())
+    analyzer.factory.computed_unknown_string(rc.to_consumable())
   }
 
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -373,11 +375,11 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
-    analyzer.factory.new_computed_unknown(rc.to_consumable())
+    analyzer.factory.computed_unknown(rc.to_consumable())
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_boolean(true)
+    analyzer.factory.boolean(true)
   }
 
   fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -418,7 +420,7 @@ impl<'a> ObjectEntity<'a> {
     value: Entity<'a>,
     definite: bool,
   ) {
-    let value = analyzer.factory.new_computed(value, key.to_consumable());
+    let value = analyzer.factory.computed(value, key.to_consumable());
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let definite = definite && key_literals.len() == 1;
       for key_literal in key_literals {
@@ -500,7 +502,7 @@ impl<'a> ObjectEntity<'a> {
             analyzer,
             dep.cloned(),
             this,
-            analyzer.factory.new_arguments(vec![(false, analyzer.factory.unknown)]),
+            analyzer.factory.arguments(vec![(false, analyzer.factory.unknown)]),
           );
         }
       }

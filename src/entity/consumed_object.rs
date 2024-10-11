@@ -17,7 +17,7 @@ pub fn get_property<'a>(
     key.consume(analyzer);
     analyzer.factory.unknown
   } else {
-    analyzer.factory.new_computed_unknown(box_consumable((rc.clone(), dep, key.clone())))
+    analyzer.factory.computed_unknown(box_consumable((rc.clone(), dep, key.clone())))
   }
 }
 

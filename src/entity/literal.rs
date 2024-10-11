@@ -75,8 +75,8 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
             .map(|(i, c)| {
               (
                 true,
-                analyzer.factory.new_string(analyzer.allocator.alloc(i.to_string())),
-                analyzer.factory.new_string(analyzer.allocator.alloc(c.to_string())),
+                analyzer.factory.string(analyzer.allocator.alloc(i.to_string())),
+                analyzer.factory.string(analyzer.allocator.alloc(c.to_string())),
               )
             })
             .collect(),
@@ -85,7 +85,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       } else {
         analyzer
           .factory
-          .new_computed_unknown_string(rc.to_consumable())
+          .computed_unknown_string(rc.to_consumable())
           .enumerate_properties(analyzer, dep)
       }
     } else {
@@ -121,7 +121,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
-    analyzer.factory.new_computed(rc, dep)
+    analyzer.factory.computed(rc, dep)
   }
 
   fn iterate(
@@ -136,7 +136,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
         if value.is_empty() {
           None
         } else {
-          Some(analyzer.factory.new_computed_unknown_string(rc.to_consumable()))
+          Some(analyzer.factory.computed_unknown_string(rc.to_consumable()))
         },
       ),
       _ => {
@@ -148,11 +148,11 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_string(self.test_typeof().to_string().unwrap())
+    analyzer.factory.string(self.test_typeof().to_string().unwrap())
   }
 
   fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_string(self.to_string())
+    analyzer.factory.string(self.to_string())
   }
 
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -163,24 +163,24 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       | LiteralEntity::Infinity(_) => rc,
       LiteralEntity::Boolean(value) => {
         if *value {
-          analyzer.factory.new_number(1.0, "1")
+          analyzer.factory.number(1.0, "1")
         } else {
-          analyzer.factory.new_number(0.0, "0")
+          analyzer.factory.number(0.0, "0")
         }
       }
       LiteralEntity::String(str) => {
         let str = str.trim();
         if str.is_empty() {
-          analyzer.factory.new_number(0.0, "0")
+          analyzer.factory.number(0.0, "0")
         } else {
           if let Ok(value) = str.parse::<f64>() {
-            analyzer.factory.new_number(value, str)
+            analyzer.factory.number(value, str)
           } else {
             analyzer.factory.nan
           }
         }
       }
-      LiteralEntity::Null => analyzer.factory.new_number(0.0, "0"),
+      LiteralEntity::Null => analyzer.factory.number(0.0, "0"),
       LiteralEntity::Symbol(_, _) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
         analyzer.factory.unknown
@@ -191,8 +191,8 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
-      Some(value) => analyzer.factory.new_boolean(value),
-      None => analyzer.factory.new_computed_unknown_boolean(rc.to_consumable()),
+      Some(value) => analyzer.factory.boolean(value),
+      None => analyzer.factory.computed_unknown_boolean(rc.to_consumable()),
     }
   }
 
@@ -419,27 +419,27 @@ impl<'a> LiteralEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn new_string(&self, value: &'a str) -> Entity<'a> {
-    self.new_entity(LiteralEntity::String(value))
+  pub fn string(&self, value: &'a str) -> Entity<'a> {
+    self.entity(LiteralEntity::String(value))
   }
 
-  pub fn new_number(&self, value: impl Into<F64WithEq>, str_rep: &'a str) -> Entity<'a> {
-    self.new_entity(LiteralEntity::Number(value.into(), str_rep))
+  pub fn number(&self, value: impl Into<F64WithEq>, str_rep: &'a str) -> Entity<'a> {
+    self.entity(LiteralEntity::Number(value.into(), str_rep))
   }
 
-  pub fn new_big_int(&self, value: &'a str) -> Entity<'a> {
-    self.new_entity(LiteralEntity::BigInt(value))
+  pub fn big_int(&self, value: &'a str) -> Entity<'a> {
+    self.entity(LiteralEntity::BigInt(value))
   }
 
-  pub fn new_boolean(&self, value: bool) -> Entity<'a> {
-    self.new_entity(LiteralEntity::Boolean(value))
+  pub fn boolean(&self, value: bool) -> Entity<'a> {
+    self.entity(LiteralEntity::Boolean(value))
   }
 
-  pub fn new_infinity(&self, positive: bool) -> Entity<'a> {
-    self.new_entity(LiteralEntity::Infinity(positive))
+  pub fn infinity(&self, positive: bool) -> Entity<'a> {
+    self.entity(LiteralEntity::Infinity(positive))
   }
 
-  pub fn new_symbol(&self, id: SymbolId, str_rep: &'a str) -> Entity<'a> {
-    self.new_entity(LiteralEntity::Symbol(id, str_rep))
+  pub fn symbol(&self, id: SymbolId, str_rep: &'a str) -> Entity<'a> {
+    self.entity(LiteralEntity::Symbol(id, str_rep))
   }
 }

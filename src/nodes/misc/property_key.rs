@@ -22,8 +22,8 @@ impl<'a> Default for Data<'a> {
 impl<'a> Analyzer<'a> {
   pub fn exec_property_key(&mut self, node: &'a PropertyKey<'a>) -> Entity<'a> {
     match node {
-      PropertyKey::StaticIdentifier(node) => self.factory.new_string(node.name.as_str()),
-      PropertyKey::PrivateIdentifier(node) => self.factory.new_string(node.name.as_str()),
+      PropertyKey::StaticIdentifier(node) => self.factory.string(node.name.as_str()),
+      PropertyKey::PrivateIdentifier(node) => self.factory.string(node.name.as_str()),
       node => {
         let node = node.to_expression();
         let value = self.exec_expression(node).get_to_property_key(self);

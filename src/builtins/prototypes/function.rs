@@ -6,19 +6,18 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
 
   prototype.insert(
     "apply",
-    factory.new_implemented_builtin_fn(|analyzer, dep, this, args| {
+    factory.implemented_builtin_fn(|analyzer, dep, this, args| {
       let mut args = args.destruct_as_array(analyzer, dep.cloned(), 2).0;
       let args_arg = {
         let arg = args.pop().unwrap();
         let cf_scope = analyzer.scope_context.cf.current_id();
         let variable_scope = analyzer.scope_context.variable.current_id();
         match arg.test_is_undefined() {
-          Some(true) => analyzer.factory.new_entity(ArrayEntity::new(cf_scope, variable_scope)),
+          Some(true) => analyzer.factory.entity(ArrayEntity::new(cf_scope, variable_scope)),
           Some(false) => arg,
-          None => analyzer.factory.new_union(vec![
-            arg,
-            analyzer.factory.new_entity(ArrayEntity::new(cf_scope, variable_scope)),
-          ]),
+          None => analyzer
+            .factory
+            .union(vec![arg, analyzer.factory.entity(ArrayEntity::new(cf_scope, variable_scope))]),
         }
       };
       let this_arg = args.pop().unwrap();
@@ -27,7 +26,7 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
   );
   prototype.insert(
     "call",
-    factory.new_implemented_builtin_fn(|analyzer, dep, this, args| {
+    factory.implemented_builtin_fn(|analyzer, dep, this, args| {
       let (this_arg, args_arg) = args.destruct_as_array(analyzer, dep.cloned(), 1);
       this.call(analyzer, dep, this_arg[0], args_arg)
     }),

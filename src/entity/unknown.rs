@@ -113,7 +113,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
       self.consume(analyzer);
       consumed_object::r#await(analyzer, dep)
     } else {
-      analyzer.factory.new_computed(rc, dep)
+      analyzer.factory.computed(rc, dep)
     }
   }
 
@@ -124,7 +124,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     if *self == UnknownEntity::String {
-      return (vec![], Some(analyzer.factory.new_computed_unknown(rc.to_consumable())));
+      return (vec![], Some(analyzer.factory.computed_unknown(rc.to_consumable())));
     }
     if !self.maybe_object() {
       analyzer.thrown_builtin_error("Cannot iterate non-object");
@@ -135,7 +135,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if let Some(str) = self.test_typeof().to_string() {
-      analyzer.factory.new_string(str)
+      analyzer.factory.string(str)
     } else {
       analyzer.factory.unknown_string
     }
@@ -151,7 +151,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
-      Some(val) => analyzer.factory.new_boolean(val),
+      Some(val) => analyzer.factory.boolean(val),
       None => analyzer.factory.unknown_boolean,
     }
   }
@@ -230,7 +230,7 @@ macro_rules! unknown_entity_ctors {
     $(
       #[allow(unused)]
       pub fn $name(&self, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
-        self.new_computed(self.$var, dep)
+        self.computed(self.$var, dep)
       }
     )*
   };
@@ -238,15 +238,15 @@ macro_rules! unknown_entity_ctors {
 
 impl<'a> EntityFactory<'a> {
   unknown_entity_ctors! {
-    new_computed_unknown -> unknown,
-    new_computed_unknown_boolean -> unknown_boolean,
-    new_computed_unknown_number -> unknown_number,
-    new_computed_unknown_string -> unknown_string,
-    new_computed_unknown_bigint -> unknown_bigint,
-    new_computed_unknown_symbol -> unknown_symbol,
-    new_computed_unknown_function -> unknown_function,
-    new_computed_unknown_regexp -> unknown_regexp,
-    new_computed_unknown_array -> unknown_array,
-    new_computed_unknown_object -> unknown_object,
+    computed_unknown -> unknown,
+    computed_unknown_boolean -> unknown_boolean,
+    computed_unknown_number -> unknown_number,
+    computed_unknown_string -> unknown_string,
+    computed_unknown_bigint -> unknown_bigint,
+    computed_unknown_symbol -> unknown_symbol,
+    computed_unknown_function -> unknown_function,
+    computed_unknown_regexp -> unknown_regexp,
+    computed_unknown_array -> unknown_array,
+    computed_unknown_object -> unknown_object,
   }
 }

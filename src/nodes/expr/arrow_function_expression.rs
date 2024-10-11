@@ -19,7 +19,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
   ) -> Entity<'a> {
-    self.factory.new_function(
+    self.factory.function(
       FunctionEntitySource::ArrowFunctionExpression(node),
       self.scope_context.variable.stack.clone(),
       true,

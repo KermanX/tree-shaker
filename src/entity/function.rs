@@ -172,7 +172,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer, dep);
     }
-    analyzer.factory.new_computed(rc, dep)
+    analyzer.factory.computed(rc, dep)
   }
 
   fn iterate(
@@ -186,14 +186,14 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_string("function")
+    analyzer.factory.string("function")
   }
 
   fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
-    analyzer.factory.new_computed_unknown_string(rc.to_consumable())
+    analyzer.factory.computed_unknown_string(rc.to_consumable())
   }
 
   fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -204,7 +204,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_boolean(true)
+    analyzer.factory.boolean(true)
   }
 
   fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -263,7 +263,7 @@ impl<'a> FunctionEntity<'a> {
         ),
       FunctionEntitySource::Module => unreachable!(),
     };
-    analyzer.factory.new_computed(ret_val, call_dep)
+    analyzer.factory.computed(ret_val, call_dep)
   }
 
   pub fn call_in_recursion(&self, analyzer: &mut Analyzer<'a>) {
@@ -302,13 +302,13 @@ impl<'a> FunctionEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn new_function(
+  pub fn function(
     &self,
     source: FunctionEntitySource<'a>,
     variable_scope_stack: Vec<ScopeId>,
     is_expression: bool,
   ) -> Entity<'a> {
-    self.new_entity(FunctionEntity {
+    self.entity(FunctionEntity {
       consumed: Rc::new(Cell::new(false)),
       body_consumed: Rc::new(Cell::new(false)),
       source,

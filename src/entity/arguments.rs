@@ -92,7 +92,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
         }
       }
     }
-    (elements, rest.map(|val| analyzer.factory.new_union(val)))
+    (elements, rest.map(|val| analyzer.factory.union(val)))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -129,7 +129,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn new_arguments(&self, arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
-    self.new_entity(ArgumentsEntity { arguments })
+  pub fn arguments(&self, arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
+    self.entity(ArgumentsEntity { arguments })
   }
 }

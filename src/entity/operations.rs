@@ -168,7 +168,7 @@ impl<'a> EntityOpHost<'a> {
         (Some(l), Some(r)) => match (l, r) {
           (Some(l), Some(r)) => {
             let val = l.0 + r.0;
-            values.push(analyzer.factory.new_number(val, self.allocator.alloc(val.to_string())));
+            values.push(analyzer.factory.number(val, self.allocator.alloc(val.to_string())));
           }
           _ => {
             values.push(analyzer.factory.nan);
@@ -195,7 +195,7 @@ impl<'a> EntityOpHost<'a> {
       match (lhs_str_lit, rhs_str_lit) {
         (Some(LiteralEntity::String(l)), Some(LiteralEntity::String(r))) => {
           let val = l.to_string() + r;
-          values.push(analyzer.factory.new_string(self.allocator.alloc(val)));
+          values.push(analyzer.factory.string(self.allocator.alloc(val)));
         }
         _ => {
           values.push(analyzer.factory.unknown_string);
@@ -206,9 +206,9 @@ impl<'a> EntityOpHost<'a> {
     let dep = box_consumable((lhs.clone(), rhs.clone()));
     if values.is_empty() {
       // TODO: throw warning
-      analyzer.factory.new_computed_unknown(dep)
+      analyzer.factory.computed_unknown(dep)
     } else {
-      analyzer.factory.new_computed_union(values, dep)
+      analyzer.factory.computed_union(values, dep)
     }
   }
 
@@ -223,11 +223,11 @@ impl<'a> EntityOpHost<'a> {
         UpdateOperator::Increment => v + 1.0,
         UpdateOperator::Decrement => v - 1.0,
       };
-      analyzer.factory.new_number(val, self.allocator.alloc(val.to_string()))
+      analyzer.factory.number(val, self.allocator.alloc(val.to_string()))
     };
 
     if let Some(num) = input.get_literal(analyzer).and_then(|lit| lit.to_number()) {
-      return analyzer.factory.new_collected(
+      return analyzer.factory.collected(
         match num {
           Some(num) => apply_update(num.0),
           None => analyzer.factory.nan,
@@ -247,9 +247,9 @@ impl<'a> EntityOpHost<'a> {
     }
 
     if values.is_empty() {
-      analyzer.factory.new_computed_unknown(input.to_consumable())
+      analyzer.factory.computed_unknown(input.to_consumable())
     } else {
-      analyzer.factory.new_computed_union(values, input.to_consumable())
+      analyzer.factory.computed_union(values, input.to_consumable())
     }
   }
 
@@ -286,10 +286,10 @@ impl<'a> EntityOpHost<'a> {
       | BinaryOperator::BitwiseAnd
       | BinaryOperator::Exponential => {
         // Can be number or bigint
-        analyzer.factory.new_computed_unknown(box_consumable((lhs.clone(), rhs.clone())))
+        analyzer.factory.computed_unknown(box_consumable((lhs.clone(), rhs.clone())))
       }
       BinaryOperator::In | BinaryOperator::Instanceof => {
-        analyzer.factory.new_computed_unknown_boolean(box_consumable((lhs.clone(), rhs.clone())))
+        analyzer.factory.computed_unknown_boolean(box_consumable((lhs.clone(), rhs.clone())))
       }
     }
   }
