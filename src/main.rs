@@ -1,6 +1,14 @@
 use std::{env, fs::File, io::Write, path::Path};
 use tree_shake::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
+#[cfg(all(feature = "allocator", not(miri), not(target_env = "msvc"), not(target_os = "windows")))]
+#[global_allocator]
+static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
+#[cfg(all(feature = "allocator", not(miri), target_os = "windows"))]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 fn main() {
   let args: Vec<String> = env::args().collect();
 
