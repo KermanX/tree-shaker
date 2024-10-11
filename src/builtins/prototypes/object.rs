@@ -1,16 +1,16 @@
 use super::{null::create_null_prototype, Prototype};
-use crate::entity::PureBuiltinFnEntity;
+use crate::entity::EntityFactory;
 
-pub fn create_object_prototype<'a>() -> Prototype<'a> {
-  let mut prototype = create_null_prototype();
+pub fn create_object_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
+  let mut prototype = create_null_prototype(factory);
 
-  prototype.insert("constructor", PureBuiltinFnEntity::returns_object());
-  prototype.insert("hasOwnProperty", PureBuiltinFnEntity::returns_boolean());
-  prototype.insert("isPrototypeOf", PureBuiltinFnEntity::returns_boolean());
-  prototype.insert("propertyIsEnumerable", PureBuiltinFnEntity::returns_boolean());
-  prototype.insert("toLocaleString", PureBuiltinFnEntity::returns_string());
-  prototype.insert("toString", PureBuiltinFnEntity::returns_string());
-  prototype.insert("valueOf", PureBuiltinFnEntity::returns_unknown());
+  prototype.insert("constructor", factory.pure_fn_returns_object);
+  prototype.insert("hasOwnProperty", factory.pure_fn_returns_boolean);
+  prototype.insert("isPrototypeOf", factory.pure_fn_returns_boolean);
+  prototype.insert("propertyIsEnumerable", factory.pure_fn_returns_boolean);
+  prototype.insert("toLocaleString", factory.pure_fn_returns_string);
+  prototype.insert("toString", factory.pure_fn_returns_string);
+  prototype.insert("valueOf", factory.pure_fn_returns_unknown);
 
   prototype
 }

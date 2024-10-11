@@ -1,12 +1,12 @@
 use super::{object::create_object_prototype, Prototype};
-use crate::entity::PureBuiltinFnEntity;
+use crate::entity::EntityFactory;
 
-pub fn create_regexp_prototype<'a>() -> Prototype<'a> {
-  let mut prototype = create_object_prototype();
+pub fn create_regexp_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
+  let mut prototype = create_object_prototype(factory);
 
-  prototype.insert("exec", PureBuiltinFnEntity::returns_unknown());
-  prototype.insert("test", PureBuiltinFnEntity::returns_boolean());
-  prototype.insert("toString", PureBuiltinFnEntity::returns_string());
+  prototype.insert("exec", factory.pure_fn_returns_unknown);
+  prototype.insert("test", factory.pure_fn_returns_boolean);
+  prototype.insert("toString", factory.pure_fn_returns_string);
 
   prototype
 }

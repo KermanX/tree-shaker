@@ -1,4 +1,6 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, consumable::box_consumable, entity::Entity, transformer::Transformer,
+};
 use oxc::ast::{
   ast::{ArrayExpressionElement, SpreadElement},
   AstKind,
@@ -7,7 +9,7 @@ use oxc::ast::{
 impl<'a> Analyzer<'a> {
   pub fn exec_spread_element(&mut self, node: &'a SpreadElement<'a>) -> Option<Entity<'a>> {
     let argument = self.exec_expression(&node.argument);
-    argument.iterate_result_union(self, AstKind::SpreadElement(node))
+    argument.iterate_result_union(self, box_consumable(AstKind::SpreadElement(node)))
   }
 }
 

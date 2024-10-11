@@ -37,8 +37,14 @@ impl<T> ScopeTree<T> {
     &mut self.nodes.get_mut(id).unwrap().data
   }
 
-  pub fn get_from_depth(&self, depth: usize) -> Option<&T> {
-    self.stack.get(depth).map(|id| self.get(*id))
+  pub fn get_from_depth(&self, depth: usize) -> &T {
+    let id = self.stack[depth];
+    self.get(id)
+  }
+
+  pub fn get_mut_from_depth(&mut self, depth: usize) -> &mut T {
+    let id = self.stack[depth];
+    self.get_mut(id)
   }
 
   pub fn get_current(&self) -> &T {

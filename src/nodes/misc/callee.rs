@@ -1,7 +1,8 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
-  entity::{Entity, EntityDepNode, ForwardedEntity, LiteralEntity},
+  consumable::box_consumable,
+  entity::{Entity, EntityDepNode},
   transformer::Transformer,
 };
 use oxc::{
@@ -32,14 +33,14 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a Expression<'a>,
   ) -> Option<(bool, Entity<'a>, Entity<'a>)> {
-    let dep: EntityDepNode = (AST_TYPE, node).into();
+    let dep = box_consumable(EntityDepNode::from((AST_TYPE, node)));
     if let Some(member_expr) = unwrap_to_member_expression(node) {
       let (short_circuit, callee, cache) =
         self.exec_member_expression_read_in_chain(member_expr, false);
       cache.map(|(object, _)| {
         assert_ne!(short_circuit, Some(true));
         let indeterminate = short_circuit.is_none();
-        (indeterminate, callee, ForwardedEntity::new(object, dep))
+        (indeterminate, callee, self.factory.new_computed(object, dep))
       })
     } else {
       let (short_circuit, callee) = self.exec_expression_in_chain(node);
@@ -49,7 +50,7 @@ impl<'a> Analyzer<'a> {
         Some((
           short_circuit.is_none(),
           callee,
-          ForwardedEntity::new(LiteralEntity::new_undefined(), dep),
+          self.factory.new_computed(self.factory.undefined, dep),
         ))
       }
     }

@@ -1,14 +1,10 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{Entity, UnknownEntity},
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{Expression, PrivateInExpression};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_private_in_expression(&mut self, node: &'a PrivateInExpression<'a>) -> Entity<'a> {
     let right = self.exec_expression(&node.right);
-    UnknownEntity::new_computed_boolean(right)
+    self.factory.new_computed_unknown_boolean(right.to_consumable())
   }
 }
 

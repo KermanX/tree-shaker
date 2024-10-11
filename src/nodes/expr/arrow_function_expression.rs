@@ -1,7 +1,8 @@
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  entity::{Consumable, Entity, FunctionEntity, FunctionEntitySource},
+  consumable::Consumable,
+  entity::{Entity, FunctionEntitySource},
   transformer::Transformer,
 };
 use oxc::{
@@ -18,7 +19,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
   ) -> Entity<'a> {
-    FunctionEntity::new(
+    self.factory.new_function(
       FunctionEntitySource::ArrowFunctionExpression(node),
       self.scope_context.variable.stack.clone(),
       true,

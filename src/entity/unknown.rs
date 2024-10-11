@@ -1,7 +1,5 @@
-use super::{
-  consumed_object, ComputedEntity, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult,
-};
-use crate::{analyzer::Analyzer, builtins::Prototype};
+use super::{consumed_object, Entity, EntityFactory, EntityTrait, TypeofResult};
+use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnknownEntity {
@@ -23,10 +21,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 
   fn get_property(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    key: &Entity<'a>,
+    key: Entity<'a>,
   ) -> Entity<'a> {
     if self.maybe_object() {
       if analyzer.config.unknown_property_read_side_effects {
@@ -35,16 +33,16 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
       consumed_object::get_property(rc, analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
-      prototype.get_property(rc, key, dep)
+      prototype.get_property(analyzer, rc, key, dep)
     }
   }
 
   fn set_property(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    key: &Entity<'a>,
+    key: Entity<'a>,
     value: Entity<'a>,
   ) {
     if self.maybe_object() {
@@ -57,7 +55,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 
   fn enumerate_properties(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
@@ -69,15 +67,15 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     } else if *self == UnknownEntity::String {
       vec![(
         false,
-        UnknownEntity::new_computed_string(rc.clone()),
-        UnknownEntity::new_computed_string(rc.clone()),
+        analyzer.factory.new_computed_unknown_string(rc.to_consumable()),
+        analyzer.factory.new_computed_unknown_string(rc.to_consumable()),
       )]
     } else {
       vec![]
     }
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     if self.maybe_object() {
       consumed_object::delete_property(analyzer, dep, key)
     } else {
@@ -87,11 +85,11 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 
   fn call(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
+    this: Entity<'a>,
+    args: Entity<'a>,
   ) -> Entity<'a> {
     if !self.maybe_object() {
       analyzer.thrown_builtin_error("Cannot call non-object");
@@ -102,7 +100,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 
   fn r#await(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
@@ -110,18 +108,18 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
       self.consume(analyzer);
       consumed_object::r#await(analyzer, dep)
     } else {
-      ComputedEntity::new(rc.clone(), dep)
+      analyzer.factory.new_computed(rc, dep)
     }
   }
 
   fn iterate(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     if *self == UnknownEntity::String {
-      return (vec![], Some(UnknownEntity::new_computed_unknown(rc.clone())));
+      return (vec![], Some(analyzer.factory.new_computed_unknown(rc.to_consumable())));
     }
     if !self.maybe_object() {
       analyzer.thrown_builtin_error("Cannot iterate non-object");
@@ -130,31 +128,31 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_typeof(&self) -> Entity<'a> {
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if let Some(str) = self.test_typeof().to_string() {
-      LiteralEntity::new_string(str)
+      analyzer.factory.new_string(str)
     } else {
-      UnknownEntity::new_string()
+      analyzer.factory.unknown_string
     }
   }
 
-  fn get_to_string(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_string()
+  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.unknown_string
   }
 
-  fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_unknown()
+  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.unknown
   }
 
-  fn get_to_boolean(&self, _rc: &Entity<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
-      Some(val) => LiteralEntity::new_boolean(val),
-      None => UnknownEntity::new_boolean(),
+      Some(val) => analyzer.factory.new_boolean(val),
+      None => analyzer.factory.unknown_boolean,
     }
   }
 
-  fn get_to_property_key(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_unknown()
+  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.unknown
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -194,36 +192,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
   }
 }
 
-macro_rules! unknown_entity_ctors {
-  ($($name:ident + $computed:ident -> $variant:ident,)*) => {
-    $(
-      #[allow(unused)]
-      pub fn $name() -> Entity<'a> {
-        Entity::new(UnknownEntity::$variant)
-      }
-
-      #[allow(unused)]
-      pub fn $computed(dep: impl Into<Consumable<'a>>) -> Entity<'a> {
-        ComputedEntity::new(Self::$name(), dep)
-      }
-    )*
-  };
-}
-
 impl<'a> UnknownEntity {
-  unknown_entity_ctors! {
-    new_unknown  + new_computed_unknown -> Unknown,
-    new_boolean  + new_computed_boolean -> Boolean,
-    new_number   + new_computed_number -> Number,
-    new_string   + new_computed_string -> String,
-    new_bigint   + new_computed_bigint -> BigInt,
-    new_symbol   + new_computed_symbol -> Symbol,
-    new_function + new_computed_function -> Function,
-    new_regexp   + new_computed_regexp -> Regexp,
-    new_array    + new_computed_array -> Array,
-    new_object   + new_computed_object -> Object,
-  }
-
   pub fn maybe_object(&self) -> bool {
     matches!(
       self,
@@ -235,7 +204,7 @@ impl<'a> UnknownEntity {
     )
   }
 
-  fn get_prototype<'b>(&self, analyzer: &'b mut Analyzer<'a>) -> &'b Prototype<'a> {
+  fn get_prototype<'b>(&self, analyzer: &mut Analyzer<'a>) -> &'a Prototype<'a> {
     match self {
       UnknownEntity::String => &analyzer.builtins.prototypes.string,
       UnknownEntity::Number => &analyzer.builtins.prototypes.number,
@@ -248,5 +217,31 @@ impl<'a> UnknownEntity {
       UnknownEntity::Object => &analyzer.builtins.prototypes.object,
       UnknownEntity::Unknown => unreachable!(),
     }
+  }
+}
+
+macro_rules! unknown_entity_ctors {
+  ($($name:ident -> $var:ident,)*) => {
+    $(
+      #[allow(unused)]
+      pub fn $name(&self, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
+        self.new_computed(self.$var, dep)
+      }
+    )*
+  };
+}
+
+impl<'a> EntityFactory<'a> {
+  unknown_entity_ctors! {
+    new_computed_unknown -> unknown,
+    new_computed_unknown_boolean -> unknown_boolean,
+    new_computed_unknown_number -> unknown_number,
+    new_computed_unknown_string -> unknown_string,
+    new_computed_unknown_bigint -> unknown_bigint,
+    new_computed_unknown_symbol -> unknown_symbol,
+    new_computed_unknown_function -> unknown_function,
+    new_computed_unknown_regexp -> unknown_regexp,
+    new_computed_unknown_array -> unknown_array,
+    new_computed_unknown_object -> unknown_object,
   }
 }

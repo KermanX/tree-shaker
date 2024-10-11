@@ -1,14 +1,14 @@
-use crate::entity::{Entity, LiteralEntity, UnknownEntity};
+use crate::entity::{Entity, EntityFactory};
 use rustc_hash::FxHashMap;
 
-pub fn create_globals<'a>() -> FxHashMap<&'static str, Entity<'a>> {
+pub fn create_globals<'a>(factory: &EntityFactory<'a>) -> FxHashMap<&'static str, Entity<'a>> {
   let mut globals = FxHashMap::default();
 
-  globals.insert("undefined", LiteralEntity::new_undefined());
-  globals.insert("Infinity", LiteralEntity::new_infinity(true));
-  globals.insert("NaN", LiteralEntity::new_nan());
-  globals.insert("undefined", LiteralEntity::new_undefined());
-  globals.insert("eval", UnknownEntity::new_function());
+  globals.insert("undefined", factory.undefined);
+  globals.insert("Infinity", factory.new_infinity(true));
+  globals.insert("NaN", factory.nan);
+  globals.insert("undefined", factory.undefined);
+  globals.insert("eval", factory.unknown_function);
 
   globals
 }

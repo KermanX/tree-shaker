@@ -1,7 +1,5 @@
-use super::{
-  consumed_object, Consumable, Entity, EntityTrait, LiteralEntity, TypeofResult, UnknownEntity,
-};
-use crate::analyzer::Analyzer;
+use super::{consumed_object, Entity, EntityFactory, EntityTrait, TypeofResult};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
 
 pub trait BuiltinFnEntity<'a>: Debug {
@@ -9,8 +7,8 @@ pub trait BuiltinFnEntity<'a>: Debug {
     &self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
+    this: Entity<'a>,
+    args: Entity<'a>,
   ) -> Entity<'a>;
 }
 
@@ -19,20 +17,20 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 
   fn get_property(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    key: &Entity<'a>,
+    key: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.builtins.prototypes.function.get_property(rc, key, dep)
+    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
   }
 
   fn set_property(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    key: &Entity<'a>,
+    key: Entity<'a>,
     value: Entity<'a>,
   ) {
     analyzer.add_diagnostic(
@@ -41,14 +39,14 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     consumed_object::set_property(analyzer, dep, key, value)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: &Entity<'a>) {
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     analyzer.add_diagnostic("Should not delete property of builtin function, it may cause unexpected tree-shaking behavior");
     consumed_object::delete_property(analyzer, dep, key)
   }
 
   fn enumerate_properties(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
   ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
@@ -57,27 +55,27 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 
   fn call(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
+    this: Entity<'a>,
+    args: Entity<'a>,
   ) -> Entity<'a> {
     self.call_impl(analyzer, dep, this, args)
   }
 
   fn r#await(
     &self,
-    rc: &Entity<'a>,
+    rc: Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
   ) -> Entity<'a> {
-    rc.clone()
+    rc
   }
 
   fn iterate(
     &self,
-    _rc: &Entity<'a>,
+    _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
@@ -85,24 +83,24 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_typeof(&self) -> Entity<'a> {
-    LiteralEntity::new_string("function")
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_string("function")
   }
 
-  fn get_to_string(&self, rc: &Entity<'a>) -> Entity<'a> {
-    UnknownEntity::new_computed_string(rc.clone())
+  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_computed_unknown_string(rc.to_consumable())
   }
 
-  fn get_to_numeric(&self, _rc: &Entity<'a>) -> Entity<'a> {
-    LiteralEntity::new_nan()
+  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.nan
   }
 
-  fn get_to_boolean(&self, rc: &Entity<'a>) -> Entity<'a> {
-    LiteralEntity::new_boolean(true)
+  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.new_boolean(true)
   }
 
-  fn get_to_property_key(&self, rc: &Entity<'a>) -> Entity<'a> {
-    self.get_to_string(rc)
+  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.get_to_string(rc, analyzer)
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -119,7 +117,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
 }
 
 pub type BuiltinFnImplementation<'a> =
-  fn(&mut Analyzer<'a>, Consumable<'a>, &Entity<'a>, &Entity<'a>) -> Entity<'a>;
+  fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ImplementedBuiltinFnEntity<'a> {
@@ -131,16 +129,19 @@ impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
     &self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
+    this: Entity<'a>,
+    args: Entity<'a>,
   ) -> Entity<'a> {
     (self.implementation)(analyzer, dep, this, args)
   }
 }
 
-impl<'a> ImplementedBuiltinFnEntity<'a> {
-  pub fn new(implementation: BuiltinFnImplementation<'a>) -> Entity<'a> {
-    Entity::new(Self { implementation })
+impl<'a> EntityFactory<'a> {
+  pub fn new_implemented_builtin_fn(
+    &self,
+    implementation: BuiltinFnImplementation<'a>,
+  ) -> Entity<'a> {
+    self.new_entity(ImplementedBuiltinFnEntity { implementation })
   }
 }
 
@@ -154,8 +155,8 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     &self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-    this: &Entity<'a>,
-    args: &Entity<'a>,
+    this: Entity<'a>,
+    args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.consume(dep);
     this.consume(analyzer);
@@ -167,37 +168,5 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
 impl<'a> PureBuiltinFnEntity<'a> {
   pub fn new(return_value: Entity<'a>) -> Self {
     Self { return_value }
-  }
-
-  pub fn returns_unknown() -> Self {
-    Self::new(UnknownEntity::new_unknown())
-  }
-
-  pub fn returns_string() -> Self {
-    Self::new(UnknownEntity::new_string())
-  }
-
-  pub fn returns_number() -> Self {
-    Self::new(UnknownEntity::new_number())
-  }
-
-  pub fn returns_boolean() -> Self {
-    Self::new(UnknownEntity::new_boolean())
-  }
-
-  pub fn returns_array() -> Self {
-    Self::new(UnknownEntity::new_array())
-  }
-
-  pub fn returns_object() -> Self {
-    Self::new(UnknownEntity::new_object())
-  }
-
-  pub fn returns_null() -> Self {
-    Self::new(LiteralEntity::new_null())
-  }
-
-  pub fn returns_undefined() -> Self {
-    Self::new(LiteralEntity::new_undefined())
   }
 }
