@@ -60,6 +60,7 @@ impl<'a> FunctionEntitySource<'a> {
 impl PartialEq for FunctionEntitySource<'_> {
   fn eq(&self, other: &Self) -> bool {
     match (self, other) {
+      (FunctionEntitySource::Module, FunctionEntitySource::Module) => true,
       (FunctionEntitySource::Function(a), FunctionEntitySource::Function(b)) => {
         a.span() == b.span()
       }
