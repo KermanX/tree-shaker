@@ -119,14 +119,14 @@ impl<'a> Analyzer<'a> {
         self.write_on_scope(
           (self.scope_context.variable.current_depth(), id),
           symbol,
-          self.factory.new_computed(value, init_dep),
+          self.factory.computed(value, init_dep),
         );
       } else {
         // Do nothing
       }
     } else {
       variable.value =
-        Some(self.factory.new_computed(value.unwrap_or(self.factory.undefined), init_dep));
+        Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_dep));
       self.exec_exhaustive_deps(false, (id, symbol));
     }
   }
@@ -140,7 +140,7 @@ impl<'a> Analyzer<'a> {
         variable
           .kind
           .is_var()
-          .then(|| self.factory.new_computed(self.factory.undefined, variable.decl_dep.cloned()))
+          .then(|| self.factory.computed(self.factory.undefined, variable.decl_dep.cloned()))
       });
 
       let target_cf_scope =
@@ -208,9 +208,9 @@ impl<'a> Analyzer<'a> {
 
             let variable =
               self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
-            variable.value = Some(self.factory.new_computed(
+            variable.value = Some(self.factory.computed(
               if indeterminate {
-                self.factory.new_union(vec![
+                self.factory.union(vec![
                   old_val.unwrap_or(unsafe { mem::transmute(UNDEFINED_ENTITY) }),
                   new_val,
                 ])

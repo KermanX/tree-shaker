@@ -13,13 +13,13 @@ impl<'a> Analyzer<'a> {
     let binding_val = match is_undefined {
       Some(true) => {
         let default_val = self.exec_expression(default);
-        self.factory.new_computed(default_val, value.to_consumable())
+        self.factory.computed(default_val, value.to_consumable())
       }
       Some(false) => value,
       None => {
         self.push_cf_scope_normal(None);
         let default_val = self.exec_expression(default);
-        let value = self.factory.new_union(vec![default_val, value]);
+        let value = self.factory.union(vec![default_val, value]);
         self.pop_cf_scope();
         value
       }

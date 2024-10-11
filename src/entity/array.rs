@@ -1,4 +1,6 @@
-use super::{consumed_object, Entity, EntityTrait, LiteralEntity, TypeofResult};
+use super::{
+  consumed_object, entity::EnumeratedProperties, Entity, EntityTrait, LiteralEntity, TypeofResult,
+};
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode},
@@ -81,12 +83,12 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               result.push(self.get_length().map_or_else(
                 || {
                   let dep: Vec<_> = self.rest.borrow().iter().cloned().collect();
-                  analyzer.factory.new_computed_unknown_number(box_consumable(dep))
+                  analyzer.factory.computed_unknown_number(box_consumable(dep))
                 },
                 |length| {
                   analyzer
                     .factory
-                    .new_number(length as f64, analyzer.allocator.alloc(length.to_string()))
+                    .number(length as f64, analyzer.allocator.alloc(length.to_string()))
                 },
               ));
             } else if let Some(property) = analyzer.builtins.prototypes.array.get(key) {
@@ -100,9 +102,9 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
           _ => unreachable!(),
         }
       }
-      analyzer.factory.new_computed_union(result, box_consumable(dep))
+      analyzer.factory.computed_union(result, box_consumable(dep))
     } else {
-      analyzer.factory.new_computed_unknown(box_consumable((
+      analyzer.factory.computed_unknown(box_consumable((
         ConsumableNode::new_box(
           self
             .elements
@@ -141,7 +143,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 *element = if definite {
                   value.clone()
                 } else {
-                  analyzer.factory.new_union(vec![element.clone(), value.clone()])
+                  analyzer.factory.union(vec![element.clone(), value.clone()])
                 };
               } else if !rest_added {
                 rest_added = true;
@@ -197,18 +199,17 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     if self.consumed.get() {
       return consumed_object::enumerate_properties(rc, analyzer, dep);
     }
-    let self_dep = box_consumable((self.deps.borrow_mut().collect(), dep.cloned()));
 
     let mut entries = Vec::new();
     for (i, element) in self.elements.borrow().iter().enumerate() {
       entries.push((
         true,
-        analyzer.factory.new_string(analyzer.allocator.alloc(i.to_string())),
-        analyzer.factory.new_computed(element.clone(), self_dep.cloned()),
+        analyzer.factory.string(analyzer.allocator.alloc(i.to_string())),
+        element.clone(),
       ));
     }
     let rest = self.rest.borrow();
@@ -216,13 +217,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       entries.push((
         true,
         analyzer.factory.unknown_string,
-        analyzer.factory.new_computed(
-          analyzer.factory.new_union(rest.iter().cloned().collect()),
-          self_dep.cloned(),
-        ),
+        analyzer.factory.union(rest.iter().cloned().collect()),
       ));
     }
-    entries
+    (entries, box_consumable((self.deps.borrow_mut().collect(), dep.cloned())))
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
@@ -251,7 +249,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer, dep);
     }
-    analyzer.factory.new_computed(rc, dep)
+    analyzer.factory.computed(rc, dep)
   }
 
   fn iterate(
@@ -269,36 +267,36 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         .elements
         .borrow()
         .iter()
-        .map(|val| analyzer.factory.new_computed(val.clone(), dep.cloned()))
+        .map(|val| analyzer.factory.computed(val.clone(), dep.cloned()))
         .collect(),
       if rest.is_empty() {
         None
       } else {
-        Some(analyzer.factory.new_computed_union(self.rest.borrow().clone(), dep))
+        Some(analyzer.factory.computed_union(self.rest.borrow().clone(), dep))
       },
     )
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_string("object")
+    analyzer.factory.string("object")
   }
 
   fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
-    analyzer.factory.new_computed_unknown_string(rc.to_consumable())
+    analyzer.factory.computed_unknown_string(rc.to_consumable())
   }
 
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
-    analyzer.factory.new_computed_unknown(rc.to_consumable())
+    analyzer.factory.computed_unknown(rc.to_consumable())
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_boolean(true)
+    analyzer.factory.boolean(true)
   }
 
   fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

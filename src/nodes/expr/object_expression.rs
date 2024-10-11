@@ -27,8 +27,7 @@ impl<'a> Analyzer<'a> {
         ObjectPropertyKind::ObjectProperty(node) => {
           let key = self.exec_property_key(&node.key);
           let value = self.exec_expression(&node.value);
-          let value =
-            self.factory.new_computed(value, box_consumable(AstKind::ObjectProperty(node)));
+          let value = self.factory.computed(value, box_consumable(AstKind::ObjectProperty(node)));
 
           match &node.key {
             PropertyKey::StaticIdentifier(node) if node.name == "__proto__" => {
@@ -53,7 +52,7 @@ impl<'a> Analyzer<'a> {
       object.consume(self);
     }
 
-    self.factory.new_entity(object)
+    self.factory.entity(object)
   }
 }
 

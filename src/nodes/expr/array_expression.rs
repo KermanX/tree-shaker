@@ -32,7 +32,7 @@ impl<'a> Analyzer<'a> {
         _ => {
           let dep = box_consumable(AstKind::ArrayExpressionElement(element));
           let value = self.exec_expression(element.to_expression());
-          let element = self.factory.new_computed(value, dep);
+          let element = self.factory.computed(value, dep);
           if rest.is_empty() {
             array.push_element(element);
           } else {
@@ -43,10 +43,10 @@ impl<'a> Analyzer<'a> {
     }
 
     if !rest.is_empty() {
-      array.init_rest(self.factory.new_union(rest));
+      array.init_rest(self.factory.union(rest));
     }
 
-    self.factory.new_entity(array)
+    self.factory.entity(array)
   }
 }
 

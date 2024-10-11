@@ -7,8 +7,8 @@ pub fn boolean_from_test_result<'a>(
   deps: impl FnOnce() -> Consumable<'a>,
 ) -> Entity<'a> {
   match result {
-    Some(value) => analyzer.factory.new_boolean(value),
-    None => analyzer.factory.new_computed(analyzer.factory.unknown_boolean, deps()),
+    Some(value) => analyzer.factory.boolean(value),
+    None => analyzer.factory.computed(analyzer.factory.unknown_boolean, deps()),
   }
 }
 

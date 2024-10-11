@@ -16,7 +16,7 @@ use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function(&mut self, node: &'a Function<'a>, is_expression: bool) -> Entity<'a> {
-    self.factory.new_function(
+    self.factory.function(
       FunctionEntitySource::Function(node),
       self.scope_context.variable.stack.clone(),
       is_expression,

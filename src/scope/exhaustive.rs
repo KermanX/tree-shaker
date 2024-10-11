@@ -91,15 +91,16 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn mark_exhaustive_read(&mut self, variable: (ScopeId, SymbolId), target: usize) {
-    for id in self.scope_context.cf.stack[target..].to_vec().into_iter() {
-      self.scope_context.cf.get_mut(id).mark_exhaustive_read(variable);
+    for depth in target..self.scope_context.cf.stack.len() {
+      self.scope_context.cf.get_mut_from_depth(depth).mark_exhaustive_read(variable);
     }
   }
 
   pub fn mark_exhaustive_write(&mut self, variable: (ScopeId, SymbolId), target: usize) -> bool {
     let mut should_consume = false;
-    for id in self.scope_context.cf.stack[target..].to_vec().into_iter() {
-      should_consume |= self.scope_context.cf.get_mut(id).mark_exhaustive_write(variable)
+    for depth in target..self.scope_context.cf.stack.len() {
+      should_consume |=
+        self.scope_context.cf.get_mut_from_depth(depth).mark_exhaustive_write(variable)
     }
     should_consume
   }

@@ -18,22 +18,18 @@ impl<'a> ConsumableCollector<'a> {
   }
 
   pub fn try_collect(&mut self) -> Option<ConsumableNode<'a>> {
-    let node = if self.current.is_empty() {
-      if let Some(node) = self.node.take() {
-        Some(ConsumableNode::new_box(node))
-      } else {
-        None
-      }
+    if self.current.is_empty() {
+      self.node.clone()
     } else {
       let current = mem::take(&mut self.current);
-      Some(if let Some(node) = self.node.take() {
-        ConsumableNode::new(Box::new((current, node)))
+      let node = Some(if let Some(node) = self.node.take() {
+        ConsumableNode::new_box((current, node))
       } else {
         ConsumableNode::new_box(current)
-      })
-    };
-    self.node = node.clone();
-    node
+      });
+      self.node = node.clone();
+      node
+    }
   }
 
   pub fn collect(&mut self) -> ConsumableNode<'a> {

@@ -3,7 +3,6 @@ use crate::{
   consumable::box_consumable,
   entity::{Entity, EntityDepNode, EntityTrait},
 };
-use oxc::ast::ast::PropertyKind;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_object_rest(
@@ -12,17 +11,12 @@ impl<'a> Analyzer<'a> {
     object: Entity<'a>,
     enumerated: Vec<Entity<'a>>,
   ) -> Entity<'a> {
-    let properties = object.enumerate_properties(self, box_consumable(dep.into()));
-
     let rest = self.new_empty_object();
-    for (definite, key, value) in properties {
-      rest.init_property(self, PropertyKind::Init, key, value, definite);
-    }
-
+    rest.init_spread(self, box_consumable(dep.into()), object);
     for key in enumerated {
       rest.delete_property(self, box_consumable(()), key);
     }
 
-    self.factory.new_entity(rest)
+    self.factory.entity(rest)
   }
 }

@@ -1,4 +1,6 @@
-use super::{consumed_object, Entity, EntityFactory, EntityTrait, TypeofResult};
+use super::{
+  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
+};
 use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
 
@@ -48,9 +50,9 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &self,
     _rc: Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-    vec![]
+    dep: Consumable<'a>,
+  ) -> EnumeratedProperties<'a> {
+    (vec![], dep)
   }
 
   fn call(
@@ -84,11 +86,11 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_string("function")
+    analyzer.factory.string("function")
   }
 
   fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_computed_unknown_string(rc.to_consumable())
+    analyzer.factory.computed_unknown_string(rc.to_consumable())
   }
 
   fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -96,7 +98,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.new_boolean(true)
+    analyzer.factory.boolean(true)
   }
 
   fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -137,11 +139,8 @@ impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn new_implemented_builtin_fn(
-    &self,
-    implementation: BuiltinFnImplementation<'a>,
-  ) -> Entity<'a> {
-    self.new_entity(ImplementedBuiltinFnEntity { implementation })
+  pub fn implemented_builtin_fn(&self, implementation: BuiltinFnImplementation<'a>) -> Entity<'a> {
+    self.entity(ImplementedBuiltinFnEntity { implementation })
   }
 }
 

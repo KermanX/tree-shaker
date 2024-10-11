@@ -29,19 +29,19 @@ impl<'a> Analyzer<'a> {
       for expr in &node.quasi.expressions {
         let value = self.exec_expression(expr);
         let dep: EntityDepNode = (AstType2::ExpressionInTaggedTemplate, expr).into();
-        arguments.push((false, self.factory.new_computed(value, box_consumable(dep))));
+        arguments.push((false, self.factory.computed(value, box_consumable(dep))));
       }
 
       let value = tag.call(
         self,
         box_consumable(AstKind::TaggedTemplateExpression(node)),
         this,
-        self.factory.new_arguments(arguments),
+        self.factory.arguments(arguments),
       );
 
       if indeterminate {
         self.pop_cf_scope();
-        self.factory.new_union(vec![value, self.factory.undefined])
+        self.factory.union(vec![value, self.factory.undefined])
       } else {
         value
       }

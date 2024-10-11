@@ -19,7 +19,7 @@ impl<'a> Builtins<'a> {
   pub fn new(factory: &EntityFactory<'a>) -> Self {
     Self {
       globals: create_globals(factory),
-      prototypes: factory.allocator.alloc(create_builtin_prototypes(factory)),
+      prototypes: factory.alloc(create_builtin_prototypes(factory)),
       import_meta: create_import_meta(factory),
     }
   }

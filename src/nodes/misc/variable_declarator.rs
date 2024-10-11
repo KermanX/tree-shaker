@@ -33,7 +33,7 @@ impl<'a> Analyzer<'a> {
       }
       None => node.init.as_ref().map(|init| {
         let val = self.exec_expression(init);
-        self.factory.new_computed(val, box_consumable(AstKind::VariableDeclarator(node)))
+        self.factory.computed(val, box_consumable(AstKind::VariableDeclarator(node)))
       }),
     };
 

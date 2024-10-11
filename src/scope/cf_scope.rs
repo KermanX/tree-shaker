@@ -192,7 +192,8 @@ impl<'a> Analyzer<'a> {
     mut must_exit: bool,
     mut acc_dep: Option<ConsumableNode<'a>>,
   ) -> Option<ConsumableNode<'a>> {
-    for id in self.scope_context.cf.stack[target_depth..from_depth].to_vec().into_iter().rev() {
+    for depth in (target_depth..from_depth).rev() {
+      let id = self.scope_context.cf.stack[depth];
       let cf_scope = self.scope_context.cf.get_mut(id);
       let this_dep = cf_scope.deps.collect();
       let dep = || acc_dep.clone().map(box_consumable);

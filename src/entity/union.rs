@@ -4,7 +4,10 @@ use crate::{
   use_consumed_flag,
 };
 
-use super::{consumed_object, Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult};
+use super::{
+  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, LiteralEntity,
+  TypeofResult,
+};
 use rustc_hash::FxHashSet;
 use std::cell::Cell;
 
@@ -37,7 +40,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
         analyzer.exec_indeterminately(|analyzer| entity.get_property(analyzer, dep.cloned(), key)),
       );
     }
-    analyzer.factory.new_union(values)
+    analyzer.factory.union(values)
   }
 
   fn set_property(
@@ -60,7 +63,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     // FIXME:
     if analyzer.config.unknown_property_read_side_effects {
       self.consume(analyzer);
@@ -88,7 +91,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
         analyzer.exec_indeterminately(|analyzer| entity.call(analyzer, dep.cloned(), this, args)),
       );
     }
-    analyzer.factory.new_union(results)
+    analyzer.factory.union(results)
   }
 
   fn r#await(
@@ -101,7 +104,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.values {
       values.push(analyzer.exec_indeterminately(|analyzer| entity.r#await(analyzer, dep.cloned())));
     }
-    analyzer.factory.new_union(values)
+    analyzer.factory.union(values)
   }
 
   fn iterate(
@@ -124,7 +127,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     if has_undefined {
       results.push(analyzer.factory.undefined);
     }
-    (vec![], analyzer.factory.try_new_union(results))
+    (vec![], analyzer.factory.try_union(results))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -133,7 +136,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.values {
       result.push(entity.get_typeof(analyzer));
     }
-    analyzer.factory.new_union(result)
+    analyzer.factory.union(result)
   }
 
   fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -142,7 +145,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.values {
       result.push(entity.get_to_string(analyzer));
     }
-    analyzer.factory.new_union(result)
+    analyzer.factory.union(result)
   }
 
   fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -151,7 +154,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.values {
       result.push(entity.get_to_numeric(analyzer));
     }
-    analyzer.factory.new_union(result)
+    analyzer.factory.union(result)
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -159,7 +162,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.values {
       result.push(entity.get_to_boolean(analyzer));
     }
-    analyzer.factory.new_union(result)
+    analyzer.factory.union(result)
   }
 
   fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -168,7 +171,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.values {
       result.push(entity.get_to_property_key(analyzer));
     }
-    analyzer.factory.new_union(result)
+    analyzer.factory.union(result)
   }
 
   fn get_to_literals(
@@ -213,7 +216,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn try_new_union(&self, values: Vec<Entity<'a>>) -> Option<Entity<'a>> {
+  pub fn try_union(&self, values: Vec<Entity<'a>>) -> Option<Entity<'a>> {
     if values.is_empty() {
       None
     } else {
@@ -222,19 +225,19 @@ impl<'a> EntityFactory<'a> {
       } else {
         let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
         if has_unknown {
-          self.new_computed_unknown(box_consumable(ConsumableNode::new_box(values)))
+          self.computed_unknown(box_consumable(ConsumableNode::new_box(values)))
         } else {
-          self.new_entity(UnionEntity { values, consumed: Cell::new(false) })
+          self.entity(UnionEntity { values, consumed: Cell::new(false) })
         }
       })
     }
   }
 
-  pub fn new_union(&self, values: Vec<Entity<'a>>) -> Entity<'a> {
-    self.try_new_union(values).unwrap()
+  pub fn union(&self, values: Vec<Entity<'a>>) -> Entity<'a> {
+    self.try_union(values).unwrap()
   }
 
-  pub fn new_computed_union(&self, values: Vec<Entity<'a>>, dep: Consumable<'a>) -> Entity<'a> {
-    self.new_computed(self.new_union(values), dep)
+  pub fn computed_union(&self, values: Vec<Entity<'a>>, dep: Consumable<'a>) -> Entity<'a> {
+    self.computed(self.union(values), dep)
   }
 }

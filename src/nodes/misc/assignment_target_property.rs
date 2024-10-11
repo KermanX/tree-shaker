@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
     let dep = box_consumable(EntityDepNode::from((AstType2::AssignmentTargetProperty, node)));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
-        let key = self.factory.new_string(node.binding.name.as_str());
+        let key = self.factory.string(node.binding.name.as_str());
 
         let value = value.get_property(self, dep, key);
 

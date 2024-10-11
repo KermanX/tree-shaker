@@ -32,7 +32,7 @@ impl<'a> Analyzer<'a> {
       let arguments_consumed = self.consume_arguments(None);
       self.call_scope_mut().need_consume_arguments = !arguments_consumed;
       self.factory.unknown
-    } else if let Some(global) = self.builtins.globals.get(node.name.as_str()).cloned() {
+    } else if let Some(global) = self.builtins.get_global(node.name.as_str()) {
       // Known global
       global
     } else {
@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
     value: Entity<'a>,
   ) {
     let dep = box_consumable(AstKind::IdentifierReference(node));
-    let value = self.factory.new_computed(value, dep);
+    let value = self.factory.computed(value, dep);
 
     let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
     debug_assert!(reference.is_write());

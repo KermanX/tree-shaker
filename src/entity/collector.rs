@@ -56,12 +56,12 @@ impl<'a> LiteralCollector<'a> {
           self.get_entity_on_invalid(entity, analyzer)
         } else {
           self.collected.borrow_mut().push(entity);
-          analyzer.factory.new_entity(literal)
+          analyzer.factory.entity(literal)
         }
       } else {
         self.literal = Some(literal);
         self.collected.borrow_mut().push(entity);
-        analyzer.factory.new_entity(literal)
+        analyzer.factory.entity(literal)
       }
     } else {
       self.invalid = true;
@@ -74,7 +74,7 @@ impl<'a> LiteralCollector<'a> {
     if self.collected.borrow().is_empty() {
       entity
     } else {
-      analyzer.factory.new_collected(entity, self.collected.clone())
+      analyzer.factory.collected(entity, self.collected.clone())
     }
   }
 

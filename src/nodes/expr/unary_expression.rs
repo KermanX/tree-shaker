@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
       match &node.argument {
         Expression::StaticMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
-          let property = self.factory.new_string(&node.property.name);
+          let property = self.factory.string(&node.property.name);
           object.delete_property(self, box_consumable(dep), property)
         }
         Expression::PrivateFieldExpression(node) => {
@@ -50,22 +50,22 @@ impl<'a> Analyzer<'a> {
         if let Some(num) = argument.get_literal(self).and_then(|lit| lit.to_number()) {
           if let Some(num) = num {
             let num = -num.0;
-            self.factory.new_number(num, self.allocator.alloc(num.to_string()))
+            self.factory.number(num, self.allocator.alloc(num.to_string()))
           } else {
             self.factory.nan
           }
         } else {
           // Maybe number or bigint
-          self.factory.new_computed_unknown(argument.to_consumable())
+          self.factory.computed_unknown(argument.to_consumable())
         }
       }
       UnaryOperator::UnaryPlus => argument.get_to_numeric(self),
       UnaryOperator::LogicalNot => match argument.test_truthy() {
         Some(true) => self.factory.r#false,
         Some(false) => self.factory.r#true,
-        None => self.factory.new_computed_unknown_boolean(argument.to_consumable()),
+        None => self.factory.computed_unknown_boolean(argument.to_consumable()),
       },
-      UnaryOperator::BitwiseNot => self.factory.new_computed_unknown(argument.to_consumable()),
+      UnaryOperator::BitwiseNot => self.factory.computed_unknown(argument.to_consumable()),
       UnaryOperator::Typeof => argument.get_typeof(self),
       UnaryOperator::Void => self.factory.undefined,
       UnaryOperator::Delete => unreachable!(),
