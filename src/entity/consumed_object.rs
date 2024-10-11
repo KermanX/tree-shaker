@@ -1,4 +1,4 @@
-use super::Entity;
+use super::{entity::EnumeratedProperties, Entity};
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
@@ -38,15 +38,17 @@ pub fn enumerate_properties<'a>(
   rc: Entity<'a>,
   analyzer: &mut Analyzer<'a>,
   dep: Consumable<'a>,
-) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+) -> EnumeratedProperties<'a> {
   if analyzer.config.unknown_property_read_side_effects {
     analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_global();
-    vec![(false, analyzer.factory.unknown, analyzer.factory.unknown)]
+    (vec![(false, analyzer.factory.unknown, analyzer.factory.unknown)], box_consumable(()))
   } else {
-    let unknown = analyzer.factory.new_computed_unknown(box_consumable((rc.clone(), dep)));
-    vec![(false, unknown.clone(), unknown)]
+    (
+      vec![(false, analyzer.factory.unknown, analyzer.factory.unknown)],
+      box_consumable((rc.clone(), dep)),
+    )
   }
 }
 

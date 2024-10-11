@@ -7,6 +7,8 @@ use oxc::allocator::Allocator;
 use rustc_hash::FxHashSet;
 use std::fmt::Debug;
 
+pub type EnumeratedProperties<'a> = (Vec<(bool, Entity<'a>, Entity<'a>)>, Consumable<'a>);
+
 pub trait EntityTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
 
@@ -30,7 +32,7 @@ pub trait EntityTrait<'a>: Debug {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)>;
+  ) -> EnumeratedProperties<'a>;
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>);
   fn call(
     &self,
@@ -132,7 +134,7 @@ impl<'a> Entity<'a> {
     &self,
     analyzer: &mut Analyzer<'a>,
     dep: impl Into<Consumable<'a>>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     self.0.enumerate_properties(*self, analyzer, dep.into())
   }
 

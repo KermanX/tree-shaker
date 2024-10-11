@@ -1,4 +1,6 @@
-use super::{consumed_object, Entity, EntityFactory, EntityTrait, TypeofResult};
+use super::{
+  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
+};
 use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable, utils::F64WithEq};
 use oxc::{
   ast::{
@@ -64,19 +66,22 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     if let LiteralEntity::String(value) = self {
       if value.len() <= analyzer.config.max_simple_string_length {
-        value
-          .char_indices()
-          .map(|(i, c)| {
-            (
-              true,
-              analyzer.factory.new_string(analyzer.allocator.alloc(i.to_string())),
-              analyzer.factory.new_string(analyzer.allocator.alloc(c.to_string())),
-            )
-          })
-          .collect()
+        (
+          value
+            .char_indices()
+            .map(|(i, c)| {
+              (
+                true,
+                analyzer.factory.new_string(analyzer.allocator.alloc(i.to_string())),
+                analyzer.factory.new_string(analyzer.allocator.alloc(c.to_string())),
+              )
+            })
+            .collect(),
+          dep,
+        )
       } else {
         analyzer
           .factory
@@ -85,7 +90,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       }
     } else {
       // No effect
-      vec![]
+      (vec![], dep)
     }
   }
 

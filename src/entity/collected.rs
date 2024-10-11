@@ -1,4 +1,6 @@
-use super::{Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult};
+use super::{
+  entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
+};
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use rustc_hash::FxHashSet;
 use std::{
@@ -48,7 +50,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     self.consume_deps(analyzer);
     self.val.enumerate_properties(analyzer, dep)
   }

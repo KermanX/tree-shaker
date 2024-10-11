@@ -1,4 +1,4 @@
-use super::{Entity, EntityFactory, EntityTrait, TypeofResult};
+use super::{entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult};
 use crate::{analyzer::Analyzer, consumable::Consumable};
 
 #[derive(Debug)]
@@ -39,7 +39,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     _rc: Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     unreachable!()
   }
 

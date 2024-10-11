@@ -4,7 +4,7 @@ use crate::{
   use_consumed_flag,
 };
 
-use super::{consumed_object, Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult};
+use super::{consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult};
 use rustc_hash::FxHashSet;
 use std::cell::Cell;
 
@@ -60,7 +60,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     // FIXME:
     if analyzer.config.unknown_property_read_side_effects {
       self.consume(analyzer);

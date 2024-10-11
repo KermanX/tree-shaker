@@ -1,5 +1,11 @@
-use super::{consumed_object, Entity, EntityFactory, EntityTrait, TypeofResult};
-use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable};
+use super::{
+  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
+};
+use crate::{
+  analyzer::Analyzer,
+  builtins::Prototype,
+  consumable::{box_consumable, Consumable},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnknownEntity {
@@ -58,20 +64,19 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     if self.maybe_object() {
       if analyzer.config.unknown_property_read_side_effects {
         self.consume(analyzer);
       }
       consumed_object::enumerate_properties(rc, analyzer, dep)
     } else if *self == UnknownEntity::String {
-      vec![(
-        false,
-        analyzer.factory.new_computed_unknown_string(rc.to_consumable()),
-        analyzer.factory.new_computed_unknown_string(rc.to_consumable()),
-      )]
+      (
+        vec![(false, analyzer.factory.unknown_string, analyzer.factory.unknown_string)],
+        box_consumable((rc.clone(), dep)),
+      )
     } else {
-      vec![]
+      (vec![], box_consumable((rc.clone(), dep)))
     }
   }
 

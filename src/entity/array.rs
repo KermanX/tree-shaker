@@ -1,4 +1,6 @@
-use super::{consumed_object, Entity, EntityTrait, LiteralEntity, TypeofResult};
+use super::{
+  consumed_object, entity::EnumeratedProperties, Entity, EntityTrait, LiteralEntity, TypeofResult,
+};
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode},
@@ -197,18 +199,17 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     if self.consumed.get() {
       return consumed_object::enumerate_properties(rc, analyzer, dep);
     }
-    let self_dep = box_consumable((self.deps.borrow_mut().collect(), dep.cloned()));
 
     let mut entries = Vec::new();
     for (i, element) in self.elements.borrow().iter().enumerate() {
       entries.push((
         true,
         analyzer.factory.new_string(analyzer.allocator.alloc(i.to_string())),
-        analyzer.factory.new_computed(element.clone(), self_dep.cloned()),
+        element.clone(),
       ));
     }
     let rest = self.rest.borrow();
@@ -216,13 +217,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       entries.push((
         true,
         analyzer.factory.unknown_string,
-        analyzer.factory.new_computed(
-          analyzer.factory.new_union(rest.iter().cloned().collect()),
-          self_dep.cloned(),
-        ),
+        analyzer.factory.new_union(rest.iter().cloned().collect()),
       ));
     }
-    entries
+    (entries, box_consumable((self.deps.borrow_mut().collect(), dep.cloned())))
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {

@@ -1,4 +1,6 @@
-use super::{consumed_object, Entity, EntityFactory, EntityTrait, TypeofResult};
+use super::{
+  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
+};
 use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
 
@@ -48,9 +50,9 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &self,
     _rc: Entity<'a>,
     _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
-    vec![]
+    dep: Consumable<'a>,
+  ) -> EnumeratedProperties<'a> {
+    (vec![], dep)
   }
 
   fn call(

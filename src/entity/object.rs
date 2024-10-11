@@ -1,4 +1,6 @@
-use super::{consumed_object, Entity, EntityTrait, LiteralEntity, TypeofResult};
+use super::{
+  consumed_object, entity::EnumeratedProperties, Entity, EntityTrait, LiteralEntity, TypeofResult,
+};
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
@@ -261,11 +263,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     if self.consumed.get() {
       return consumed_object::enumerate_properties(rc, analyzer, dep);
     }
-    let self_dep = ConsumableNode::new_box((self.deps.borrow_mut().collect(), dep.cloned()));
 
     let this = rc;
     // unknown_keyed = unknown_keyed + rest
@@ -273,21 +274,18 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     unknown_keyed.extend(self.rest.borrow().get_value(analyzer, dep.cloned(), this));
     let mut result = Vec::new();
     if unknown_keyed.len() > 0 {
-      result.push((
-        false,
-        analyzer.factory.unknown,
-        analyzer.factory.new_computed_union(unknown_keyed, self_dep.cloned()),
-      ));
+      result.push((false, analyzer.factory.unknown, analyzer.factory.new_union(unknown_keyed)));
     }
     for (key, properties) in self.string_keyed.borrow().iter() {
       let values = properties.get_value(analyzer, dep.cloned(), this);
       result.push((
         properties.definite,
         analyzer.factory.new_string(key),
-        analyzer.factory.new_computed_union(values, self_dep.cloned()),
+        analyzer.factory.new_union(values),
       ));
     }
-    result
+
+    (result, box_consumable((self.deps.borrow_mut().collect(), dep.cloned())))
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
@@ -482,7 +480,8 @@ impl<'a> ObjectEntity<'a> {
     dep: Consumable<'a>,
     argument: Entity<'a>,
   ) {
-    let properties = argument.enumerate_properties(analyzer, dep);
+    let (properties, deps) = argument.enumerate_properties(analyzer, dep);
+    self.deps.borrow_mut().push(deps);
     for (definite, key, value) in properties {
       self.init_property(analyzer, PropertyKind::Init, key, value, definite);
     }

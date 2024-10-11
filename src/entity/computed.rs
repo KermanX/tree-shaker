@@ -1,4 +1,6 @@
-use super::{Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult};
+use super::{
+  entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
+};
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableTrait},
@@ -48,7 +50,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     self.val.enumerate_properties(analyzer, box_consumable((self.dep.cloned(), dep)))
   }
 

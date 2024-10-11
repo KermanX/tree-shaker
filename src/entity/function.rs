@@ -1,4 +1,7 @@
-use super::{consumed_object, Entity, EntityDepNode, EntityFactory, EntityTrait, TypeofResult};
+use super::{
+  consumed_object, entity::EnumeratedProperties, Entity, EntityDepNode, EntityFactory, EntityTrait,
+  TypeofResult,
+};
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
@@ -132,7 +135,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Vec<(bool, Entity<'a>, Entity<'a>)> {
+  ) -> EnumeratedProperties<'a> {
     if analyzer.config.unknown_property_read_side_effects {
       self.consume(analyzer);
     }
