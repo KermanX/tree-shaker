@@ -27,11 +27,15 @@ impl<'a> ConsumableTrait<'a> for &'a ConditionalBranchConsumable<'a> {
     if !self.referred.get() {
       self.referred.set(true);
 
-      let data = analyzer.conditional_data.get_mut(&self.dep_node).unwrap();
-
-      data.true_referred |= self.maybe_true;
-      data.false_referred |= self.maybe_false;
-      data.referred_tests.push(self.test);
+      if let Some(data) = analyzer.conditional_data.get_mut(&self.dep_node) {
+        data.true_referred |= self.maybe_true;
+        data.false_referred |= self.maybe_false;
+        data.referred_tests.push(self.test);
+      } else {
+        // When this conditional scope is already consumed in `post_analyze_handle_conditional`
+        // we should consume the test here
+        self.test.consume(analyzer);
+      }
     }
   }
   fn cloned(&self) -> Consumable<'a> {
@@ -76,7 +80,7 @@ impl<'a> Analyzer<'a> {
       if data.true_referred && data.false_referred {
         self.refer_dep(dep);
         for test in &data.referred_tests {
-          self.consume(*test);
+          test.consume(self);
         }
       }
     }
