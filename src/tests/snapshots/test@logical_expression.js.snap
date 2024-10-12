@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/logical_expression.js
 ---
@@ -24,12 +23,12 @@ export function impure(a) {
 	t2 = (effect2, 0);
 	t3 = (effect3, 1);
 	t4 = (effect4, effect4);
-	function f(b) {
-		b && effect;
+	function f(__unused_0B97) {
+		effect;
 	}
-	f(1);
-	function g(b) {
-		b || effect;
+	f();
+	function g(__unused_14EB) {
+		effect;
 	}
-	g(0);
+	g();
 }

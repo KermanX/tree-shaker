@@ -135,7 +135,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ComputedEntity<'a, T> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn computed(&self, val: Entity<'a>, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
-    self.entity(ComputedEntity { val, dep: dep.into(), consumed: Cell::new(false) })
+  pub fn computed<T: ConsumableTrait<'a> + 'a>(&self, val: Entity<'a>, dep: T) -> Entity<'a> {
+    self.entity(ComputedEntity { val, dep, consumed: Cell::new(false) })
   }
 }

@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/conditional_expression.js
 ---
@@ -18,4 +17,19 @@ export function main(a, b) {
 	e7;
 	a && e9;
 	a || e10;
+}
+export function complex_1() {
+	function f(__unused_39F5) {
+		effect();
+	}
+	f();
+	function g(__unused_5A66) {
+		effect(2);
+	}
+	g();
+	function h(t) {
+		effect(t ? 1 : 2);
+	}
+	h(0);
+	h(1);
 }

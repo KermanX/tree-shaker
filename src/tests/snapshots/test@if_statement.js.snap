@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/if_statement.js
 ---
@@ -43,4 +42,10 @@ export function with_effect(unknown) {
 	}
 	f(unknown);
 	e1;
+}
+export function with_effect_2() {
+	function f(__unused_910F) {
+		effect();
+	}
+	f();
 }

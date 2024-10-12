@@ -1,23 +1,17 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  build_effect,
-  entity::Entity,
-  scope::{conditional::ConditionalData, CfScopeKind},
+  analyzer::Analyzer, ast::AstType2, build_effect, entity::Entity, scope::CfScopeKind,
   transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{AssignmentExpression, AssignmentOperator, BinaryOperator, Expression, LogicalOperator},
-  AstKind,
+use oxc::ast::ast::{
+  AssignmentExpression, AssignmentOperator, BinaryOperator, Expression, LogicalOperator,
 };
 
 const AST_TYPE: AstType2 = AstType2::AssignmentExpression;
 
 #[derive(Debug, Default)]
-pub struct DataForLogical<'a> {
+pub struct DataForLogical {
   need_left_val: bool,
   need_right: bool,
-  conditional: ConditionalData<'a>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -53,29 +47,29 @@ impl<'a> Analyzer<'a> {
       data.need_left_val |= need_left_val;
       data.need_right |= need_right;
 
-      let historical_indeterminate = data.need_left_val && data.need_right;
-      let current_indeterminate = need_left_val && need_right;
-
-      self.push_conditional_cf_scope(
-        &mut data.conditional,
+      let conditional_dep = self.push_conditional_cf_scope(
+        (AstType2::LogicalExpressionLeft, &node.left),
         CfScopeKind::LogicalExpression,
         left.clone(),
-        historical_indeterminate,
-        current_indeterminate,
+        need_left_val,
+        need_right,
       );
-      self.push_cf_scope_for_dep(AstKind::AssignmentExpression(node));
+
+      let exec_right = |analyzer: &mut Analyzer<'a>| {
+        let val = analyzer.exec_expression(&node.right);
+        analyzer.factory.computed(val, conditional_dep)
+      };
 
       let value = match (need_left_val, need_right) {
-        (false, true) => self.exec_expression(&node.right),
+        (false, true) => exec_right(self),
         (true, false) => left,
         (true, true) => {
-          let right = self.exec_expression(&node.right);
+          let right = exec_right(self);
           self.factory.union(vec![left, right])
         }
         (false, false) => unreachable!(),
       };
 
-      self.pop_cf_scope();
       self.pop_cf_scope();
 
       if need_right {
@@ -122,40 +116,44 @@ impl<'a> Transformer<'a> {
         left,
         right,
       )),
-      (None, Some(right)) => Some(if need_val && *operator != AssignmentOperator::Assign {
-        if operator.is_logical() {
-          let data = self.get_data::<DataForLogical>(AST_TYPE, node);
+      (None, Some(right)) => {
+        if need_val && *operator != AssignmentOperator::Assign {
+          if operator.is_logical() {
+            let data = self.get_data::<DataForLogical>(AST_TYPE, node);
 
-          let need_left_val = (need_val && data.need_left_val)
-            || self.is_referred(AstKind::AssignmentExpression(node));
+            let need_left_val = self.is_referred((AstType2::LogicalExpressionLeft, &node.left));
 
-          let left = self.transform_assignment_target_read(left, need_left_val);
-          let right = data.need_right.then_some(right);
+            let left = self.transform_assignment_target_read(left, need_left_val);
+            let right = data.need_right.then_some(right);
 
-          match (left, right) {
-            (Some(left), Some(right)) => {
-              if need_left_val {
-                self.ast_builder.expression_logical(
+            if need_left_val {
+              let left = left.unwrap();
+              if let Some(right) = right {
+                Some(self.ast_builder.expression_logical(
                   *span,
                   left,
                   to_logical_operator(*operator),
                   right,
-                )
+                ))
               } else {
-                build_effect!(self.ast_builder, *span, Some(left); right)
+                Some(left)
               }
+            } else {
+              build_effect!(self.ast_builder, *span, left, right)
             }
-            (Some(left), None) => left,
-            (None, Some(right)) => right,
-            (None, None) => unreachable!(),
+          } else {
+            let left = self.transform_assignment_target_read(left, true).unwrap();
+            Some(self.ast_builder.expression_binary(
+              *span,
+              left,
+              to_binary_operator(*operator),
+              right,
+            ))
           }
         } else {
-          let left = self.transform_assignment_target_read(left, true).unwrap();
-          self.ast_builder.expression_binary(*span, left, to_binary_operator(*operator), right)
+          Some(right)
         }
-      } else {
-        right
-      }),
+      }
       (None, None) => None,
       _ => unreachable!(),
     }

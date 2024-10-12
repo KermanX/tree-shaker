@@ -1,7 +1,10 @@
 use crate::{
   ast::AstType2,
   builtins::Builtins,
-  data::{get_node_ptr, Diagnostics, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
+  data::{
+    get_node_ptr, ConditionalDataMap, Diagnostics, ExtraData, ReferredNodes, StatementVecData,
+    VarDeclarations,
+  },
   entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
   logger::{DebuggerEvent, Logger},
   scope::ScopeContext,
@@ -24,6 +27,7 @@ pub struct Analyzer<'a> {
   pub current_span: Vec<Span>,
   pub data: ExtraData<'a>,
   pub referred_nodes: ReferredNodes<'a>,
+  pub conditional_data: ConditionalDataMap<'a>,
   pub var_decls: VarDeclarations<'a>,
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
@@ -52,6 +56,7 @@ impl<'a> Analyzer<'a> {
       current_span: vec![],
       data: Default::default(),
       referred_nodes: Default::default(),
+      conditional_data: Default::default(),
       var_decls: Default::default(),
       named_exports: Vec::new(),
       default_export: None,
@@ -78,6 +83,8 @@ impl<'a> Analyzer<'a> {
     self.call_scope_mut().try_scopes.pop().unwrap().thrown_val(self).map(|entity| {
       entity.consume(self);
     });
+
+    self.post_analyze_handle_conditional();
 
     self.scope_context.assert_final_state();
   }

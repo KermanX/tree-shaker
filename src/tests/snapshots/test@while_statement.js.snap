@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/while_statement.js
 ---
@@ -42,10 +41,14 @@ export function main() {
 		if (a) {
 			break;
 		} else {
-			if (b) {
-				break;
-			} else {
-				continue;
+			{
+				b;
+				{
+					break;
+				}
+				{
+					continue;
+				}
 			}
 		}
 	}
@@ -53,10 +56,14 @@ export function main() {
 		i: if (a) {
 			break i;
 		} else {
-			if (b) {
-				break;
-			} else {
-				continue;
+			{
+				b;
+				{
+					break;
+				}
+				{
+					continue;
+				}
 			}
 		}
 		effect2;

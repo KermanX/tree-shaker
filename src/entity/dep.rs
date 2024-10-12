@@ -8,7 +8,6 @@ pub enum EntityDepNode {
   Environment,
   AstKind((usize, usize)),
   AstType(AstType2, usize),
-  DataPtr(usize),
 }
 
 impl Debug for EntityDepNode {
@@ -25,17 +24,8 @@ impl Debug for EntityDepNode {
         (*t).fmt(f)?;
         s.fmt(f)?;
       }
-      EntityDepNode::DataPtr(p) => {
-        p.fmt(f)?;
-      }
     }
     Ok(())
-  }
-}
-
-impl<'a> EntityDepNode {
-  pub fn from_data<T: 'a>(data: &'a T) -> Self {
-    EntityDepNode::DataPtr(get_node_ptr(data))
   }
 }
 
@@ -54,10 +44,6 @@ impl<T: GetSpan> From<(AstType2, &T)> for EntityDepNode {
 impl<'a> Analyzer<'a> {
   pub fn refer_dep(&mut self, dep: impl Into<EntityDepNode>) {
     self.referred_nodes.entry(dep.into()).and_modify(|v| *v += 1).or_insert(1);
-  }
-
-  pub fn is_referred(&self, dep: impl Into<EntityDepNode>) -> bool {
-    self.referred_nodes.contains_key(&dep.into())
   }
 }
 

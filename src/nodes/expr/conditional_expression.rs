@@ -1,20 +1,18 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  build_effect,
-  entity::Entity,
-  scope::{conditional::ConditionalData, CfScopeKind},
+  analyzer::Analyzer, ast::AstType2, build_effect, entity::Entity, scope::CfScopeKind,
   transformer::Transformer,
 };
-use oxc::ast::ast::{ConditionalExpression, Expression, LogicalOperator};
+use oxc::ast::{
+  ast::{ConditionalExpression, Expression, LogicalOperator},
+  AstKind,
+};
 
 const AST_TYPE: AstType2 = AstType2::ConditionalExpression;
 
 #[derive(Debug, Default)]
-pub struct Data<'a> {
+pub struct Data {
   maybe_true: bool,
   maybe_false: bool,
-  conditional: ConditionalData<'a>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -31,15 +29,12 @@ impl<'a> Analyzer<'a> {
     data.maybe_true |= maybe_true;
     data.maybe_false |= maybe_false;
 
-    let historical_indeterminate = data.maybe_true && data.maybe_false;
-    let current_indeterminate = maybe_true && maybe_false;
-
-    self.push_conditional_cf_scope(
-      &mut data.conditional,
+    let conditional_dep = self.push_conditional_cf_scope(
+      AstKind::ConditionalExpression(node),
       CfScopeKind::ConditionalExpression,
       test.clone(),
-      historical_indeterminate,
-      current_indeterminate,
+      maybe_true,
+      maybe_false,
     );
     let result = match (maybe_true, maybe_false) {
       (true, false) => self.exec_expression(&node.consequent),
@@ -54,7 +49,7 @@ impl<'a> Analyzer<'a> {
     };
     self.pop_cf_scope();
 
-    self.factory.computed(result, test.to_consumable())
+    self.factory.computed(result, conditional_dep)
   }
 }
 
@@ -68,36 +63,31 @@ impl<'a> Transformer<'a> {
 
     let ConditionalExpression { span, test, consequent, alternate, .. } = node;
 
-    match (data.maybe_true, data.maybe_false) {
-      (true, true) => {
-        let left = self.transform_expression(consequent, need_val);
-        let right = self.transform_expression(alternate, need_val);
-        let test = self.transform_expression(test, left.is_some() || right.is_some());
-        match (test, left, right) {
-          (Some(test), Some(left), Some(right)) => {
-            Some(self.ast_builder.expression_conditional(*span, test, left, right))
-          }
-          (Some(test), Some(consequent), None) => {
-            Some(self.ast_builder.expression_logical(*span, test, LogicalOperator::And, consequent))
-          }
-          (Some(test), None, Some(alternate)) => {
-            Some(self.ast_builder.expression_logical(*span, test, LogicalOperator::Or, alternate))
-          }
-          (test, None, None) => test,
-          _ => unreachable!(),
+    let consequent =
+      data.maybe_true.then(|| self.transform_expression(consequent, need_val)).flatten();
+    let alternate =
+      data.maybe_false.then(|| self.transform_expression(alternate, need_val)).flatten();
+
+    let need_test_val = self.is_referred(AstKind::ConditionalExpression(node));
+    let test = self.transform_expression(test, need_test_val);
+
+    if need_test_val {
+      let test = test.unwrap();
+
+      match (consequent, alternate) {
+        (Some(consequent), Some(alternate)) => {
+          Some(self.ast_builder.expression_conditional(*span, test, consequent, alternate))
         }
+        (Some(consequent), None) => {
+          Some(self.ast_builder.expression_logical(*span, test, LogicalOperator::And, consequent))
+        }
+        (None, Some(alternate)) => {
+          Some(self.ast_builder.expression_logical(*span, test, LogicalOperator::Or, alternate))
+        }
+        (None, None) => unreachable!(),
       }
-      (true, false) => {
-        let test = self.transform_expression(test, false);
-        let consequent = self.transform_expression(consequent, need_val);
-        build_effect!(self.ast_builder, *span, test, consequent)
-      }
-      (false, true) => {
-        let test = self.transform_expression(test, false);
-        let alternate = self.transform_expression(alternate, need_val);
-        build_effect!(self.ast_builder, *span, test, alternate)
-      }
-      _ => unreachable!(),
+    } else {
+      build_effect!(self.ast_builder, *span, test, consequent, alternate)
     }
   }
 }

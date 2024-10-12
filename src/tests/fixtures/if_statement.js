@@ -68,3 +68,11 @@ export function with_effect(unknown) {
     e2
   }
 }
+
+export function with_effect_2() {
+  function f(t) {
+    if(t) effect()
+  }
+  f(0)
+  f(1)
+}

@@ -4,7 +4,7 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   builtins::Prototype,
-  consumable::{box_consumable, Consumable},
+  consumable::{box_consumable, Consumable, ConsumableTrait},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -230,7 +230,7 @@ macro_rules! unknown_entity_ctors {
   ($($name:ident -> $var:ident,)*) => {
     $(
       #[allow(unused)]
-      pub fn $name(&self, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
+      pub fn $name<T: ConsumableTrait<'a> + 'a>(&self, dep: T) -> Entity<'a> {
         self.computed(self.$var, dep)
       }
     )*
