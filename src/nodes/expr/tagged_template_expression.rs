@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
       for expr in &node.quasi.expressions {
         let value = self.exec_expression(expr);
         let dep: EntityDepNode = (AstType2::ExpressionInTaggedTemplate, expr).into();
-        arguments.push((false, self.factory.computed(value, box_consumable(dep))));
+        arguments.push((false, self.factory.computed(value, dep)));
       }
 
       let value = tag.call(

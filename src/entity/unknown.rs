@@ -125,7 +125,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     dep: Consumable<'a>,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
     if *self == UnknownEntity::String {
-      return (vec![], Some(analyzer.factory.computed_unknown(rc.to_consumable())));
+      return (vec![], Some(analyzer.factory.computed_unknown(rc)));
     }
     if !self.maybe_object() {
       analyzer.thrown_builtin_error("Cannot iterate non-object");

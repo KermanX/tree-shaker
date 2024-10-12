@@ -232,7 +232,7 @@ impl<'a> Entity<'a> {
       if let Some(rest) = rest.clone() {
         result.push(rest.clone());
       } else {
-        result.push(analyzer.factory.computed(analyzer.factory.undefined, self.to_consumable()));
+        result.push(analyzer.factory.computed(analyzer.factory.undefined, *self));
       }
     }
     let rest_arr = analyzer.new_empty_array();

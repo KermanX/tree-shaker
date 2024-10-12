@@ -89,7 +89,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               result.push(self.get_length().map_or_else(
                 || {
                   let dep: Vec<_> = self.rest.borrow().iter().cloned().collect();
-                  analyzer.factory.computed_unknown_number(box_consumable(dep))
+                  analyzer.factory.computed_unknown_number(dep)
                 },
                 |length| {
                   analyzer
@@ -108,20 +108,22 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
           _ => unreachable!(),
         }
       }
-      analyzer.factory.computed_union(result, box_consumable(dep))
+      analyzer.factory.computed_union(result, dep)
     } else {
-      analyzer.factory.computed_unknown(box_consumable((
-        ConsumableNode::new_box(
-          self
-            .elements
-            .borrow()
-            .iter()
-            .chain(self.rest.borrow().iter())
-            .cloned()
-            .collect::<Vec<_>>(),
+      analyzer.factory.computed_unknown(
+        (
+          ConsumableNode::new_box(
+            self
+              .elements
+              .borrow()
+              .iter()
+              .chain(self.rest.borrow().iter())
+              .cloned()
+              .collect::<Vec<_>>(),
+          ),
+          dep,
         ),
-        dep,
-      )))
+      )
     }
   }
 
@@ -296,14 +298,14 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
-    analyzer.factory.computed_unknown_string(rc.to_consumable())
+    analyzer.factory.computed_unknown_string(rc)
   }
 
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
-    analyzer.factory.computed_unknown(rc.to_consumable())
+    analyzer.factory.computed_unknown(rc)
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

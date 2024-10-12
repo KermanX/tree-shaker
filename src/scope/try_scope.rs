@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, ConsumableNode},
+  consumable::ConsumableNode,
   entity::Entity,
 };
 
@@ -19,9 +19,9 @@ impl<'a> TryScope<'a> {
 
   pub fn thrown_val(self, analyzer: &Analyzer<'a>) -> Option<Entity<'a>> {
     // Always unknown here
-    self.may_throw.then(|| {
-      analyzer.factory.computed_unknown(box_consumable(ConsumableNode::new_box(self.thrown_values)))
-    })
+    self
+      .may_throw
+      .then(|| analyzer.factory.computed_unknown(ConsumableNode::new_box(self.thrown_values)))
   }
 }
 
@@ -69,7 +69,7 @@ impl<'a> Analyzer<'a> {
   fn explicit_throw_impl(&mut self, value: Entity<'a>) {
     let try_scope = self.try_scope();
     let exec_dep = self.get_exec_dep(try_scope.cf_scope_depth);
-    let forwarded = self.factory.computed(value, box_consumable(exec_dep));
+    let forwarded = self.factory.computed(value, exec_dep);
 
     let try_scope = self.try_scope_mut();
     try_scope.may_throw = true;

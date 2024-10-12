@@ -56,16 +56,16 @@ impl<'a> Analyzer<'a> {
           }
         } else {
           // Maybe number or bigint
-          self.factory.computed_unknown(argument.to_consumable())
+          self.factory.computed_unknown(argument)
         }
       }
       UnaryOperator::UnaryPlus => argument.get_to_numeric(self),
       UnaryOperator::LogicalNot => match argument.test_truthy() {
         Some(true) => self.factory.r#false,
         Some(false) => self.factory.r#true,
-        None => self.factory.computed_unknown_boolean(argument.to_consumable()),
+        None => self.factory.computed_unknown_boolean(argument),
       },
-      UnaryOperator::BitwiseNot => self.factory.computed_unknown(argument.to_consumable()),
+      UnaryOperator::BitwiseNot => self.factory.computed_unknown(argument),
       UnaryOperator::Typeof => argument.get_typeof(self),
       UnaryOperator::Void => self.factory.undefined,
       UnaryOperator::Delete => unreachable!(),

@@ -165,7 +165,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       }
       analyzer.factory.computed(
         analyzer.factory.union(values),
-        box_consumable((dep, key.clone(), self.deps.borrow_mut().collect())),
+        (dep, key.clone(), self.deps.borrow_mut().collect()),
       )
     } else {
       // TODO: like set_property, call getters and collect all possible values
@@ -199,7 +199,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     analyzer.push_cf_scope_normal(None);
 
     let key = key.get_to_property_key(analyzer);
-    let value = analyzer.factory.computed(value, key.to_consumable());
+    let value = analyzer.factory.computed(value, key);
     let this = rc;
 
     let mut may_write = false;
@@ -276,7 +276,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         .unknown_keyed
         .borrow_mut()
         .values
-        .push(ObjectPropertyValue::Field(analyzer.factory.computed(value, key.to_consumable())));
+        .push(ObjectPropertyValue::Field(analyzer.factory.computed(value, key)));
       self.apply_unknown_to_possible_setters(analyzer, dep);
     };
 
@@ -416,7 +416,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
-    analyzer.factory.computed_unknown_string(rc.to_consumable())
+    analyzer.factory.computed_unknown_string(rc)
   }
 
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -424,7 +424,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
-    analyzer.factory.computed_unknown(rc.to_consumable())
+    analyzer.factory.computed_unknown(rc)
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -469,7 +469,7 @@ impl<'a> ObjectEntity<'a> {
     value: Entity<'a>,
     definite: bool,
   ) {
-    let value = analyzer.factory.computed(value, key.to_consumable());
+    let value = analyzer.factory.computed(value, key);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let definite = definite && key_literals.len() == 1;
       for key_literal in key_literals {

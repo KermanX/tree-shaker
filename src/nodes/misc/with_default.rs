@@ -13,7 +13,7 @@ impl<'a> Analyzer<'a> {
     let binding_val = match is_undefined {
       Some(true) => {
         let default_val = self.exec_expression(default);
-        self.factory.computed(default_val, value.to_consumable())
+        self.factory.computed(default_val, value)
       }
       Some(false) => value,
       None => {

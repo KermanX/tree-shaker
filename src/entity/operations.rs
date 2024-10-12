@@ -247,9 +247,9 @@ impl<'a> EntityOpHost<'a> {
     }
 
     if values.is_empty() {
-      analyzer.factory.computed_unknown(input.to_consumable())
+      analyzer.factory.computed_unknown(input)
     } else {
-      analyzer.factory.computed_union(values, input.to_consumable())
+      analyzer.factory.computed_union(values, input)
     }
   }
 
@@ -286,10 +286,10 @@ impl<'a> EntityOpHost<'a> {
       | BinaryOperator::BitwiseAnd
       | BinaryOperator::Exponential => {
         // Can be number or bigint
-        analyzer.factory.computed_unknown(box_consumable((lhs.clone(), rhs.clone())))
+        analyzer.factory.computed_unknown((lhs.clone(), rhs.clone()))
       }
       BinaryOperator::In | BinaryOperator::Instanceof => {
-        analyzer.factory.computed_unknown_boolean(box_consumable((lhs.clone(), rhs.clone())))
+        analyzer.factory.computed_unknown_boolean((lhs.clone(), rhs.clone()))
       }
     }
   }

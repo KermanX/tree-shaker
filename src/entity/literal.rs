@@ -83,10 +83,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
           dep,
         )
       } else {
-        analyzer
-          .factory
-          .computed_unknown_string(rc.to_consumable())
-          .enumerate_properties(analyzer, dep)
+        analyzer.factory.computed_unknown_string(rc).enumerate_properties(analyzer, dep)
       }
     } else {
       // No effect
@@ -133,11 +130,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     match self {
       LiteralEntity::String(value) => (
         vec![],
-        if value.is_empty() {
-          None
-        } else {
-          Some(analyzer.factory.computed_unknown_string(rc.to_consumable()))
-        },
+        if value.is_empty() { None } else { Some(analyzer.factory.computed_unknown_string(rc)) },
       ),
       _ => {
         self.consume(analyzer);
@@ -192,7 +185,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
       Some(value) => analyzer.factory.boolean(value),
-      None => analyzer.factory.computed_unknown_boolean(rc.to_consumable()),
+      None => analyzer.factory.computed_unknown_boolean(rc),
     }
   }
 

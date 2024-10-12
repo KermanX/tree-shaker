@@ -1,12 +1,11 @@
-use crate::{
-  analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableNode},
-  use_consumed_flag,
-};
-
 use super::{
   consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, LiteralEntity,
   TypeofResult,
+};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{Consumable, ConsumableNode, ConsumableTrait},
+  use_consumed_flag,
 };
 use rustc_hash::FxHashSet;
 use std::cell::Cell;
@@ -225,7 +224,7 @@ impl<'a> EntityFactory<'a> {
       } else {
         let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
         if has_unknown {
-          self.computed_unknown(box_consumable(ConsumableNode::new_box(values)))
+          self.computed_unknown(ConsumableNode::new_box(values))
         } else {
           self.entity(UnionEntity { values, consumed: Cell::new(false) })
         }
@@ -237,7 +236,11 @@ impl<'a> EntityFactory<'a> {
     self.try_union(values).unwrap()
   }
 
-  pub fn computed_union(&self, values: Vec<Entity<'a>>, dep: Consumable<'a>) -> Entity<'a> {
+  pub fn computed_union<T: ConsumableTrait<'a> + 'a>(
+    &self,
+    values: Vec<Entity<'a>>,
+    dep: T,
+  ) -> Entity<'a> {
     self.computed(self.union(values), dep)
   }
 }
