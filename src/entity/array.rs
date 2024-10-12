@@ -110,20 +110,18 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       }
       analyzer.factory.computed_union(result, dep)
     } else {
-      analyzer.factory.computed_unknown(
-        (
-          ConsumableNode::new_box(
-            self
-              .elements
-              .borrow()
-              .iter()
-              .chain(self.rest.borrow().iter())
-              .cloned()
-              .collect::<Vec<_>>(),
-          ),
-          dep,
+      analyzer.factory.computed_unknown((
+        ConsumableNode::new_box(
+          self
+            .elements
+            .borrow()
+            .iter()
+            .chain(self.rest.borrow().iter())
+            .cloned()
+            .collect::<Vec<_>>(),
         ),
-      )
+        dep,
+      ))
     }
   }
 

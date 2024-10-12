@@ -1,8 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
-  build_effect_from_arr,
-  consumable::ConsumableNode,
-  entity::Entity,
+  analyzer::Analyzer, build_effect_from_arr, consumable::ConsumableNode, entity::Entity,
   transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, ImportExpression};
