@@ -2,10 +2,7 @@
 import Input from './Input.vue';
 import Logs from './Logs.vue';
 import Editor from './Editor.vue';
-import { doMinify, doTreeShake, diagnostics, output } from './states';
-import { ref } from 'vue';
-
-let showLogs = ref(true)
+import { doMinify, doTreeShake, diagnostics, output, showLogs } from './states';
 </script>
 
 <template>

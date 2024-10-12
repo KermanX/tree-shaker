@@ -2,7 +2,7 @@
 import * as monaco from 'monaco-editor';
 import { watchEffect } from 'vue';
 import Editor from './Editor.vue';
-import { activeCallScope, currentCallScopes, currentExprSpan, currentStmtSpan, input } from './states';
+import { activeCallScope, currentCallScopes, currentExprSpan, currentStmtSpan, input, showLogs } from './states';
 
 function setupEditor(editor: monaco.editor.IStandaloneCodeEditor) {
   const model = editor.getModel()!;
@@ -12,6 +12,13 @@ function setupEditor(editor: monaco.editor.IStandaloneCodeEditor) {
   const activeCallScopeDeco = editor.createDecorationsCollection();
 
   watchEffect(() => {
+    if (!showLogs.value) {
+      activeStmtSpanDeco.clear();
+      activeExprSpanDeco.clear();
+      activeCallScopeDeco.clear();
+      return;
+    }
+
     let stmtSpan = currentStmtSpan.value;
     activeStmtSpanDeco.set([{
       range: stmtSpan ? monaco.Range.fromPositions(
