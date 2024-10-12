@@ -96,13 +96,19 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn mark_exhaustive_write(&mut self, variable: (ScopeId, SymbolId), target: usize) -> bool {
+  pub fn mark_exhaustive_write(
+    &mut self,
+    variable: (ScopeId, SymbolId),
+    target: usize,
+  ) -> (bool, bool) {
     let mut should_consume = false;
+    let mut indeterminate = false;
     for depth in target..self.scope_context.cf.stack.len() {
-      should_consume |=
-        self.scope_context.cf.get_mut_from_depth(depth).mark_exhaustive_write(variable)
+      let scope = self.scope_context.cf.get_mut_from_depth(depth);
+      should_consume |= scope.mark_exhaustive_write(variable);
+      indeterminate |= scope.is_indeterminate();
     }
-    should_consume
+    (should_consume, indeterminate)
   }
 
   pub fn exec_exhaustive_deps(

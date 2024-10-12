@@ -180,13 +180,13 @@ impl<'a> Analyzer<'a> {
           self.consume(new_val);
         } else {
           let old_val = variable.value;
-          let should_consume = if old_val.is_some() {
+          let (should_consume, indeterminate) = if old_val.is_some() {
             // Normal write
             self.mark_exhaustive_write((id, symbol), target_cf_scope)
           } else if !variable.kind.is_redeclarable() {
             // TDZ write
             self.handle_tdz(target_cf_scope);
-            true
+            (true, false)
           } else {
             // Write uninitialized `var`
             self.mark_exhaustive_write((id, symbol), target_cf_scope)
@@ -204,8 +204,6 @@ impl<'a> Analyzer<'a> {
             variable.exhausted = true;
             variable.value = Some(self.factory.unknown);
           } else {
-            let indeterminate = self.is_relatively_indeterminate(target_cf_scope);
-
             let variable =
               self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
             variable.value = Some(self.factory.computed(
