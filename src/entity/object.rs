@@ -202,13 +202,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     let value = analyzer.factory.computed(value, key.to_consumable());
     let this = rc;
 
-    let may_write = if let Some(key_literals) = key.get_to_literals(analyzer) {
+    let mut may_write = false;
+
+    if let Some(key_literals) = key.get_to_literals(analyzer) {
       let indeterminate = indeterminate
         || self.unknown_keyed.borrow().values.len() > 0
         || self.rest.borrow().values.len() > 0;
       let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_and_unknown_setter_called = false;
-      let mut may_write = false;
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
@@ -269,15 +270,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           _ => unreachable!(),
         }
       }
-      may_write
     } else {
+      may_write = true;
       self
         .unknown_keyed
         .borrow_mut()
         .values
         .push(ObjectPropertyValue::Field(analyzer.factory.computed(value, key.to_consumable())));
       self.apply_unknown_to_possible_setters(analyzer, dep);
-      true
     };
 
     analyzer.pop_cf_scope();
