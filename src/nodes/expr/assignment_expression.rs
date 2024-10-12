@@ -121,12 +121,13 @@ impl<'a> Transformer<'a> {
           if operator.is_logical() {
             let data = self.get_data::<DataForLogical>(AST_TYPE, node);
 
-            let need_left_val = self.is_referred((AstType2::LogicalExpressionLeft, &node.left));
+            let need_left_test_val = self.is_referred((AstType2::LogicalExpressionLeft, &node.left));
+            let need_left_val = (need_val && data.need_left_val) || need_left_test_val;
 
             let left = self.transform_assignment_target_read(left, need_left_val);
             let right = data.need_right.then_some(right);
 
-            if need_left_val {
+            if need_left_test_val {
               let left = left.unwrap();
               if let Some(right) = right {
                 Some(self.ast_builder.expression_logical(

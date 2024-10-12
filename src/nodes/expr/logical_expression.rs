@@ -78,12 +78,13 @@ impl<'a> Transformer<'a> {
 
     let LogicalExpression { span, left, operator, right, .. } = node;
 
-    let need_left_val = self.is_referred((AstType2::LogicalExpressionLeft, &node.left));
+    let need_left_test_val = self.is_referred((AstType2::LogicalExpressionLeft, &node.left));
+    let need_left_val = (need_val && data.need_left_val) || need_left_test_val;
     let left = self.transform_expression(left, need_left_val);
 
     let right = data.need_right.then(|| self.transform_expression(right, need_val)).flatten();
 
-    if need_left_val {
+    if need_left_test_val {
       let left = left.unwrap();
       if let Some(right) = right {
         Some(self.ast_builder.expression_logical(*span, left, *operator, right))
