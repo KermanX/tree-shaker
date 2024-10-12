@@ -3,10 +3,13 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode},
+  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
   use_consumed_flag,
 };
-use oxc::{semantic::ScopeId, syntax::number::ToJsInt32};
+use oxc::{
+  semantic::{ScopeId, SymbolId},
+  syntax::number::ToJsInt32,
+};
 use std::{
   cell::{Cell, RefCell},
   fmt,
@@ -16,7 +19,7 @@ pub struct ArrayEntity<'a> {
   consumed: Cell<bool>,
   pub deps: RefCell<ConsumableCollector<'a>>,
   cf_scope: ScopeId,
-  variable_scope: ScopeId,
+  object_id: SymbolId,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Vec<Entity<'a>>>,
 }
@@ -36,7 +39,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    analyzer.refer_to_diff_variable_scope(self.variable_scope);
+    analyzer.refer_to_diff_cf_scope(self.cf_scope);
 
     self.deps.borrow_mut().consume_all(analyzer);
 
@@ -59,6 +62,9 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_property(rc, analyzer, dep, key);
     }
+
+    analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
+
     let dep = ConsumableNode::new_box((self.deps.borrow_mut().collect(), dep, key.clone()));
     let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
@@ -130,7 +136,9 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
-    let indeterminate = analyzer.is_assignment_indeterminate(self.cf_scope);
+
+    let (indeterminate, exec_deps) = analyzer.pre_mutate_array(self.cf_scope, self.object_id);
+
     let mut has_effect = false;
     if let Some(key_literals) = key.get_to_property_key(analyzer).get_to_literals(analyzer) {
       let definite = !indeterminate && key_literals.len() == 1;
@@ -186,7 +194,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         }
       }
       if has_effect {
-        self.add_dep(analyzer, dep);
+        self.add_assignment_dep(exec_deps, dep.cloned());
       }
     } else {
       self.consume(analyzer);
@@ -204,6 +212,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return consumed_object::enumerate_properties(rc, analyzer, dep);
     }
 
+    analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
+
     let mut entries = Vec::new();
     for (i, element) in self.elements.borrow().iter().enumerate() {
       entries.push((
@@ -220,6 +230,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         analyzer.factory.union(rest.iter().cloned().collect()),
       ));
     }
+
     (entries, box_consumable((self.deps.borrow_mut().collect(), dep.cloned())))
   }
 
@@ -317,12 +328,12 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 }
 
 impl<'a> ArrayEntity<'a> {
-  pub fn new(cf_scope: ScopeId, variable_scope: ScopeId) -> Self {
+  pub fn new(cf_scope: ScopeId, object_id: SymbolId) -> Self {
     ArrayEntity {
       consumed: Cell::new(false),
       deps: Default::default(),
       cf_scope,
-      variable_scope,
+      object_id,
       elements: RefCell::new(Vec::new()),
       rest: RefCell::new(Vec::new()),
     }
@@ -344,16 +355,14 @@ impl<'a> ArrayEntity<'a> {
     }
   }
 
-  fn add_dep(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    let target_depth = analyzer.find_first_different_variable_scope(self.variable_scope);
+  fn add_assignment_dep(&self, exec_deps: ConsumableNode<'a>, dep: impl ConsumableTrait<'a> + 'a) {
     let mut deps = self.deps.borrow_mut();
-    deps.push(box_consumable(analyzer.get_assignment_dep(target_depth)));
-    deps.push(dep);
+    deps.push(box_consumable((exec_deps, dep)));
   }
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new_empty_array(&self) -> ArrayEntity<'a> {
-    ArrayEntity::new(self.scope_context.cf.current_id(), self.scope_context.variable.current_id())
+  pub fn new_empty_array(&mut self) -> ArrayEntity<'a> {
+    ArrayEntity::new(self.scope_context.cf.current_id(), self.scope_context.alloc_object_id())
   }
 }

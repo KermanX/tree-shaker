@@ -17,6 +17,7 @@ use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
 use oxc::{
+  index::Idx,
   semantic::{ScopeId, SymbolId},
   span::GetSpan,
 };
@@ -29,6 +30,9 @@ pub struct ScopeContext<'a> {
   pub call: Vec<CallScope<'a>>,
   pub variable: ScopeTree<VariableScope<'a>>,
   pub cf: ScopeTree<CfScope<'a>>,
+
+  pub object_scope_id: ScopeId,
+  pub object_symbol_counter: usize,
 }
 
 impl<'a> ScopeContext<'a> {
@@ -37,6 +41,7 @@ impl<'a> ScopeContext<'a> {
     let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
     let mut variable = ScopeTree::new();
     let body_variable_scope = variable.push(VariableScope::new(cf_scope_0));
+    let object_scope_id = variable.add_special(VariableScope::new(cf_scope_0));
     ScopeContext {
       call: vec![CallScope::new(
         FunctionEntitySource::Module,
@@ -51,6 +56,9 @@ impl<'a> ScopeContext<'a> {
       )],
       variable,
       cf,
+
+      object_scope_id,
+      object_symbol_counter: 128,
     }
   }
 
@@ -58,6 +66,11 @@ impl<'a> ScopeContext<'a> {
     debug_assert_eq!(self.call.len(), 1);
     debug_assert_eq!(self.variable.current_depth(), 0);
     debug_assert_eq!(self.cf.current_depth(), 0);
+  }
+
+  pub fn alloc_object_id(&mut self) -> SymbolId {
+    self.object_symbol_counter += 1;
+    SymbolId::from_usize(self.object_symbol_counter)
   }
 }
 

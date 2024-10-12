@@ -160,7 +160,7 @@ impl<'a> CfScope<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_indeterminately<T>(&mut self, runner: impl FnOnce(&mut Analyzer<'a>) -> T) -> T {
-    self.push_cf_scope(CfScopeKind::Normal, None, None);
+    self.push_cf_scope_normal(None);
     let result = runner(self);
     self.pop_cf_scope();
     result

@@ -348,10 +348,4 @@ impl<'a> Analyzer<'a> {
     }
     self.refer_global();
   }
-
-  pub fn refer_to_diff_variable_scope(&mut self, another: ScopeId) {
-    let target_depth = self.find_first_different_variable_scope(another);
-    let dep = self.get_assignment_dep(target_depth);
-    self.consume(dep);
-  }
 }
