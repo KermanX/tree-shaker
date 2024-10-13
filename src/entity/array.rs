@@ -88,7 +88,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
             } else if key == "length" {
               result.push(self.get_length().map_or_else(
                 || {
-                  let dep: Vec<_> = self.rest.borrow().iter().cloned().collect();
+                  let dep = ConsumableNode::new_box(self.rest.borrow().clone());
                   analyzer.factory.computed_unknown_number(dep)
                 },
                 |length| {
