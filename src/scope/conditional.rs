@@ -76,17 +76,32 @@ impl<'a> Analyzer<'a> {
 
   pub fn post_analyze_handle_conditional(&mut self) {
     let conditional_data = mem::take(&mut self.conditional_data);
+
+    let mut deps_to_consume = vec![];
+    let mut tests_to_consume = vec![];
+
     for (dep, data) in conditional_data {
       if data.true_referred && data.false_referred {
-        self.refer_dep(dep);
-        for test in &data.referred_tests {
-          test.consume(self);
-        }
+        deps_to_consume.push(dep);
+        tests_to_consume.push(data.referred_tests);
+      } else {
+        self.conditional_data.insert(dep, data);
       }
     }
 
-    if !self.conditional_data.is_empty() {
-      self.post_analyze_handle_conditional();
+    if deps_to_consume.is_empty() {
+      return;
     }
+
+    for dep in deps_to_consume {
+      self.refer_dep(dep);
+    }
+    for tests in tests_to_consume {
+      for test in tests {
+        test.consume(self);
+      }
+    }
+
+    self.post_analyze_handle_conditional();
   }
 }
