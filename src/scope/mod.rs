@@ -207,12 +207,17 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf.current_depth()
   }
 
-  pub fn push_cf_scope_normal(&mut self, exited: Option<bool>) {
-    self.push_cf_scope(CfScopeKind::Normal, None, exited);
+  pub fn push_cf_scope_indeterminate(&mut self) {
+    self.push_cf_scope(CfScopeKind::Indeterminate, None, None);
   }
 
   pub fn push_cf_scope_for_dep(&mut self, dep: impl ConsumableTrait<'a> + 'a) {
-    self.push_cf_scope_with_dep(CfScopeKind::Normal, None, vec![box_consumable(dep)], Some(false));
+    self.push_cf_scope_with_dep(
+      CfScopeKind::Dependent,
+      None,
+      vec![box_consumable(dep)],
+      Some(false),
+    );
   }
 
   pub fn pop_cf_scope(&mut self) -> ScopeId {
@@ -229,7 +234,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_try_scope(&mut self) {
-    self.push_cf_scope(CfScopeKind::Normal, None, None);
+    self.push_cf_scope_indeterminate();
     let cf_scope_depth = self.scope_context.cf.current_depth();
     self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_depth));
   }

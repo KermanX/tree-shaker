@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
       }
       Some(false) => value,
       None => {
-        self.push_cf_scope_normal(None);
+        self.push_cf_scope_indeterminate();
         let default_val = self.exec_expression(default);
         let value = self.factory.union(vec![default_val, value]);
         self.pop_cf_scope();

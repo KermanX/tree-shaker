@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
         maybe_true,
         maybe_false,
       );
-      self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
+      self.push_cf_scope(CfScopeKind::Labeled, labels.clone(), Some(false));
       self.exec_statement(&node.consequent);
       self.pop_cf_scope();
       let conditional_scope = self.pop_cf_scope_and_get_mut();
@@ -65,7 +65,7 @@ impl<'a> Analyzer<'a> {
           maybe_true,
           maybe_false,
         );
-        self.push_cf_scope(CfScopeKind::Normal, labels.clone(), Some(false));
+        self.push_cf_scope(CfScopeKind::Labeled, labels.clone(), Some(false));
         self.exec_statement(alternate);
         self.pop_cf_scope();
         let conditional_scope = self.pop_cf_scope_and_get_mut();

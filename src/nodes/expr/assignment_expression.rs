@@ -49,7 +49,7 @@ impl<'a> Analyzer<'a> {
 
       let conditional_dep = self.push_conditional_cf_scope(
         (AstType2::LogicalExpressionLeft, &node.left),
-        CfScopeKind::LogicalExpression,
+        CfScopeKind::LogicalExpressionRight,
         left.clone(),
         need_left_val,
         need_right,

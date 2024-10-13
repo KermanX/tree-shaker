@@ -12,14 +12,17 @@ use std::{mem, rc::Rc};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CfScopeKind {
-  Normal,
+  Indeterminate,
+  Labeled,
+  Dependent,
   BreakableWithoutLabel,
   Continuable,
   Exhaustive,
   IfStatement,
   ConditionalExpression,
-  LogicalExpression,
+  LogicalExpressionRight,
   Function,
+  Block,
   Module,
 }
 
@@ -162,7 +165,7 @@ impl<'a> CfScope<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_indeterminately<T>(&mut self, runner: impl FnOnce(&mut Analyzer<'a>) -> T) -> T {
-    self.push_cf_scope_normal(None);
+    self.push_cf_scope_indeterminate();
     let result = runner(self);
     self.pop_cf_scope();
     result

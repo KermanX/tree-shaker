@@ -92,7 +92,7 @@ impl<'a> Analyzer<'a> {
     let indeterminate = object_indeterminate || self_indeterminate;
 
     if indeterminate {
-      self.push_cf_scope_normal(None);
+      self.push_cf_scope_indeterminate();
     }
 
     if will_write {

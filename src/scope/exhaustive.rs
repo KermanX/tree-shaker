@@ -31,7 +31,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn exec_consumed_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a) {
     let runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a> = Rc::new(move |analyzer| {
-      analyzer.push_cf_scope_normal(None);
+      analyzer.push_cf_scope_indeterminate();
       analyzer.push_try_scope();
       let ret_val = runner(analyzer);
       ret_val.consume(analyzer);

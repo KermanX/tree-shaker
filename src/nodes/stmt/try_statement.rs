@@ -7,7 +7,7 @@ use oxc::{
 impl<'a> Analyzer<'a> {
   pub fn exec_try_statement(&mut self, node: &'a TryStatement<'a>) {
     let labels = self.take_labels();
-    self.push_cf_scope(CfScopeKind::Normal, labels, Some(false));
+    self.push_cf_scope(CfScopeKind::Labeled, labels, Some(false));
 
     self.push_try_scope();
     self.exec_block_statement(&node.block);
