@@ -3,6 +3,8 @@ use oxc::ast::ast::{Expression, YieldExpression};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_yield_expression(&mut self, node: &'a YieldExpression<'a>) -> Entity<'a> {
+    self.refer_to_call();
+
     if let Some(argument) = &node.argument {
       let argument = self.exec_expression(argument);
       argument.consume(self);

@@ -346,6 +346,6 @@ impl<'a> Analyzer<'a> {
     } else {
       self.thrown_builtin_error("Cannot access variable before initialization");
     }
-    self.refer_global();
+    self.refer_to_global();
   }
 }

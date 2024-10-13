@@ -39,7 +39,7 @@ impl<'a> Analyzer<'a> {
       // Unknown global
       if self.config.unknown_global_side_effects {
         self.set_data(AST_TYPE, node, Data { has_effect: true });
-        self.refer_global();
+        self.refer_to_global();
         self.may_throw();
       }
       self.factory.unknown
@@ -68,7 +68,7 @@ impl<'a> Analyzer<'a> {
       self.set_data(AST_TYPE, node, Data { has_effect: true });
       value.consume(self);
       self.may_throw();
-      self.refer_global();
+      self.refer_to_global();
     }
   }
 }
