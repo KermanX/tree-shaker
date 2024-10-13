@@ -311,23 +311,4 @@ impl<'a> Analyzer<'a> {
       }
     }
   }
-
-  pub fn refer_to_call(&mut self) {
-    self.may_throw();
-    for depth in (self.call_scope().cf_scope_depth..self.scope_context.cf.stack.len()).rev() {
-      let scope = self.scope_context.cf.get_mut_from_depth(depth);
-      match scope.referred_state {
-        ReferredState::Never => {
-          let mut deps = mem::take(&mut scope.deps);
-          deps.consume_all(self);
-        }
-        ReferredState::ReferredClean => break,
-        ReferredState::ReferredDirty => {
-          let mut deps = mem::take(&mut scope.deps);
-          deps.consume_all(self);
-          break;
-        }
-      }
-    }
-  }
 }

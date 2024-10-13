@@ -10,7 +10,7 @@ impl<'a> Analyzer<'a> {
       self.add_diagnostic("SyntaxError: await is only valid in async functions");
     }
 
-    self.refer_to_call();
+    self.refer_to_global();
 
     let value = self.exec_expression(&node.argument);
     value.r#await(self, box_consumable(()))
