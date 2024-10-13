@@ -569,7 +569,11 @@ impl<'a> ObjectEntity<'a> {
     apply_unknown_to_vec(analyzer, dep.cloned(), &self.rest.borrow(), analyzer.factory.unknown);
   }
 
-  fn add_assignment_dep(&self, exec_deps: ConsumableNode<'a>, dep: impl ConsumableTrait<'a> + 'a) {
+  fn add_assignment_dep<T: ConsumableTrait<'a> + 'a>(
+    &self,
+    exec_deps: ConsumableNode<'a, T>,
+    dep: impl ConsumableTrait<'a> + 'a,
+  ) {
     let mut deps = self.deps.borrow_mut();
     deps.push(box_consumable((exec_deps, dep)));
   }

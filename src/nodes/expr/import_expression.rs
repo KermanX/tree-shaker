@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
 
     // FIXME: if have side effects, then consume all deps
 
-    self.factory.computed_unknown(ConsumableNode::new_box(deps))
+    self.factory.computed_unknown(ConsumableNode::new(deps))
   }
 }
 

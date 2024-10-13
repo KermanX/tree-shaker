@@ -5,7 +5,7 @@ use std::mem;
 #[derive(Debug, Default)]
 pub struct ConsumableCollector<'a> {
   pub current: ConsumableVec<'a>,
-  pub node: Option<ConsumableNode<'a>>,
+  pub node: Option<ConsumableNode<'a, Consumable<'a>>>,
 }
 
 impl<'a> ConsumableCollector<'a> {
@@ -17,7 +17,7 @@ impl<'a> ConsumableCollector<'a> {
     self.current.push(value);
   }
 
-  pub fn try_collect(&mut self) -> Option<ConsumableNode<'a>> {
+  pub fn try_collect(&mut self) -> Option<ConsumableNode<'a, Consumable<'a>>> {
     if self.current.is_empty() {
       self.node.clone()
     } else {
@@ -32,7 +32,7 @@ impl<'a> ConsumableCollector<'a> {
     }
   }
 
-  pub fn collect(&mut self) -> ConsumableNode<'a> {
+  pub fn collect(&mut self) -> ConsumableNode<'a, Consumable<'a>> {
     self.try_collect().unwrap_or_else(|| ConsumableNode::new_box(()))
   }
 

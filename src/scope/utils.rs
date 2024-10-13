@@ -1,4 +1,7 @@
-use crate::{analyzer::Analyzer, consumable::ConsumableNode};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{ConsumableNode, ConsumableTrait},
+};
 use oxc::semantic::{ScopeId, SymbolId};
 
 impl<'a> Analyzer<'a> {
@@ -10,7 +13,10 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable.find_lca(another).0 + 1
   }
 
-  pub fn get_assignment_dep(&mut self, target_depth: usize) -> ConsumableNode<'a> {
+  pub fn get_assignment_dep(
+    &mut self,
+    target_depth: usize,
+  ) -> ConsumableNode<'a, impl ConsumableTrait<'a> + 'a> {
     if target_depth == 0 {
       self.get_exec_dep(0)
     } else {
@@ -27,7 +33,10 @@ impl<'a> Analyzer<'a> {
   }
 
   /// Returns (has_exhaustive, indeterminate, exec_deps)
-  pub fn pre_mutate_object(&mut self, target_depth: usize) -> (bool, bool, ConsumableNode<'a>) {
+  pub fn pre_mutate_object(
+    &mut self,
+    target_depth: usize,
+  ) -> (bool, bool, ConsumableNode<'a, impl ConsumableTrait<'a> + 'a>) {
     let mut has_exhaustive = false;
     let mut indeterminate = false;
     let mut exec_deps = vec![];
@@ -39,7 +48,7 @@ impl<'a> Analyzer<'a> {
         exec_deps.push(dep);
       }
     }
-    (has_exhaustive, indeterminate, ConsumableNode::new_box(exec_deps))
+    (has_exhaustive, indeterminate, ConsumableNode::new(exec_deps))
   }
 
   /// Returns (indeterminate, exec_deps)
@@ -47,7 +56,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     cf_scope: ScopeId,
     object_id: SymbolId,
-  ) -> (bool, ConsumableNode<'a>) {
+  ) -> (bool, ConsumableNode<'a, impl ConsumableTrait<'a> + 'a>) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
 
     let mut indeterminate = false;
@@ -60,7 +69,7 @@ impl<'a> Analyzer<'a> {
         exec_deps.push(dep);
       }
     }
-    (indeterminate, ConsumableNode::new_box(exec_deps))
+    (indeterminate, ConsumableNode::new(exec_deps))
   }
 
   pub fn mark_object_property_exhaustive_write(

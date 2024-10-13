@@ -17,7 +17,7 @@ impl<'a> TryScope<'a> {
     // Always unknown here
     self
       .may_throw
-      .then(|| analyzer.factory.computed_unknown(ConsumableNode::new_box(self.thrown_values)))
+      .then(|| analyzer.factory.computed_unknown(ConsumableNode::new(self.thrown_values)))
   }
 }
 
@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
     if values.is_empty() {
       self.may_throw();
     } else {
-      let thrown_val = self.factory.computed_unknown(ConsumableNode::new_box(values));
+      let thrown_val = self.factory.computed_unknown(ConsumableNode::new(values));
       self.explicit_throw_impl(thrown_val);
 
       let try_scope = self.try_scope();

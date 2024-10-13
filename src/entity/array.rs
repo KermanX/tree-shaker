@@ -65,7 +65,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
-    let dep = ConsumableNode::new_box((self.deps.borrow_mut().collect(), dep, key.clone()));
+    let dep = ConsumableNode::new((self.deps.borrow_mut().collect(), dep, key.clone()));
     let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut result = vec![];
@@ -88,7 +88,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
             } else if key == "length" {
               result.push(self.get_length().map_or_else(
                 || {
-                  let dep = ConsumableNode::new_box(self.rest.borrow().clone());
+                  let dep = ConsumableNode::new(self.rest.borrow().clone());
                   analyzer.factory.computed_unknown_number(dep)
                 },
                 |length| {
@@ -111,7 +111,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       analyzer.factory.computed_union(result, dep)
     } else {
       analyzer.factory.computed_unknown((
-        ConsumableNode::new_box(
+        ConsumableNode::new(
           self
             .elements
             .borrow()
@@ -355,7 +355,11 @@ impl<'a> ArrayEntity<'a> {
     }
   }
 
-  fn add_assignment_dep(&self, exec_deps: ConsumableNode<'a>, dep: impl ConsumableTrait<'a> + 'a) {
+  fn add_assignment_dep<T: ConsumableTrait<'a> + 'a>(
+    &self,
+    exec_deps: ConsumableNode<'a, T>,
+    dep: impl ConsumableTrait<'a> + 'a,
+  ) {
     let mut deps = self.deps.borrow_mut();
     deps.push(box_consumable((exec_deps, dep)));
   }

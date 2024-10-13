@@ -224,7 +224,7 @@ impl<'a> EntityFactory<'a> {
       } else {
         let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
         if has_unknown {
-          self.computed_unknown(ConsumableNode::new_box(values))
+          self.computed_unknown(ConsumableNode::new(values))
         } else {
           self.entity(UnionEntity { values, consumed: Cell::new(false) })
         }

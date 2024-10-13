@@ -1,6 +1,8 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableVec},
+  consumable::{
+    box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait, ConsumableVec,
+  },
   entity::LabelEntity,
   logger::{DebuggerEvent, Logger},
 };
@@ -166,7 +168,10 @@ impl<'a> Analyzer<'a> {
     result
   }
 
-  pub fn get_exec_dep(&mut self, target_depth: usize) -> ConsumableNode<'a> {
+  pub fn get_exec_dep(
+    &mut self,
+    target_depth: usize,
+  ) -> ConsumableNode<'a, impl ConsumableTrait<'a> + 'a> {
     let mut deps = vec![];
     for id in target_depth..self.scope_context.cf.stack.len() {
       let scope = self.scope_context.cf.get_mut_from_depth(id);
@@ -174,7 +179,7 @@ impl<'a> Analyzer<'a> {
         deps.push(dep);
       }
     }
-    ConsumableNode::new_box(deps)
+    ConsumableNode::new(deps)
   }
 
   pub fn exit_to(&mut self, target_depth: usize) {
@@ -190,8 +195,8 @@ impl<'a> Analyzer<'a> {
     target_depth: usize,
     from_depth: usize,
     mut must_exit: bool,
-    mut acc_dep: Option<ConsumableNode<'a>>,
-  ) -> Option<ConsumableNode<'a>> {
+    mut acc_dep: Option<ConsumableNode<'a, Consumable<'a>>>,
+  ) -> Option<ConsumableNode<'a, Consumable<'a>>> {
     for depth in (target_depth..from_depth).rev() {
       let id = self.scope_context.cf.stack[depth];
       let cf_scope = self.scope_context.cf.get_mut(id);
