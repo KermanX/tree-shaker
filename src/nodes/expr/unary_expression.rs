@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
         if let Some(num) = argument.get_literal(self).and_then(|lit| lit.to_number()) {
           if let Some(num) = num {
             let num = -num.0;
-            self.factory.number(num, self.allocator.alloc(num.to_string()))
+            self.factory.number(num, None)
           } else {
             self.factory.nan
           }

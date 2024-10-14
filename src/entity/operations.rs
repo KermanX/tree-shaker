@@ -168,7 +168,7 @@ impl<'a> EntityOpHost<'a> {
         (Some(l), Some(r)) => match (l, r) {
           (Some(l), Some(r)) => {
             let val = l.0 + r.0;
-            values.push(analyzer.factory.number(val, self.allocator.alloc(val.to_string())));
+            values.push(analyzer.factory.number(val, None));
           }
           _ => {
             values.push(analyzer.factory.nan);
@@ -223,7 +223,7 @@ impl<'a> EntityOpHost<'a> {
         UpdateOperator::Increment => v + 1.0,
         UpdateOperator::Decrement => v - 1.0,
       };
-      analyzer.factory.number(val, self.allocator.alloc(val.to_string()))
+      analyzer.factory.number(val, None)
     };
 
     if let Some(num) = input.get_literal(analyzer).and_then(|lit| lit.to_number()) {

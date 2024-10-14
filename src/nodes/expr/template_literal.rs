@@ -52,7 +52,7 @@ impl<'a> Transformer<'a> {
             transformed_quasis.push(quasi_str);
           } else {
             let last_quasi = transformed_quasis.pop().unwrap();
-            let expr_str = literal.to_string();
+            let expr_str = literal.to_string(self.allocator);
             transformed_quasis.push(format!("{}{}{}", last_quasi, expr_str, quasi_str));
           }
         } else {

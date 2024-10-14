@@ -9,11 +9,11 @@ impl<'a> Analyzer<'a> {
     self.factory.string(node.value.as_str())
   }
 
-  pub fn exc_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity<'a> {
+  pub fn exec_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity<'a> {
     if node.base == NumberBase::Float {
       self.factory.unknown_number
     } else {
-      self.factory.number(node.value, self.allocator.alloc(node.value.to_string()))
+      self.factory.number(node.value, None)
     }
   }
 

@@ -3,6 +3,7 @@ use super::{
 };
 use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable, utils::F64WithEq};
 use oxc::{
+  allocator::Allocator,
   ast::{
     ast::{BigintBase, Expression, NumberBase, UnaryOperator},
     AstBuilder,
@@ -16,7 +17,7 @@ use std::hash::{Hash, Hasher};
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum LiteralEntity<'a> {
   String(&'a str),
-  Number(F64WithEq, &'a str),
+  Number(F64WithEq, Option<&'a str>),
   BigInt(&'a str),
   Boolean(bool),
   Symbol(SymbolId, &'a str),
@@ -145,7 +146,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.string(self.to_string())
+    analyzer.factory.string(self.to_string(analyzer.allocator))
   }
 
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -156,24 +157,24 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       | LiteralEntity::Infinity(_) => rc,
       LiteralEntity::Boolean(value) => {
         if *value {
-          analyzer.factory.number(1.0, "1")
+          analyzer.factory.number(1.0, Some("1"))
         } else {
-          analyzer.factory.number(0.0, "0")
+          analyzer.factory.number(0.0, Some("0"))
         }
       }
       LiteralEntity::String(str) => {
         let str = str.trim();
         if str.is_empty() {
-          analyzer.factory.number(0.0, "0")
+          analyzer.factory.number(0.0, Some("0"))
         } else {
           if let Ok(value) = str.parse::<f64>() {
-            analyzer.factory.number(value, str)
+            analyzer.factory.number(value, Some(str))
           } else {
             analyzer.factory.nan
           }
         }
       }
-      LiteralEntity::Null => analyzer.factory.number(0.0, "0"),
+      LiteralEntity::Null => analyzer.factory.number(0.0, Some("0")),
       LiteralEntity::Symbol(_, _) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
         analyzer.factory.unknown
@@ -286,6 +287,7 @@ impl<'a> LiteralEntity<'a> {
     match self {
       LiteralEntity::String(value) => ast_builder.expression_string_literal(span, *value),
       LiteralEntity::Number(value, raw) => {
+        let raw = raw.unwrap_or_else(|| ast_builder.allocator.alloc(value.0.to_string()));
         let negated = raw.chars().nth(0).unwrap() == '-';
         let absolute = ast_builder.expression_numeric_literal(
           span,
@@ -340,10 +342,12 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
-  pub fn to_string(&self) -> &'a str {
+  pub fn to_string(&self, allocator: &'a Allocator) -> &'a str {
     match self {
       LiteralEntity::String(value) => *value,
-      LiteralEntity::Number(_, str_rep) => *str_rep,
+      LiteralEntity::Number(value, str_rep) => {
+        str_rep.unwrap_or_else(|| allocator.alloc(value.0.to_string()))
+      }
       LiteralEntity::BigInt(value) => *value,
       LiteralEntity::Boolean(value) => {
         if *value {
@@ -416,7 +420,7 @@ impl<'a> EntityFactory<'a> {
     self.entity(LiteralEntity::String(value))
   }
 
-  pub fn number(&self, value: impl Into<F64WithEq>, str_rep: &'a str) -> Entity<'a> {
+  pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {
     self.entity(LiteralEntity::Number(value.into(), str_rep))
   }
 

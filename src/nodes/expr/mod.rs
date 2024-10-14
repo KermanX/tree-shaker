@@ -58,7 +58,7 @@ impl<'a> Analyzer<'a> {
         self.exec_member_expression_read(node.to_member_expression(), false).0
       }
       Expression::StringLiteral(node) => self.exec_string_literal(node),
-      Expression::NumericLiteral(node) => self.exc_numeric_literal(node),
+      Expression::NumericLiteral(node) => self.exec_numeric_literal(node),
       Expression::BigIntLiteral(node) => self.exc_big_int_literal(node),
       Expression::BooleanLiteral(node) => self.exec_boolean_literal(node),
       Expression::NullLiteral(node) => self.exec_null_literal(node),

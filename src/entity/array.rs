@@ -91,11 +91,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                   let dep = ConsumableNode::new(self.rest.borrow().clone());
                   analyzer.factory.computed_unknown_number(dep)
                 },
-                |length| {
-                  analyzer
-                    .factory
-                    .number(length as f64, analyzer.allocator.alloc(length.to_string()))
-                },
+                |length| analyzer.factory.number(length as f64, None),
               ));
             } else if let Some(property) = analyzer.builtins.prototypes.array.get(key) {
               result.push(property.clone());
