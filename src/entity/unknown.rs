@@ -23,7 +23,9 @@ pub enum UnknownEntity {
 }
 
 impl<'a> EntityTrait<'a> for UnknownEntity {
-  fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
+  fn consume(&self, _analyzer: &mut Analyzer<'a>) {
+    // FIXME: Should set self to UnknownEntity::Object here
+  }
 
   fn get_property(
     &self,
@@ -52,7 +54,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     value: Entity<'a>,
   ) {
     if self.maybe_object() {
-      // FIXME: Should set self to UnknownEntity::Object here
+      self.consume(analyzer);
       consumed_object::set_property(analyzer, dep, key, value)
     } else {
       // Primitives. No effect
@@ -82,7 +84,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     if self.maybe_object() {
-      // FIXME: Should set self to UnknownEntity::Object here
+      self.consume(analyzer);
       consumed_object::delete_property(analyzer, dep, key)
     } else {
       // No effect
