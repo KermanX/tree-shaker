@@ -60,6 +60,7 @@ impl<'a> EntityOpHost<'a> {
           if *l == 0.0.into() || *l == (-0.0).into() {
             return Some(*r == 0.0.into() || *r == (-0.0).into());
           }
+          return Some(l == r);
         }
 
         return Some(lhs_lit == rhs_lit && *lhs_lit != LiteralEntity::NaN);
