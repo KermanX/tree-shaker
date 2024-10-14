@@ -64,7 +64,7 @@ impl<'a> Analyzer<'a> {
       referred: self.allocator.alloc(Cell::new(false)),
     });
 
-    self.push_cf_scope_with_dep(
+    self.push_cf_scope_with_deps(
       kind,
       None,
       vec![box_consumable(dep)],

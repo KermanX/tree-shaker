@@ -88,7 +88,7 @@ impl<'a> Analyzer<'a> {
         for property in &node.properties {
           let dep = box_consumable(EntityDepNode::from((AstType2::BindingProperty, property)));
 
-          self.push_cf_scope_for_dep(init.clone());
+          self.push_dependent_cf_scope(init.clone());
           let key = self.exec_property_key(&property.key);
           self.pop_cf_scope();
 

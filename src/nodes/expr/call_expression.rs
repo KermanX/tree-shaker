@@ -41,7 +41,7 @@ impl<'a> Analyzer<'a> {
       let indeterminate = callee_indeterminate || self_indeterminate;
 
       if indeterminate {
-        self.push_cf_scope_indeterminate();
+        self.push_indeterminate_cf_scope();
       }
 
       let args = self.exec_arguments(&node.arguments);

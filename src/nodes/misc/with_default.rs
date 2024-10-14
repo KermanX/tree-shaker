@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
   ) -> (bool, Entity<'a>) {
     let is_undefined = value.test_is_undefined();
 
-    self.push_cf_scope_for_dep(value.to_consumable());
+    self.push_dependent_cf_scope(value.to_consumable());
     let binding_val = match is_undefined {
       Some(true) => {
         let default_val = self.exec_expression(default);
@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
       }
       Some(false) => value,
       None => {
-        self.push_cf_scope_indeterminate();
+        self.push_indeterminate_cf_scope();
         let default_val = self.exec_expression(default);
         let value = self.factory.union(vec![default_val, value]);
         self.pop_cf_scope();

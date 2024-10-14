@@ -122,7 +122,7 @@ impl<'a> Analyzer<'a> {
     let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth =
-      self.push_cf_scope_with_dep(CfScopeKind::Function, None, vec![call_dep], Some(false));
+      self.push_cf_scope_with_deps(CfScopeKind::Function, None, vec![call_dep], Some(false));
 
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::PushCallScope(
@@ -184,10 +184,10 @@ impl<'a> Analyzer<'a> {
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
     exited: Option<bool>,
   ) -> usize {
-    self.push_cf_scope_with_dep(kind, labels, vec![], exited)
+    self.push_cf_scope_with_deps(kind, labels, vec![], exited)
   }
 
-  pub fn push_cf_scope_with_dep(
+  pub fn push_cf_scope_with_deps(
     &mut self,
     kind: CfScopeKind,
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
@@ -207,12 +207,12 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf.current_depth()
   }
 
-  pub fn push_cf_scope_indeterminate(&mut self) {
+  pub fn push_indeterminate_cf_scope(&mut self) {
     self.push_cf_scope(CfScopeKind::Indeterminate, None, None);
   }
 
-  pub fn push_cf_scope_for_dep(&mut self, dep: impl ConsumableTrait<'a> + 'a) {
-    self.push_cf_scope_with_dep(
+  pub fn push_dependent_cf_scope(&mut self, dep: impl ConsumableTrait<'a> + 'a) {
+    self.push_cf_scope_with_deps(
       CfScopeKind::Dependent,
       None,
       vec![box_consumable(dep)],
@@ -234,7 +234,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_try_scope(&mut self) {
-    self.push_cf_scope_indeterminate();
+    self.push_indeterminate_cf_scope();
     let cf_scope_depth = self.scope_context.cf.current_depth();
     self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_depth));
   }

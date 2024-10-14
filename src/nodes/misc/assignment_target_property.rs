@@ -46,7 +46,7 @@ impl<'a> Analyzer<'a> {
         key
       }
       AssignmentTargetProperty::AssignmentTargetPropertyProperty(node) => {
-        self.push_cf_scope_for_dep(value.clone());
+        self.push_dependent_cf_scope(value.clone());
         let key = self.exec_property_key(&node.name);
         self.pop_cf_scope();
 

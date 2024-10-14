@@ -165,7 +165,7 @@ impl<'a> CfScope<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_indeterminately<T>(&mut self, runner: impl FnOnce(&mut Analyzer<'a>) -> T) -> T {
-    self.push_cf_scope_indeterminate();
+    self.push_indeterminate_cf_scope();
     let result = runner(self);
     self.pop_cf_scope();
     result

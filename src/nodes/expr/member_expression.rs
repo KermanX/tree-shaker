@@ -92,11 +92,11 @@ impl<'a> Analyzer<'a> {
     let indeterminate = object_indeterminate || self_indeterminate;
 
     if indeterminate {
-      self.push_cf_scope_indeterminate();
+      self.push_indeterminate_cf_scope();
     }
 
     if will_write {
-      self.push_cf_scope_for_dep(object.clone());
+      self.push_dependent_cf_scope(object.clone());
     }
     let key = self.exec_key(node);
     if will_write {
@@ -124,7 +124,7 @@ impl<'a> Analyzer<'a> {
     let (object, key) = cache.unwrap_or_else(|| {
       let object = self.exec_expression(node.object());
 
-      self.push_cf_scope_for_dep(object.clone());
+      self.push_dependent_cf_scope(object.clone());
       let key = self.exec_key(node);
       self.pop_cf_scope();
 

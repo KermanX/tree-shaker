@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     if let Some((indeterminate, tag, this)) = self.exec_callee(&node.tag) {
       if indeterminate {
-        self.push_cf_scope_indeterminate();
+        self.push_indeterminate_cf_scope();
       }
 
       let mut arguments = vec![(false, self.factory.unknown)];

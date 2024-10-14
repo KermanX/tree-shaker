@@ -121,7 +121,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     // FIXME: this is inaccurate - the read properties may be all getter/setters
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
-    analyzer.push_cf_scope_indeterminate();
+    analyzer.push_indeterminate_cf_scope();
 
     let this = rc;
     let key = key.get_to_property_key(analyzer);
@@ -196,7 +196,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     let (has_exhaustive, indeterminate, exec_deps) = analyzer.pre_mutate_object(target_depth);
     let dep_cloned = dep.cloned();
 
-    analyzer.push_cf_scope_indeterminate();
+    analyzer.push_indeterminate_cf_scope();
 
     let key = key.get_to_property_key(analyzer);
     let value = analyzer.factory.computed(value, key);
