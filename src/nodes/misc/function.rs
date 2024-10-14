@@ -60,7 +60,7 @@ impl<'a> Analyzer<'a> {
           let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
           analyzer.declare_symbol(
             symbol,
-            box_consumable(source.into_dep_node()),
+            box_consumable(source.into_dep_id()),
             false,
             DeclarationKind::NamedFunctionInBody,
             Some(fn_entity.clone()),

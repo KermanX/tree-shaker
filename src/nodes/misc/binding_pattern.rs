@@ -1,7 +1,8 @@
 use crate::{
   ast::{AstType2, DeclarationKind},
   consumable::box_consumable,
-  entity::{Entity, EntityDepNode},
+  dep::DepId,
+  entity::Entity,
   transformer::Transformer,
   Analyzer,
 };
@@ -86,7 +87,7 @@ impl<'a> Analyzer<'a> {
 
         let mut enumerated = vec![];
         for property in &node.properties {
-          let dep = box_consumable(EntityDepNode::from((AstType2::BindingProperty, property)));
+          let dep = box_consumable(DepId::from((AstType2::BindingProperty, property)));
 
           self.push_dependent_cf_scope(init.clone());
           let key = self.exec_property_key(&property.key);

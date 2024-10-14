@@ -1,8 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  consumable::box_consumable,
-  entity::{Entity, EntityDepNode},
+  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, dep::DepId, entity::Entity,
   transformer::Transformer,
 };
 use oxc::{
@@ -24,7 +21,7 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
-    let dep = box_consumable(EntityDepNode::from((AstType2::AssignmentTargetProperty, node)));
+    let dep = box_consumable(DepId::from((AstType2::AssignmentTargetProperty, node)));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = self.factory.string(node.binding.name.as_str());

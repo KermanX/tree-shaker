@@ -2,7 +2,8 @@ use super::CfScopeKind;
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableTrait},
-  entity::{Entity, EntityDepNode},
+  dep::DepId,
+  entity::Entity,
 };
 use std::{cell::Cell, fmt::Debug, mem};
 
@@ -15,7 +16,7 @@ pub struct ConditionalData<'a> {
 
 #[derive(Debug, Clone)]
 struct ConditionalBranchConsumable<'a> {
-  dep_node: EntityDepNode,
+  dep_id: DepId,
   maybe_true: bool,
   maybe_false: bool,
   test: Entity<'a>,
@@ -27,7 +28,7 @@ impl<'a> ConsumableTrait<'a> for &'a ConditionalBranchConsumable<'a> {
     if !self.referred.get() {
       self.referred.set(true);
 
-      if let Some(data) = analyzer.conditional_data.get_mut(&self.dep_node) {
+      if let Some(data) = analyzer.conditional_data.get_mut(&self.dep_id) {
         data.true_referred |= self.maybe_true;
         data.false_referred |= self.maybe_false;
         data.referred_tests.push(self.test);
@@ -46,18 +47,18 @@ impl<'a> ConsumableTrait<'a> for &'a ConditionalBranchConsumable<'a> {
 impl<'a> Analyzer<'a> {
   pub fn push_conditional_cf_scope(
     &mut self,
-    dep_node: impl Into<EntityDepNode>,
+    dep_id: impl Into<DepId>,
     kind: CfScopeKind,
     test: Entity<'a>,
     maybe_true: bool,
     maybe_false: bool,
   ) -> impl ConsumableTrait<'a> + 'a {
-    let dep_node = dep_node.into();
+    let dep_id = dep_id.into();
 
-    self.conditional_data.entry(dep_node).or_insert_with(Default::default);
+    self.conditional_data.entry(dep_id).or_insert_with(Default::default);
 
     let dep: &ConditionalBranchConsumable<'a> = self.allocator.alloc(ConditionalBranchConsumable {
-      dep_node,
+      dep_id,
       maybe_true,
       maybe_false,
       test,

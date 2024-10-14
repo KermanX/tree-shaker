@@ -1,10 +1,10 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityDepNode, EntityFactory, EntityTrait,
-  TypeofResult,
+  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
+  dep::DepId,
   use_consumed_flag,
 };
 use oxc::{
@@ -39,13 +39,13 @@ impl GetSpan for FunctionEntitySource<'_> {
 }
 
 impl<'a> FunctionEntitySource<'a> {
-  pub fn into_dep_node(self) -> EntityDepNode {
+  pub fn into_dep_id(self) -> DepId {
     match self {
       FunctionEntitySource::Function(node) => AstKind::Function(node).into(),
       FunctionEntitySource::ArrowFunctionExpression(node) => {
         AstKind::ArrowFunctionExpression(node).into()
       }
-      FunctionEntitySource::Module => EntityDepNode::Environment,
+      FunctionEntitySource::Module => DepId::Environment,
     }
   }
 
@@ -238,7 +238,7 @@ impl<'a> FunctionEntity<'a> {
       logger.push_fn_call(self.source.span(), self.source.name());
     }
 
-    let call_dep = box_consumable((self.source.into_dep_node(), dep));
+    let call_dep = box_consumable((self.source.into_dep_id(), dep));
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.source {
       FunctionEntitySource::Function(node) => analyzer.call_function(
@@ -284,7 +284,7 @@ impl<'a> FunctionEntity<'a> {
       }
     }
 
-    analyzer.consume(self.source.into_dep_node());
+    analyzer.consume(self.source.into_dep_id());
     analyzer.consume_arguments(Some(self.source));
 
     let self_cloned = self.clone();

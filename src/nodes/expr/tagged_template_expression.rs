@@ -1,10 +1,6 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  build_effect_from_arr,
-  consumable::box_consumable,
-  entity::{Entity, EntityDepNode},
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstType2, build_effect_from_arr, consumable::box_consumable, dep::DepId,
+  entity::Entity, transformer::Transformer,
 };
 use oxc::{
   ast::{
@@ -28,7 +24,7 @@ impl<'a> Analyzer<'a> {
 
       for expr in &node.quasi.expressions {
         let value = self.exec_expression(expr);
-        let dep: EntityDepNode = (AstType2::ExpressionInTaggedTemplate, expr).into();
+        let dep = DepId::from((AstType2::ExpressionInTaggedTemplate, expr));
         arguments.push((false, self.factory.computed(value, dep)));
       }
 

@@ -1,13 +1,14 @@
 use crate::{
   analyzer::Analyzer,
   consumable::box_consumable,
-  entity::{Entity, EntityDepNode, EntityTrait},
+  dep::DepId,
+  entity::{Entity, EntityTrait},
 };
 
 impl<'a> Analyzer<'a> {
   pub fn exec_object_rest(
     &mut self,
-    dep: impl Into<EntityDepNode>,
+    dep: impl Into<DepId>,
     object: Entity<'a>,
     enumerated: Vec<Entity<'a>>,
   ) -> Entity<'a> {
