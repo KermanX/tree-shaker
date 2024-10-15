@@ -1,4 +1,7 @@
-use super::{entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult};
+use super::{
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, TypeofResult,
+};
 use crate::{analyzer::Analyzer, consumable::Consumable};
 
 #[derive(Debug)]
@@ -72,7 +75,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     let mut elements = Vec::new();
     let mut rest: Option<Vec<Entity<'a>>> = None;
     for (spread, entity) in &self.arguments {
@@ -92,7 +95,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
         }
       }
     }
-    (elements, rest.map(|val| analyzer.factory.union(val)))
+    (elements, rest.map(|val| analyzer.factory.union(val)), dep)
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {

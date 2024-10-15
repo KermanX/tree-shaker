@@ -1,10 +1,11 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, LiteralEntity,
-  TypeofResult,
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableNode, ConsumableTrait},
+  consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait},
   use_consumed_flag,
 };
 use rustc_hash::FxHashSet;
@@ -111,7 +112,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     let mut results = Vec::new();
     let mut has_undefined = false;
     for entity in &self.values {
@@ -126,7 +127,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     if has_undefined {
       results.push(analyzer.factory.undefined);
     }
-    (vec![], analyzer.factory.try_union(results))
+    (vec![], analyzer.factory.try_union(results), box_consumable(()))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

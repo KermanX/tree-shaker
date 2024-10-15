@@ -109,11 +109,13 @@ impl<'a> Analyzer<'a> {
           self.factory.unknown
         });
 
-        let (element_values, rest_value) = init.destruct_as_array(
+        let (element_values, rest_value, dep) = init.destruct_as_array(
           self,
           box_consumable(AstKind::ArrayPattern(node)),
           node.elements.len(),
         );
+
+        self.push_dependent_cf_scope(dep);
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
             self.init_binding_pattern(element, Some(value));
@@ -122,6 +124,7 @@ impl<'a> Analyzer<'a> {
         if let Some(rest) = &node.rest {
           self.init_binding_rest_element(rest, rest_value);
         }
+        self.pop_cf_scope();
       }
       BindingPatternKind::AssignmentPattern(node) => {
         let (need_right, binding_val) = self.exec_with_default(&node.right, init.unwrap());

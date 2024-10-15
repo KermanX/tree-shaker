@@ -1,5 +1,6 @@
 use super::{
-  entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -83,7 +84,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     self.val.iterate(analyzer, box_consumable((self.dep.cloned(), dep)))
   }
 

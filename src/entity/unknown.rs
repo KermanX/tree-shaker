@@ -1,5 +1,7 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -125,9 +127,9 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     if *self == UnknownEntity::String {
-      return (vec![], Some(analyzer.factory.computed_unknown(rc)));
+      return (vec![], Some(analyzer.factory.unknown), box_consumable((rc, dep)));
     }
     if !self.maybe_object() {
       analyzer.thrown_builtin_error("Cannot iterate non-object");

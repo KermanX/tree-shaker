@@ -1,7 +1,14 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, TypeofResult,
 };
-use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable, utils::F64WithEq};
+use crate::{
+  analyzer::Analyzer,
+  builtins::Prototype,
+  consumable::{box_consumable, Consumable},
+  utils::F64WithEq,
+};
 use oxc::{
   allocator::Allocator,
   ast::{
@@ -127,11 +134,12 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     match self {
       LiteralEntity::String(value) => (
         vec![],
-        if value.is_empty() { None } else { Some(analyzer.factory.computed_unknown_string(rc)) },
+        (*value != "").then_some(analyzer.factory.unknown_string),
+        box_consumable((rc, dep)),
       ),
       _ => {
         self.consume(analyzer);

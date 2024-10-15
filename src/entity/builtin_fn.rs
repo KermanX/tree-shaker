@@ -1,5 +1,7 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
@@ -80,7 +82,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     analyzer.thrown_builtin_error("Cannot iterate over function");
     consumed_object::iterate(analyzer, dep)
   }

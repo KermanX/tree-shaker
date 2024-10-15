@@ -31,7 +31,7 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
   prototype.insert(
     "call",
     factory.implemented_builtin_fn(|analyzer, dep, this, args| {
-      let (this_arg, args_arg) = args.destruct_as_array(analyzer, dep.cloned(), 1);
+      let (this_arg, args_arg, _deps) = args.destruct_as_array(analyzer, dep.cloned(), 1);
       this.call(analyzer, dep, this_arg[0], args_arg)
     }),
   );

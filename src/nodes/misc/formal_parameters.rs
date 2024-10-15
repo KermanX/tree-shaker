@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
     args: Entity<'a>,
     kind: DeclarationKind,
   ) {
-    let (elements_init, rest_init) =
+    let (elements_init, rest_init, _deps) =
       args.destruct_as_array(self, box_consumable(()), node.items.len());
 
     for param in &node.items {

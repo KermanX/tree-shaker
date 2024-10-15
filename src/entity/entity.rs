@@ -1,13 +1,17 @@
 use super::{EntityFactory, LiteralEntity, TypeofResult};
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable},
+  consumable::{box_consumable, Consumable, ConsumableNode},
 };
 use oxc::allocator::Allocator;
 use rustc_hash::FxHashSet;
 use std::fmt::Debug;
 
+/// (vec![(definite, key, value)], dep)
 pub type EnumeratedProperties<'a> = (Vec<(bool, Entity<'a>, Entity<'a>)>, Consumable<'a>);
+
+/// (vec![known_elements], rest, dep)
+pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>);
 
 pub trait EntityTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
@@ -49,7 +53,7 @@ pub trait EntityTrait<'a>: Debug {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>);
+  ) -> IteratedElements<'a>;
 
   fn get_typeof(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
@@ -58,8 +62,8 @@ pub trait EntityTrait<'a>: Debug {
   fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_literals(
     &self,
-    rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
+    _rc: Entity<'a>,
+    _analyzer: &Analyzer<'a>,
   ) -> Option<FxHashSet<LiteralEntity<'a>>> {
     None
   }
@@ -165,7 +169,7 @@ impl<'a> Entity<'a> {
     &self,
     analyzer: &mut Analyzer<'a>,
     dep: impl Into<Consumable<'a>>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     self.0.iterate(*self, analyzer, dep.into())
   }
 
@@ -222,20 +226,22 @@ impl<'a> Entity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     length: usize,
-  ) -> (Vec<Entity<'a>>, Entity<'a>) {
-    let (elements, rest) = self.iterate(analyzer, dep);
-    let mut result = Vec::new();
+  ) -> (Vec<Entity<'a>>, Entity<'a>, Consumable<'a>) {
+    let (elements, rest, deps) = self.iterate(analyzer, dep);
+    let deps = box_consumable(ConsumableNode::new(deps));
+    let mut result_elements = Vec::new();
     for i in 0..length.min(elements.len()) {
-      result.push(elements[i].clone());
+      result_elements.push(analyzer.factory.computed(elements[i].clone(), deps.cloned()));
     }
     for _ in 0..length.saturating_sub(elements.len()) {
-      if let Some(rest) = rest.clone() {
-        result.push(rest.clone());
+      if let Some(rest) = rest {
+        result_elements.push(analyzer.factory.computed(rest, deps.cloned()));
       } else {
-        result.push(analyzer.factory.computed(analyzer.factory.undefined, *self));
+        result_elements.push(analyzer.factory.computed(analyzer.factory.undefined, deps.cloned()));
       }
     }
     let rest_arr = analyzer.new_empty_array();
+    rest_arr.deps.borrow_mut().push(deps.cloned());
     let mut rest_arr_is_empty = true;
     if length < elements.len() {
       for element in &elements[length..elements.len()] {
@@ -250,7 +256,7 @@ impl<'a> Entity<'a> {
     if rest_arr_is_empty {
       rest_arr.deps.borrow_mut().push(self.to_consumable());
     }
-    (result, analyzer.factory.entity(rest_arr))
+    (result_elements, analyzer.factory.entity(rest_arr), deps)
   }
 
   pub fn iterate_result_union(
@@ -258,13 +264,13 @@ impl<'a> Entity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Option<Entity<'a>> {
-    let (elements, rest) = self.iterate(analyzer, dep);
+    let (elements, rest, deps) = self.iterate(analyzer, dep);
     if let Some(rest) = rest {
       let mut result = elements;
       result.push(rest);
-      Some(analyzer.factory.union(result))
+      Some(analyzer.factory.computed_union(result, deps))
     } else if !elements.is_empty() {
-      Some(analyzer.factory.union(elements))
+      Some(analyzer.factory.computed_union(elements, deps))
     } else {
       None
     }

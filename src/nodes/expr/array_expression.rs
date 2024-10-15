@@ -18,8 +18,8 @@ impl<'a> Analyzer<'a> {
     for element in &node.elements {
       match element {
         ArrayExpressionElement::SpreadElement(node) => {
-          if let Some(spreaded) = self.exec_spread_element(node) {
-            rest.push(spreaded);
+          if let Some(spread) = self.exec_spread_element(node) {
+            rest.push(spread);
           }
         }
         ArrayExpressionElement::Elision(_node) => {

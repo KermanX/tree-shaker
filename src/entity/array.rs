@@ -1,5 +1,7 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityTrait, LiteralEntity, TypeofResult,
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -264,23 +266,14 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     if self.consumed.get() {
       return consumed_object::iterate(analyzer, dep);
     }
-    let rest = self.rest.borrow();
     (
-      self
-        .elements
-        .borrow()
-        .iter()
-        .map(|val| analyzer.factory.computed(val.clone(), dep.cloned()))
-        .collect(),
-      if rest.is_empty() {
-        None
-      } else {
-        Some(analyzer.factory.computed_union(self.rest.borrow().clone(), dep))
-      },
+      self.elements.borrow().clone(),
+      analyzer.factory.try_union(self.rest.borrow().clone()),
+      box_consumable((dep, self.deps.borrow_mut().collect())),
     )
   }
 

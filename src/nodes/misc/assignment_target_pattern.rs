@@ -15,11 +15,13 @@ impl<'a> Analyzer<'a> {
   ) {
     match node {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
-        let (element_values, rest_value) = value.destruct_as_array(
+        let (element_values, rest_value, dep) = value.destruct_as_array(
           self,
           box_consumable(AstKind::ArrayAssignmentTarget(node)),
           node.elements.len(),
         );
+
+        self.push_dependent_cf_scope(dep);
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
             self.exec_assignment_target_maybe_default(element, value);
@@ -28,6 +30,7 @@ impl<'a> Analyzer<'a> {
         if let Some(rest) = &node.rest {
           self.exec_assignment_target_rest(rest, rest_value);
         }
+        self.pop_cf_scope();
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
         let is_nullish = value.test_nullish();
