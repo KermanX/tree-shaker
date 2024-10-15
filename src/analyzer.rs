@@ -67,6 +67,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_program(&mut self, node: &'a Program<'a>) {
+    // Top level is always preserved
+    let top_level_call_id = self.call_scope().call_id;
+    self.refer_dep(top_level_call_id);
+
     let data = self.load_data::<StatementVecData>(AstType2::Program, node);
     self.exec_statement_vec(data, &node.body);
 

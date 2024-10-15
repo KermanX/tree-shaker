@@ -11,8 +11,8 @@ const AST_TYPE: AstType2 = AstType2::IfStatement;
 
 #[derive(Debug, Default)]
 pub struct Data {
-  maybe_true: bool,
-  maybe_false: bool,
+  maybe_consequent: bool,
+  maybe_alternate: bool,
 }
 
 impl<'a> Analyzer<'a> {
@@ -21,28 +21,28 @@ impl<'a> Analyzer<'a> {
 
     let test = self.exec_expression(&node.test).get_to_boolean(self);
 
-    let (maybe_true, maybe_false) = match test.test_truthy() {
+    let (maybe_consequent, maybe_alternate) = match test.test_truthy() {
       Some(true) => (true, false),
       Some(false) => (false, true),
       None => (true, true),
     };
 
     let data = self.load_data::<Data>(AST_TYPE, node);
-    data.maybe_true |= maybe_true;
-    data.maybe_false |= maybe_false;
+    data.maybe_consequent |= maybe_consequent;
+    data.maybe_alternate |= maybe_alternate;
 
     let mut should_exit = true;
     let mut exit_target_inner = 0;
     let mut exit_target_outer = self.scope_context.cf.stack.len();
     let mut acc_dep = None;
 
-    if maybe_true {
+    if maybe_consequent {
       self.push_if_like_branch_cf_scope(
         AstKind::IfStatement(node),
         CfScopeKind::IfBranch,
         test.clone(),
-        maybe_true,
-        maybe_false,
+        maybe_consequent,
+        maybe_alternate,
         true,
         node.alternate.is_some(),
       );
@@ -58,13 +58,13 @@ impl<'a> Analyzer<'a> {
       }
       acc_dep.get_or_insert_with(|| conditional_scope.deps.collect());
     }
-    if maybe_false {
+    if maybe_alternate {
       self.push_if_like_branch_cf_scope(
         AstKind::IfStatement(node),
         CfScopeKind::IfBranch,
         test,
-        maybe_true,
-        maybe_false,
+        maybe_consequent,
+        maybe_alternate,
         false,
         true,
       );
@@ -102,8 +102,9 @@ impl<'a> Transformer<'a> {
 
     let IfStatement { span, test, consequent, alternate, .. } = node;
 
-    let consequent = if data.maybe_true { self.transform_statement(consequent) } else { None };
-    let alternate = if data.maybe_false {
+    let consequent =
+      if data.maybe_consequent { self.transform_statement(consequent) } else { None };
+    let alternate = if data.maybe_alternate {
       alternate.as_ref().and_then(|alt| self.transform_statement(alt))
     } else {
       None

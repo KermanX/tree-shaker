@@ -68,7 +68,7 @@ impl<'a> Analyzer<'a> {
     maybe_consequent: bool,
     maybe_alternate: bool,
     is_consequent: bool,
-    has_alternate: bool,
+    has_contra: bool,
   ) -> impl ConsumableTrait<'a> + 'a {
     self.push_conditional_cf_scope(
       dep_id,
@@ -77,7 +77,7 @@ impl<'a> Analyzer<'a> {
       maybe_consequent,
       maybe_alternate,
       is_consequent,
-      has_alternate,
+      has_contra,
     )
   }
 
@@ -110,7 +110,7 @@ impl<'a> Analyzer<'a> {
     has_contra: bool,
   ) -> impl ConsumableTrait<'a> + 'a {
     let dep_id = dep_id.into();
-    let call_id = self.call_scope().dep_id;
+    let call_id = self.call_scope().call_id;
 
     let ConditionalDataMap { call_to_deps, node_to_data } = &mut self.conditional_data;
 
@@ -154,16 +154,16 @@ impl<'a> Analyzer<'a> {
   pub fn post_analyze_handle_conditional(&mut self) {
     for (call_id, deps) in mem::take(&mut self.conditional_data.call_to_deps) {
       if self.is_referred(call_id) {
-        let mut deps_to_consume = vec![];
+        let mut deps_not_consumed = vec![];
         for branch in deps {
           if self.is_contra_branch_impure(branch) {
             branch.consume(self);
           } else {
-            deps_to_consume.push(branch);
+            deps_not_consumed.push(branch);
           }
         }
-        if !deps_to_consume.is_empty() {
-          self.conditional_data.call_to_deps.insert(call_id, deps_to_consume);
+        if !deps_not_consumed.is_empty() {
+          self.conditional_data.call_to_deps.insert(call_id, deps_not_consumed);
         }
       } else {
         self.conditional_data.call_to_deps.insert(call_id, deps);

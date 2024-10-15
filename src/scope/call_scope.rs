@@ -10,7 +10,7 @@ use std::mem;
 
 #[derive(Debug)]
 pub struct CallScope<'a> {
-  pub dep_id: DepId,
+  pub call_id: DepId,
   pub source: FunctionEntitySource<'a>,
   pub old_variable_scope_stack: Vec<ScopeId>,
   pub cf_scope_depth: usize,
@@ -26,7 +26,7 @@ pub struct CallScope<'a> {
 
 impl<'a> CallScope<'a> {
   pub fn new(
-    dep_id: DepId,
+    call_id: DepId,
     source: FunctionEntitySource<'a>,
     old_variable_scope_stack: Vec<ScopeId>,
     cf_scope_depth: usize,
@@ -37,7 +37,7 @@ impl<'a> CallScope<'a> {
     is_generator: bool,
   ) -> Self {
     CallScope {
-      dep_id,
+      call_id,
       source,
       old_variable_scope_stack,
       cf_scope_depth,
