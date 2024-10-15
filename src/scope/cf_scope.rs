@@ -33,7 +33,7 @@ pub struct ExhaustiveData {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ReferredState {
+pub enum ReferredState {
   Never,
   ReferredClean,
   ReferredDirty,
@@ -44,7 +44,7 @@ pub struct CfScope<'a> {
   pub kind: CfScopeKind,
   pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
   pub deps: ConsumableCollector<'a>,
-  referred_state: ReferredState,
+  pub referred_state: ReferredState,
   pub exited: Option<bool>,
   /// Exits that have been stopped by this scope's indeterminate state.
   /// Only available when `kind` is `If`.

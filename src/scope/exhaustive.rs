@@ -1,3 +1,4 @@
+use super::cf_scope::ReferredState;
 use crate::{analyzer::Analyzer, entity::Entity, scope::CfScopeKind};
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
@@ -26,7 +27,13 @@ impl Hash for TrackerRunner<'_> {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
-    self.exec_exhaustively(Rc::new(runner), false);
+    let runner = Rc::new(runner);
+    self.exec_exhaustively(runner.clone(), false);
+    if self.cf_scope().referred_state != ReferredState::ReferredClean {
+      self.push_indeterminate_cf_scope();
+      runner(self);
+      self.pop_cf_scope();
+    }
   }
 
   pub fn exec_consumed_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a) {
