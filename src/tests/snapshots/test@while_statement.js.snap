@@ -41,14 +41,10 @@ export function main() {
 		if (a) {
 			break;
 		} else {
-			{
-				b;
-				{
-					break;
-				}
-				{
-					continue;
-				}
+			if (b) {
+				break;
+			} else {
+				continue;
 			}
 		}
 	}
@@ -56,14 +52,10 @@ export function main() {
 		i: if (a) {
 			break i;
 		} else {
-			{
-				b;
-				{
-					break;
-				}
-				{
-					continue;
-				}
+			if (b) {
+				break;
+			} else {
+				continue;
 			}
 		}
 		effect2;
