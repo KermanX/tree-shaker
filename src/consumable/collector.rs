@@ -45,4 +45,15 @@ impl<'a> ConsumableCollector<'a> {
       node.consume(analyzer);
     }
   }
+
+  pub fn may_not_referred(&self) -> bool {
+    if !self.current.is_empty() {
+      return true;
+    }
+    if let Some(node) = &self.node {
+      node.may_not_referred()
+    } else {
+      false
+    }
+  }
 }

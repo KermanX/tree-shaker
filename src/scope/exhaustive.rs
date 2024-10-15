@@ -28,8 +28,11 @@ impl Hash for TrackerRunner<'_> {
 impl<'a> Analyzer<'a> {
   pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
     let runner = Rc::new(runner);
+
     self.exec_exhaustively(runner.clone(), false);
-    if self.cf_scope().referred_state != ReferredState::ReferredClean {
+
+    let cf_scope = self.cf_scope();
+    if cf_scope.referred_state != ReferredState::ReferredClean && cf_scope.deps.may_not_referred() {
       self.push_indeterminate_cf_scope();
       runner(self);
       self.pop_cf_scope();

@@ -16,6 +16,10 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableNode<'a, T> {
   pub fn new_box(value: T) -> ConsumableNode<'a, Consumable<'a>> {
     ConsumableNode::new(box_consumable(value))
   }
+
+  pub fn may_not_referred(&self) -> bool {
+    unsafe { &*self.0.get() }.is_some()
+  }
 }
 
 impl<'a, T: ConsumableTrait<'a> + 'a> Clone for ConsumableNode<'a, T> {
