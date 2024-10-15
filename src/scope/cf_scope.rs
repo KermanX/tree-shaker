@@ -79,11 +79,11 @@ impl<'a> CfScope<'a> {
     id: ScopeId,
     logger: &Option<&Logger>,
     exited: Option<bool>,
-    dep: impl FnOnce() -> Option<Consumable<'a>>,
+    get_dep: impl FnOnce() -> Option<Consumable<'a>>,
   ) {
     if self.exited != Some(true) {
       self.exited = exited;
-      if let Some(dep) = dep() {
+      if let Some(dep) = get_dep() {
         self.deps.push(dep);
         self.referred_state = ReferredState::ReferredDirty;
       }
@@ -193,21 +193,25 @@ impl<'a> Analyzer<'a> {
     self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), false, None);
   }
 
+  /// `None` => Interrupted by if branch
+  /// `Some` => Accumulated dependencies, may be `None`
   pub fn exit_to_impl(
     &mut self,
     target_depth: usize,
     from_depth: usize,
     mut must_exit: bool,
     mut acc_dep: Option<ConsumableNode<'a, Consumable<'a>>>,
-  ) -> Option<ConsumableNode<'a, Consumable<'a>>> {
+  ) -> Option<Option<ConsumableNode<'a, Consumable<'a>>>> {
     for depth in (target_depth..from_depth).rev() {
       let id = self.scope_context.cf.stack[depth];
       let cf_scope = self.scope_context.cf.get_mut(id);
-      let this_dep = cf_scope.deps.collect();
-      let dep = || acc_dep.clone().map(box_consumable);
+      let this_dep = cf_scope.deps.try_collect();
+      let get_dep = || acc_dep.clone().map(box_consumable);
+
+      // Update exited state
       if must_exit {
         let is_indeterminate = cf_scope.is_indeterminate();
-        cf_scope.update_exited(id, &self.logger, Some(true), dep);
+        cf_scope.update_exited(id, &self.logger, Some(true), get_dep);
 
         // Stop exiting outer scopes if one inner scope is indeterminate.
         if is_indeterminate {
@@ -217,19 +221,23 @@ impl<'a> Analyzer<'a> {
             // Instead, let the `if` statement handle it.
             debug_assert!(cf_scope.blocked_exit.is_none());
             cf_scope.blocked_exit = Some(target_depth);
-            break;
+            return None;
           }
         }
       } else {
-        cf_scope.update_exited(id, &self.logger, None, dep);
+        cf_scope.update_exited(id, &self.logger, None, get_dep);
       }
-      acc_dep = if let Some(acc_dep) = acc_dep {
-        Some(ConsumableNode::new_box((this_dep, acc_dep)))
-      } else {
-        Some(this_dep)
-      };
+
+      // Accumulate the dependencies
+      if let Some(this_dep) = this_dep.clone() {
+        acc_dep = if let Some(acc_dep) = acc_dep {
+          Some(ConsumableNode::new_box((this_dep, acc_dep)))
+        } else {
+          Some(this_dep)
+        };
+      }
     }
-    acc_dep
+    Some(acc_dep)
   }
 
   /// If the label is used, `true` is returned.

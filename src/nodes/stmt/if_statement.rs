@@ -1,4 +1,7 @@
-use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstType2, consumable::ConsumableNode, scope::CfScopeKind,
+  transformer::Transformer,
+};
 use oxc::{
   ast::{
     ast::{IfStatement, Statement},
@@ -31,10 +34,11 @@ impl<'a> Analyzer<'a> {
     data.maybe_consequent |= maybe_consequent;
     data.maybe_alternate |= maybe_alternate;
 
-    let mut should_exit = true;
+    let mut both_exit = true;
     let mut exit_target_inner = 0;
     let mut exit_target_outer = self.scope_context.cf.stack.len();
-    let mut acc_dep = None;
+    let mut acc_dep_1 = None;
+    let mut acc_dep_2 = None;
 
     if maybe_consequent {
       self.push_if_like_branch_cf_scope(
@@ -54,9 +58,9 @@ impl<'a> Analyzer<'a> {
         exit_target_inner = exit_target_inner.max(stopped_exit);
         exit_target_outer = exit_target_outer.min(stopped_exit);
       } else {
-        should_exit = false;
+        both_exit = false;
       }
-      acc_dep.get_or_insert_with(|| conditional_scope.deps.collect());
+      acc_dep_1 = conditional_scope.deps.try_collect();
     }
     if maybe_alternate {
       self.push_if_like_branch_cf_scope(
@@ -77,19 +81,22 @@ impl<'a> Analyzer<'a> {
           exit_target_inner = exit_target_inner.max(stopped_exit);
           exit_target_outer = exit_target_outer.min(stopped_exit);
         } else {
-          should_exit = false;
+          both_exit = false;
         }
-        acc_dep.get_or_insert_with(|| conditional_scope.deps.collect());
+        acc_dep_2 = conditional_scope.deps.try_collect();
       } else {
         self.pop_cf_scope();
-        should_exit = false;
+        both_exit = false;
       }
     }
 
-    if should_exit {
-      let acc_dep =
-        self.exit_to_impl(exit_target_inner, self.scope_context.cf.stack.len(), true, acc_dep);
-      self.exit_to_impl(exit_target_outer, exit_target_inner, false, acc_dep);
+    let acc_dep = Some(ConsumableNode::new_box((acc_dep_1, acc_dep_2)));
+    if both_exit {
+      if let Some(acc_dep) =
+        self.exit_to_impl(exit_target_inner, self.scope_context.cf.stack.len(), true, acc_dep)
+      {
+        self.exit_to_impl(exit_target_outer, exit_target_inner, false, acc_dep);
+      }
     } else {
       self.exit_to_impl(exit_target_outer, self.scope_context.cf.stack.len(), false, acc_dep);
     }

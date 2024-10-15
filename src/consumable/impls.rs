@@ -19,6 +19,17 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Box<T> {
   }
 }
 
+impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Option<T> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    if let Some(value) = self {
+      value.consume(analyzer)
+    }
+  }
+  fn cloned(&self) -> Consumable<'a> {
+    Box::new(self.as_ref().map(|value| value.cloned()))
+  }
+}
+
 impl<'a, T: Default + ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Rc<RefCell<T>> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.take().consume(analyzer)
