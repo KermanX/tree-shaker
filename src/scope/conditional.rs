@@ -33,20 +33,26 @@ struct ConditionalBranchConsumable<'a> {
   referred: &'a Cell<bool>,
 }
 
+impl<'a> ConditionalBranchConsumable<'a> {
+  fn force_consume_with_data(&self, data: &mut ConditionalData<'a>) {
+    data.maybe_true |= self.maybe_true;
+    data.maybe_false |= self.maybe_false;
+    data.referred_tests.push(self.test);
+    if self.is_true {
+      data.impure_true = true;
+    } else {
+      data.impure_false = true;
+    }
+  }
+}
+
 impl<'a> ConsumableTrait<'a> for &'a ConditionalBranchConsumable<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     if !self.referred.get() {
       self.referred.set(true);
 
       if let Some(data) = analyzer.conditional_data.node_to_data.get_mut(&self.dep_id) {
-        data.maybe_true |= self.maybe_true;
-        data.maybe_false |= self.maybe_false;
-        data.referred_tests.push(self.test);
-        if self.is_true {
-          data.impure_true = true;
-        } else {
-          data.impure_false = true;
-        }
+        self.force_consume_with_data(data);
       } else {
         // When this conditional scope is already consumed in `post_analyze_handle_conditional`
         // we should consume the test here
@@ -139,15 +145,14 @@ impl<'a> Analyzer<'a> {
     dep
   }
 
-  fn is_contra_branch_impure(&self, branch: &'a ConditionalBranchConsumable<'a>) -> bool {
-    if let Some(data) = &self.conditional_data.node_to_data.get(&branch.dep_id) {
-      if branch.is_true {
-        data.impure_false
-      } else {
-        data.impure_true
-      }
+  fn is_contra_branch_impure(
+    &mut self,
+    branch: &'a ConditionalBranchConsumable<'a>,
+  ) -> Option<&mut ConditionalData<'a>> {
+    if let Some(data) = self.conditional_data.node_to_data.get_mut(&branch.dep_id) {
+      if branch.is_true { data.impure_false } else { data.impure_true }.then_some(data)
     } else {
-      false
+      None
     }
   }
 
@@ -156,8 +161,11 @@ impl<'a> Analyzer<'a> {
       if self.is_referred(call_id) {
         let mut deps_not_consumed = vec![];
         for branch in deps {
-          if self.is_contra_branch_impure(branch) {
-            branch.consume(self);
+          if let Some(data) = self.is_contra_branch_impure(branch) {
+            if !branch.referred.get() {
+              branch.referred.set(true);
+              branch.force_consume_with_data(data);
+            }
           } else {
             deps_not_consumed.push(branch);
           }
