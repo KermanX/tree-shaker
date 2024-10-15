@@ -10,6 +10,7 @@ pub mod variable_scope;
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
+  dep::DepId,
   entity::{Entity, EntityFactory, FunctionEntitySource, LabelEntity},
   logger::DebuggerEvent,
 };
@@ -44,6 +45,7 @@ impl<'a> ScopeContext<'a> {
     let object_scope_id = variable.add_special(VariableScope::new(cf_scope_0));
     ScopeContext {
       call: vec![CallScope::new(
+        DepId::from_counter(),
         FunctionEntitySource::Module,
         vec![],
         0,
@@ -117,12 +119,18 @@ impl<'a> Analyzer<'a> {
     is_async: bool,
     is_generator: bool,
   ) {
+    let dep_id = DepId::from_counter();
+
     // FIXME: no clone
     let variable_scope_stack = variable_scope_stack.as_ref().clone();
     let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
-    let cf_scope_depth =
-      self.push_cf_scope_with_deps(CfScopeKind::Function, None, vec![call_dep], Some(false));
+    let cf_scope_depth = self.push_cf_scope_with_deps(
+      CfScopeKind::Function,
+      None,
+      vec![call_dep, box_consumable(dep_id)],
+      Some(false),
+    );
 
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::PushCallScope(
@@ -134,6 +142,7 @@ impl<'a> Analyzer<'a> {
     }
 
     self.scope_context.call.push(CallScope::new(
+      dep_id,
       source.into(),
       old_variable_scope_stack,
       cf_scope_depth,

@@ -1,13 +1,17 @@
 use crate::{analyzer::Analyzer, ast::AstType2, data::get_node_ptr, transformer::Transformer};
-use core::hash::Hash;
 use oxc::{ast::AstKind, span::GetSpan};
-use std::fmt::Debug;
+use std::{
+  fmt::Debug,
+  hash::Hash,
+  sync::atomic::{AtomicUsize, Ordering},
+};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DepId {
   Environment,
   AstKind((usize, usize)),
   AstType(AstType2, usize),
+  Index(usize),
 }
 
 impl Debug for DepId {
@@ -23,6 +27,9 @@ impl Debug for DepId {
       DepId::AstType(t, s) => {
         (*t).fmt(f)?;
         s.fmt(f)?;
+      }
+      DepId::Index(c) => {
+        c.fmt(f)?;
       }
     }
     Ok(())
@@ -41,9 +48,21 @@ impl<T: GetSpan> From<(AstType2, &T)> for DepId {
   }
 }
 
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+impl DepId {
+  pub fn from_counter() -> Self {
+    DepId::Index(COUNTER.fetch_add(1, Ordering::Relaxed))
+  }
+}
+
 impl<'a> Analyzer<'a> {
   pub fn refer_dep(&mut self, dep: impl Into<DepId>) {
     self.referred_nodes.entry(dep.into()).and_modify(|v| *v += 1).or_insert(1);
+  }
+
+  pub fn is_referred(&self, dep: impl Into<DepId>) -> bool {
+    self.referred_nodes.contains_key(&dep.into())
   }
 }
 

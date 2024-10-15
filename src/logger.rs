@@ -77,9 +77,9 @@ impl Logger {
           Self::serialize_scope_id(scope_id),
           match kind {
             CfScopeKind::BreakableWithoutLabel => "Breakable",
-            CfScopeKind::ConditionalExpression => "CondExpr",
+            CfScopeKind::ConditionalExprBranch => "ConditionalExprBranch",
             CfScopeKind::Exhaustive => "Exhaustive",
-            CfScopeKind::IfStatement => "IfStmt",
+            CfScopeKind::IfBranch => "IfBranch",
             CfScopeKind::Dependent => "Dependent",
             CfScopeKind::Labeled => "Labeled",
             CfScopeKind::Indeterminate => "Indeterminate",
@@ -87,7 +87,7 @@ impl Logger {
             CfScopeKind::Module => "Module",
             CfScopeKind::Block => "Block",
             CfScopeKind::Continuable => "Continuable",
-            CfScopeKind::LogicalExpressionRight => "LogicalExprRight",
+            CfScopeKind::LogicalRight => "LogicalRight",
           },
           Self::serialize_exited(exited),
         )

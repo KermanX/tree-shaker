@@ -29,27 +29,46 @@ impl<'a> Analyzer<'a> {
     data.maybe_true |= maybe_true;
     data.maybe_false |= maybe_false;
 
-    let conditional_dep = self.push_conditional_cf_scope(
-      AstKind::ConditionalExpression(node),
-      CfScopeKind::ConditionalExpression,
-      test.clone(),
-      maybe_true,
-      maybe_false,
-    );
-    let result = match (maybe_true, maybe_false) {
-      (true, false) => self.exec_expression(&node.consequent),
-      (false, true) => self.exec_expression(&node.alternate),
+    let exec_consequent = move |analyzer: &mut Analyzer<'a>| {
+      let conditional_dep = analyzer.push_if_like_branch_cf_scope(
+        AstKind::ConditionalExpression(node),
+        CfScopeKind::ConditionalExprBranch,
+        test.clone(),
+        maybe_true,
+        maybe_false,
+        true,
+        true,
+      );
+      let value = analyzer.exec_expression(&node.consequent);
+      analyzer.pop_cf_scope();
+      analyzer.factory.computed(value, conditional_dep)
+    };
+
+    let exec_alternate = move |analyzer: &mut Analyzer<'a>| {
+      let conditional_dep = analyzer.push_if_like_branch_cf_scope(
+        AstKind::ConditionalExpression(node),
+        CfScopeKind::ConditionalExprBranch,
+        test.clone(),
+        maybe_true,
+        maybe_false,
+        false,
+        true,
+      );
+      let value = analyzer.exec_expression(&node.alternate);
+      analyzer.pop_cf_scope();
+      analyzer.factory.computed(value, conditional_dep)
+    };
+
+    match (maybe_true, maybe_false) {
+      (true, false) => exec_consequent(self),
+      (false, true) => exec_alternate(self),
       (true, true) => {
-        let consequent = self.exec_expression(&node.consequent);
-        self.cf_scope_mut().exited = None;
-        let alternate = self.exec_expression(&node.alternate);
-        self.factory.union(vec![consequent, alternate])
+        let v1 = exec_consequent(self);
+        let v2 = exec_alternate(self);
+        self.factory.union(vec![v1, v2])
       }
       _ => unreachable!(),
-    };
-    self.pop_cf_scope();
-
-    self.factory.computed(result, conditional_dep)
+    }
   }
 }
 

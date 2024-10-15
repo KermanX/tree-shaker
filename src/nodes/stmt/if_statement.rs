@@ -37,12 +37,14 @@ impl<'a> Analyzer<'a> {
     let mut acc_dep = None;
 
     if maybe_true {
-      self.push_conditional_cf_scope(
+      self.push_if_like_branch_cf_scope(
         AstKind::IfStatement(node),
-        CfScopeKind::IfStatement,
+        CfScopeKind::IfBranch,
         test.clone(),
         maybe_true,
         maybe_false,
+        true,
+        node.alternate.is_some(),
       );
       self.push_cf_scope(CfScopeKind::Labeled, labels.clone(), Some(false));
       self.exec_statement(&node.consequent);
@@ -57,14 +59,16 @@ impl<'a> Analyzer<'a> {
       acc_dep.get_or_insert_with(|| conditional_scope.deps.collect());
     }
     if maybe_false {
+      self.push_if_like_branch_cf_scope(
+        AstKind::IfStatement(node),
+        CfScopeKind::IfBranch,
+        test,
+        maybe_true,
+        maybe_false,
+        false,
+        true,
+      );
       if let Some(alternate) = &node.alternate {
-        self.push_conditional_cf_scope(
-          AstKind::IfStatement(node),
-          CfScopeKind::IfStatement,
-          test,
-          maybe_true,
-          maybe_false,
-        );
         self.push_cf_scope(CfScopeKind::Labeled, labels.clone(), Some(false));
         self.exec_statement(alternate);
         self.pop_cf_scope();
@@ -77,6 +81,7 @@ impl<'a> Analyzer<'a> {
         }
         acc_dep.get_or_insert_with(|| conditional_scope.deps.collect());
       } else {
+        self.pop_cf_scope();
         should_exit = false;
       }
     }

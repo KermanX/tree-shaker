@@ -1,6 +1,4 @@
-use crate::{
-  ast::AstType2, dep::DepId, entity::FunctionEntitySource, scope::conditional::ConditionalData,
-};
+use crate::{ast::AstType2, dep::DepId, entity::FunctionEntitySource};
 use oxc::semantic::SymbolId;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeSet;
@@ -12,8 +10,6 @@ pub struct DataPlaceholder<'a> {
 pub type ExtraData<'a> = FxHashMap<(AstType2, usize), Box<DataPlaceholder<'a>>>;
 
 pub type ReferredNodes<'a> = FxHashMap<DepId, usize>;
-
-pub type ConditionalDataMap<'a> = FxHashMap<DepId, ConditionalData<'a>>;
 
 pub type VarDeclarations<'a> = FxHashMap<FunctionEntitySource<'a>, FxHashSet<SymbolId>>;
 

@@ -1,5 +1,3 @@
-// @minify
-
 export function truthy() {
   s1 ; if (1) {2} else {3}
   s2 ; if (1) {e} else {3}
@@ -70,6 +68,15 @@ export function with_effect(unknown) {
 }
 
 export function with_effect_2() {
+  function f(t) {
+    effect()
+    if(t) effect()
+  }
+  f(0)
+  f(1)
+}
+
+export function with_effect_3() {
   function f(t) {
     if(t) effect()
   }

@@ -1,6 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, build_effect, entity::Entity, scope::CfScopeKind,
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstType2, build_effect, entity::Entity, transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, LogicalExpression, LogicalOperator};
 
@@ -39,9 +38,8 @@ impl<'a> Analyzer<'a> {
     data.need_left_val |= need_left_val;
     data.need_right |= need_right;
 
-    let conditional_dep = self.push_conditional_cf_scope(
+    let conditional_dep = self.push_logical_right_cf_cope(
       (AstType2::LogicalExpressionLeft, &node.left),
-      CfScopeKind::LogicalExpressionRight,
       left.clone(),
       need_left_val,
       need_right,
