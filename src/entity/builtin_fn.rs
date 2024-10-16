@@ -3,7 +3,10 @@ use super::{
   entity::{EnumeratedProperties, IteratedElements},
   Entity, EntityFactory, EntityTrait, TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable},
+};
 use std::fmt::Debug;
 
 pub trait BuiltinFnEntity<'a>: Debug {
@@ -85,6 +88,10 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   ) -> IteratedElements<'a> {
     analyzer.thrown_builtin_error("Cannot iterate over function");
     consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((rc, dep))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

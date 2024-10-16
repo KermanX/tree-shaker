@@ -187,6 +187,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
+  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((rc, dep))
+  }
+
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("function")
   }

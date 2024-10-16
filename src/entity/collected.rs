@@ -96,6 +96,10 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     (elements, rest, box_consumable((deps, self.deps.clone())))
   }
 
+  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((self.deps.clone(), dep))
+  }
+
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: Verify this
     self.forward(self.val.get_typeof(analyzer), analyzer)

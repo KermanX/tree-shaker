@@ -33,6 +33,8 @@ impl<'a> Analyzer<'a> {
         self.pop_cf_scope();
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
+        self.push_dependent_cf_scope(value.get_destructable(box_consumable(())));
+
         let is_nullish = value.test_nullish();
         if is_nullish != Some(false) {
           if is_nullish == Some(true) {
@@ -53,6 +55,8 @@ impl<'a> Analyzer<'a> {
           let init = self.exec_object_rest(dep, value, enumerated);
           self.exec_assignment_target_rest(rest, init);
         }
+
+        self.pop_cf_scope();
       }
     }
   }

@@ -138,6 +138,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     consumed_object::iterate(analyzer, dep)
   }
 
+  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((rc, dep))
+  }
+
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if let Some(str) = self.test_typeof().to_string() {
       analyzer.factory.string(str)

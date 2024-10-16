@@ -130,6 +130,14 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     (vec![], analyzer.factory.try_union(results), box_consumable(()))
   }
 
+  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    let mut values = Vec::new();
+    for entity in &self.values {
+      values.push(entity.get_destructable(dep.cloned()));
+    }
+    box_consumable(values)
+  }
+
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     let mut result = Vec::new();
     // TODO: collect literals

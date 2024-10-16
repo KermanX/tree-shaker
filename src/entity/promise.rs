@@ -3,7 +3,10 @@ use super::{
   entity::{EnumeratedProperties, IteratedElements},
   Entity, EntityFactory, EntityTrait, TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable},
+};
 
 #[derive(Debug, Clone)]
 pub struct PromiseEntity<'a> {
@@ -92,6 +95,10 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   ) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((rc, dep))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

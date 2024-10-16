@@ -88,6 +88,10 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     self.val.iterate(analyzer, box_consumable((self.dep.cloned(), dep)))
   }
 
+  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    self.val.get_destructable(box_consumable((self.dep.cloned(), dep)))
+  }
+
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward(self.val.get_typeof(analyzer), analyzer)
   }

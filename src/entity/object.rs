@@ -409,6 +409,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
+  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    dep
+  }
+
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("object")
   }
