@@ -4,6 +4,7 @@ use crate::{
   consumable::{box_consumable, Consumable, ConsumableTrait},
   dep::DepId,
   entity::Entity,
+  transformer::Transformer,
 };
 use rustc_hash::FxHashMap;
 use std::{cell::Cell, fmt::Debug, mem};
@@ -26,7 +27,7 @@ pub struct ConditionalDataMap<'a> {
 #[derive(Debug, Clone)]
 struct ConditionalBranchConsumable<'a> {
   dep_id: DepId,
-  is_true: bool,
+  is_true_branch: bool,
   maybe_true: bool,
   maybe_false: bool,
   test: Entity<'a>,
@@ -34,31 +35,26 @@ struct ConditionalBranchConsumable<'a> {
 }
 
 impl<'a> ConditionalBranchConsumable<'a> {
-  fn force_consume_with_data(&self, data: &mut ConditionalData<'a>) {
-    data.maybe_true |= self.maybe_true;
-    data.maybe_false |= self.maybe_false;
-    data.referred_tests.push(self.test);
-    if self.is_true {
-      data.impure_true = true;
-    } else {
-      data.impure_false = true;
+  fn refer_with_data(&self, data: &mut ConditionalData<'a>) {
+    if !self.referred.get() {
+      self.referred.set(true);
+
+      data.maybe_true |= self.maybe_true;
+      data.maybe_false |= self.maybe_false;
+      data.referred_tests.push(self.test);
+      if self.is_true_branch {
+        data.impure_true = true;
+      } else {
+        data.impure_false = true;
+      }
     }
   }
 }
 
 impl<'a> ConsumableTrait<'a> for &'a ConditionalBranchConsumable<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    if !self.referred.get() {
-      self.referred.set(true);
-
-      if let Some(data) = analyzer.conditional_data.node_to_data.get_mut(&self.dep_id) {
-        self.force_consume_with_data(data);
-      } else {
-        // When this conditional scope is already consumed in `post_analyze_handle_conditional`
-        // we should consume the test here
-        self.test.consume(analyzer);
-      }
-    }
+    let data = analyzer.get_conditional_data_mut(self.dep_id);
+    self.refer_with_data(data);
   }
   fn cloned(&self) -> Consumable<'a> {
     Box::new(*self)
@@ -123,7 +119,7 @@ impl<'a> Analyzer<'a> {
     let dep: &'a ConditionalBranchConsumable<'a> =
       self.allocator.alloc(ConditionalBranchConsumable {
         dep_id,
-        is_true,
+        is_true_branch: is_true,
         maybe_true,
         maybe_false,
         test,
@@ -149,11 +145,8 @@ impl<'a> Analyzer<'a> {
     &mut self,
     branch: &'a ConditionalBranchConsumable<'a>,
   ) -> Option<&mut ConditionalData<'a>> {
-    if let Some(data) = self.conditional_data.node_to_data.get_mut(&branch.dep_id) {
-      if branch.is_true { data.impure_false } else { data.impure_true }.then_some(data)
-    } else {
-      None
-    }
+    let data = self.get_conditional_data_mut(branch.dep_id);
+    if branch.is_true_branch { data.impure_false } else { data.impure_true }.then_some(data)
   }
 
   pub fn post_analyze_handle_conditional(&mut self) {
@@ -162,10 +155,7 @@ impl<'a> Analyzer<'a> {
         let mut deps_not_consumed = vec![];
         for branch in deps {
           if let Some(data) = self.is_contra_branch_impure(branch) {
-            if !branch.referred.get() {
-              branch.referred.set(true);
-              branch.force_consume_with_data(data);
-            }
+            branch.refer_with_data(data);
           } else {
             deps_not_consumed.push(branch);
           }
@@ -178,30 +168,35 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    let mut deps_to_consume = vec![];
     let mut tests_to_consume = vec![];
-    for (dep, data) in mem::take(&mut self.conditional_data.node_to_data) {
+    for (dep_id, mut data) in mem::take(&mut self.conditional_data.node_to_data) {
       if data.maybe_true && data.maybe_false {
-        deps_to_consume.push(dep);
-        tests_to_consume.push(data.referred_tests);
-      } else {
-        self.conditional_data.node_to_data.insert(dep, data);
+        tests_to_consume.push(mem::take(&mut data.referred_tests));
       }
+      self.conditional_data.node_to_data.insert(dep_id, data);
     }
 
-    if deps_to_consume.is_empty() {
-      return;
-    }
-
-    for dep in deps_to_consume {
-      self.refer_dep(dep);
-    }
+    let mut dirty = false;
     for tests in tests_to_consume {
       for test in tests {
         test.consume(self);
+        dirty = true;
       }
     }
 
-    self.post_analyze_handle_conditional();
+    if dirty {
+      self.post_analyze_handle_conditional();
+    }
+  }
+
+  fn get_conditional_data_mut(&mut self, dep_id: DepId) -> &mut ConditionalData<'a> {
+    self.conditional_data.node_to_data.get_mut(&dep_id).unwrap()
+  }
+}
+
+impl<'a> Transformer<'a> {
+  pub fn get_conditional_result(&self, dep_id: impl Into<DepId>) -> (bool, bool, bool) {
+    let data = self.conditional_data.node_to_data.get(&dep_id.into()).unwrap();
+    (data.maybe_true && data.maybe_false, data.maybe_true, data.maybe_false)
   }
 }

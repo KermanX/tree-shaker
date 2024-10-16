@@ -6,6 +6,7 @@ use crate::{
   },
   entity::FunctionEntitySource,
   logger::Logger,
+  scope::conditional::ConditionalDataMap,
   TreeShakeConfig,
 };
 use oxc::{
@@ -34,6 +35,7 @@ pub struct Transformer<'a> {
   pub ast_builder: AstBuilder<'a>,
   pub data: ExtraData<'a>,
   pub referred_nodes: ReferredNodes<'a>,
+  pub conditional_data: ConditionalDataMap<'a>,
   pub var_decls: RefCell<VarDeclarations<'a>>,
   pub logger: Option<&'a Logger>,
 
@@ -45,8 +47,17 @@ pub struct Transformer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn new(analyzer: Analyzer<'a>) -> Self {
-    let Analyzer { config, allocator, semantic, data, referred_nodes, var_decls, logger, .. } =
-      analyzer;
+    let Analyzer {
+      config,
+      allocator,
+      semantic,
+      data,
+      referred_nodes,
+      conditional_data,
+      var_decls,
+      logger,
+      ..
+    } = analyzer;
 
     // for (key, v) in referred_nodes.iter() {
     //   if *v > 100 {
@@ -61,6 +72,7 @@ impl<'a> Transformer<'a> {
       ast_builder: AstBuilder::new(allocator),
       data,
       referred_nodes,
+      conditional_data,
       var_decls: RefCell::new(var_decls),
       logger,
 

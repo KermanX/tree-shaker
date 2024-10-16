@@ -1,19 +1,10 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, build_effect, entity::Entity, scope::CfScopeKind,
-  transformer::Transformer,
+  analyzer::Analyzer, build_effect, entity::Entity, scope::CfScopeKind, transformer::Transformer,
 };
 use oxc::ast::{
   ast::{ConditionalExpression, Expression, LogicalOperator},
   AstKind,
 };
-
-const AST_TYPE: AstType2 = AstType2::ConditionalExpression;
-
-#[derive(Debug, Default)]
-pub struct Data {
-  maybe_true: bool,
-  maybe_false: bool,
-}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_conditional_expression(&mut self, node: &'a ConditionalExpression<'a>) -> Entity<'a> {
@@ -24,10 +15,6 @@ impl<'a> Analyzer<'a> {
       Some(false) => (false, true),
       None => (true, true),
     };
-
-    let data = self.load_data::<Data>(AST_TYPE, node);
-    data.maybe_true |= maybe_true;
-    data.maybe_false |= maybe_false;
 
     let exec_consequent = move |analyzer: &mut Analyzer<'a>| {
       let conditional_dep = analyzer.push_if_like_branch_cf_scope(
@@ -78,17 +65,14 @@ impl<'a> Transformer<'a> {
     node: &'a ConditionalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data2::<Data>(AST_TYPE, node);
-
     let ConditionalExpression { span, test, consequent, alternate, .. } = node;
 
-    let consequent =
-      data.maybe_true.then(|| self.transform_expression(consequent, need_val)).flatten();
-    let alternate =
-      data.maybe_false.then(|| self.transform_expression(alternate, need_val)).flatten();
+    let (need_test_val, maybe_true, maybe_false) =
+      self.get_conditional_result(AstKind::ConditionalExpression(node));
 
-    let need_test_val = self.is_referred(AstKind::ConditionalExpression(node));
     let test = self.transform_expression(test, need_test_val);
+    let consequent = maybe_true.then(|| self.transform_expression(consequent, need_val)).flatten();
+    let alternate = maybe_false.then(|| self.transform_expression(alternate, need_val)).flatten();
 
     if need_test_val {
       let test = test.unwrap();

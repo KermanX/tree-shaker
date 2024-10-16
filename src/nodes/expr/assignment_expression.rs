@@ -5,14 +5,6 @@ use oxc::ast::ast::{
   AssignmentExpression, AssignmentOperator, BinaryOperator, Expression, LogicalOperator,
 };
 
-const AST_TYPE: AstType2 = AstType2::AssignmentExpression;
-
-#[derive(Debug, Default)]
-pub struct DataForLogical {
-  need_left_val: bool,
-  need_right: bool,
-}
-
 impl<'a> Analyzer<'a> {
   pub fn exec_assignment_expression(&mut self, node: &'a AssignmentExpression<'a>) -> Entity<'a> {
     if node.operator == AssignmentOperator::Assign {
@@ -40,11 +32,6 @@ impl<'a> Analyzer<'a> {
         },
         _ => unreachable!(),
       };
-
-      let data = self.load_data::<DataForLogical>(AST_TYPE, node);
-
-      data.need_left_val |= need_left_val;
-      data.need_right |= need_right;
 
       let conditional_dep = self.push_logical_right_cf_cope(
         (AstType2::LogicalExpressionLeft, &node.left),
@@ -101,9 +88,10 @@ impl<'a> Transformer<'a> {
       (Some(left), Some(right)) => Some(self.ast_builder.expression_assignment(
         *span,
         if operator.is_logical() {
-          let data = self.get_data::<DataForLogical>(AST_TYPE, node);
+          let (_, need_left_val, _) =
+            self.get_conditional_result((AstType2::LogicalExpressionLeft, &node.left));
 
-          if data.need_left_val {
+          if need_left_val {
             *operator
           } else {
             AssignmentOperator::Assign
@@ -117,14 +105,12 @@ impl<'a> Transformer<'a> {
       (None, Some(right)) => {
         if need_val && *operator != AssignmentOperator::Assign {
           if operator.is_logical() {
-            let data = self.get_data::<DataForLogical>(AST_TYPE, node);
+            let (need_left_test_val, need_left_val, need_right) =
+              self.get_conditional_result((AstType2::LogicalExpressionLeft, &node.left));
 
-            let need_left_test_val =
-              self.is_referred((AstType2::LogicalExpressionLeft, &node.left));
-            let need_left_val = (need_val && data.need_left_val) || need_left_test_val;
-
+            let need_left_val = (need_val && need_left_val) || need_left_test_val;
             let left = self.transform_assignment_target_read(left, need_left_val);
-            let right = data.need_right.then_some(right);
+            let right = need_right.then_some(right);
 
             if need_left_test_val {
               let left = left.unwrap();

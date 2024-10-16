@@ -3,14 +3,6 @@ use crate::{
 };
 use oxc::ast::ast::{Expression, LogicalExpression, LogicalOperator};
 
-const AST_TYPE: AstType2 = AstType2::LogicalExpression;
-
-#[derive(Debug, Default)]
-pub struct Data {
-  need_left_val: bool,
-  need_right: bool,
-}
-
 impl<'a> Analyzer<'a> {
   pub fn exec_logical_expression(&mut self, node: &'a LogicalExpression<'a>) -> Entity<'a> {
     let left = self.exec_expression(&node.left);
@@ -32,11 +24,6 @@ impl<'a> Analyzer<'a> {
         None => (true, true),
       },
     };
-
-    let data = self.load_data::<Data>(AST_TYPE, node);
-
-    data.need_left_val |= need_left_val;
-    data.need_right |= need_right;
 
     let conditional_dep = self.push_logical_right_cf_cope(
       (AstType2::LogicalExpressionLeft, &node.left),
@@ -72,15 +59,14 @@ impl<'a> Transformer<'a> {
     node: &'a LogicalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
-
     let LogicalExpression { span, left, operator, right, .. } = node;
 
-    let need_left_test_val = self.is_referred((AstType2::LogicalExpressionLeft, &node.left));
-    let need_left_val = (need_val && data.need_left_val) || need_left_test_val;
-    let left = self.transform_expression(left, need_left_val);
+    let (need_left_test_val, need_left_val, need_right) =
+      self.get_conditional_result((AstType2::LogicalExpressionLeft, &node.left));
 
-    let right = data.need_right.then(|| self.transform_expression(right, need_val)).flatten();
+    let need_left_val = (need_val && need_left_val) || need_left_test_val;
+    let left = self.transform_expression(left, need_left_val);
+    let right = need_right.then(|| self.transform_expression(right, need_val)).flatten();
 
     if need_left_test_val {
       let left = left.unwrap();

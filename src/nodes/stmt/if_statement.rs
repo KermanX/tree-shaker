@@ -1,6 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, consumable::ConsumableNode, scope::CfScopeKind,
-  transformer::Transformer,
+  analyzer::Analyzer, consumable::ConsumableNode, scope::CfScopeKind, transformer::Transformer,
 };
 use oxc::{
   ast::{
@@ -9,14 +8,6 @@ use oxc::{
   },
   span::GetSpan,
 };
-
-const AST_TYPE: AstType2 = AstType2::IfStatement;
-
-#[derive(Debug, Default)]
-pub struct Data {
-  maybe_consequent: bool,
-  maybe_alternate: bool,
-}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_if_statement(&mut self, node: &'a IfStatement) {
@@ -29,10 +20,6 @@ impl<'a> Analyzer<'a> {
       Some(false) => (false, true),
       None => (true, true),
     };
-
-    let data = self.load_data::<Data>(AST_TYPE, node);
-    data.maybe_consequent |= maybe_consequent;
-    data.maybe_alternate |= maybe_alternate;
 
     let mut both_exit = true;
     let mut exit_target_inner = 0;
@@ -105,21 +92,18 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_if_statement(&self, node: &'a IfStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
-
     let IfStatement { span, test, consequent, alternate, .. } = node;
 
-    let consequent =
-      if data.maybe_consequent { self.transform_statement(consequent) } else { None };
-    let alternate = if data.maybe_alternate {
+    let (need_test_val, maybe_consequent, maybe_alternate) =
+      self.get_conditional_result(AstKind::IfStatement(node));
+
+    let test = self.transform_expression(test, need_test_val);
+    let consequent = if maybe_consequent { self.transform_statement(consequent) } else { None };
+    let alternate = if maybe_alternate {
       alternate.as_ref().and_then(|alt| self.transform_statement(alt))
     } else {
       None
     };
-
-    let need_test_val = self.is_referred(AstKind::IfStatement(node));
-
-    let test = self.transform_expression(test, need_test_val);
 
     if need_test_val {
       match (consequent, alternate) {
