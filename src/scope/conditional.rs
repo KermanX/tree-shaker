@@ -39,8 +39,6 @@ impl<'a> ConditionalBranchConsumable<'a> {
     if !self.referred.get() {
       self.referred.set(true);
 
-      println!("CONSUME");
-
       data.maybe_true |= self.maybe_true;
       data.maybe_false |= self.maybe_false;
       data.referred_tests.push(self.test);
@@ -82,26 +80,35 @@ impl<'a> Analyzer<'a> {
       maybe_alternate,
       is_consequent,
       has_contra,
-      false,
     )
+  }
+
+  pub fn forward_logical_left_val(
+    &mut self,
+    dep_id: impl Into<DepId>,
+    left: Entity<'a>,
+    maybe_left: bool,
+    maybe_right: bool,
+  ) -> Entity<'a> {
+    let dep = self.register_conditional_data(dep_id, left, maybe_left, maybe_right, true, false);
+    self.factory.computed(left, dep)
   }
 
   pub fn push_logical_right_cf_cope(
     &mut self,
     dep_id: impl Into<DepId>,
-    test: Entity<'a>,
+    left: Entity<'a>,
     maybe_left: bool,
     maybe_right: bool,
   ) -> impl ConsumableTrait<'a> + 'a {
     self.push_conditional_cf_scope(
       dep_id,
       CfScopeKind::LogicalRight,
-      test,
+      left,
       maybe_left,
       maybe_right,
-      true,
       false,
-      true,
+      false,
     )
   }
 
@@ -114,8 +121,29 @@ impl<'a> Analyzer<'a> {
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
-    is_logical: bool,
   ) -> impl ConsumableTrait<'a> + 'a {
+    let dep =
+      self.register_conditional_data(dep_id, test, maybe_true, maybe_false, is_true, has_contra);
+
+    self.push_cf_scope_with_deps(
+      kind,
+      None,
+      vec![box_consumable(dep)],
+      if maybe_true && maybe_false { None } else { Some(false) },
+    );
+
+    dep
+  }
+
+  fn register_conditional_data(
+    &mut self,
+    dep_id: impl Into<DepId>,
+    test: Entity<'a>,
+    maybe_true: bool,
+    maybe_false: bool,
+    is_true: bool,
+    has_contra: bool,
+  ) -> &'a ConditionalBranchConsumable<'a> {
     let dep_id = dep_id.into();
     let call_id = self.call_scope().call_id;
 
@@ -135,20 +163,7 @@ impl<'a> Analyzer<'a> {
       call_to_deps.entry(call_id).or_insert_with(Default::default).push(dep);
     }
 
-    node_to_data.entry(dep_id).or_insert_with(|| {
-      let mut data = ConditionalData::default();
-      if is_logical {
-        data.maybe_true = maybe_true;
-      }
-      data
-    });
-
-    self.push_cf_scope_with_deps(
-      kind,
-      None,
-      vec![box_consumable(dep)],
-      if maybe_true && maybe_false { None } else { Some(false) },
-    );
+    node_to_data.entry(dep_id).or_insert_with(ConditionalData::default);
 
     dep
   }

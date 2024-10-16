@@ -33,6 +33,15 @@ impl<'a> Analyzer<'a> {
         _ => unreachable!(),
       };
 
+      let forward_left = |analyzer: &mut Analyzer<'a>| {
+        analyzer.forward_logical_left_val(
+          (AstType2::LogicalExpressionLeft, &node.left),
+          left,
+          maybe_left,
+          maybe_right,
+        )
+      };
+
       let conditional_dep = self.push_logical_right_cf_cope(
         (AstType2::LogicalExpressionLeft, &node.left),
         left.clone(),
@@ -47,8 +56,9 @@ impl<'a> Analyzer<'a> {
 
       let value = match (maybe_left, maybe_right) {
         (false, true) => exec_right(self),
-        (true, false) => left,
+        (true, false) => forward_left(self),
         (true, true) => {
+          let left = forward_left(self);
           let right = exec_right(self);
           self.factory.union(vec![left, right])
         }
