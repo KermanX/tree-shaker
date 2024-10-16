@@ -150,30 +150,29 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn post_analyze_handle_conditional(&mut self) {
-    for (call_id, deps) in mem::take(&mut self.conditional_data.call_to_deps) {
+    for (call_id, branches) in mem::take(&mut self.conditional_data.call_to_deps) {
       if self.is_referred(call_id) {
-        let mut deps_not_consumed = vec![];
-        for branch in deps {
+        let mut remaining_branches = vec![];
+        for branch in branches {
           if let Some(data) = self.is_contra_branch_impure(branch) {
             branch.refer_with_data(data);
           } else {
-            deps_not_consumed.push(branch);
+            remaining_branches.push(branch);
           }
         }
-        if !deps_not_consumed.is_empty() {
-          self.conditional_data.call_to_deps.insert(call_id, deps_not_consumed);
+        if !remaining_branches.is_empty() {
+          self.conditional_data.call_to_deps.insert(call_id, remaining_branches);
         }
       } else {
-        self.conditional_data.call_to_deps.insert(call_id, deps);
+        self.conditional_data.call_to_deps.insert(call_id, branches);
       }
     }
 
     let mut tests_to_consume = vec![];
-    for (dep_id, mut data) in mem::take(&mut self.conditional_data.node_to_data) {
+    for data in self.conditional_data.node_to_data.values_mut() {
       if data.maybe_true && data.maybe_false {
         tests_to_consume.push(mem::take(&mut data.referred_tests));
       }
-      self.conditional_data.node_to_data.insert(dep_id, data);
     }
 
     let mut dirty = false;
