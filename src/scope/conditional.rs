@@ -39,6 +39,8 @@ impl<'a> ConditionalBranchConsumable<'a> {
     if !self.referred.get() {
       self.referred.set(true);
 
+      println!("CONSUME");
+
       data.maybe_true |= self.maybe_true;
       data.maybe_false |= self.maybe_false;
       data.referred_tests.push(self.test);
@@ -80,6 +82,7 @@ impl<'a> Analyzer<'a> {
       maybe_alternate,
       is_consequent,
       has_contra,
+      false,
     )
   }
 
@@ -87,17 +90,18 @@ impl<'a> Analyzer<'a> {
     &mut self,
     dep_id: impl Into<DepId>,
     test: Entity<'a>,
-    may_enter: bool,
-    may_short_circuit: bool,
+    maybe_left: bool,
+    maybe_right: bool,
   ) -> impl ConsumableTrait<'a> + 'a {
     self.push_conditional_cf_scope(
       dep_id,
       CfScopeKind::LogicalRight,
       test,
-      may_enter,
-      may_short_circuit,
+      maybe_left,
+      maybe_right,
       true,
       false,
+      true,
     )
   }
 
@@ -110,6 +114,7 @@ impl<'a> Analyzer<'a> {
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
+    is_logical: bool,
   ) -> impl ConsumableTrait<'a> + 'a {
     let dep_id = dep_id.into();
     let call_id = self.call_scope().call_id;
@@ -129,7 +134,14 @@ impl<'a> Analyzer<'a> {
     if has_contra {
       call_to_deps.entry(call_id).or_insert_with(Default::default).push(dep);
     }
-    node_to_data.entry(dep_id).or_insert_with(Default::default);
+
+    node_to_data.entry(dep_id).or_insert_with(|| {
+      let mut data = ConditionalData::default();
+      if is_logical {
+        data.maybe_true = maybe_true;
+      }
+      data
+    });
 
     self.push_cf_scope_with_deps(
       kind,

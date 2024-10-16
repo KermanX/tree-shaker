@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
     } else if node.operator.is_logical() {
       let (left, cache) = self.exec_assignment_target_read(&node.left);
 
-      let (need_left_val, need_right) = match &node.operator {
+      let (maybe_left, maybe_right) = match &node.operator {
         AssignmentOperator::LogicalAnd => match left.test_truthy() {
           Some(true) => (false, true),
           Some(false) => (true, false),
@@ -36,8 +36,8 @@ impl<'a> Analyzer<'a> {
       let conditional_dep = self.push_logical_right_cf_cope(
         (AstType2::LogicalExpressionLeft, &node.left),
         left.clone(),
-        need_left_val,
-        need_right,
+        maybe_left,
+        maybe_right,
       );
 
       let exec_right = |analyzer: &mut Analyzer<'a>| {
@@ -45,7 +45,7 @@ impl<'a> Analyzer<'a> {
         analyzer.factory.computed(val, conditional_dep)
       };
 
-      let value = match (need_left_val, need_right) {
+      let value = match (maybe_left, maybe_right) {
         (false, true) => exec_right(self),
         (true, false) => left,
         (true, true) => {
@@ -57,7 +57,7 @@ impl<'a> Analyzer<'a> {
 
       self.pop_cf_scope();
 
-      if need_right {
+      if maybe_right {
         self.exec_assignment_target_write(&node.left, value.clone(), cache);
       }
 
@@ -88,10 +88,10 @@ impl<'a> Transformer<'a> {
       (Some(left), Some(right)) => Some(self.ast_builder.expression_assignment(
         *span,
         if operator.is_logical() {
-          let (_, need_left_val, _) =
+          let (_, maybe_left, _) =
             self.get_conditional_result((AstType2::LogicalExpressionLeft, &node.left));
 
-          if need_left_val {
+          if maybe_left {
             *operator
           } else {
             AssignmentOperator::Assign
@@ -105,12 +105,12 @@ impl<'a> Transformer<'a> {
       (None, Some(right)) => {
         if need_val && *operator != AssignmentOperator::Assign {
           if operator.is_logical() {
-            let (need_left_test_val, need_left_val, need_right) =
+            let (need_left_test_val, maybe_left, maybe_right) =
               self.get_conditional_result((AstType2::LogicalExpressionLeft, &node.left));
 
-            let need_left_val = (need_val && need_left_val) || need_left_test_val;
-            let left = self.transform_assignment_target_read(left, need_left_val);
-            let right = need_right.then_some(right);
+            let maybe_left = (need_val && maybe_left) || need_left_test_val;
+            let left = self.transform_assignment_target_read(left, maybe_left);
+            let right = maybe_right.then_some(right);
 
             if need_left_test_val {
               let left = left.unwrap();
