@@ -109,12 +109,7 @@ impl<'a> Analyzer<'a> {
   ) {
     let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
 
-    if variable.exhausted {
-      if let Some(value) = value {
-        self.consume(value);
-      }
-      self.consume(init_dep);
-    } else if variable.kind.is_redeclarable() {
+    if variable.kind.is_redeclarable() {
       if let Some(value) = value {
         self.write_on_scope(
           (self.scope_context.variable.current_depth(), id),
@@ -124,6 +119,11 @@ impl<'a> Analyzer<'a> {
       } else {
         // Do nothing
       }
+    } else if variable.exhausted {
+      if let Some(value) = value {
+        self.consume(value);
+      }
+      self.consume(init_dep);
     } else {
       variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_dep));
