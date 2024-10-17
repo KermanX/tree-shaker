@@ -238,7 +238,7 @@ impl<'a> FunctionEntity<'a> {
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
-    consume_return: bool,
+    consume: bool,
   ) -> Entity<'a> {
     if let Some(logger) = analyzer.logger {
       logger.push_fn_call(self.source.span(), self.source.name());
@@ -256,7 +256,7 @@ impl<'a> FunctionEntity<'a> {
         variable_scopes,
         this.clone(),
         args.clone(),
-        consume_return,
+        consume,
       ),
       FunctionEntitySource::ArrowFunctionExpression(node) => analyzer
         .call_arrow_function_expression(
@@ -265,7 +265,7 @@ impl<'a> FunctionEntity<'a> {
           node,
           variable_scopes,
           args.clone(),
-          consume_return,
+          consume,
         ),
       FunctionEntitySource::Module => unreachable!(),
     };

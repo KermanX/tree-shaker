@@ -33,7 +33,7 @@ impl<'a> Analyzer<'a> {
     node: &'a ArrowFunctionExpression<'a>,
     variable_scopes: Rc<Vec<ScopeId>>,
     args: Entity<'a>,
-    consume_return: bool,
+    consume: bool,
   ) -> Entity<'a> {
     let parent_call_scope = self.call_scope();
     self.push_call_scope(
@@ -44,6 +44,7 @@ impl<'a> Analyzer<'a> {
       parent_call_scope.args.clone(),
       node.r#async,
       false,
+      consume,
     );
 
     self.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
@@ -53,7 +54,7 @@ impl<'a> Analyzer<'a> {
       self.exec_function_body(&node.body);
     }
 
-    if consume_return {
+    if consume {
       self.consume_return_values();
     }
 

@@ -118,8 +118,12 @@ impl<'a> Analyzer<'a> {
     args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
     is_generator: bool,
+    consume: bool,
   ) {
     let dep_id = DepId::from_counter();
+    if consume {
+      self.refer_dep(dep_id);
+    }
 
     // FIXME: no clone
     let variable_scope_stack = variable_scope_stack.as_ref().clone();

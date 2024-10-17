@@ -41,7 +41,7 @@ impl<'a> Analyzer<'a> {
     variable_scopes: Rc<Vec<ScopeId>>,
     this: Entity<'a>,
     args: Entity<'a>,
-    consume_return: bool,
+    consume: bool,
   ) -> Entity<'a> {
     let runner: Box<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a> =
       Box::new(move |analyzer: &mut Analyzer<'a>| {
@@ -53,6 +53,7 @@ impl<'a> Analyzer<'a> {
           (args.clone(), vec![ /* later filled by formal parameters */]),
           node.r#async,
           node.generator,
+          consume,
         );
 
         let declare_in_body = is_expression && node.id.is_some();
@@ -81,7 +82,7 @@ impl<'a> Analyzer<'a> {
           analyzer.pop_variable_scope();
         }
 
-        if consume_return {
+        if consume {
           analyzer.consume_return_values();
         }
 
