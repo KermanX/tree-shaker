@@ -21,8 +21,6 @@ impl<'a> Analyzer<'a> {
       None => (true, true),
     };
 
-    println!("maybe_consequent: {}, maybe_alternate: {}", maybe_consequent, maybe_alternate);
-
     let mut both_exit = true;
     let mut exit_target_inner = 0;
     let mut exit_target_outer = self.scope_context.cf.stack.len();

@@ -17,9 +17,9 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a PropertyDefinition<'a>,
   ) -> ClassElement<'a> {
-    let PropertyDefinition { r#type, span, decorators, key, value, r#static, .. } = node;
+    let PropertyDefinition { r#type, span, decorators, key, value, computed, r#static, .. } = node;
 
-    let (computed, key) = self.transform_property_key(key, true).unwrap();
+    let key = self.transform_property_key(key, true).unwrap();
     let value = value.as_ref().map(|node| self.transform_expression(node, true).unwrap());
 
     self.ast_builder.class_element_property_definition(
@@ -28,7 +28,7 @@ impl<'a> Transformer<'a> {
       self.clone_node(decorators),
       key,
       value,
-      computed,
+      *computed,
       *r#static,
       false,
       false,

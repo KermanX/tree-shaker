@@ -111,13 +111,13 @@ impl<'a> Transformer<'a> {
         let name_span = name.span();
         let binding = self.transform_assignment_target_maybe_default(binding, need_binding);
         if let Some(binding) = binding {
-          let (_computed, name) = self.transform_property_key(name, true).unwrap();
+          let name = self.transform_property_key(name, true).unwrap();
           Some(
             self
               .ast_builder
               .assignment_target_property_assignment_target_property_property(*span, name, binding),
           )
-        } else if let Some((_computed, name)) = self.transform_property_key(name, false) {
+        } else if let Some(name) = self.transform_property_key(name, false) {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
             *span,
             name,

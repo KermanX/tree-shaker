@@ -69,7 +69,7 @@ impl<'a> Transformer<'a> {
     for property in properties {
       transformed_properties.push(match property {
         ObjectPropertyKind::ObjectProperty(node) => {
-          let ObjectProperty { span, key, kind, value, method, .. } = node.as_ref();
+          let ObjectProperty { span, key, kind, value, method, computed, .. } = node.as_ref();
 
           let value_span = value.span();
 
@@ -89,7 +89,7 @@ impl<'a> Transformer<'a> {
               }
             }
 
-            let (computed, key) = self.transform_property_key(key, true).unwrap();
+            let key = self.transform_property_key(key, true).unwrap();
             self.ast_builder.object_property_kind_object_property(
               *span,
               *kind,
@@ -98,10 +98,10 @@ impl<'a> Transformer<'a> {
               None,
               *method,
               false,
-              computed,
+              *computed,
             )
           } else {
-            if let Some((computed, key)) = self.transform_property_key(key, false) {
+            if let Some(key) = self.transform_property_key(key, false) {
               self.ast_builder.object_property_kind_object_property(
                 *span,
                 *kind,
@@ -110,7 +110,7 @@ impl<'a> Transformer<'a> {
                 None,
                 *method,
                 false,
-                computed,
+                *computed,
               )
             } else {
               continue;

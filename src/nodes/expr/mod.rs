@@ -39,15 +39,9 @@ use oxc::{
 
 const AST_TYPE: AstType2 = AstType2::Expression;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Data<'a> {
   collector: LiteralCollector<'a>,
-}
-
-impl<'a> Default for Data<'a> {
-  fn default() -> Self {
-    Data { collector: LiteralCollector::new_expr_collector() }
-  }
 }
 
 impl<'a> Analyzer<'a> {

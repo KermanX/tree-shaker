@@ -182,7 +182,7 @@ impl<'a> Transformer<'a> {
           let dep = (AstType2::BindingProperty, property);
           let need_property = rest.is_some() || self.is_referred(dep);
 
-          let BindingProperty { span, key, value, shorthand, .. } = property;
+          let BindingProperty { span, key, value, shorthand, computed, .. } = property;
 
           if *shorthand && matches!(value.kind, BindingPatternKind::BindingIdentifier(_)) {
             if need_property
@@ -195,10 +195,10 @@ impl<'a> Transformer<'a> {
             let transformed_key = self.transform_property_key(key, need_property);
             let value = self.transform_binding_pattern(value, transformed_key.is_some());
             if let Some(value) = value {
-              let (computed, key) =
+              let key =
                 transformed_key.unwrap_or_else(|| self.transform_property_key(key, true).unwrap());
               transformed_properties
-                .push(self.ast_builder.binding_property(*span, key, value, *shorthand, computed));
+                .push(self.ast_builder.binding_property(*span, key, value, *shorthand, *computed));
             }
           }
         }

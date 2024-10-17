@@ -1,9 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  build_effect,
-  consumable::box_consumable,
-  entity::{Entity, LiteralCollector, LiteralEntity},
+  analyzer::Analyzer, ast::AstType2, build_effect, consumable::box_consumable, entity::Entity,
   transformer::Transformer,
 };
 use oxc::{
@@ -19,34 +15,10 @@ use oxc::{
 
 const AST_TYPE_READ: AstType2 = AstType2::MemberExpressionRead;
 
-#[derive(Debug)]
-struct DataRead<'a> {
+#[derive(Debug, Default)]
+struct DataRead {
   need_access: bool,
   need_optional: bool,
-  collector: LiteralCollector<'a>,
-}
-
-impl<'a> Default for DataRead<'a> {
-  fn default() -> Self {
-    Self {
-      need_access: false,
-      need_optional: false,
-      collector: LiteralCollector::new_property_key_collector(),
-    }
-  }
-}
-
-const AST_TYPE_WRITE: AstType2 = AstType2::MemberExpressionWrite;
-
-#[derive(Debug)]
-struct DataWrite<'a> {
-  collector: LiteralCollector<'a>,
-}
-
-impl<'a> Default for DataWrite<'a> {
-  fn default() -> Self {
-    Self { collector: LiteralCollector::new_property_key_collector() }
-  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -103,7 +75,6 @@ impl<'a> Analyzer<'a> {
       self.pop_cf_scope();
     }
 
-    let key = data.collector.collect(self, key);
     let value = object.get_property(self, box_consumable(AstKind::MemberExpression(node)), key);
     let cache = Some((object, key));
 
@@ -130,9 +101,6 @@ impl<'a> Analyzer<'a> {
 
       (object, key)
     });
-
-    let data = self.load_data::<DataWrite>(AST_TYPE_WRITE, node);
-    let key = data.collector.collect(self, key);
 
     object.set_property(self, box_consumable(AstKind::MemberExpression(node)), key, value);
   }
@@ -181,39 +149,17 @@ impl<'a> Transformer<'a> {
       MemberExpression::ComputedMemberExpression(node) => {
         let ComputedMemberExpression { span, object, expression, .. } = node.as_ref();
 
-        let object = self.transform_expression(object, need_read);
         if need_read {
-          Some(self.ast_builder.expression_member(
-            if let Some(LiteralEntity::String(s)) = data.collector.collected() {
-              let key_span = expression.span();
-              let key = self.transform_expression(expression, false);
-              if key.is_none() {
-                self.ast_builder.member_expression_static(
-                  *span,
-                  object.unwrap(),
-                  self.ast_builder.identifier_name(key_span, s),
-                  data.need_optional,
-                )
-              } else {
-                let key = self.transform_expression(expression, true);
-                self.ast_builder.member_expression_computed(
-                  *span,
-                  object.unwrap(),
-                  key.unwrap(),
-                  data.need_optional,
-                )
-              }
-            } else {
-              let key = self.transform_expression(expression, true);
-              self.ast_builder.member_expression_computed(
-                *span,
-                object.unwrap(),
-                key.unwrap(),
-                data.need_optional,
-              )
-            },
-          ))
+          let object = self.transform_expression(object, true).unwrap();
+          let key = self.transform_expression(expression, true).unwrap();
+          Some(self.ast_builder.expression_member(self.ast_builder.member_expression_computed(
+            *span,
+            object,
+            key,
+            data.need_optional,
+          )))
         } else {
+          let object = self.transform_expression(object, false);
           let key = self.transform_expression(expression, false);
           build_effect!(&self.ast_builder, *span, object, key)
         }
@@ -260,8 +206,6 @@ impl<'a> Transformer<'a> {
   ) -> Option<MemberExpression<'a>> {
     let need_write = self.is_referred(AstKind::MemberExpression(node));
 
-    let data = self.get_data::<DataWrite>(AST_TYPE_WRITE, node);
-
     match node {
       MemberExpression::ComputedMemberExpression(node) => {
         let ComputedMemberExpression { span, object, expression, .. } = node.as_ref();
@@ -269,38 +213,15 @@ impl<'a> Transformer<'a> {
         let transformed_object = self.transform_expression(object, need_write);
 
         let need_key_value = need_write || transformed_object.is_some();
-        let static_key = if need_key_value {
-          if let Some(LiteralEntity::String(s)) = data.collector.collected() {
-            if self.transform_expression(expression, false).is_none() {
-              Some(self.ast_builder.identifier_name(expression.span(), s))
-            } else {
-              None
-            }
-          } else {
-            None
-          }
-        } else {
-          None
-        };
-        let transformed_key =
-          self.transform_expression(expression, need_key_value && static_key.is_none());
+        let transformed_key = self.transform_expression(expression, need_key_value);
 
         if need_key_value {
-          if let Some(key) = static_key {
-            Some(self.ast_builder.member_expression_static(
-              *span,
-              transformed_object.unwrap(),
-              key,
-              false,
-            ))
-          } else {
-            Some(self.ast_builder.member_expression_computed(
-              *span,
-              transformed_object.unwrap(),
-              transformed_key.unwrap(),
-              false,
-            ))
-          }
+          Some(self.ast_builder.member_expression_computed(
+            *span,
+            transformed_object.unwrap(),
+            transformed_key.unwrap(),
+            false,
+          ))
         } else if transformed_key.is_some() {
           Some(self.ast_builder.member_expression_computed(
             *span,

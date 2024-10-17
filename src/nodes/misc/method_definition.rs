@@ -19,6 +19,7 @@ impl<'a> Transformer<'a> {
       key,
       value,
       kind,
+      computed,
       r#static,
       r#override,
       optional,
@@ -26,7 +27,7 @@ impl<'a> Transformer<'a> {
       ..
     } = node;
 
-    let (computed, key) = self.transform_property_key(key, true).unwrap();
+    let key = self.transform_property_key(key, true).unwrap();
     let mut transformed_value = self.transform_function(value, true).unwrap();
 
     if *kind == MethodDefinitionKind::Set {
@@ -40,7 +41,7 @@ impl<'a> Transformer<'a> {
       key,
       transformed_value,
       *kind,
-      computed,
+      *computed,
       *r#static,
       *r#override,
       *optional,
