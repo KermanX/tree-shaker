@@ -145,7 +145,9 @@ impl<'a> Analyzer<'a> {
 
       let target_cf_scope =
         self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
-      self.mark_exhaustive_read((id, symbol), target_cf_scope);
+      if !variable.exhausted {
+        self.mark_exhaustive_read((id, symbol), target_cf_scope);
+      }
 
       if value.is_none() {
         // TDZ

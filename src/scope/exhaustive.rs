@@ -132,7 +132,8 @@ impl<'a> Analyzer<'a> {
       let runners = if should_consume { mem::take(runners) } else { runners.clone() };
       for runner in runners {
         let TrackerRunner { runner, once } = runner.clone();
-        self.exec_exhaustively(runner, once);
+        let deps = self.exec_exhaustively(runner.clone(), once);
+        self.track_dep_after_finished(once, runner, deps);
       }
     }
   }
