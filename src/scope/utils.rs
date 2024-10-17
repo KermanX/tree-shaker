@@ -3,14 +3,11 @@ use crate::{
   consumable::{ConsumableNode, ConsumableTrait},
 };
 use oxc::semantic::{ScopeId, SymbolId};
+use std::mem;
 
 impl<'a> Analyzer<'a> {
   pub fn find_first_different_cf_scope(&self, another: ScopeId) -> usize {
     self.scope_context.cf.find_lca(another).0 + 1
-  }
-
-  pub fn find_first_different_variable_scope(&self, another: ScopeId) -> usize {
-    self.scope_context.variable.find_lca(another).0 + 1
   }
 
   pub fn get_assignment_dep(
@@ -24,12 +21,6 @@ impl<'a> Analyzer<'a> {
       let target_cf_depth = self.find_first_different_cf_scope(variable_scope.cf_scope);
       self.get_exec_dep(target_cf_depth)
     }
-  }
-
-  pub fn refer_to_diff_cf_scope(&mut self, cf_scope: ScopeId) {
-    let target_depth = self.find_first_different_cf_scope(cf_scope);
-    let dep = self.get_exec_dep(target_depth);
-    self.consume(dep);
   }
 
   /// Returns (has_exhaustive, indeterminate, exec_deps)
@@ -69,6 +60,7 @@ impl<'a> Analyzer<'a> {
         exec_deps.push(dep);
       }
     }
+    self.exec_exhaustive_deps(true, (self.scope_context.object_scope_id, object_id));
     (indeterminate, ConsumableNode::new(exec_deps))
   }
 
@@ -81,10 +73,21 @@ impl<'a> Analyzer<'a> {
       let scope = self.scope_context.cf.get_mut_from_depth(depth);
       scope.mark_exhaustive_write((self.scope_context.object_scope_id, object_id));
     }
+    self.exec_exhaustive_deps(true, (self.scope_context.object_scope_id, object_id));
   }
 
   pub fn mark_object_property_exhaustive_read(&mut self, cf_scope: ScopeId, object_id: SymbolId) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
     self.mark_exhaustive_read((self.scope_context.object_scope_id, object_id), target_depth);
+  }
+
+  pub fn mark_object_consumed(&mut self, cf_scope: ScopeId, object_id: SymbolId) {
+    let target_depth = self.find_first_different_cf_scope(cf_scope);
+    for depth in target_depth..self.scope_context.cf.stack.len() {
+      let scope = self.scope_context.cf.get_mut_from_depth(depth);
+      scope.mark_exhaustive_write((self.scope_context.object_scope_id, object_id));
+      mem::take(&mut scope.deps).consume_all(self);
+    }
+    self.exec_exhaustive_deps(true, (self.scope_context.object_scope_id, object_id));
   }
 }

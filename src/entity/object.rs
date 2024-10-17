@@ -86,7 +86,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    analyzer.refer_to_diff_cf_scope(self.cf_scope);
+    analyzer.mark_object_consumed(self.cf_scope, self.object_id);
 
     self.deps.borrow_mut().consume_all(analyzer);
 
