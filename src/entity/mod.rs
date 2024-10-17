@@ -10,6 +10,7 @@ mod factory;
 mod function;
 mod label;
 mod literal;
+mod logical_result;
 mod object;
 mod operations;
 mod promise;

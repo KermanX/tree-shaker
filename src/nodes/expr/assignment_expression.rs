@@ -60,7 +60,7 @@ impl<'a> Analyzer<'a> {
         (true, true) => {
           let left = forward_left(self);
           let right = exec_right(self);
-          self.factory.union(vec![left, right])
+          self.factory.logical_result(left, right, to_logical_operator(node.operator))
         }
         (false, false) => unreachable!(),
       };
