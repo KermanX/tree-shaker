@@ -16,7 +16,7 @@ use oxc::{
     AstBuilder,
   },
   semantic::SymbolId,
-  span::Span,
+  span::{Span, SPAN},
 };
 use rustc_hash::FxHashSet;
 use std::hash::{Hash, Hasher};
@@ -331,7 +331,11 @@ impl<'a> LiteralEntity<'a> {
       }
       LiteralEntity::NaN => ast_builder.expression_identifier_reference(span, "NaN"),
       LiteralEntity::Null => ast_builder.expression_null_literal(span),
-      LiteralEntity::Undefined => ast_builder.expression_identifier_reference(span, "undefined"),
+      LiteralEntity::Undefined => ast_builder.expression_unary(
+        span,
+        UnaryOperator::Void,
+        ast_builder.expression_numeric_literal(SPAN, 0.0, "0", NumberBase::Decimal),
+      ),
     }
   }
 

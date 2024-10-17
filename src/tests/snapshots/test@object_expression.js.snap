@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/object_expression.js
 ---
@@ -12,7 +11,7 @@ export function main() {
 	} };
 	effect(2);
 	obj3.b;
-	effect(undefined, 3);
+	effect(void 0, 3);
 	let __unused_995C = { ...{ get x() {
 		effect();
 	} } };

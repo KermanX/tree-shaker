@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/binding_pattern.js
 ---
@@ -13,7 +12,7 @@ export function simple(unknown) {
 }
 export function with_rest(unknown) {
 	let { a,...rest } = { b: unknown };
-	effect(undefined, rest.b, 2);
+	effect(void 0, rest.b, 2);
 	let { b,...__unused_2075 } = unknown;
 	let { d } = { d: unknown };
 	effect(d);
