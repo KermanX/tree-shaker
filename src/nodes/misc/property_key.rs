@@ -4,7 +4,10 @@ use crate::{
   entity::{Entity, LiteralCollector, LiteralEntity},
   transformer::Transformer,
 };
-use oxc::{ast::ast::PropertyKey, span::GetSpan};
+use oxc::{
+  ast::ast::{Expression, PropertyKey},
+  span::GetSpan,
+};
 
 const AST_TYPE: AstType2 = AstType2::PropertyKey;
 
@@ -61,7 +64,7 @@ impl<'a> Transformer<'a> {
         let node = node.to_expression();
         if let Some(LiteralEntity::String(s)) = data.collector.collected() {
           let effect = self.transform_expression(node, false);
-          if effect.is_some() || need_val {
+          if effect.is_some() {
             let expr = self.transform_expression(node, true).unwrap();
             Some((true, self.ast_builder.property_key_expression(expr)))
           } else if need_val {
@@ -72,7 +75,10 @@ impl<'a> Transformer<'a> {
         } else {
           if need_val || self.transform_expression(node, false).is_some() {
             let expr = self.transform_expression(node, true).unwrap();
-            Some((true, self.ast_builder.property_key_expression(expr)))
+            Some((
+              !matches!(node, Expression::StringLiteral(_) | Expression::NumericLiteral(_)),
+              self.ast_builder.property_key_expression(expr),
+            ))
           } else {
             None
           }
