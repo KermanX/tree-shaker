@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::{ConsumableNode, ConsumableTrait},
+  consumable::{Consumable, ConsumableNode, ConsumableTrait},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 

@@ -143,8 +143,9 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       let mut rest_added = false;
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key) => {
-            if let Some(index) = key.parse::<usize>().ok() {
+          LiteralEntity::String(key_str) => {
+            if let Some(index) = key_str.parse::<usize>().ok() {
+              has_effect = true;
               if let Some(element) = self.elements.borrow_mut().get_mut(index) {
                 *element = if definite {
                   value.clone()
@@ -155,7 +156,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 rest_added = true;
                 self.rest.borrow_mut().push(value.clone());
               }
-            } else if key == "length" {
+            } else if key_str == "length" {
               if let Some(length) = value.get_literal(analyzer).and_then(|lit| lit.to_number()) {
                 if let Some(length) = length.map(|l| l.0.to_js_int_32()) {
                   let length = length as usize;
@@ -183,8 +184,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               }
             } else {
               self.consume(analyzer);
-              analyzer.consume(dep);
-              return;
+              return consumed_object::set_property(analyzer, dep, key, value);
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
@@ -192,7 +192,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         }
       }
       if has_effect {
-        self.add_assignment_dep(exec_deps, dep.cloned());
+        self.add_assignment_dep(exec_deps, dep);
       }
     } else {
       self.consume(analyzer);
