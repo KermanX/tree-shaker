@@ -15,7 +15,7 @@ struct ConditionalData<'a> {
   maybe_false: bool,
   impure_true: bool,
   impure_false: bool,
-  referred_tests: Vec<Entity<'a>>,
+  tests_to_consume: Vec<Entity<'a>>,
 }
 
 #[derive(Debug, Default)]
@@ -41,7 +41,7 @@ impl<'a> ConditionalBranchConsumable<'a> {
 
       data.maybe_true |= self.maybe_true;
       data.maybe_false |= self.maybe_false;
-      data.referred_tests.push(self.test);
+      data.tests_to_consume.push(self.test);
       if self.is_true_branch {
         data.impure_true = true;
       } else {
@@ -198,7 +198,7 @@ impl<'a> Analyzer<'a> {
     let mut tests_to_consume = vec![];
     for data in self.conditional_data.node_to_data.values_mut() {
       if data.maybe_true && data.maybe_false {
-        tests_to_consume.push(mem::take(&mut data.referred_tests));
+        tests_to_consume.push(mem::take(&mut data.tests_to_consume));
       }
     }
 
@@ -223,6 +223,9 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn get_conditional_result(&self, dep_id: impl Into<DepId>) -> (bool, bool, bool) {
     let data = self.conditional_data.node_to_data.get(&dep_id.into()).unwrap();
+    if data.maybe_true && data.maybe_false {
+      assert!(data.tests_to_consume.is_empty());
+    }
     (data.maybe_true && data.maybe_false, data.maybe_true, data.maybe_false)
   }
 }

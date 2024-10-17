@@ -1,15 +1,18 @@
 use super::Entity;
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{analyzer::Analyzer, consumable::ConsumableTrait};
 
 pub fn boolean_from_test_result<'a>(
   analyzer: &Analyzer<'a>,
   result: Option<bool>,
-  deps: impl FnOnce() -> Consumable<'a>,
+  dep: impl ConsumableTrait<'a> + 'a,
 ) -> Entity<'a> {
-  match result {
-    Some(value) => analyzer.factory.boolean(value),
-    None => analyzer.factory.computed(analyzer.factory.unknown_boolean, deps()),
-  }
+  analyzer.factory.computed(
+    match result {
+      Some(value) => analyzer.factory.boolean(value),
+      None => analyzer.factory.unknown_boolean,
+    },
+    dep,
+  )
 }
 
 #[macro_export]

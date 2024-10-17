@@ -261,9 +261,8 @@ impl<'a> EntityOpHost<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> Entity<'a> {
-    let to_result = |result: Option<bool>| {
-      boolean_from_test_result(analyzer, result, || box_consumable((lhs.clone(), rhs.clone())))
-    };
+    let to_result =
+      |result: Option<bool>| boolean_from_test_result(analyzer, result, (lhs.clone(), rhs.clone()));
 
     match operator {
       BinaryOperator::Equality => to_result(self.eq(analyzer, lhs, rhs)),
