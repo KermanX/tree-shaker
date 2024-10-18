@@ -47,24 +47,29 @@ impl<'a> Analyzer<'a> {
 
     match &node.operator {
       UnaryOperator::UnaryNegation => {
-        if let Some(num) = argument.get_literal(self).and_then(|lit| lit.to_number()) {
-          if let Some(num) = num {
-            let num = -num.0;
-            self.factory.number(num, None)
+        self.factory.computed(
+          if let Some(num) = argument.get_literal(self).and_then(|lit| lit.to_number()) {
+            if let Some(num) = num {
+              let num = -num.0;
+              self.factory.number(num, None)
+            } else {
+              self.factory.nan
+            }
           } else {
-            self.factory.nan
-          }
-        } else {
-          // Maybe number or bigint
-          self.factory.computed_unknown(argument)
-        }
+            // Maybe number or bigint
+            self.factory.unknown
+          },
+          argument,
+        )
       }
       UnaryOperator::UnaryPlus => argument.get_to_numeric(self),
-      UnaryOperator::LogicalNot => match argument.test_truthy() {
-        Some(true) => self.factory.r#false,
-        Some(false) => self.factory.r#true,
-        None => self.factory.computed_unknown_boolean(argument),
-      },
+      UnaryOperator::LogicalNot => self.factory.computed(
+        match argument.test_truthy() {
+          Some(value) => self.factory.boolean(!value),
+          None => self.factory.unknown_boolean,
+        },
+        argument,
+      ),
       UnaryOperator::BitwiseNot => self.factory.computed_unknown(argument),
       UnaryOperator::Typeof => argument.get_typeof(self),
       UnaryOperator::Void => self.factory.undefined,
