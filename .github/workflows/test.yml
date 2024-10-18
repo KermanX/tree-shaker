@@ -119,5 +119,6 @@ jobs:
       working-directory: ./test/e2e
     - name: Run e2e tests
       run: |
+        pnpm exec playwright install --with-deps chromium
         pnpm test
       working-directory: ./test/e2e
