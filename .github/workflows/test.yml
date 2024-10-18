@@ -88,3 +88,36 @@ jobs:
               body
             });
           }
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Init submodule
+      run: |
+        git submodule init
+        git submodule update
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Use Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Setup PNPM
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+    - name: Build NAPI
+      run: |
+        pnpm i
+        pnpm build
+      working-directory: ./napi
+    - name: Build e2e tests
+      run: |
+        pnpm i
+        pnpm build
+      working-directory: ./test/e2e
+    - name: Run e2e tests
+      run: |
+        pnpm test
+      working-directory: ./test/e2e

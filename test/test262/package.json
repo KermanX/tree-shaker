@@ -8,7 +8,7 @@
 		"prettier": "^3.3.3",
 		"test262-harness": "^10.0.0"
 	},
-	"packageManager": "pnpm@9.7.1",
+	"packageManager": "pnpm@9.11.0",
 	"scripts": {
 		"test": "test262-harness --host-type=engine262 --host-path ./node_modules/.bin/engine262 --features-exclude \"decorators,source-phase-imports,source-phase-imports-module-source,import-attributes\" --preprocessor ./preprocessor.cjs \"./test262/test/language/**/*.js\" --threads 32 | node ./output.cjs"
 	}
