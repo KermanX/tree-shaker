@@ -21,6 +21,10 @@ export default function (): Plugin | false {
             formats: ['es'],
             fileName: disabled ? 'bundled' : 'shaken'
           },
+          // Currently enabling Rollup treeshake because JS built-ins is not supported yet
+          // rollupOptions: {
+          //   treeshake: false
+          // },
           outDir: './dist',
           minify: false,
           emptyOutDir: false,
