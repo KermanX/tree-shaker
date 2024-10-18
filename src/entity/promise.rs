@@ -1,7 +1,12 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable},
+};
 
 #[derive(Debug, Clone)]
 pub struct PromiseEntity<'a> {
@@ -87,9 +92,13 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((rc, dep))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -97,11 +106,11 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   }
 
   fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown_string(self.value.to_consumable())
+    analyzer.factory.computed_unknown_string(self.value)
   }
 
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown(rc.to_consumable())
+    analyzer.factory.computed_unknown(rc)
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -109,7 +118,7 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
   }
 
   fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown_string(self.value.to_consumable())
+    analyzer.factory.computed_unknown_string(self.value)
   }
 
   fn test_typeof(&self) -> TypeofResult {

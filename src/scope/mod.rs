@@ -10,6 +10,7 @@ pub mod variable_scope;
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
+  dep::DepId,
   entity::{Entity, EntityFactory, FunctionEntitySource, LabelEntity},
   logger::DebuggerEvent,
 };
@@ -17,6 +18,7 @@ use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
 use oxc::{
+  index::Idx,
   semantic::{ScopeId, SymbolId},
   span::GetSpan,
 };
@@ -29,6 +31,9 @@ pub struct ScopeContext<'a> {
   pub call: Vec<CallScope<'a>>,
   pub variable: ScopeTree<VariableScope<'a>>,
   pub cf: ScopeTree<CfScope<'a>>,
+
+  pub object_scope_id: ScopeId,
+  pub object_symbol_counter: usize,
 }
 
 impl<'a> ScopeContext<'a> {
@@ -37,8 +42,10 @@ impl<'a> ScopeContext<'a> {
     let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
     let mut variable = ScopeTree::new();
     let body_variable_scope = variable.push(VariableScope::new(cf_scope_0));
+    let object_scope_id = variable.add_special(VariableScope::new(cf_scope_0));
     ScopeContext {
       call: vec![CallScope::new(
+        DepId::from_counter(),
         FunctionEntitySource::Module,
         vec![],
         0,
@@ -51,6 +58,9 @@ impl<'a> ScopeContext<'a> {
       )],
       variable,
       cf,
+
+      object_scope_id,
+      object_symbol_counter: 128,
     }
   }
 
@@ -58,6 +68,11 @@ impl<'a> ScopeContext<'a> {
     debug_assert_eq!(self.call.len(), 1);
     debug_assert_eq!(self.variable.current_depth(), 0);
     debug_assert_eq!(self.cf.current_depth(), 0);
+  }
+
+  pub fn alloc_object_id(&mut self) -> SymbolId {
+    self.object_symbol_counter += 1;
+    SymbolId::from_usize(self.object_symbol_counter)
   }
 }
 
@@ -103,13 +118,23 @@ impl<'a> Analyzer<'a> {
     args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
     is_generator: bool,
+    consume: bool,
   ) {
+    let dep_id = DepId::from_counter();
+    if consume {
+      self.refer_dep(dep_id);
+    }
+
     // FIXME: no clone
     let variable_scope_stack = variable_scope_stack.as_ref().clone();
     let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
-    let cf_scope_depth =
-      self.push_cf_scope_with_dep(CfScopeKind::Function, None, vec![call_dep], Some(false));
+    let cf_scope_depth = self.push_cf_scope_with_deps(
+      CfScopeKind::Function,
+      None,
+      vec![call_dep, box_consumable(dep_id)],
+      Some(false),
+    );
 
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::PushCallScope(
@@ -121,6 +146,7 @@ impl<'a> Analyzer<'a> {
     }
 
     self.scope_context.call.push(CallScope::new(
+      dep_id,
       source.into(),
       old_variable_scope_stack,
       cf_scope_depth,
@@ -171,10 +197,10 @@ impl<'a> Analyzer<'a> {
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
     exited: Option<bool>,
   ) -> usize {
-    self.push_cf_scope_with_dep(kind, labels, vec![], exited)
+    self.push_cf_scope_with_deps(kind, labels, vec![], exited)
   }
 
-  pub fn push_cf_scope_with_dep(
+  pub fn push_cf_scope_with_deps(
     &mut self,
     kind: CfScopeKind,
     labels: Option<Rc<Vec<LabelEntity<'a>>>>,
@@ -194,12 +220,17 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf.current_depth()
   }
 
-  pub fn push_cf_scope_normal(&mut self, exited: Option<bool>) {
-    self.push_cf_scope(CfScopeKind::Normal, None, exited);
+  pub fn push_indeterminate_cf_scope(&mut self) {
+    self.push_cf_scope(CfScopeKind::Indeterminate, None, None);
   }
 
-  pub fn push_cf_scope_for_dep(&mut self, dep: impl ConsumableTrait<'a> + 'a) {
-    self.push_cf_scope_with_dep(CfScopeKind::Normal, None, vec![box_consumable(dep)], Some(false));
+  pub fn push_dependent_cf_scope(&mut self, dep: impl ConsumableTrait<'a> + 'a) {
+    self.push_cf_scope_with_deps(
+      CfScopeKind::Dependent,
+      None,
+      vec![box_consumable(dep)],
+      Some(false),
+    );
   }
 
   pub fn pop_cf_scope(&mut self) -> ScopeId {
@@ -216,7 +247,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_try_scope(&mut self) {
-    self.push_cf_scope(CfScopeKind::Normal, None, None);
+    self.push_indeterminate_cf_scope();
     let cf_scope_depth = self.scope_context.cf.current_depth();
     self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_depth));
   }

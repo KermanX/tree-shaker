@@ -2,13 +2,13 @@
 	"type": "module",
 	"devDependencies": {
 		"@engine262/engine262": "0.0.1-dd05c163162914b12baca4fbabb6e9ce99a217bc",
-		"@kermanx/tree-shaker": "link:..\\napi",
+		"@kermanx/tree-shaker": "link:..\\..\\napi",
 		"diff": "^6.0.0",
 		"picocolors": "^1.1.0",
 		"prettier": "^3.3.3",
 		"test262-harness": "^10.0.0"
 	},
-	"packageManager": "pnpm@9.7.1",
+	"packageManager": "pnpm@9.11.0",
 	"scripts": {
 		"test": "test262-harness --host-type=engine262 --host-path ./node_modules/.bin/engine262 --features-exclude \"decorators,source-phase-imports,source-phase-imports-module-source,import-attributes\" --preprocessor ./preprocessor.cjs \"./test262/test/language/**/*.js\" --threads 32 | node ./output.cjs"
 	}

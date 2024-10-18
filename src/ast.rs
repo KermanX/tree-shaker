@@ -192,6 +192,7 @@ pub enum AstType2 {
   BindingProperty,
   Callee,
   ExpressionInTaggedTemplate,
+  LogicalExpressionLeft,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

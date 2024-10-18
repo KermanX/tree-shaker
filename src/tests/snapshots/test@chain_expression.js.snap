@@ -1,11 +1,10 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/chain_expression.js
 ---
 export function main(unknown) {
 	g?.h.i?.j?.(o?.p)?.q.r;
 	let a = { b: unknown };
-	effect(a.b?.c, undefined, NaN);
+	effect(a.b?.c, void 0, NaN);
 }

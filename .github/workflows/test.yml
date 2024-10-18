@@ -55,14 +55,14 @@ jobs:
       run: |
         pnpm i
         pnpm test
-      working-directory: ./test
+      working-directory: ./test/test262
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.2.1-node20
       with:
         name: Test262 result
         path: |
-          ./test/failed.txt
-          ./test/stat.txt
+          ./test/test262/failed.txt
+          ./test/test262/stat.txt
     # Comment stat.txt to the commit or PR
     - name: Send comment
       uses: actions/github-script@v7
@@ -71,7 +71,7 @@ jobs:
         script: |
           const fs = require('fs');
           const path = require('path');
-          const stat = fs.readFileSync('./test/stat.txt', 'utf-8');
+          const stat = fs.readFileSync('./test/test262/stat.txt', 'utf-8');
           const body = stat.slice(0, 50000);
           if (context.issue.number) {
             github.rest.issues.createComment({
@@ -88,3 +88,33 @@ jobs:
               body
             });
           }
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Use Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Setup PNPM
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+    - name: Build NAPI
+      run: |
+        pnpm i
+        pnpm build
+      working-directory: ./napi
+    - name: Build e2e tests
+      run: |
+        pnpm i
+        pnpm build-shaken
+      working-directory: ./test/e2e
+    - name: Run e2e tests
+      run: |
+        pnpm exec playwright install --with-deps chromium
+        pnpm test
+      working-directory: ./test/e2e

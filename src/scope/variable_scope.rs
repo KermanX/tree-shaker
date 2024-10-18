@@ -109,12 +109,7 @@ impl<'a> Analyzer<'a> {
   ) {
     let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
 
-    if variable.exhausted {
-      if let Some(value) = value {
-        self.consume(value);
-      }
-      self.consume(init_dep);
-    } else if variable.kind.is_redeclarable() {
+    if variable.kind.is_redeclarable() {
       if let Some(value) = value {
         self.write_on_scope(
           (self.scope_context.variable.current_depth(), id),
@@ -124,6 +119,11 @@ impl<'a> Analyzer<'a> {
       } else {
         // Do nothing
       }
+    } else if variable.exhausted {
+      if let Some(value) = value {
+        self.consume(value);
+      }
+      self.consume(init_dep);
     } else {
       variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_dep));
@@ -145,7 +145,9 @@ impl<'a> Analyzer<'a> {
 
       let target_cf_scope =
         self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
-      self.mark_exhaustive_read((id, symbol), target_cf_scope);
+      if !variable.exhausted {
+        self.mark_exhaustive_read((id, symbol), target_cf_scope);
+      }
 
       if value.is_none() {
         // TDZ
@@ -180,13 +182,13 @@ impl<'a> Analyzer<'a> {
           self.consume(new_val);
         } else {
           let old_val = variable.value;
-          let should_consume = if old_val.is_some() {
+          let (should_consume, indeterminate) = if old_val.is_some() {
             // Normal write
             self.mark_exhaustive_write((id, symbol), target_cf_scope)
           } else if !variable.kind.is_redeclarable() {
             // TDZ write
             self.handle_tdz(target_cf_scope);
-            true
+            (true, false)
           } else {
             // Write uninitialized `var`
             self.mark_exhaustive_write((id, symbol), target_cf_scope)
@@ -204,8 +206,6 @@ impl<'a> Analyzer<'a> {
             variable.exhausted = true;
             variable.value = Some(self.factory.unknown);
           } else {
-            let indeterminate = self.is_relatively_indeterminate(target_cf_scope);
-
             let variable =
               self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
             variable.value = Some(self.factory.computed(
@@ -348,12 +348,6 @@ impl<'a> Analyzer<'a> {
     } else {
       self.thrown_builtin_error("Cannot access variable before initialization");
     }
-    self.refer_global();
-  }
-
-  pub fn refer_to_diff_variable_scope(&mut self, another: ScopeId) {
-    let target_depth = self.find_first_different_variable_scope(another);
-    let dep = self.get_assignment_dep(target_depth);
-    self.consume(dep);
+    self.refer_to_global();
   }
 }

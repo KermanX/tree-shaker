@@ -1,7 +1,7 @@
 export function f1() {
   let x = false;
   let y = 0;
-  while(someCondition()) {
+  while (someCondition()) {
     if (x) {
       y++;
     }
@@ -26,5 +26,23 @@ export function f3() {
       let x = 'inner' + j;
       continue label;
     }
+  }
+}
+
+// FIXME: this is a bug
+export function f4() {
+  let obj = { a: 0, b: 0 }
+  while (sth()) {
+    if (obj.a++ > 10) {
+      obj.b = 'abc'
+    }
+  }
+  test = typeof obj.b
+}
+
+export function f5() {
+  let i = 1
+  while (a) {
+    i = 2;
   }
 }

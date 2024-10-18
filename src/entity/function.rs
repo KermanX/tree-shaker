@@ -1,10 +1,12 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityDepNode, EntityFactory, EntityTrait,
-  TypeofResult,
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
+  dep::DepId,
   use_consumed_flag,
 };
 use oxc::{
@@ -39,13 +41,13 @@ impl GetSpan for FunctionEntitySource<'_> {
 }
 
 impl<'a> FunctionEntitySource<'a> {
-  pub fn into_dep_node(self) -> EntityDepNode {
+  pub fn into_dep_id(self) -> DepId {
     match self {
       FunctionEntitySource::Function(node) => AstKind::Function(node).into(),
       FunctionEntitySource::ArrowFunctionExpression(node) => {
         AstKind::ArrowFunctionExpression(node).into()
       }
-      FunctionEntitySource::Module => EntityDepNode::Environment,
+      FunctionEntitySource::Module => DepId::Environment,
     }
   }
 
@@ -180,9 +182,13 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((rc, dep))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -193,7 +199,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
-    analyzer.factory.computed_unknown_string(rc.to_consumable())
+    analyzer.factory.computed_unknown_string(rc)
   }
 
   fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -232,13 +238,13 @@ impl<'a> FunctionEntity<'a> {
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
-    consume_return: bool,
+    consume: bool,
   ) -> Entity<'a> {
     if let Some(logger) = analyzer.logger {
       logger.push_fn_call(self.source.span(), self.source.name());
     }
 
-    let call_dep = box_consumable((self.source.into_dep_node(), dep));
+    let call_dep = box_consumable((self.source.into_dep_id(), dep));
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.source {
       FunctionEntitySource::Function(node) => analyzer.call_function(
@@ -250,7 +256,7 @@ impl<'a> FunctionEntity<'a> {
         variable_scopes,
         this.clone(),
         args.clone(),
-        consume_return,
+        consume,
       ),
       FunctionEntitySource::ArrowFunctionExpression(node) => analyzer
         .call_arrow_function_expression(
@@ -259,7 +265,7 @@ impl<'a> FunctionEntity<'a> {
           node,
           variable_scopes,
           args.clone(),
-          consume_return,
+          consume,
         ),
       FunctionEntitySource::Module => unreachable!(),
     };
@@ -284,7 +290,7 @@ impl<'a> FunctionEntity<'a> {
       }
     }
 
-    analyzer.consume(self.source.into_dep_node());
+    analyzer.consume(self.source.into_dep_id());
     analyzer.consume_arguments(Some(self.source));
 
     let self_cloned = self.clone();

@@ -1,7 +1,12 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable},
+};
 use std::fmt::Debug;
 
 pub trait BuiltinFnEntity<'a>: Debug {
@@ -80,9 +85,13 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     analyzer.thrown_builtin_error("Cannot iterate over function");
     consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((rc, dep))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -90,7 +99,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown_string(rc.to_consumable())
+    analyzer.factory.computed_unknown_string(rc)
   }
 
   fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

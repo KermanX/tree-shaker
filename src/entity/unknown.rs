@@ -1,10 +1,12 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, TypeofResult,
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
   builtins::Prototype,
-  consumable::{box_consumable, Consumable},
+  consumable::{box_consumable, Consumable, ConsumableTrait},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -23,7 +25,9 @@ pub enum UnknownEntity {
 }
 
 impl<'a> EntityTrait<'a> for UnknownEntity {
-  fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
+  fn consume(&self, _analyzer: &mut Analyzer<'a>) {
+    // FIXME: Should set self to UnknownEntity::Object here
+  }
 
   fn get_property(
     &self,
@@ -82,6 +86,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     if self.maybe_object() {
+      self.consume(analyzer);
       consumed_object::delete_property(analyzer, dep, key)
     } else {
       // No effect
@@ -122,15 +127,19 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     if *self == UnknownEntity::String {
-      return (vec![], Some(analyzer.factory.computed_unknown(rc.to_consumable())));
+      return (vec![], Some(analyzer.factory.unknown), box_consumable((rc, dep)));
     }
     if !self.maybe_object() {
       analyzer.thrown_builtin_error("Cannot iterate non-object");
     }
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((rc, dep))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -229,7 +238,7 @@ macro_rules! unknown_entity_ctors {
   ($($name:ident -> $var:ident,)*) => {
     $(
       #[allow(unused)]
-      pub fn $name(&self, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
+      pub fn $name<T: ConsumableTrait<'a> + 'a>(&self, dep: T) -> Entity<'a> {
         self.computed(self.$var, dep)
       }
     )*

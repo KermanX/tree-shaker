@@ -1,11 +1,7 @@
+use super::{Consumable, ConsumableTrait};
+use crate::{analyzer::Analyzer, dep::DepId, entity::Entity};
 use oxc::ast::AstKind;
 use std::{cell::RefCell, rc::Rc};
-
-use super::{Consumable, ConsumableTrait};
-use crate::{
-  analyzer::Analyzer,
-  entity::{Entity, EntityDepNode},
-};
 
 impl<'a> ConsumableTrait<'a> for () {
   fn consume(&self, _: &mut Analyzer<'a>) {}
@@ -20,6 +16,17 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Box<T> {
   }
   fn cloned(&self) -> Consumable<'a> {
     Box::new(self.as_ref().cloned())
+  }
+}
+
+impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Option<T> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    if let Some(value) = self {
+      value.consume(analyzer)
+    }
+  }
+  fn cloned(&self) -> Consumable<'a> {
+    Box::new(self.as_ref().map(|value| value.cloned()))
   }
 }
 
@@ -90,7 +97,7 @@ impl<'a> ConsumableTrait<'a> for Entity<'a> {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for EntityDepNode {
+impl<'a> ConsumableTrait<'a> for DepId {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.refer_dep(*self);
   }

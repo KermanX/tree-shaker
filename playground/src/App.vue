@@ -2,7 +2,7 @@
 import Input from './Input.vue';
 import Logs from './Logs.vue';
 import Editor from './Editor.vue';
-import { doMinify, doTreeShake, diagnostics, output } from './states';
+import { doMinify, doTreeShake, diagnostics, output, showLogs } from './states';
 </script>
 
 <template>
@@ -34,7 +34,7 @@ import { doMinify, doTreeShake, diagnostics, output } from './states';
       </div>
     </div>
     <div flex-grow h-0 flex flex-col md:flex-row gap-x-2 gap-y-2>
-      <div flex-grow-2 h-0 md:h-full md:w-0 flex flex-col>
+      <div :class="showLogs ? 'flex-grow-2' : 'flex-grow'" h-0 md:h-full md:w-0 flex flex-col>
         <div flex items-center>
           <h2 md:text-xl pb-2 pl-4 select-none>
             Input
@@ -42,9 +42,11 @@ import { doMinify, doTreeShake, diagnostics, output } from './states';
         </div>
         <Input class="flex-grow h-0 max-h-full" />
       </div>
-      <div flex-grow-3 h-0 md:h-full md:w-0 flex flex-col>
+      <div v-show="showLogs" flex-grow-2 h-0 md:h-full md:w-0 flex flex-col>
         <h2 md:text-xl pb-2 pl-4 select-none flex items-end>
           Logs
+          <div flex-grow />
+          <button i-carbon-close w-6 h-6 b-none @click="showLogs = false" />
         </h2>
         <Logs class="flex-grow relative h-full" />
       </div>

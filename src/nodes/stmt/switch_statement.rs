@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
 
     // 1. discriminant
     let discriminant = self.exec_expression(&node.discriminant);
-    self.push_cf_scope_for_dep(discriminant.clone());
+    self.push_dependent_cf_scope(discriminant.clone());
 
     // 2. tests
     let mut default_case = None;
@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
             maybe_default_case = None;
             if !indeterminate {
               indeterminate = true;
-              self.push_cf_scope_normal(None);
+              self.push_indeterminate_cf_scope();
             }
           }
         }
@@ -92,13 +92,17 @@ impl<'a> Analyzer<'a> {
 
       if entered != Some(false) {
         data.need_consequent.insert(index);
+
+        let data = self.load_data::<StatementVecData>(AstType2::SwitchCase, case);
+
+        if entered == None {
+          self.push_indeterminate_cf_scope();
+        }
+        self.exec_statement_vec(data, &case.consequent);
+        if entered == None {
+          self.pop_cf_scope();
+        }
       }
-
-      let data = self.load_data::<StatementVecData>(AstType2::SwitchCase, case);
-
-      self.push_cf_scope_normal(entered.map(|entered| !entered));
-      self.exec_statement_vec(data, &case.consequent);
-      self.pop_cf_scope();
     }
 
     self.pop_cf_scope();

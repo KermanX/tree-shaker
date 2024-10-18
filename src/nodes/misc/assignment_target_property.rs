@@ -1,8 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  consumable::box_consumable,
-  entity::{Entity, EntityDepNode},
+  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, dep::DepId, entity::Entity,
   transformer::Transformer,
 };
 use oxc::{
@@ -24,7 +21,7 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
-    let dep = box_consumable(EntityDepNode::from((AstType2::AssignmentTargetProperty, node)));
+    let dep = box_consumable(DepId::from((AstType2::AssignmentTargetProperty, node)));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = self.factory.string(node.binding.name.as_str());
@@ -46,7 +43,7 @@ impl<'a> Analyzer<'a> {
         key
       }
       AssignmentTargetProperty::AssignmentTargetPropertyProperty(node) => {
-        self.push_cf_scope_for_dep(value.clone());
+        self.push_dependent_cf_scope(value.clone());
         let key = self.exec_property_key(&node.name);
         self.pop_cf_scope();
 
@@ -114,13 +111,13 @@ impl<'a> Transformer<'a> {
         let name_span = name.span();
         let binding = self.transform_assignment_target_maybe_default(binding, need_binding);
         if let Some(binding) = binding {
-          let (_computed, name) = self.transform_property_key(name, true).unwrap();
+          let name = self.transform_property_key(name, true).unwrap();
           Some(
             self
               .ast_builder
               .assignment_target_property_assignment_target_property_property(*span, name, binding),
           )
-        } else if let Some((_computed, name)) = self.transform_property_key(name, false) {
+        } else if let Some(name) = self.transform_property_key(name, false) {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
             *span,
             name,

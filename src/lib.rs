@@ -4,6 +4,7 @@ mod builtins;
 mod config;
 mod consumable;
 mod data;
+mod dep;
 mod effect_builder;
 mod entity;
 mod logger;

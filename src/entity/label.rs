@@ -1,4 +1,4 @@
-use super::EntityDepNode;
+use crate::dep::DepId;
 use oxc::ast::{ast::LabelIdentifier, AstKind};
 
 #[derive(Debug, Clone, Copy)]
@@ -12,7 +12,7 @@ impl<'a> LabelEntity<'a> {
     LabelEntity { name: &node.name, node }
   }
 
-  pub fn dep_node(&self) -> EntityDepNode {
+  pub fn dep_id(&self) -> DepId {
     AstKind::LabelIdentifier(self.node).into()
   }
 }

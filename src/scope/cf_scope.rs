@@ -1,6 +1,8 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableVec},
+  consumable::{
+    box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait, ConsumableVec,
+  },
   entity::LabelEntity,
   logger::{DebuggerEvent, Logger},
 };
@@ -10,14 +12,17 @@ use std::{mem, rc::Rc};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CfScopeKind {
-  Normal,
+  Indeterminate,
+  Labeled,
+  Dependent,
   BreakableWithoutLabel,
   Continuable,
   Exhaustive,
-  IfStatement,
-  ConditionalExpression,
-  LogicalExpression,
+  IfBranch,
+  ConditionalExprBranch,
+  LogicalRight,
   Function,
+  Block,
   Module,
 }
 
@@ -28,7 +33,7 @@ pub struct ExhaustiveData {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ReferredState {
+pub enum ReferredState {
   Never,
   ReferredClean,
   ReferredDirty,
@@ -39,7 +44,7 @@ pub struct CfScope<'a> {
   pub kind: CfScopeKind,
   pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
   pub deps: ConsumableCollector<'a>,
-  referred_state: ReferredState,
+  pub referred_state: ReferredState,
   pub exited: Option<bool>,
   /// Exits that have been stopped by this scope's indeterminate state.
   /// Only available when `kind` is `If`.
@@ -74,11 +79,11 @@ impl<'a> CfScope<'a> {
     id: ScopeId,
     logger: &Option<&Logger>,
     exited: Option<bool>,
-    dep: impl FnOnce() -> Option<Consumable<'a>>,
+    get_dep: impl FnOnce() -> Option<Consumable<'a>>,
   ) {
     if self.exited != Some(true) {
       self.exited = exited;
-      if let Some(dep) = dep() {
+      if let Some(dep) = get_dep() {
         self.deps.push(dep);
         self.referred_state = ReferredState::ReferredDirty;
       }
@@ -113,8 +118,8 @@ impl<'a> CfScope<'a> {
     self.kind == CfScopeKind::Continuable
   }
 
-  pub fn is_if_statement(&self) -> bool {
-    self.kind == CfScopeKind::IfStatement
+  pub fn is_if_branch(&self) -> bool {
+    self.kind == CfScopeKind::IfBranch
   }
 
   pub fn is_function(&self) -> bool {
@@ -160,13 +165,16 @@ impl<'a> CfScope<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_indeterminately<T>(&mut self, runner: impl FnOnce(&mut Analyzer<'a>) -> T) -> T {
-    self.push_cf_scope(CfScopeKind::Normal, None, None);
+    self.push_indeterminate_cf_scope();
     let result = runner(self);
     self.pop_cf_scope();
     result
   }
 
-  pub fn get_exec_dep(&mut self, target_depth: usize) -> ConsumableNode<'a> {
+  pub fn get_exec_dep(
+    &mut self,
+    target_depth: usize,
+  ) -> ConsumableNode<'a, impl ConsumableTrait<'a> + 'a> {
     let mut deps = vec![];
     for id in target_depth..self.scope_context.cf.stack.len() {
       let scope = self.scope_context.cf.get_mut_from_depth(id);
@@ -174,7 +182,7 @@ impl<'a> Analyzer<'a> {
         deps.push(dep);
       }
     }
-    ConsumableNode::new_box(deps)
+    ConsumableNode::new(deps)
   }
 
   pub fn exit_to(&mut self, target_depth: usize) {
@@ -185,43 +193,51 @@ impl<'a> Analyzer<'a> {
     self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), false, None);
   }
 
+  /// `None` => Interrupted by if branch
+  /// `Some` => Accumulated dependencies, may be `None`
   pub fn exit_to_impl(
     &mut self,
     target_depth: usize,
     from_depth: usize,
     mut must_exit: bool,
-    mut acc_dep: Option<ConsumableNode<'a>>,
-  ) -> Option<ConsumableNode<'a>> {
+    mut acc_dep: Option<ConsumableNode<'a, Consumable<'a>>>,
+  ) -> Option<Option<ConsumableNode<'a, Consumable<'a>>>> {
     for depth in (target_depth..from_depth).rev() {
       let id = self.scope_context.cf.stack[depth];
       let cf_scope = self.scope_context.cf.get_mut(id);
-      let this_dep = cf_scope.deps.collect();
-      let dep = || acc_dep.clone().map(box_consumable);
+      let this_dep = cf_scope.deps.try_collect();
+      let get_dep = || acc_dep.clone().map(box_consumable);
+
+      // Update exited state
       if must_exit {
         let is_indeterminate = cf_scope.is_indeterminate();
-        cf_scope.update_exited(id, &self.logger, Some(true), dep);
+        cf_scope.update_exited(id, &self.logger, Some(true), get_dep);
 
         // Stop exiting outer scopes if one inner scope is indeterminate.
         if is_indeterminate {
           must_exit = false;
-          if cf_scope.is_if_statement() {
+          if cf_scope.is_if_branch() {
             // For the `if` statement, do not mark the outer scopes as indeterminate here.
             // Instead, let the `if` statement handle it.
             debug_assert!(cf_scope.blocked_exit.is_none());
             cf_scope.blocked_exit = Some(target_depth);
-            break;
+            return None;
           }
         }
       } else {
-        cf_scope.update_exited(id, &self.logger, None, dep);
+        cf_scope.update_exited(id, &self.logger, None, get_dep);
       }
-      acc_dep = if let Some(acc_dep) = acc_dep {
-        Some(ConsumableNode::new_box((this_dep, acc_dep)))
-      } else {
-        Some(this_dep)
-      };
+
+      // Accumulate the dependencies
+      if let Some(this_dep) = this_dep.clone() {
+        acc_dep = if let Some(acc_dep) = acc_dep {
+          Some(ConsumableNode::new_box((this_dep, acc_dep)))
+        } else {
+          Some(this_dep)
+        };
+      }
     }
-    acc_dep
+    Some(acc_dep)
   }
 
   /// If the label is used, `true` is returned.
@@ -237,7 +253,7 @@ impl<'a> Analyzer<'a> {
       if let Some(label) = label {
         if let Some(label_entity) = cf_scope.matches_label(label) {
           if !is_closest_breakable || !breakable_without_label {
-            self.referred_nodes.insert(label_entity.dep_node(), 1);
+            self.referred_nodes.insert(label_entity.dep_id(), 1);
             label_used = true;
           }
           target_depth = Some(idx);
@@ -269,7 +285,7 @@ impl<'a> Analyzer<'a> {
         if is_continuable {
           if let Some(label_entity) = cf_scope.matches_label(label) {
             if !is_closest_continuable {
-              self.referred_nodes.insert(label_entity.dep_node(), 1);
+              self.referred_nodes.insert(label_entity.dep_id(), 1);
               label_used = true;
             }
             target_depth = Some(idx);
@@ -286,7 +302,7 @@ impl<'a> Analyzer<'a> {
     label_used
   }
 
-  pub fn refer_global(&mut self) {
+  pub fn refer_to_global(&mut self) {
     self.may_throw();
     for depth in (0..self.scope_context.cf.stack.len()).rev() {
       let scope = self.scope_context.cf.get_mut_from_depth(depth);

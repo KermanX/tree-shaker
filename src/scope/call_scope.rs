@@ -2,6 +2,7 @@ use super::try_scope::TryScope;
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, ConsumableTrait},
+  dep::DepId,
   entity::{Entity, FunctionEntitySource},
 };
 use oxc::semantic::{ScopeId, SymbolId};
@@ -9,6 +10,7 @@ use std::mem;
 
 #[derive(Debug)]
 pub struct CallScope<'a> {
+  pub call_id: DepId,
   pub source: FunctionEntitySource<'a>,
   pub old_variable_scope_stack: Vec<ScopeId>,
   pub cf_scope_depth: usize,
@@ -24,6 +26,7 @@ pub struct CallScope<'a> {
 
 impl<'a> CallScope<'a> {
   pub fn new(
+    call_id: DepId,
     source: FunctionEntitySource<'a>,
     old_variable_scope_stack: Vec<ScopeId>,
     cf_scope_depth: usize,
@@ -34,6 +37,7 @@ impl<'a> CallScope<'a> {
     is_generator: bool,
   ) -> Self {
     CallScope {
+      call_id,
       source,
       old_variable_scope_stack,
       cf_scope_depth,

@@ -1,7 +1,8 @@
 use crate::{
   ast::{AstType2, DeclarationKind},
   consumable::box_consumable,
-  entity::{Entity, EntityDepNode},
+  dep::DepId,
+  entity::Entity,
   transformer::Transformer,
   Analyzer,
 };
@@ -86,9 +87,9 @@ impl<'a> Analyzer<'a> {
 
         let mut enumerated = vec![];
         for property in &node.properties {
-          let dep = box_consumable(EntityDepNode::from((AstType2::BindingProperty, property)));
+          let dep = box_consumable(DepId::from((AstType2::BindingProperty, property)));
 
-          self.push_cf_scope_for_dep(init.clone());
+          self.push_dependent_cf_scope(init.clone());
           let key = self.exec_property_key(&property.key);
           self.pop_cf_scope();
 
@@ -108,11 +109,13 @@ impl<'a> Analyzer<'a> {
           self.factory.unknown
         });
 
-        let (element_values, rest_value) = init.destruct_as_array(
+        let (element_values, rest_value, dep) = init.destruct_as_array(
           self,
           box_consumable(AstKind::ArrayPattern(node)),
           node.elements.len(),
         );
+
+        self.push_dependent_cf_scope(dep);
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
             self.init_binding_pattern(element, Some(value));
@@ -121,6 +124,7 @@ impl<'a> Analyzer<'a> {
         if let Some(rest) = &node.rest {
           self.init_binding_rest_element(rest, rest_value);
         }
+        self.pop_cf_scope();
       }
       BindingPatternKind::AssignmentPattern(node) => {
         let (need_right, binding_val) = self.exec_with_default(&node.right, init.unwrap());
@@ -178,7 +182,7 @@ impl<'a> Transformer<'a> {
           let dep = (AstType2::BindingProperty, property);
           let need_property = rest.is_some() || self.is_referred(dep);
 
-          let BindingProperty { span, key, value, shorthand, .. } = property;
+          let BindingProperty { span, key, value, shorthand, computed, .. } = property;
 
           if *shorthand && matches!(value.kind, BindingPatternKind::BindingIdentifier(_)) {
             if need_property
@@ -191,10 +195,10 @@ impl<'a> Transformer<'a> {
             let transformed_key = self.transform_property_key(key, need_property);
             let value = self.transform_binding_pattern(value, transformed_key.is_some());
             if let Some(value) = value {
-              let (computed, key) =
+              let key =
                 transformed_key.unwrap_or_else(|| self.transform_property_key(key, true).unwrap());
               transformed_properties
-                .push(self.ast_builder.binding_property(*span, key, value, *shorthand, computed));
+                .push(self.ast_builder.binding_property(*span, key, value, *shorthand, *computed));
             }
           }
         }

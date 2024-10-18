@@ -1,3 +1,4 @@
+use super::cf_scope::ReferredState;
 use crate::{analyzer::Analyzer, entity::Entity, scope::CfScopeKind};
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
@@ -26,12 +27,21 @@ impl Hash for TrackerRunner<'_> {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
-    self.exec_exhaustively(Rc::new(runner), false);
+    let runner = Rc::new(runner);
+
+    self.exec_exhaustively(runner.clone(), false);
+
+    let cf_scope = self.cf_scope();
+    if cf_scope.referred_state != ReferredState::ReferredClean && cf_scope.deps.may_not_referred() {
+      self.push_indeterminate_cf_scope();
+      runner(self);
+      self.pop_cf_scope();
+    }
   }
 
   pub fn exec_consumed_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a) {
     let runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a> = Rc::new(move |analyzer| {
-      analyzer.push_cf_scope_normal(None);
+      analyzer.push_indeterminate_cf_scope();
       analyzer.push_try_scope();
       let ret_val = runner(analyzer);
       ret_val.consume(analyzer);
@@ -96,13 +106,19 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn mark_exhaustive_write(&mut self, variable: (ScopeId, SymbolId), target: usize) -> bool {
+  pub fn mark_exhaustive_write(
+    &mut self,
+    variable: (ScopeId, SymbolId),
+    target: usize,
+  ) -> (bool, bool) {
     let mut should_consume = false;
+    let mut indeterminate = false;
     for depth in target..self.scope_context.cf.stack.len() {
-      should_consume |=
-        self.scope_context.cf.get_mut_from_depth(depth).mark_exhaustive_write(variable)
+      let scope = self.scope_context.cf.get_mut_from_depth(depth);
+      should_consume |= scope.mark_exhaustive_write(variable);
+      indeterminate |= scope.is_indeterminate();
     }
-    should_consume
+    (should_consume, indeterminate)
   }
 
   pub fn exec_exhaustive_deps(
@@ -116,7 +132,8 @@ impl<'a> Analyzer<'a> {
       let runners = if should_consume { mem::take(runners) } else { runners.clone() };
       for runner in runners {
         let TrackerRunner { runner, once } = runner.clone();
-        self.exec_exhaustively(runner, once);
+        let deps = self.exec_exhaustively(runner.clone(), once);
+        self.track_dep_after_finished(once, runner, deps);
       }
     }
   }

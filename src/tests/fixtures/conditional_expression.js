@@ -22,3 +22,22 @@ export function main(a, b) {
   a ? e9 : b;
   a ? b : e10;
 }
+
+export function complex_1() {
+  function f(t) {
+    t ? 0 : effect()
+  }
+  f(0)
+  f(1)
+
+  function g(t) {
+    effect(t ? 1 : 2)
+  }
+  g(0)
+
+  function h(t) {
+    effect(t ? 1 : 2)
+  }
+  h(0)
+  h(1)
+}

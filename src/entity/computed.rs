@@ -1,5 +1,6 @@
 use super::{
-  entity::EnumeratedProperties, Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -83,8 +84,12 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     self.val.iterate(analyzer, box_consumable((self.dep.cloned(), dep)))
+  }
+
+  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    self.val.get_destructable(box_consumable((self.dep.cloned(), dep)))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -135,7 +140,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ComputedEntity<'a, T> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn computed(&self, val: Entity<'a>, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
-    self.entity(ComputedEntity { val, dep: dep.into(), consumed: Cell::new(false) })
+  pub fn computed<T: ConsumableTrait<'a> + 'a>(&self, val: Entity<'a>, dep: T) -> Entity<'a> {
+    self.entity(ComputedEntity { val, dep, consumed: Cell::new(false) })
   }
 }

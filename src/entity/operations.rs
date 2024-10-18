@@ -60,6 +60,7 @@ impl<'a> EntityOpHost<'a> {
           if *l == 0.0.into() || *l == (-0.0).into() {
             return Some(*r == 0.0.into() || *r == (-0.0).into());
           }
+          return Some(l == r);
         }
 
         return Some(lhs_lit == rhs_lit && *lhs_lit != LiteralEntity::NaN);
@@ -168,7 +169,7 @@ impl<'a> EntityOpHost<'a> {
         (Some(l), Some(r)) => match (l, r) {
           (Some(l), Some(r)) => {
             let val = l.0 + r.0;
-            values.push(analyzer.factory.number(val, self.allocator.alloc(val.to_string())));
+            values.push(analyzer.factory.number(val, None));
           }
           _ => {
             values.push(analyzer.factory.nan);
@@ -223,7 +224,7 @@ impl<'a> EntityOpHost<'a> {
         UpdateOperator::Increment => v + 1.0,
         UpdateOperator::Decrement => v - 1.0,
       };
-      analyzer.factory.number(val, self.allocator.alloc(val.to_string()))
+      analyzer.factory.number(val, None)
     };
 
     if let Some(num) = input.get_literal(analyzer).and_then(|lit| lit.to_number()) {
@@ -247,9 +248,9 @@ impl<'a> EntityOpHost<'a> {
     }
 
     if values.is_empty() {
-      analyzer.factory.computed_unknown(input.to_consumable())
+      analyzer.factory.computed_unknown(input)
     } else {
-      analyzer.factory.computed_union(values, input.to_consumable())
+      analyzer.factory.computed_union(values, input)
     }
   }
 
@@ -260,9 +261,8 @@ impl<'a> EntityOpHost<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> Entity<'a> {
-    let to_result = |result: Option<bool>| {
-      boolean_from_test_result(analyzer, result, || box_consumable((lhs.clone(), rhs.clone())))
-    };
+    let to_result =
+      |result: Option<bool>| boolean_from_test_result(analyzer, result, (lhs.clone(), rhs.clone()));
 
     match operator {
       BinaryOperator::Equality => to_result(self.eq(analyzer, lhs, rhs)),
@@ -286,10 +286,10 @@ impl<'a> EntityOpHost<'a> {
       | BinaryOperator::BitwiseAnd
       | BinaryOperator::Exponential => {
         // Can be number or bigint
-        analyzer.factory.computed_unknown(box_consumable((lhs.clone(), rhs.clone())))
+        analyzer.factory.computed_unknown((lhs.clone(), rhs.clone()))
       }
       BinaryOperator::In | BinaryOperator::Instanceof => {
-        analyzer.factory.computed_unknown_boolean(box_consumable((lhs.clone(), rhs.clone())))
+        analyzer.factory.computed_unknown_boolean((lhs.clone(), rhs.clone()))
       }
     }
   }

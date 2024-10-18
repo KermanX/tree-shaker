@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/exec_exhaustively.js
 ---
@@ -15,7 +14,7 @@ export function f1() {
 		effect(y);
 	}
 }
-export function f2(__unused_83DD) {
+export function f2(__unused_8B42) {
 	let a = true;
 	while (sth()) {
 		a = true;
@@ -30,5 +29,23 @@ export function f3() {
 		for (var j = 0; j < 10; ++j) {
 			continue label;
 		}
+	}
+}
+export function f4() {
+	let obj = {
+		a: 0,
+		b: 0
+	};
+	while (sth()) {
+		if (obj.a++ > 10) {
+			obj.b = "abc";
+		}
+	}
+	test = typeof obj.b;
+}
+export function f5() {
+	let i = 1;
+	while (a) {
+		i = 2;
 	}
 }

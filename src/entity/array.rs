@@ -1,12 +1,17 @@
 use super::{
-  consumed_object, entity::EnumeratedProperties, Entity, EntityTrait, LiteralEntity, TypeofResult,
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode},
+  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
   use_consumed_flag,
 };
-use oxc::{semantic::ScopeId, syntax::number::ToJsInt32};
+use oxc::{
+  semantic::{ScopeId, SymbolId},
+  syntax::number::ToJsInt32,
+};
 use std::{
   cell::{Cell, RefCell},
   fmt,
@@ -16,7 +21,7 @@ pub struct ArrayEntity<'a> {
   consumed: Cell<bool>,
   pub deps: RefCell<ConsumableCollector<'a>>,
   cf_scope: ScopeId,
-  variable_scope: ScopeId,
+  object_id: SymbolId,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Vec<Entity<'a>>>,
 }
@@ -36,7 +41,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    analyzer.refer_to_diff_variable_scope(self.variable_scope);
+    analyzer.mark_object_consumed(self.cf_scope, self.object_id);
 
     self.deps.borrow_mut().consume_all(analyzer);
 
@@ -59,7 +64,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_property(rc, analyzer, dep, key);
     }
-    let dep = ConsumableNode::new_box((self.deps.borrow_mut().collect(), dep, key.clone()));
+
+    analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
+
+    let dep = ConsumableNode::new((self.deps.borrow_mut().collect(), dep, key.clone()));
     let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut result = vec![];
@@ -82,14 +90,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
             } else if key == "length" {
               result.push(self.get_length().map_or_else(
                 || {
-                  let dep: Vec<_> = self.rest.borrow().iter().cloned().collect();
-                  analyzer.factory.computed_unknown_number(box_consumable(dep))
+                  let dep = ConsumableNode::new(self.rest.borrow().clone());
+                  analyzer.factory.computed_unknown_number(dep)
                 },
-                |length| {
-                  analyzer
-                    .factory
-                    .number(length as f64, analyzer.allocator.alloc(length.to_string()))
-                },
+                |length| analyzer.factory.number(length as f64, None),
               ));
             } else if let Some(property) = analyzer.builtins.prototypes.array.get(key) {
               result.push(property.clone());
@@ -102,10 +106,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
           _ => unreachable!(),
         }
       }
-      analyzer.factory.computed_union(result, box_consumable(dep))
+      analyzer.factory.computed_union(result, dep)
     } else {
-      analyzer.factory.computed_unknown(box_consumable((
-        ConsumableNode::new_box(
+      analyzer.factory.computed_unknown((
+        ConsumableNode::new(
           self
             .elements
             .borrow()
@@ -115,7 +119,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
             .collect::<Vec<_>>(),
         ),
         dep,
-      )))
+      ))
     }
   }
 
@@ -130,15 +134,18 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
-    let indeterminate = analyzer.is_assignment_indeterminate(self.cf_scope);
+
+    let (indeterminate, exec_deps) = analyzer.pre_mutate_array(self.cf_scope, self.object_id);
+
     let mut has_effect = false;
     if let Some(key_literals) = key.get_to_property_key(analyzer).get_to_literals(analyzer) {
       let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_added = false;
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key) => {
-            if let Some(index) = key.parse::<usize>().ok() {
+          LiteralEntity::String(key_str) => {
+            if let Some(index) = key_str.parse::<usize>().ok() {
+              has_effect = true;
               if let Some(element) = self.elements.borrow_mut().get_mut(index) {
                 *element = if definite {
                   value.clone()
@@ -149,7 +156,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 rest_added = true;
                 self.rest.borrow_mut().push(value.clone());
               }
-            } else if key == "length" {
+            } else if key_str == "length" {
               if let Some(length) = value.get_literal(analyzer).and_then(|lit| lit.to_number()) {
                 if let Some(length) = length.map(|l| l.0.to_js_int_32()) {
                   let length = length as usize;
@@ -177,8 +184,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               }
             } else {
               self.consume(analyzer);
-              analyzer.consume(dep);
-              return;
+              return consumed_object::set_property(analyzer, dep, key, value);
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
@@ -186,7 +192,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         }
       }
       if has_effect {
-        self.add_dep(analyzer, dep);
+        self.add_assignment_dep(exec_deps, dep);
       }
     } else {
       self.consume(analyzer);
@@ -204,6 +210,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return consumed_object::enumerate_properties(rc, analyzer, dep);
     }
 
+    analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
+
     let mut entries = Vec::new();
     for (i, element) in self.elements.borrow().iter().enumerate() {
       entries.push((
@@ -220,6 +228,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         analyzer.factory.union(rest.iter().cloned().collect()),
       ));
     }
+
     (entries, box_consumable((self.deps.borrow_mut().collect(), dep.cloned())))
   }
 
@@ -257,24 +266,19 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+  ) -> IteratedElements<'a> {
     if self.consumed.get() {
       return consumed_object::iterate(analyzer, dep);
     }
-    let rest = self.rest.borrow();
     (
-      self
-        .elements
-        .borrow()
-        .iter()
-        .map(|val| analyzer.factory.computed(val.clone(), dep.cloned()))
-        .collect(),
-      if rest.is_empty() {
-        None
-      } else {
-        Some(analyzer.factory.computed_union(self.rest.borrow().clone(), dep))
-      },
+      self.elements.borrow().clone(),
+      analyzer.factory.try_union(self.rest.borrow().clone()),
+      box_consumable((dep, self.deps.borrow_mut().collect())),
     )
+  }
+
+  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    dep
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -285,14 +289,14 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
-    analyzer.factory.computed_unknown_string(rc.to_consumable())
+    analyzer.factory.computed_unknown_string(rc)
   }
 
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
-    analyzer.factory.computed_unknown(rc.to_consumable())
+    analyzer.factory.computed_unknown(rc)
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -317,12 +321,12 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 }
 
 impl<'a> ArrayEntity<'a> {
-  pub fn new(cf_scope: ScopeId, variable_scope: ScopeId) -> Self {
+  pub fn new(cf_scope: ScopeId, object_id: SymbolId) -> Self {
     ArrayEntity {
       consumed: Cell::new(false),
       deps: Default::default(),
       cf_scope,
-      variable_scope,
+      object_id,
       elements: RefCell::new(Vec::new()),
       rest: RefCell::new(Vec::new()),
     }
@@ -344,16 +348,18 @@ impl<'a> ArrayEntity<'a> {
     }
   }
 
-  fn add_dep(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    let target_depth = analyzer.find_first_different_variable_scope(self.variable_scope);
+  fn add_assignment_dep<T: ConsumableTrait<'a> + 'a>(
+    &self,
+    exec_deps: ConsumableNode<'a, T>,
+    dep: impl ConsumableTrait<'a> + 'a,
+  ) {
     let mut deps = self.deps.borrow_mut();
-    deps.push(box_consumable(analyzer.get_assignment_dep(target_depth)));
-    deps.push(dep);
+    deps.push(box_consumable((exec_deps, dep)));
   }
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new_empty_array(&self) -> ArrayEntity<'a> {
-    ArrayEntity::new(self.scope_context.cf.current_id(), self.scope_context.variable.current_id())
+  pub fn new_empty_array(&mut self) -> ArrayEntity<'a> {
+    ArrayEntity::new(self.scope_context.cf.current_id(), self.scope_context.alloc_object_id())
   }
 }

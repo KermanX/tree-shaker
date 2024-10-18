@@ -7,6 +7,8 @@ export const input = ref('')
 export const doTreeShake = ref(true)
 export const doMinify = ref(false)
 
+export const showLogs = ref(true)
+
 const debouncedInput = ref('')
 let debounceTimeout = Number.NaN
 watch(input, (input) => {

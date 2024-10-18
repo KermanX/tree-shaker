@@ -1,10 +1,6 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstType2,
-  build_effect_from_arr,
-  consumable::box_consumable,
-  entity::{Entity, EntityDepNode},
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstType2, build_effect_from_arr, consumable::box_consumable, dep::DepId,
+  entity::Entity, transformer::Transformer,
 };
 use oxc::{
   ast::{
@@ -21,15 +17,15 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     if let Some((indeterminate, tag, this)) = self.exec_callee(&node.tag) {
       if indeterminate {
-        self.push_cf_scope_normal(None);
+        self.push_indeterminate_cf_scope();
       }
 
       let mut arguments = vec![(false, self.factory.unknown)];
 
       for expr in &node.quasi.expressions {
         let value = self.exec_expression(expr);
-        let dep: EntityDepNode = (AstType2::ExpressionInTaggedTemplate, expr).into();
-        arguments.push((false, self.factory.computed(value, box_consumable(dep))));
+        let dep = DepId::from((AstType2::ExpressionInTaggedTemplate, expr));
+        arguments.push((false, self.factory.computed(value, dep)));
       }
 
       let value = tag.call(
