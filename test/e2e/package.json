@@ -1,7 +1,11 @@
 {
+  "type": "module",
   "scripts": {
-    "build:vue": "pnpm vite build ./vue -c ./vue/vite.config.ts",
-    "build": "pnpm run --parallel \"/^build:.*/\"",
+    "build:vue": "vite build ./vue",
+    "build:vuetify": "vite build ./vuetify",
+    "build-shaken": "cross-env DISABLE_TREE_SHAKE=0 pnpm run --parallel \"/^build:.*/\"",
+    "build-unshaken": "cross-env DISABLE_TREE_SHAKE=1 pnpm run --parallel \"/^build:.*/\"",
+    "build": "pnpm run --parallel \"/^build-.*/\"",
     "test": "vitest"
   },
   "devDependencies": {
@@ -9,11 +13,13 @@
     "@types/node": "^22.7.6",
     "@vitejs/plugin-vue": "^5.1.4",
     "@vitest/browser": "^2.1.3",
+    "cross-env": "^7.0.3",
     "picocolors": "^1.1.1",
     "playwright": "^1.48.1",
     "vite": "^5.4.9",
     "vitest": "^2.1.3",
-    "vue": "^3.5.12"
+    "vue": "^3.5.12",
+    "vuetify": "^3.7.3"
   },
   "packageManager": "pnpm@9.11.0"
 }

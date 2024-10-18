@@ -1,5 +1,7 @@
-use codspeed_criterion_compat::{black_box, criterion_group, criterion_main, Criterion};
-use std::path::Path;
+use codspeed_criterion_compat::{
+  black_box, criterion_group, criterion_main, BenchmarkId, Criterion,
+};
+use std::{fs::read_to_string, path::Path};
 use tree_shake::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
 fn run_tree_shaker(source_text: String) -> String {
@@ -19,17 +21,22 @@ fn run_tree_shaker(source_text: String) -> String {
   result.codegen_return.source_text
 }
 
-pub fn criterion_benchmark(c: &mut Criterion) {
-  let input_path = Path::new("./benches/fixtures/vue-starter.js");
-  let source_text = match std::fs::read_to_string(&input_path) {
-    Err(why) => {
-      eprintln!("Couldn't read {}: {}", input_path.display(), why);
-      std::process::exit(1);
-    }
-    Ok(content) => content,
-  };
+const FIXTURES: &[&str] = &["vue", "vuetify"];
 
-  c.bench_function("vue-starter", |b| b.iter(|| run_tree_shaker(black_box(source_text.clone()))));
+pub fn criterion_benchmark(c: &mut Criterion) {
+  let mut group = c.benchmark_group("fixtures");
+
+  for fixture in FIXTURES {
+    let input_path = format!("./test/e2e/{fixture}/dist/bundled.js");
+    let input_path = Path::new(&input_path);
+    let source_text = read_to_string(&input_path).unwrap();
+
+    group.bench_with_input(BenchmarkId::from_parameter(fixture), &source_text, |b, source_text| {
+      b.iter(|| run_tree_shaker(black_box(source_text.clone())))
+    });
+  }
+
+  group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);
