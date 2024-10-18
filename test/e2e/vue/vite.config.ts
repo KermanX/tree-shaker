@@ -12,13 +12,4 @@ export default defineConfig({
   define: {
     'process.env.NODE_ENV': '"production"'
   },
-  build: {
-    lib: {
-      entry: './index.ts',
-      formats: ['es'],
-      fileName: 'out'
-    },
-    outDir: './dist',
-    minify: false,
-  }
 })

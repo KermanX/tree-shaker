@@ -7,7 +7,7 @@ test('harness', async () => {
   root.id = 'app'
   document.body.append(root)
 
-  await import('./dist/out.mjs')
+  await import('./dist/shaken.js')
 
   await expect.element(page.getByText('Hello World')).toBeInTheDocument()
 
