@@ -111,7 +111,7 @@ jobs:
     - name: Build e2e tests
       run: |
         pnpm i
-        pnpm build
+        pnpm build-shaken
       working-directory: ./test/e2e
     - name: Run e2e tests
       run: |

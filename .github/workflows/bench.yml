@@ -35,10 +35,10 @@ jobs:
           pnpm build
         working-directory: ./napi
 
-      - name: Build e2e tests
+      - name: Build fixtures
         run: |
           pnpm i
-          pnpm build
+          pnpm build-unshaken
         working-directory: ./test/e2e
 
       - name: Build benchmarks
