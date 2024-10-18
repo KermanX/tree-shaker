@@ -17,7 +17,7 @@ export default function (): Plugin | false {
       return {
         build: {
           lib: {
-            entry: './index.ts',
+            entry: './main.ts',
             formats: ['es'],
             fileName: disabled ? 'bundled' : 'shaken'
           },

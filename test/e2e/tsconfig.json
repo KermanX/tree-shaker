@@ -1,0 +1,13 @@
+{
+  "include": [
+    "**/*.ts",
+  ],
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "allowJs": true,
+    "noEmit": true,
+  }
+}

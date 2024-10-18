@@ -23,7 +23,7 @@ fn run_tree_shaker(source_text: String) -> String {
 
 const FIXTURES: &[&str] = &[
   "vue",
-  // "vuetify",
+  "vuetify",
 ];
 
 pub fn criterion_benchmark(c: &mut Criterion) {
