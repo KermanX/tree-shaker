@@ -3,9 +3,7 @@ import { expect, test } from 'vitest'
 import { page } from '@vitest/browser/context'
 
 test('harness', async () => {
-  const root = document.createElement('div')
-  root.id = 'app'
-  document.body.append(root)
+  document.body.innerHTML = `<div id="app"></div>`
 
   await import('./dist/shaken.js')
 
