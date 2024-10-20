@@ -22,7 +22,8 @@ fn run_tree_shaker(source_text: String) -> String {
 }
 
 const FIXTURES: &[&str] = &["vue", "vuetify"];
-pub fn fixtures_benchmark(c: &mut Criterion) {
+
+pub fn criterion_benchmark(c: &mut Criterion) {
   let mut group = c.benchmark_group("fixtures");
 
   for fixture in FIXTURES {
@@ -38,14 +39,5 @@ pub fn fixtures_benchmark(c: &mut Criterion) {
   group.finish();
 }
 
-pub fn false_if_statement_benchmark(c: &mut Criterion) {
-  let time_consuming_code = format!("({{{}}})", "a:1,".repeat(1000));
-  let source_text = format!("if (false) {{ {} }}", time_consuming_code).repeat(100);
-
-  c.bench_function("false_if_statements", |b| {
-    b.iter(|| run_tree_shaker(black_box(source_text.clone())))
-  });
-}
-
-criterion_group!(benches, fixtures_benchmark, false_if_statement_benchmark);
+criterion_group!(benches, criterion_benchmark);
 criterion_main!(benches);
