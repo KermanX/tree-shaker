@@ -8,7 +8,7 @@ use crate::{
   entity::{Entity, FunctionEntitySource},
   transformer::Transformer,
 };
-use oxc::ast::ast::{ClassElement, StaticBlock};
+use oxc::ast::ast::StaticBlock;
 
 const AST_TYPE: AstType2 = AstType2::StaticBlock;
 
