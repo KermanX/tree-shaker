@@ -1,0 +1,163 @@
+use super::{
+  consumed_object,
+  entity::{EnumeratedProperties, IteratedElements},
+  Entity, EntityFactory, EntityTrait, ObjectEntity, TypeofResult,
+};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{box_consumable, Consumable},
+  use_consumed_flag,
+};
+use oxc::{ast::ast::Class, semantic::ScopeId};
+use std::{cell::Cell, rc::Rc};
+
+#[derive(Debug)]
+pub struct ClassEntity<'a> {
+  consumed: Rc<Cell<bool>>,
+  source: &'a Class<'a>,
+  statics: Entity<'a>,
+  pub super_class: Option<Entity<'a>>,
+  pub variable_scope_stack: Rc<Vec<ScopeId>>,
+  pub is_expression: bool,
+}
+
+impl<'a> EntityTrait<'a> for ClassEntity<'a> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    use_consumed_flag!(self);
+
+    analyzer.construct_class(self);
+  }
+
+  fn get_property(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    key: Entity<'a>,
+  ) -> Entity<'a> {
+    if self.consumed.get() {
+      return consumed_object::get_property(rc, analyzer, dep, key);
+    }
+    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
+  }
+
+  fn set_property(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    key: Entity<'a>,
+    value: Entity<'a>,
+  ) {
+    self.statics.set_property(analyzer, dep, key, value)
+  }
+
+  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+    self.statics.delete_property(analyzer, dep, key)
+  }
+
+  fn enumerate_properties(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> EnumeratedProperties<'a> {
+    self.statics.enumerate_properties(analyzer, dep)
+  }
+
+  fn call(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    this: Entity<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    analyzer.thrown_builtin_error("Class constructor A cannot be invoked without 'new'");
+    self.consume(analyzer);
+    consumed_object::call(analyzer, dep, this, args)
+  }
+
+  fn r#await(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Entity<'a> {
+    // In case of `class A { static then() {} }`
+    self.consume(analyzer);
+    consumed_object::r#await(analyzer, dep)
+  }
+
+  fn iterate(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> IteratedElements<'a> {
+    self.consume(analyzer);
+    consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((rc, dep))
+  }
+
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.string("function")
+  }
+
+  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    if self.consumed.get() {
+      return consumed_object::get_to_string(analyzer);
+    }
+    analyzer.factory.computed_unknown_string(rc)
+  }
+
+  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    if self.consumed.get() {
+      return consumed_object::get_to_numeric(analyzer);
+    }
+    analyzer.factory.nan
+  }
+
+  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.boolean(true)
+  }
+
+  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.get_to_string(rc, analyzer)
+  }
+
+  fn test_typeof(&self) -> TypeofResult {
+    TypeofResult::Function
+  }
+
+  fn test_truthy(&self) -> Option<bool> {
+    Some(true)
+  }
+
+  fn test_nullish(&self) -> Option<bool> {
+    Some(false)
+  }
+}
+
+impl<'a> EntityFactory<'a> {
+  pub fn class(
+    &self,
+    source: &'a Class<'a>,
+    is_expression: bool,
+    variable_scope_stack: Vec<ScopeId>,
+    super_class: Option<Entity<'a>>,
+    statics: ObjectEntity<'a>,
+  ) -> Entity<'a> {
+    self.entity(ClassEntity {
+      consumed: Rc::new(Cell::new(false)),
+      source,
+      statics: self.entity(statics),
+      variable_scope_stack: Rc::new(variable_scope_stack),
+      super_class,
+      is_expression,
+    })
+  }
+}

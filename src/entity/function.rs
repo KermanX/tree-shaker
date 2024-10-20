@@ -11,7 +11,7 @@ use crate::{
 };
 use oxc::{
   ast::{
-    ast::{ArrowFunctionExpression, Function},
+    ast::{ArrowFunctionExpression, Function, StaticBlock},
     AstKind,
   },
   semantic::ScopeId,
@@ -27,6 +27,7 @@ use std::{
 pub enum FunctionEntitySource<'a> {
   Function(&'a Function<'a>),
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
+  StaticBlock(&'a StaticBlock<'a>),
   Module,
 }
 
@@ -35,6 +36,7 @@ impl GetSpan for FunctionEntitySource<'_> {
     match self {
       FunctionEntitySource::Function(node) => node.span(),
       FunctionEntitySource::ArrowFunctionExpression(node) => node.span(),
+      FunctionEntitySource::StaticBlock(node) => node.span(),
       FunctionEntitySource::Module => Span::default(),
     }
   }
@@ -47,6 +49,7 @@ impl<'a> FunctionEntitySource<'a> {
       FunctionEntitySource::ArrowFunctionExpression(node) => {
         AstKind::ArrowFunctionExpression(node).into()
       }
+      FunctionEntitySource::StaticBlock(node) => AstKind::StaticBlock(node).into(),
       FunctionEntitySource::Module => DepId::Environment,
     }
   }
@@ -57,6 +60,7 @@ impl<'a> FunctionEntitySource<'a> {
         node.id.as_ref().map_or("<unknown>", |id| &id.name).to_string()
       }
       FunctionEntitySource::ArrowFunctionExpression(_) => "<anonymous>".to_string(),
+      FunctionEntitySource::StaticBlock(_) => "<StaticBlock>".to_string(),
       FunctionEntitySource::Module => "<Module>".to_string(),
     }
   }
@@ -73,6 +77,9 @@ impl PartialEq for FunctionEntitySource<'_> {
         FunctionEntitySource::ArrowFunctionExpression(a),
         FunctionEntitySource::ArrowFunctionExpression(b),
       ) => a.span() == b.span(),
+      (FunctionEntitySource::StaticBlock(a), FunctionEntitySource::StaticBlock(b)) => {
+        a.span() == b.span()
+      }
       _ => false,
     }
   }
@@ -267,7 +274,7 @@ impl<'a> FunctionEntity<'a> {
           args.clone(),
           consume,
         ),
-      FunctionEntitySource::Module => unreachable!(),
+      _ => unreachable!(),
     };
     analyzer.factory.computed(ret_val, call_dep)
   }

@@ -39,7 +39,7 @@ impl<'a> Analyzer<'a> {
     self.push_call_scope(
       source,
       call_dep,
-      variable_scopes,
+      variable_scopes.as_ref().clone(),
       parent_call_scope.this.clone(),
       parent_call_scope.args.clone(),
       node.r#async,

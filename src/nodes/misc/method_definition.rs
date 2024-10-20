@@ -11,7 +11,10 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_method_definition(&self, node: &'a MethodDefinition<'a>) -> ClassElement<'a> {
+  pub fn transform_method_definition(
+    &self,
+    node: &'a MethodDefinition<'a>,
+  ) -> Option<ClassElement<'a>> {
     let MethodDefinition {
       r#type,
       span,
@@ -34,7 +37,7 @@ impl<'a> Transformer<'a> {
       self.patch_method_definition_params(value, &mut transformed_value);
     }
 
-    self.ast_builder.class_element_method_definition(
+    Some(self.ast_builder.class_element_method_definition(
       *r#type,
       *span,
       self.clone_node(decorators),
@@ -46,7 +49,7 @@ impl<'a> Transformer<'a> {
       *r#override,
       *optional,
       *accessibility,
-    )
+    ))
   }
 
   /// It is possible that `set a(param) {}` has been optimized to `set a() {}`.

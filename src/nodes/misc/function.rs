@@ -48,7 +48,7 @@ impl<'a> Analyzer<'a> {
         analyzer.push_call_scope(
           source,
           call_dep.cloned(),
-          variable_scopes.clone(),
+          variable_scopes.as_ref().clone(),
           this.clone(),
           (args.clone(), vec![ /* later filled by formal parameters */]),
           node.r#async,
