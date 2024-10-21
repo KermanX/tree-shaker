@@ -89,7 +89,9 @@ impl<'a> Analyzer<'a> {
     // Keys
     for (index, element) in node.body.body.iter().enumerate() {
       if !element.r#static() {
-        class.keys[index].unwrap().consume(self);
+        if let Some(key) = class.keys[index] {
+          key.consume(self);
+        }
       }
     }
 
