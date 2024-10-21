@@ -20,7 +20,7 @@ class A extends 2 {
 	}
 }
 new A();
-export const a = class {
+export const a = class X {
 	[2] = 2;
 };
 export const b = class extends 2 {
