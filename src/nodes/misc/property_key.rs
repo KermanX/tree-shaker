@@ -5,7 +5,10 @@ impl<'a> Analyzer<'a> {
   pub fn exec_property_key(&mut self, node: &'a PropertyKey<'a>) -> Entity<'a> {
     match node {
       PropertyKey::StaticIdentifier(node) => self.factory.string(node.name.as_str()),
-      PropertyKey::PrivateIdentifier(node) => self.factory.string(node.name.as_str()),
+      PropertyKey::PrivateIdentifier(node) => {
+        // FIXME: Not good
+        self.factory.string(self.allocator.alloc("__#private__".to_string() + node.name.as_str()))
+      }
       node => self.exec_expression(node.to_expression()).get_to_property_key(self),
     }
   }
