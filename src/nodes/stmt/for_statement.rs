@@ -17,8 +17,6 @@ impl<'a> Analyzer<'a> {
 
     let data = self.load_data::<Data>(AST_TYPE, node);
 
-    self.push_variable_scope();
-
     if let Some(init) = &node.init {
       match init {
         ForStatementInit::VariableDeclaration(node) => {
@@ -34,7 +32,6 @@ impl<'a> Analyzer<'a> {
     if let Some(test) = &node.test {
       let test = self.exec_expression(test);
       if test.test_truthy() == Some(false) {
-        self.pop_variable_scope();
         return;
       }
       test.consume(self);
@@ -57,8 +54,6 @@ impl<'a> Analyzer<'a> {
       analyzer.pop_cf_scope();
     });
     self.pop_cf_scope();
-
-    self.pop_variable_scope();
   }
 }
 

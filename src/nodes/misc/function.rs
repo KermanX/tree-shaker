@@ -66,9 +66,6 @@ impl<'a> Analyzer<'a> {
             DeclarationKind::NamedFunctionInBody,
             Some(fn_entity.clone()),
           );
-
-          let body_variable_scope = analyzer.push_variable_scope();
-          analyzer.call_scope_mut().body_variable_scope = body_variable_scope;
         }
 
         analyzer.exec_formal_parameters(
@@ -77,10 +74,6 @@ impl<'a> Analyzer<'a> {
           DeclarationKind::FunctionParameter,
         );
         analyzer.exec_function_body(node.body.as_ref().unwrap());
-
-        if declare_in_body {
-          analyzer.pop_variable_scope();
-        }
 
         if consume {
           analyzer.consume_return_values();

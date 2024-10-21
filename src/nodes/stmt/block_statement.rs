@@ -12,9 +12,7 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<StatementVecData>(AST_TYPE, node);
 
     self.push_cf_scope(CfScopeKind::Block, labels, Some(false));
-    self.push_variable_scope();
     self.exec_statement_vec(data, &node.body);
-    self.pop_variable_scope();
     self.pop_cf_scope();
   }
 }
