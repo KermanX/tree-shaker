@@ -14,11 +14,11 @@ use std::{cell::Cell, rc::Rc};
 #[derive(Debug)]
 pub struct ClassEntity<'a> {
   consumed: Rc<Cell<bool>>,
-  source: &'a Class<'a>,
+  pub node: &'a Class<'a>,
+  pub keys: Vec<Option<Entity<'a>>>,
   statics: Entity<'a>,
   pub super_class: Option<Entity<'a>>,
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
-  pub is_expression: bool,
 }
 
 impl<'a> EntityTrait<'a> for ClassEntity<'a> {
@@ -145,19 +145,19 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
 impl<'a> EntityFactory<'a> {
   pub fn class(
     &self,
-    source: &'a Class<'a>,
-    is_expression: bool,
+    node: &'a Class<'a>,
+    keys: Vec<Option<Entity<'a>>>,
     variable_scope_stack: Vec<ScopeId>,
     super_class: Option<Entity<'a>>,
     statics: ObjectEntity<'a>,
   ) -> Entity<'a> {
     self.entity(ClassEntity {
       consumed: Rc::new(Cell::new(false)),
-      source,
+      node,
+      keys,
       statics: self.entity(statics),
       variable_scope_stack: Rc::new(variable_scope_stack),
       super_class,
-      is_expression,
     })
   }
 }

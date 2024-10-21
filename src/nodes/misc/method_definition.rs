@@ -1,14 +1,7 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::transformer::Transformer;
 use oxc::ast::ast::{
   BindingPatternKind, ClassElement, Function, MethodDefinition, MethodDefinitionKind,
 };
-
-impl<'a> Analyzer<'a> {
-  pub fn exec_method_definition(&mut self, node: &'a MethodDefinition<'a>) {
-    let value = self.exec_function(&node.value, true);
-    self.consume(value);
-  }
-}
 
 impl<'a> Transformer<'a> {
   pub fn transform_method_definition(

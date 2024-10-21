@@ -83,7 +83,7 @@ impl<'a> Analyzer<'a> {
           ExportDefaultDeclarationKind::ClassDeclaration(node) => {
             if node.id.is_none() {
               // Patch `export default class{}`
-              self.exec_class(node, true)
+              self.exec_class(node)
             } else {
               self.init_class(node)
             }

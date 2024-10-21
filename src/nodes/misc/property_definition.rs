@@ -1,16 +1,8 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::transformer::Transformer;
 use oxc::ast::{
   ast::{ClassElement, PropertyDefinition},
   NONE,
 };
-
-impl<'a> Analyzer<'a> {
-  pub fn exec_property_definition(&mut self, node: &'a PropertyDefinition<'a>) {
-    if let Some(value) = &node.value {
-      self.exec_consumed_fn(|analyzer| analyzer.exec_expression(value));
-    }
-  }
-}
 
 impl<'a> Transformer<'a> {
   pub fn transform_property_definition(

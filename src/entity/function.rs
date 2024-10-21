@@ -11,7 +11,7 @@ use crate::{
 };
 use oxc::{
   ast::{
-    ast::{ArrowFunctionExpression, Function, StaticBlock},
+    ast::{ArrowFunctionExpression, Class, Function, StaticBlock},
     AstKind,
   },
   semantic::ScopeId,
@@ -28,6 +28,7 @@ pub enum FunctionEntitySource<'a> {
   Function(&'a Function<'a>),
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
   StaticBlock(&'a StaticBlock<'a>),
+  ClassConstructor(&'a Class<'a>),
   Module,
 }
 
@@ -37,6 +38,7 @@ impl GetSpan for FunctionEntitySource<'_> {
       FunctionEntitySource::Function(node) => node.span(),
       FunctionEntitySource::ArrowFunctionExpression(node) => node.span(),
       FunctionEntitySource::StaticBlock(node) => node.span(),
+      FunctionEntitySource::ClassConstructor(node) => node.span(),
       FunctionEntitySource::Module => Span::default(),
     }
   }
@@ -50,6 +52,7 @@ impl<'a> FunctionEntitySource<'a> {
         AstKind::ArrowFunctionExpression(node).into()
       }
       FunctionEntitySource::StaticBlock(node) => AstKind::StaticBlock(node).into(),
+      FunctionEntitySource::ClassConstructor(node) => AstKind::Class(node).into(),
       FunctionEntitySource::Module => DepId::Environment,
     }
   }
@@ -61,6 +64,7 @@ impl<'a> FunctionEntitySource<'a> {
       }
       FunctionEntitySource::ArrowFunctionExpression(_) => "<anonymous>".to_string(),
       FunctionEntitySource::StaticBlock(_) => "<StaticBlock>".to_string(),
+      FunctionEntitySource::ClassConstructor(_) => "<ClassConstructor>".to_string(),
       FunctionEntitySource::Module => "<Module>".to_string(),
     }
   }

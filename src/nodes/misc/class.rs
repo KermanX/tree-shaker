@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
   consumable::{box_consumable, ConsumableTrait},
-  entity::{ClassEntity, Entity},
+  entity::{ClassEntity, Entity, FunctionEntitySource},
   transformer::Transformer,
 };
 use oxc::{
@@ -14,15 +14,19 @@ use oxc::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_class(&mut self, node: &'a Class<'a>, is_expression: bool) -> Entity<'a> {
+  pub fn exec_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
     let super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
 
-    let statics = self.new_empty_object();
-
+    let mut keys = vec![];
     for element in &node.body.body {
+      keys.push(element.property_key().map(|key| self.exec_property_key(key)));
+    }
+
+    let statics = self.new_empty_object();
+    for (index, element) in node.body.body.iter().enumerate() {
       if let ClassElement::MethodDefinition(node) = element {
         if node.r#static {
-          let key = self.exec_property_key(&node.key);
+          let key = keys[index].unwrap();
           let value = self.exec_function(&node.value, false);
           let kind = match node.kind {
             MethodDefinitionKind::Constructor => unreachable!(),
@@ -37,31 +41,24 @@ impl<'a> Analyzer<'a> {
 
     let class = self.factory.class(
       node,
-      is_expression,
+      keys.clone(),
       self.scope_context.variable.stack.clone(),
       super_class,
       statics,
     );
 
-    for element in &node.body.body {
-      if element.r#static() {
-        match element {
-          ClassElement::StaticBlock(node) => self.exec_static_block(node, class),
-          ClassElement::MethodDefinition(_node) => {}
-          ClassElement::PropertyDefinition(node) => {
-            if let Some(value) = &node.value {
-              let key = self.exec_property_key(&node.key);
-              let value = self.exec_expression(value);
-              class.set_property(
-                self,
-                box_consumable(AstKind::PropertyDefinition(node)),
-                key,
-                value,
-              );
-            }
+    for (index, element) in node.body.body.iter().enumerate() {
+      match element {
+        ClassElement::StaticBlock(node) => self.exec_static_block(node, class),
+        ClassElement::MethodDefinition(_node) => {}
+        ClassElement::PropertyDefinition(node) if node.r#static => {
+          if let Some(value) = &node.value {
+            let key = keys[index].unwrap();
+            let value = self.exec_expression(value);
+            class.set_property(self, box_consumable(AstKind::PropertyDefinition(node)), key, value);
           }
-          _ => unreachable!(),
         }
+        _ => unreachable!(),
       }
     }
 
@@ -73,7 +70,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn init_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
-    let value = self.exec_class(node, false);
+    let value = self.exec_class(node);
 
     self.init_binding_identifier(node.id.as_ref().unwrap(), Some(value.clone()));
 
@@ -81,7 +78,56 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn construct_class(&mut self, class: &ClassEntity<'a>) {
+    let node = class.node;
+
     class.super_class.consume(self);
+
+    // Keys
+    for (index, element) in node.body.body.iter().enumerate() {
+      if !element.r#static() {
+        class.keys[index].unwrap().consume(self);
+      }
+    }
+
+    // Non-static methods
+    for element in &node.body.body {
+      if let ClassElement::MethodDefinition(node) = element {
+        if !node.r#static {
+          let value = self.exec_function(&node.value, true);
+          self.consume(value);
+        }
+      }
+    }
+
+    // Non-static properties
+    let variable_scope_stack = class.variable_scope_stack.clone();
+    self.exec_consumed_fn(move |analyzer| {
+      analyzer.push_call_scope(
+        FunctionEntitySource::ClassConstructor(node),
+        box_consumable(()),
+        variable_scope_stack.as_ref().clone(),
+        analyzer.factory.unknown,
+        (analyzer.factory.unknown, vec![]),
+        false,
+        false,
+        false,
+      );
+
+      for element in &node.body.body {
+        if let ClassElement::PropertyDefinition(node) = element {
+          if !node.r#static {
+            if let Some(value) = &node.value {
+              let value = analyzer.exec_expression(value);
+              analyzer.consume(value);
+            }
+          }
+        }
+      }
+
+      analyzer.pop_call_scope();
+
+      analyzer.factory.undefined
+    });
   }
 }
 
