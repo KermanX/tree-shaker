@@ -80,6 +80,8 @@ impl<'a> Analyzer<'a> {
   pub fn construct_class(&mut self, class: &ClassEntity<'a>) {
     let node = class.node;
 
+    self.consume(AstKind::Class(node));
+
     class.super_class.consume(self);
 
     // Keys
@@ -138,8 +140,15 @@ impl<'a> Transformer<'a> {
     let id = id.as_ref().and_then(|node| self.transform_binding_identifier(node));
 
     if need_val || id.is_some() {
-      let super_class =
-        super_class.as_ref().map(|node| self.transform_expression(node, true).unwrap());
+      let ever_constructed = self.is_referred(AstKind::Class(node));
+
+      let super_class = super_class.as_ref().and_then(|node| {
+        if ever_constructed || self.transform_expression(node, false).is_some() {
+          self.transform_expression(node, true)
+        } else {
+          None
+        }
+      });
 
       let body = {
         let ClassBody { span, body, .. } = body.as_ref();
@@ -147,16 +156,18 @@ impl<'a> Transformer<'a> {
         let mut transformed_body = self.ast_builder.vec();
 
         for element in body {
-          if let Some(element) = match element {
-            ClassElement::StaticBlock(node) => self
-              .transform_static_block(node)
-              .map(|node| self.ast_builder.class_element_from_static_block(node)),
-            ClassElement::MethodDefinition(node) => self.transform_method_definition(node),
-            ClassElement::PropertyDefinition(node) => self.transform_property_definition(node),
-            ClassElement::AccessorProperty(_node) => unreachable!(),
-            ClassElement::TSIndexSignature(_node) => unreachable!(),
-          } {
-            transformed_body.push(element);
+          if ever_constructed || element.r#static() {
+            if let Some(element) = match element {
+              ClassElement::StaticBlock(node) => self
+                .transform_static_block(node)
+                .map(|node| self.ast_builder.class_element_from_static_block(node)),
+              ClassElement::MethodDefinition(node) => self.transform_method_definition(node),
+              ClassElement::PropertyDefinition(node) => self.transform_property_definition(node),
+              ClassElement::AccessorProperty(_node) => unreachable!(),
+              ClassElement::TSIndexSignature(_node) => unreachable!(),
+            } {
+              transformed_body.push(element);
+            }
           }
         }
 
