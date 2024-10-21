@@ -214,6 +214,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         || self.rest.borrow().values.len() > 0;
       let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_and_unknown_setter_called = false;
+      let mut setters_to_call = vec![];
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
@@ -231,12 +232,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                 property.values.iter().chain(self.unknown_keyed.borrow().values.iter())
               {
                 if let ObjectPropertyValue::Property(_, Some(setter)) = property_val {
-                  setter.call(
-                    analyzer,
-                    dep.cloned(),
-                    this,
-                    analyzer.factory.arguments(vec![(false, value.clone())]),
-                  );
+                  setters_to_call.push(*setter);
                 }
               }
               if indeterminate || !property.definite || property.values.is_empty() {
@@ -273,6 +269,15 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           LiteralEntity::Symbol(_, _) => todo!(),
           _ => unreachable!(),
         }
+      }
+
+      for setter in setters_to_call {
+        setter.call(
+          analyzer,
+          dep.cloned(),
+          this,
+          analyzer.factory.arguments(vec![(false, value.clone())]),
+        );
       }
     } else {
       may_write = true;
