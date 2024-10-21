@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
       if let ClassElement::MethodDefinition(node) = element {
         if node.r#static {
           let key = keys[index].unwrap();
-          let value = self.exec_function(&node.value, false);
+          let value = self.exec_function(&node.value);
           let kind = match node.kind {
             MethodDefinitionKind::Constructor => unreachable!(),
             MethodDefinitionKind::Method => PropertyKind::Init,
@@ -105,7 +105,7 @@ impl<'a> Analyzer<'a> {
     for element in &node.body.body {
       if let ClassElement::MethodDefinition(node) = element {
         if !node.r#static {
-          let value = self.exec_function(&node.value, true);
+          let value = self.exec_function(&node.value);
           self.consume(value);
         }
       }
