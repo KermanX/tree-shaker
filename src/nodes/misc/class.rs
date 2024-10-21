@@ -141,9 +141,13 @@ impl<'a> Transformer<'a> {
   pub fn transform_class(&self, node: &'a Class<'a>, need_val: bool) -> Option<Class<'a>> {
     let Class { r#type, span, id, super_class, body, .. } = node;
 
-    let id = id.as_ref().and_then(|node| self.transform_binding_identifier(node));
-
     if need_val || id.is_some() {
+      let id = if self.config.preserve_function_name {
+        self.clone_node(id)
+      } else {
+        id.as_ref().and_then(|node| self.transform_binding_identifier(node))
+      };
+
       let ever_constructed = self.is_referred(AstKind::Class(node));
 
       let super_class = super_class.as_ref().and_then(|node| {
