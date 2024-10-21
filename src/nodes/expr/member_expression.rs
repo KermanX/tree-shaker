@@ -112,7 +112,7 @@ impl<'a> Analyzer<'a> {
         self.factory.string(node.property.name.as_str())
       }
       MemberExpression::PrivateFieldExpression(node) => {
-        self.factory.string(node.field.name.as_str())
+        self.factory.string(self.escape_private_identifier_name(node.field.name.as_str()))
       }
     }
   }

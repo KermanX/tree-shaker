@@ -7,7 +7,7 @@ impl<'a> Analyzer<'a> {
       PropertyKey::StaticIdentifier(node) => self.factory.string(node.name.as_str()),
       PropertyKey::PrivateIdentifier(node) => {
         // FIXME: Not good
-        self.factory.string(self.allocator.alloc("__#private__".to_string() + node.name.as_str()))
+        self.factory.string(self.escape_private_identifier_name(node.name.as_str()))
       }
       node => self.exec_expression(node.to_expression()).get_to_property_key(self),
     }
