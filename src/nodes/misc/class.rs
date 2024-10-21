@@ -58,7 +58,7 @@ impl<'a> Analyzer<'a> {
             class.set_property(self, box_consumable(AstKind::PropertyDefinition(node)), key, value);
           }
         }
-        _ => unreachable!(),
+        _ => {}
       }
     }
 
