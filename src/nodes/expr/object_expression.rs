@@ -18,7 +18,7 @@ use oxc::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
-    let object = self.new_empty_object();
+    let object = self.new_empty_object(&self.builtins.prototypes.object);
 
     let mut has_proto = false;
 

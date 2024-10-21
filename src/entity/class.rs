@@ -38,7 +38,7 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_property(rc, analyzer, dep, key);
     }
-    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
+    self.statics.get_property(analyzer, dep, key)
   }
 
   fn set_property(

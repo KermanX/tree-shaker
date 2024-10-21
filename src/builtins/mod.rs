@@ -18,10 +18,11 @@ pub struct Builtins<'a> {
 
 impl<'a> Builtins<'a> {
   pub fn new(factory: &EntityFactory<'a>) -> Self {
+    let prototypes = factory.alloc(create_builtin_prototypes(factory));
     Self {
       globals: create_globals(factory),
-      prototypes: factory.alloc(create_builtin_prototypes(factory)),
-      import_meta: create_import_meta(factory),
+      prototypes,
+      import_meta: create_import_meta(factory, prototypes),
     }
   }
 
