@@ -173,7 +173,7 @@ impl<'a> Transformer<'a> {
               transformed_body.push(element);
             }
           } else if let Some(key) =
-            self.transform_property_key(element.property_key().unwrap(), false)
+            element.property_key().and_then(|key| self.transform_property_key(key, false))
           {
             transformed_body.push(self.ast_builder.class_element_property_definition(
               PropertyDefinitionType::PropertyDefinition,
