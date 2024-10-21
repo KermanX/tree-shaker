@@ -95,6 +95,12 @@ impl<'a> Analyzer<'a> {
       }
     }
 
+    if let Some(id) = &node.id {
+      self.push_variable_scope();
+      self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
+      self.init_binding_identifier(id, Some(self.factory.unknown));
+    }
+
     // Non-static methods
     for element in &node.body.body {
       if let ClassElement::MethodDefinition(node) = element {
@@ -134,6 +140,10 @@ impl<'a> Analyzer<'a> {
 
       analyzer.factory.undefined
     });
+
+    if node.id.is_some() {
+      self.pop_variable_scope();
+    }
 
     self.factory.unknown
   }
