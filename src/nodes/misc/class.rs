@@ -79,7 +79,7 @@ impl<'a> Analyzer<'a> {
     value
   }
 
-  pub fn construct_class(&mut self, class: &ClassEntity<'a>) {
+  pub fn construct_class(&mut self, class: &ClassEntity<'a>) -> Entity<'a> {
     let node = class.node;
 
     self.consume(AstKind::Class(node));
@@ -134,6 +134,8 @@ impl<'a> Analyzer<'a> {
 
       analyzer.factory.undefined
     });
+
+    self.factory.unknown
   }
 }
 

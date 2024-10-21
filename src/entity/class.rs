@@ -25,6 +25,7 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
+    self.statics.consume(analyzer);
     analyzer.construct_class(self);
   }
 
@@ -76,6 +77,18 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
     analyzer.thrown_builtin_error("Class constructor A cannot be invoked without 'new'");
     self.consume(analyzer);
     consumed_object::call(analyzer, dep, this, args)
+  }
+
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    if self.consumed.get() {
+      return consumed_object::construct(analyzer, args);
+    }
+    analyzer.construct_class(self)
   }
 
   fn r#await(

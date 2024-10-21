@@ -75,6 +75,13 @@ pub fn call<'a>(
   analyzer.factory.unknown
 }
 
+pub fn construct<'a>(analyzer: &mut Analyzer<'a>, args: Entity<'a>) -> Entity<'a> {
+  analyzer.may_throw();
+  analyzer.refer_to_global();
+  args.consume(analyzer);
+  analyzer.factory.unknown
+}
+
 pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
   analyzer.may_throw();
   analyzer.consume(dep);
