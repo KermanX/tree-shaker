@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_static_block(&mut self, node: &'a StaticBlock<'a>, class: Entity<'a>) {
     let data = self.load_data::<StatementVecData>(AST_TYPE, node);
 
-    let variable_scope_stack = mem::take(&mut self.scope_context.variable.stack);
+    let variable_scope_stack = self.scope_context.variable.stack.clone();
     self.push_call_scope(
       FunctionEntitySource::StaticBlock(node),
       box_consumable(()),

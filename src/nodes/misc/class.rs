@@ -7,7 +7,9 @@ use crate::{
 };
 use oxc::{
   ast::{
-    ast::{Class, ClassBody, ClassElement, MethodDefinitionKind, PropertyKind},
+    ast::{
+      Class, ClassBody, ClassElement, MethodDefinitionKind, PropertyDefinitionType, PropertyKind,
+    },
     AstKind, NONE,
   },
   span::GetSpan,
@@ -168,6 +170,25 @@ impl<'a> Transformer<'a> {
             } {
               transformed_body.push(element);
             }
+          } else if let Some(key) =
+            self.transform_property_key(element.property_key().unwrap(), false)
+          {
+            transformed_body.push(self.ast_builder.class_element_property_definition(
+              PropertyDefinitionType::PropertyDefinition,
+              element.span(),
+              self.ast_builder.vec(),
+              key,
+              None,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              NONE,
+              None,
+            ));
           }
         }
 
