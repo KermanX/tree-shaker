@@ -1,5 +1,3 @@
-use std::mem;
-
 use crate::{
   analyzer::Analyzer,
   ast::AstType2,
