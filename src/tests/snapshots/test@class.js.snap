@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/class.js
 ---
@@ -20,12 +19,25 @@ class A extends 2 {
 		this._x = v;
 	}
 }
-const __unused_DA20 = class X {
+new A();
+export const a = class {
 	[2] = 2;
 };
-const __unused_EC09 = class extends 2 {
+export const b = class extends 2 {
 	[2] = 2;
 };
 export default class {
 	a = 1;
+}
+class {
+	static {
+		effect(2);
+		effect(4);
+		effect(7);
+		effect(1);
+		effect(5);
+		{
+			effect(6);
+		}
+	}
 }

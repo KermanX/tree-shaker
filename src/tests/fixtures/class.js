@@ -12,10 +12,23 @@ class A extends (1+1) {
   get [3+3]() { return 3+3 }
   set x(v) { this._x = v }
 }
+new A()
 
-const a = class X { [1+1] = 1+1 };
-const b = class extends (1+1) { [1+1] = 1+1 };
+export const a = class X { [1+1] = 1+1 };
+export const b = class extends (1+1) { [1+1] = 1+1 };
 
-export default class{
+export default class {
   a = 1;
+}
+
+class C {
+  static a = effect(1);
+  [effect(2)] = effect(3);
+  static [effect(4)] = effect(5);
+  static {
+    effect(6);
+  }
+  [effect(7)]() {
+    effect(8);
+  }
 }
