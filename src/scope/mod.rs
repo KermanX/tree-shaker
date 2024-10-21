@@ -113,7 +113,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     source: FunctionEntitySource<'a>,
     call_dep: Consumable<'a>,
-    variable_scope_stack: Rc<Vec<ScopeId>>,
+    variable_scope_stack: Vec<ScopeId>,
     this: Entity<'a>,
     args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
@@ -126,7 +126,6 @@ impl<'a> Analyzer<'a> {
     }
 
     // FIXME: no clone
-    let variable_scope_stack = variable_scope_stack.as_ref().clone();
     let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(

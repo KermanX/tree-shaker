@@ -1,6 +1,7 @@
 mod arguments;
 mod array;
 mod builtin_fn;
+mod class;
 mod collected;
 mod collector;
 mod computed;
@@ -22,6 +23,7 @@ mod utils;
 
 pub use array::ArrayEntity;
 pub use builtin_fn::PureBuiltinFnEntity;
+pub use class::ClassEntity;
 pub use collector::LiteralCollector;
 pub use entity::{Entity, EntityTrait};
 pub use factory::EntityFactory;
