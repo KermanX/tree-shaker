@@ -53,7 +53,7 @@ fn main() {
     Ok(file) => file,
   };
 
-  match output_file.write_all(result.codegen_return.source_text.as_bytes()) {
+  match output_file.write_all(result.codegen_return.code.as_bytes()) {
     Err(why) => {
       eprintln!("Couldn't write to {}: {}", output_path.display(), why);
       std::process::exit(1);

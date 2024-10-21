@@ -18,7 +18,7 @@ fn run_tree_shaker(source_text: String) -> String {
     logging: false,
   });
 
-  result.codegen_return.source_text
+  result.codegen_return.code
 }
 
 const FIXTURES: &[&str] = &["vue", "vuetify"];
