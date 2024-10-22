@@ -45,14 +45,15 @@ impl GetSpan for FunctionEntitySource<'_> {
 impl<'a> FunctionEntitySource<'a> {
   pub fn into_dep_id(self) -> DepId {
     match self {
-      FunctionEntitySource::Function(node) => AstKind2::Function(node).into(),
+      FunctionEntitySource::Function(node) => AstKind2::Function(node),
       FunctionEntitySource::ArrowFunctionExpression(node) => {
-        AstKind2::ArrowFunctionExpression(node).into()
+        AstKind2::ArrowFunctionExpression(node)
       }
-      FunctionEntitySource::StaticBlock(node) => AstKind2::StaticBlock(node).into(),
-      FunctionEntitySource::ClassConstructor(node) => AstKind2::Class(node).into(),
-      FunctionEntitySource::Module => DepId::Environment,
+      FunctionEntitySource::StaticBlock(node) => AstKind2::StaticBlock(node),
+      FunctionEntitySource::ClassConstructor(node) => AstKind2::Class(node),
+      FunctionEntitySource::Module => AstKind2::Environment,
     }
+    .into()
   }
 
   pub fn name(&self) -> String {

@@ -1,10 +1,18 @@
-use oxc::{allocator::Vec, ast::ast::*, span::GetSpan};
+use oxc::{
+  allocator::Vec,
+  ast::ast::*,
+  span::{GetSpan, SPAN},
+};
 
 pub type Arguments<'a> = Vec<'a, Argument<'a>>;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub enum AstKind2<'a> {
+  // Special
+  Environment,
+  Index(usize),
+
   BooleanLiteral(&'a BooleanLiteral),
   NullLiteral(&'a NullLiteral),
   NumericLiteral(&'a NumericLiteral<'a>),
@@ -120,6 +128,7 @@ pub enum AstKind2<'a> {
 impl<'a> GetSpan for AstKind2<'a> {
   fn span(&self) -> Span {
     match self {
+      AstKind2::Environment | AstKind2::Index(_) => SPAN,
       AstKind2::BooleanLiteral(node) => node.span(),
       AstKind2::NullLiteral(node) => node.span(),
       AstKind2::NumericLiteral(node) => node.span(),
