@@ -8,7 +8,8 @@ use crate::{
 use oxc::{
   ast::{
     ast::{
-      Class, ClassBody, ClassElement, MethodDefinitionKind, PropertyDefinitionType, PropertyKind,
+      Class, ClassBody, ClassElement, ClassType, MethodDefinitionKind, PropertyDefinitionType,
+      PropertyKind,
     },
     AstKind, NONE,
   },
@@ -166,8 +167,17 @@ impl<'a> Transformer<'a> {
     let transformed_id = id.as_ref().and_then(|node| self.transform_binding_identifier(node));
 
     if need_val || transformed_id.is_some() {
-      let id =
-        if self.config.preserve_function_name { self.clone_node(id) } else { transformed_id };
+      let id = if self.config.preserve_function_name {
+        self.clone_node(id)
+      } else if node.r#type == ClassType::ClassDeclaration {
+        // Id cannot be omitted for class declaration
+        Some(
+          transformed_id
+            .unwrap_or_else(|| self.build_unused_binding_identifier(id.as_ref().unwrap().span)),
+        )
+      } else {
+        transformed_id
+      };
 
       let ever_constructed = self.is_referred(AstKind::Class(node));
 
@@ -226,7 +236,7 @@ impl<'a> Transformer<'a> {
         *r#type,
         *span,
         self.ast_builder.vec(),
-        id.clone(),
+        id,
         NONE,
         super_class,
         NONE,
@@ -282,7 +292,8 @@ impl<'a> Transformer<'a> {
             *r#type,
             *span,
             self.ast_builder.vec(),
-            None,
+            (node.r#type == ClassType::ClassDeclaration)
+              .then(|| self.build_unused_binding_identifier(id.as_ref().unwrap().span)),
             NONE,
             None,
             NONE,

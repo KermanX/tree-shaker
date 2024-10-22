@@ -160,7 +160,7 @@ impl<'a> Transformer<'a> {
         });
 
         if need_binding {
-          Some(result.unwrap_or_else(|| self.build_unused_binding_identifier(span)))
+          Some(result.unwrap_or_else(|| self.build_unused_binding_pattern(span)))
         } else {
           result
         }
