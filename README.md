@@ -1,4 +1,4 @@
-# Tree Shaker
+# Experimental Tree Shaker
 
 \[WIP\] This is an experimental tree shaker for JS based on [Oxc](https://oxc.rs).
 
@@ -14,7 +14,7 @@
 - As accurate as possible.
 - May not be the fastest. (But I will try my best)
 
-## Goal
+## Demo
 
 Tree shake the following code (this already works!):
 
@@ -45,7 +45,6 @@ Although the code above is simple to analyze, but to achieve this correctly and 
 - JS Builtins metadata
 - Pure notation support
 - Test against fixtures from other tree shakers like Rollup
-- Implement built-in objects and properties
 - Rollup-like try-scope optimization/de-optimization
 - Reuse code with oxc_minifier for JS computation logics
 - Type narrowing
