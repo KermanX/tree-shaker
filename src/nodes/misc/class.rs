@@ -49,6 +49,12 @@ impl<'a> Analyzer<'a> {
       statics,
     );
 
+    if let Some(id) = &node.id {
+      self.push_variable_scope();
+      self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
+      self.init_binding_identifier(id, Some(class));
+    }
+
     for (index, element) in node.body.body.iter().enumerate() {
       match element {
         ClassElement::StaticBlock(node) => self.exec_static_block(node, class),
@@ -62,6 +68,10 @@ impl<'a> Analyzer<'a> {
         }
         _ => {}
       }
+    }
+
+    if node.id.is_some() {
+      self.pop_variable_scope();
     }
 
     class
