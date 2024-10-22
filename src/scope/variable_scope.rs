@@ -12,6 +12,7 @@ use std::{fmt, mem};
 #[derive(Debug)]
 pub struct Variable<'a> {
   pub kind: DeclarationKind,
+  pub cf_scope: ScopeId,
   pub exhausted: bool,
   pub value: Option<Entity<'a>>,
   pub decl_dep: Consumable<'a>,
@@ -22,6 +23,7 @@ impl Clone for Variable<'_> {
   fn clone(&self) -> Self {
     Self {
       kind: self.kind,
+      cf_scope: self.cf_scope,
       exhausted: self.exhausted,
       value: self.value.clone(),
       decl_dep: self.decl_dep.cloned(),
@@ -30,8 +32,6 @@ impl Clone for Variable<'_> {
 }
 
 pub struct VariableScope<'a> {
-  /// Cf scopes when the scope was created
-  pub cf_scope: ScopeId,
   pub variables: FxHashMap<SymbolId, Variable<'a>>,
   pub exhaustive_deps: FxHashMap<SymbolId, FxHashSet<TrackerRunner<'a>>>,
 }
@@ -47,8 +47,8 @@ impl fmt::Debug for VariableScope<'_> {
 }
 
 impl<'a> VariableScope<'a> {
-  pub fn new(cf_scope: ScopeId) -> Self {
-    Self { cf_scope, variables: Default::default(), exhaustive_deps: Default::default() }
+  pub fn new() -> Self {
+    Self { variables: Default::default(), exhaustive_deps: Default::default() }
   }
 }
 
@@ -78,22 +78,25 @@ impl<'a> Analyzer<'a> {
         // TODO: Sometimes this is not necessary
         variable.decl_dep = box_consumable((variable.decl_dep.cloned(), decl_dep));
         if let Some(new_val) = fn_value {
-          self.write_on_scope((self.scope_context.variable.current_depth(), id), symbol, new_val);
+          self.write_on_scope(id, symbol, new_val);
         }
       } else {
-        let decl_dep = (old.decl_dep.cloned(), decl_dep);
-        let name = self.semantic.symbols().get_name(symbol);
-        self.thrown_builtin_error(format!("Variable {name:?} already declared"));
-        self.consume(decl_dep);
+        // Re-declaration
       }
     } else {
       let has_fn_value = fn_value.is_some();
-      self
-        .scope_context
-        .variable
-        .get_mut(id)
-        .variables
-        .insert(symbol, Variable { kind, exhausted: false, value: fn_value, decl_dep });
+      let variable = Variable {
+        kind,
+        cf_scope: if kind.is_var() {
+          self.cf_scope_id_of_call_scope()
+        } else {
+          self.scope_context.cf.current_id()
+        },
+        exhausted: false,
+        value: fn_value,
+        decl_dep,
+      };
+      self.scope_context.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
         self.exec_exhaustive_deps(false, (id, symbol));
       }
@@ -111,11 +114,7 @@ impl<'a> Analyzer<'a> {
 
     if variable.kind.is_redeclarable() {
       if let Some(value) = value {
-        self.write_on_scope(
-          (self.scope_context.variable.current_depth(), id),
-          symbol,
-          self.factory.computed(value, init_dep),
-        );
+        self.write_on_scope(id, symbol, self.factory.computed(value, init_dep));
       } else {
         // Do nothing
       }
@@ -143,8 +142,7 @@ impl<'a> Analyzer<'a> {
           .then(|| self.factory.computed(self.factory.undefined, variable.decl_dep.cloned()))
       });
 
-      let target_cf_scope =
-        self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
+      let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
       if !variable.exhausted {
         self.mark_exhaustive_read((id, symbol), target_cf_scope);
       }
@@ -159,12 +157,7 @@ impl<'a> Analyzer<'a> {
     })
   }
 
-  fn write_on_scope(
-    &mut self,
-    (depth, id): (usize, ScopeId),
-    symbol: SymbolId,
-    new_val: Entity<'a>,
-  ) -> bool {
+  fn write_on_scope(&mut self, id: ScopeId, symbol: SymbolId, new_val: Entity<'a>) -> bool {
     if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).cloned() {
       if variable.kind.is_untracked() {
         self.consume(new_val);
@@ -173,9 +166,8 @@ impl<'a> Analyzer<'a> {
         self.consume(variable.decl_dep);
         new_val.consume(self);
       } else {
-        let target_cf_scope =
-          self.find_first_different_cf_scope(self.scope_context.variable.get(id).cf_scope);
-        let dep = (self.get_assignment_dep(depth), variable.decl_dep.cloned());
+        let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
+        let dep = (self.get_exec_dep(target_cf_scope), variable.decl_dep.cloned());
 
         if variable.exhausted {
           self.consume(dep);
@@ -247,16 +239,16 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  fn mark_untracked_on_scope(&mut self, id: ScopeId, symbol: SymbolId) {
-    let old = self.scope_context.variable.get_mut(id).variables.insert(
-      symbol,
-      Variable {
-        exhausted: true,
-        kind: DeclarationKind::UntrackedVar,
-        value: Some(self.factory.unknown),
-        decl_dep: box_consumable(()),
-      },
-    );
+  fn mark_untracked_on_scope(&mut self, symbol: SymbolId) {
+    let cf_scope_depth = self.call_scope().cf_scope_depth;
+    let variable = Variable {
+      exhausted: true,
+      kind: DeclarationKind::UntrackedVar,
+      cf_scope: self.scope_context.cf.stack[cf_scope_depth],
+      value: Some(self.factory.unknown),
+      decl_dep: box_consumable(()),
+    };
+    let old = self.variable_scope_mut().variables.insert(symbol, variable);
     debug_assert!(old.is_none());
   }
 }
@@ -280,7 +272,7 @@ impl<'a> Analyzer<'a> {
       self.insert_var_decl(symbol);
     }
 
-    let variable_scope = self.get_variable_scope(kind.is_var());
+    let variable_scope = self.scope_context.variable.current_id();
     self.declare_on_scope(variable_scope, kind, symbol, decl_dep, fn_value);
   }
 
@@ -290,18 +282,8 @@ impl<'a> Analyzer<'a> {
     value: Option<Entity<'a>>,
     init_dep: Consumable<'a>,
   ) {
-    let flags = self.semantic.symbols().get_flags(symbol);
-    let is_function_scope = flags.is_function_scoped_declaration() && !flags.is_catch_variable();
-    let variable_scope = self.get_variable_scope(is_function_scope);
+    let variable_scope = self.scope_context.variable.current_id();
     self.init_on_scope(variable_scope, symbol, value, init_dep);
-  }
-
-  fn get_variable_scope(&self, is_function_scope: bool) -> ScopeId {
-    if is_function_scope {
-      self.call_scope().body_variable_scope
-    } else {
-      self.scope_context.variable.current_id()
-    }
   }
 
   /// `None` for TDZ
@@ -319,7 +301,7 @@ impl<'a> Analyzer<'a> {
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
     for depth in (0..self.scope_context.variable.stack.len()).rev() {
       let id = self.scope_context.variable.stack[depth];
-      if self.write_on_scope((depth, id), symbol, new_val) {
+      if self.write_on_scope(id, symbol, new_val) {
         return;
       }
     }
@@ -330,8 +312,7 @@ impl<'a> Analyzer<'a> {
   fn mark_unresolved_reference(&mut self, symbol: SymbolId) {
     if self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration() {
       self.insert_var_decl(symbol);
-      let id = self.get_variable_scope(true);
-      self.mark_untracked_on_scope(id, symbol);
+      self.mark_untracked_on_scope(symbol);
     } else {
       self.thrown_builtin_error("Unresolved identifier reference");
     }

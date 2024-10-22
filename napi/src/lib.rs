@@ -33,12 +33,12 @@ pub fn tree_shake(
     source_text: input,
     tree_shake: tree_shake.is_some(),
     minify: do_minify.then(MinifierOptions::default),
-    code_gen: CodegenOptions { single_quote: true, minify: do_minify },
+    code_gen: CodegenOptions { minify: do_minify, ..Default::default() },
     eval_mode,
     logging: true,
   });
   TreeShakeResultBinding {
-    output: result.codegen_return.source_text,
+    output: result.codegen_return.code,
     diagnostics: result.diagnostics.into_iter().collect(),
   }
 }

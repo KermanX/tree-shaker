@@ -10,19 +10,6 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf.find_lca(another).0 + 1
   }
 
-  pub fn get_assignment_dep(
-    &mut self,
-    target_depth: usize,
-  ) -> ConsumableNode<'a, impl ConsumableTrait<'a> + 'a> {
-    if target_depth == 0 {
-      self.get_exec_dep(0)
-    } else {
-      let variable_scope = self.scope_context.variable.get_from_depth(target_depth - 1);
-      let target_cf_depth = self.find_first_different_cf_scope(variable_scope.cf_scope);
-      self.get_exec_dep(target_cf_depth)
-    }
-  }
-
   /// Returns (has_exhaustive, indeterminate, exec_deps)
   pub fn pre_mutate_object(
     &mut self,

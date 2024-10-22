@@ -103,7 +103,6 @@ pub struct FunctionEntity<'a> {
   body_consumed: Rc<Cell<bool>>,
   pub source: FunctionEntitySource<'a>,
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
-  pub is_expression: bool,
 }
 
 impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
@@ -261,7 +260,6 @@ impl<'a> FunctionEntity<'a> {
       FunctionEntitySource::Function(node) => analyzer.call_function(
         rc,
         self.source,
-        self.is_expression,
         call_dep.cloned(),
         node,
         variable_scopes,
@@ -323,14 +321,12 @@ impl<'a> EntityFactory<'a> {
     &self,
     source: FunctionEntitySource<'a>,
     variable_scope_stack: Vec<ScopeId>,
-    is_expression: bool,
   ) -> Entity<'a> {
     self.entity(FunctionEntity {
       consumed: Rc::new(Cell::new(false)),
       body_consumed: Rc::new(Cell::new(false)),
       source,
       variable_scope_stack: Rc::new(variable_scope_stack),
-      is_expression,
     })
   }
 }

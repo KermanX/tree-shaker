@@ -39,10 +39,10 @@ pub struct ScopeContext<'a> {
 impl<'a> ScopeContext<'a> {
   pub fn new(factory: &EntityFactory<'a>) -> Self {
     let mut cf = ScopeTree::new();
-    let cf_scope_0 = cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
+    cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
     let mut variable = ScopeTree::new();
-    let body_variable_scope = variable.push(VariableScope::new(cf_scope_0));
-    let object_scope_id = variable.add_special(VariableScope::new(cf_scope_0));
+    let body_variable_scope = variable.push(VariableScope::new());
+    let object_scope_id = variable.add_special(VariableScope::new());
     ScopeContext {
       call: vec![CallScope::new(
         DepId::from_counter(),
@@ -101,6 +101,19 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf.get_current_mut()
   }
 
+  pub fn cf_scope_id_of_call_scope(&self) -> ScopeId {
+    let depth = self.call_scope().cf_scope_depth;
+    self.scope_context.cf.stack[depth]
+  }
+
+  pub fn variable_scope(&self) -> &VariableScope<'a> {
+    self.scope_context.variable.get_current()
+  }
+
+  pub fn variable_scope_mut(&mut self) -> &mut VariableScope<'a> {
+    self.scope_context.variable.get_current_mut()
+  }
+
   fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId> {
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::ReplaceVarScopeStack(new_stack.clone()));
@@ -125,7 +138,6 @@ impl<'a> Analyzer<'a> {
       self.refer_dep(dep_id);
     }
 
-    // FIXME: no clone
     let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
@@ -172,8 +184,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_variable_scope(&mut self) -> ScopeId {
-    let id =
-      self.scope_context.variable.push(VariableScope::new(self.scope_context.cf.current_id()));
+    let id = self.scope_context.variable.push(VariableScope::new());
 
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::PushVarScope(id, self.scope_context.cf.current_id()));

@@ -7,7 +7,7 @@ use crate::{
 };
 use oxc::{
   ast::{
-    ast::{Function, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration},
+    ast::{Function, FunctionType, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration},
     AstKind,
   },
   semantic::ScopeId,
@@ -15,17 +15,15 @@ use oxc::{
 use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_function(&mut self, node: &'a Function<'a>, is_expression: bool) -> Entity<'a> {
-    self.factory.function(
-      FunctionEntitySource::Function(node),
-      self.scope_context.variable.stack.clone(),
-      is_expression,
-    )
+  pub fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
+    self
+      .factory
+      .function(FunctionEntitySource::Function(node), self.scope_context.variable.stack.clone())
   }
 
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
     let dep = box_consumable(AstKind::Function(node));
-    let entity = self.exec_function(node, false);
+    let entity = self.exec_function(node);
 
     let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
     self.declare_symbol(symbol, dep, exporting, DeclarationKind::Function, Some(entity.clone()));
@@ -35,7 +33,6 @@ impl<'a> Analyzer<'a> {
     &mut self,
     fn_entity: Entity<'a>,
     source: FunctionEntitySource<'a>,
-    is_expression: bool,
     call_dep: Consumable<'a>,
     node: &'a Function<'a>,
     variable_scopes: Rc<Vec<ScopeId>>,
@@ -56,7 +53,7 @@ impl<'a> Analyzer<'a> {
           consume,
         );
 
-        let declare_in_body = is_expression && node.id.is_some();
+        let declare_in_body = node.r#type == FunctionType::FunctionExpression && node.id.is_some();
         if declare_in_body {
           let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
           analyzer.declare_symbol(
@@ -66,9 +63,6 @@ impl<'a> Analyzer<'a> {
             DeclarationKind::NamedFunctionInBody,
             Some(fn_entity.clone()),
           );
-
-          let body_variable_scope = analyzer.push_variable_scope();
-          analyzer.call_scope_mut().body_variable_scope = body_variable_scope;
         }
 
         analyzer.exec_formal_parameters(
@@ -77,10 +71,6 @@ impl<'a> Analyzer<'a> {
           DeclarationKind::FunctionParameter,
         );
         analyzer.exec_function_body(node.body.as_ref().unwrap());
-
-        if declare_in_body {
-          analyzer.pop_variable_scope();
-        }
 
         if consume {
           analyzer.consume_return_values();

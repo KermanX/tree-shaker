@@ -6,7 +6,7 @@ impl<'a> Analyzer<'a> {
     let callee = self.exec_expression(&node.callee);
     let arguments = self.exec_arguments(&node.arguments);
 
-    callee.consume(self);
+    callee.construct(self, arguments);
     arguments.consume(self);
 
     self.factory.unknown_object

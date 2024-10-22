@@ -5,6 +5,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
+  builtins::Prototype,
   consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
   use_consumed_flag,
 };
@@ -27,6 +28,7 @@ pub struct ObjectEntity<'a> {
   pub unknown_keyed: RefCell<ObjectProperty<'a>>,
   // TODO: symbol_keyed
   pub rest: RefCell<ObjectProperty<'a>>,
+  pub prototype: &'a Prototype<'a>,
 }
 
 impl<'a> fmt::Debug for ObjectEntity<'a> {
@@ -142,7 +144,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               true
             };
             let add_undefined = if lookup_rest {
-              if let Some(from_prototype) = analyzer.builtins.prototypes.object.get(key) {
+              if let Some(from_prototype) = self.prototype.get(key) {
                 values.push(from_prototype.clone());
               }
               if !rest_added {
@@ -212,6 +214,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         || self.rest.borrow().values.len() > 0;
       let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_and_unknown_setter_called = false;
+      let mut setters_to_call = vec![];
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
@@ -229,12 +232,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                 property.values.iter().chain(self.unknown_keyed.borrow().values.iter())
               {
                 if let ObjectPropertyValue::Property(_, Some(setter)) = property_val {
-                  setter.call(
-                    analyzer,
-                    dep.cloned(),
-                    this,
-                    analyzer.factory.arguments(vec![(false, value.clone())]),
-                  );
+                  setters_to_call.push(*setter);
                 }
               }
               if indeterminate || !property.definite || property.values.is_empty() {
@@ -271,6 +269,15 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           LiteralEntity::Symbol(_, _) => todo!(),
           _ => unreachable!(),
         }
+      }
+
+      for setter in setters_to_call {
+        setter.call(
+          analyzer,
+          dep.cloned(),
+          this,
+          analyzer.factory.arguments(vec![(false, value.clone())]),
+        );
       }
     } else {
       may_write = true;
@@ -455,7 +462,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 }
 
 impl<'a> ObjectEntity<'a> {
-  pub fn new_builtin(object_id: SymbolId) -> Self {
+  pub fn new_builtin(object_id: SymbolId, prototype: &'a Prototype<'a>) -> Self {
     ObjectEntity {
       consumed: Cell::new(false),
       deps: Default::default(),
@@ -464,6 +471,7 @@ impl<'a> ObjectEntity<'a> {
       string_keyed: Default::default(),
       unknown_keyed: Default::default(),
       rest: Default::default(),
+      prototype,
     }
   }
 
@@ -586,7 +594,7 @@ impl<'a> ObjectEntity<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new_empty_object(&mut self) -> ObjectEntity<'a> {
+  pub fn new_empty_object(&mut self, prototype: &'a Prototype<'a>) -> ObjectEntity<'a> {
     ObjectEntity {
       consumed: Cell::new(false),
       deps: Default::default(),
@@ -595,6 +603,7 @@ impl<'a> Analyzer<'a> {
       string_keyed: RefCell::new(FxHashMap::default()),
       unknown_keyed: RefCell::new(ObjectProperty::default()),
       rest: RefCell::new(ObjectProperty::default()),
+      prototype,
     }
   }
 }

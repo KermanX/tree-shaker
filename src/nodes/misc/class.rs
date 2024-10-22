@@ -24,12 +24,12 @@ impl<'a> Analyzer<'a> {
       keys.push(element.property_key().map(|key| self.exec_property_key(key)));
     }
 
-    let statics = self.new_empty_object();
+    let statics = self.new_empty_object(&self.builtins.prototypes.function);
     for (index, element) in node.body.body.iter().enumerate() {
       if let ClassElement::MethodDefinition(node) = element {
         if node.r#static {
           let key = keys[index].unwrap();
-          let value = self.exec_function(&node.value, false);
+          let value = self.exec_function(&node.value);
           let kind = match node.kind {
             MethodDefinitionKind::Constructor => unreachable!(),
             MethodDefinitionKind::Method => PropertyKind::Init,
@@ -79,7 +79,7 @@ impl<'a> Analyzer<'a> {
     value
   }
 
-  pub fn construct_class(&mut self, class: &ClassEntity<'a>) {
+  pub fn construct_class(&mut self, class: &ClassEntity<'a>) -> Entity<'a> {
     let node = class.node;
 
     self.consume(AstKind::Class(node));
@@ -89,15 +89,23 @@ impl<'a> Analyzer<'a> {
     // Keys
     for (index, element) in node.body.body.iter().enumerate() {
       if !element.r#static() {
-        class.keys[index].unwrap().consume(self);
+        if let Some(key) = class.keys[index] {
+          key.consume(self);
+        }
       }
+    }
+
+    if let Some(id) = &node.id {
+      self.push_variable_scope();
+      self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
+      self.init_binding_identifier(id, Some(self.factory.unknown));
     }
 
     // Non-static methods
     for element in &node.body.body {
       if let ClassElement::MethodDefinition(node) = element {
         if !node.r#static {
-          let value = self.exec_function(&node.value, true);
+          let value = self.exec_function(&node.value);
           self.consume(value);
         }
       }
@@ -132,6 +140,12 @@ impl<'a> Analyzer<'a> {
 
       analyzer.factory.undefined
     });
+
+    if node.id.is_some() {
+      self.pop_variable_scope();
+    }
+
+    self.factory.unknown
   }
 }
 
@@ -139,9 +153,12 @@ impl<'a> Transformer<'a> {
   pub fn transform_class(&self, node: &'a Class<'a>, need_val: bool) -> Option<Class<'a>> {
     let Class { r#type, span, id, super_class, body, .. } = node;
 
-    let id = id.as_ref().and_then(|node| self.transform_binding_identifier(node));
+    let transformed_id = id.as_ref().and_then(|node| self.transform_binding_identifier(node));
 
-    if need_val || id.is_some() {
+    if need_val || transformed_id.is_some() {
+      let id =
+        if self.config.preserve_function_name { self.clone_node(id) } else { transformed_id };
+
       let ever_constructed = self.is_referred(AstKind::Class(node));
 
       let super_class = super_class.as_ref().and_then(|node| {
@@ -171,7 +188,7 @@ impl<'a> Transformer<'a> {
               transformed_body.push(element);
             }
           } else if let Some(key) =
-            self.transform_property_key(element.property_key().unwrap(), false)
+            element.property_key().and_then(|key| self.transform_property_key(key, false))
           {
             transformed_body.push(self.ast_builder.class_element_property_definition(
               PropertyDefinitionType::PropertyDefinition,

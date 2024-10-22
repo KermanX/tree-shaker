@@ -74,7 +74,7 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
     transform_eval_mode_encode(&ast_builder, ast);
   }
 
-  let semantic_builder = SemanticBuilder::new(source_text.as_str());
+  let semantic_builder = SemanticBuilder::new();
   let semantic = semantic_builder.build(ast).semantic;
   let mut diagnostics = Diagnostics::default();
 

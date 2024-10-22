@@ -22,7 +22,6 @@ impl<'a> Analyzer<'a> {
     self.factory.function(
       FunctionEntitySource::ArrowFunctionExpression(node),
       self.scope_context.variable.stack.clone(),
-      true,
     )
   }
 

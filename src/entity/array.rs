@@ -8,10 +8,7 @@ use crate::{
   consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
   use_consumed_flag,
 };
-use oxc::{
-  semantic::{ScopeId, SymbolId},
-  syntax::number::ToJsInt32,
-};
+use oxc::semantic::{ScopeId, SymbolId};
 use std::{
   cell::{Cell, RefCell},
   fmt,
@@ -158,7 +155,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               }
             } else if key_str == "length" {
               if let Some(length) = value.get_literal(analyzer).and_then(|lit| lit.to_number()) {
-                if let Some(length) = length.map(|l| l.0.to_js_int_32()) {
+                if let Some(length) = length.map(|l| l.0.trunc()) {
                   let length = length as usize;
                   let mut elements = self.elements.borrow_mut();
                   let mut rest = self.rest.borrow_mut();

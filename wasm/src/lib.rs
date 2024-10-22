@@ -19,12 +19,12 @@ pub fn tree_shake(input: String, do_tree_shake: bool, do_minify: bool, logging: 
     source_text: input,
     tree_shake: do_tree_shake,
     minify: do_minify.then(|| MinifierOptions::default()),
-    code_gen: CodegenOptions { single_quote: true, minify: do_minify },
+    code_gen: CodegenOptions { minify: do_minify, ..Default::default() },
     eval_mode: false,
     logging,
   });
   Result {
-    output: result.codegen_return.source_text,
+    output: result.codegen_return.code,
     diagnostics: result.diagnostics.into_iter().collect(),
     logs: result.logs,
   }

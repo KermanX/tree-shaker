@@ -19,7 +19,7 @@ fn tree_shake(input: String) -> String {
     eval_mode: false,
     logging: true,
   });
-  result.codegen_return.source_text
+  result.codegen_return.code
 }
 
 #[test]

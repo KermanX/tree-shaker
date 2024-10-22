@@ -59,7 +59,7 @@ impl<'a> Analyzer<'a> {
       Expression::RegExpLiteral(node) => self.exec_regexp_literal(node),
       Expression::TemplateLiteral(node) => self.exec_template_literal(node),
       Expression::Identifier(node) => self.exec_identifier_reference_read(node),
-      Expression::FunctionExpression(node) => self.exec_function(node, true),
+      Expression::FunctionExpression(node) => self.exec_function(node),
       Expression::ArrowFunctionExpression(node) => self.exec_arrow_function_expression(node),
       Expression::UnaryExpression(node) => self.exec_unary_expression(node),
       Expression::UpdateExpression(node) => self.exec_update_expression(node),

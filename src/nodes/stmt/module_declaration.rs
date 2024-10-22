@@ -79,7 +79,7 @@ impl<'a> Analyzer<'a> {
       }
       ModuleDeclaration::ExportDefaultDeclaration(node) => {
         let value = match &node.declaration {
-          ExportDefaultDeclarationKind::FunctionDeclaration(node) => self.exec_function(node, true),
+          ExportDefaultDeclarationKind::FunctionDeclaration(node) => self.exec_function(node),
           ExportDefaultDeclarationKind::ClassDeclaration(node) => {
             if node.id.is_none() {
               // Patch `export default class{}`

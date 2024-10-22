@@ -83,7 +83,7 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn transform_program(&self, node: &'a Program<'a>) -> Program<'a> {
-    let Program { span, source_type, hashbang, directives, body, .. } = node;
+    let Program { span, source_type, source_text, comments, hashbang, directives, body, .. } = node;
 
     let data = self.get_data::<StatementVecData>(AstType2::Program, node);
     let mut body = self.transform_statement_vec(data, body);
@@ -112,6 +112,8 @@ impl<'a> Transformer<'a> {
     self.ast_builder.program(
       *span,
       *source_type,
+      *source_text,
+      self.clone_node(comments),
       self.clone_node(hashbang),
       self.clone_node(directives),
       body,

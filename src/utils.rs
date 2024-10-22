@@ -1,3 +1,4 @@
+use crate::analyzer::Analyzer;
 use oxc::{
   ast::{
     ast::{
@@ -40,6 +41,12 @@ impl Into<f64> for F64WithEq {
 impl Eq for F64WithEq {}
 
 const EVAL_MOD_RET_FN: &str = "__EVAL_RET__";
+
+impl<'a> Analyzer<'a> {
+  pub fn escape_private_identifier_name(&self, name: &str) -> &'a str {
+    self.allocator.alloc(format!("__#private__{}", name))
+  }
+}
 
 pub fn transform_eval_mode_encode<'a>(ast_builder: &AstBuilder<'a>, program: &mut Program<'a>) {
   let last = program.body.pop().unwrap();
