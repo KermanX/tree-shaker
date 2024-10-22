@@ -1,7 +1,8 @@
 use crate::{
-  ast::AstType2,
+  ast::AstKind2,
   builtins::Builtins,
-  data::{get_node_ptr, Diagnostics, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
+  data::{Diagnostics, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
+  dep::DepId,
   entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
   logger::{DebuggerEvent, Logger},
   scope::{conditional::ConditionalDataMap, ScopeContext},
@@ -71,7 +72,7 @@ impl<'a> Analyzer<'a> {
     let top_level_call_id = self.call_scope().call_id;
     self.refer_dep(top_level_call_id);
 
-    let data = self.load_data::<StatementVecData>(AstType2::Program, node);
+    let data = self.load_data::<StatementVecData>(AstKind2::Program(node));
     self.exec_statement_vec(data, &node.body);
 
     // Consume exports
@@ -92,19 +93,15 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn set_data<T>(&mut self, ast_type: AstType2, node: &'a T, data: impl Default + 'a) {
-    let key = (ast_type, get_node_ptr(node));
-    self.data.insert(key, unsafe { mem::transmute(Box::new(data)) });
+  pub fn set_data(&mut self, key: impl Into<DepId>, data: impl Default + 'a) {
+    self.data.insert(key.into(), unsafe { mem::transmute(Box::new(data)) });
   }
 
-  pub fn load_data<D: Default + 'a>(
-    &mut self,
-    ast_type: AstType2,
-    node: &'a impl GetSpan,
-  ) -> &'a mut D {
-    let key = (ast_type, get_node_ptr(node));
-    let boxed =
-      self.data.entry(key).or_insert_with(|| unsafe { mem::transmute(Box::new(D::default())) });
+  pub fn load_data<D: Default + 'a>(&mut self, key: impl Into<DepId>) -> &'a mut D {
+    let boxed = self
+      .data
+      .entry(key.into())
+      .or_insert_with(|| unsafe { mem::transmute(Box::new(D::default())) });
     unsafe { mem::transmute(boxed.as_mut()) }
   }
 

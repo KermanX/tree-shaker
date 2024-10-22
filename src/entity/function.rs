@@ -5,15 +5,13 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
+  ast::AstKind2,
   consumable::{box_consumable, Consumable},
   dep::DepId,
   use_consumed_flag,
 };
 use oxc::{
-  ast::{
-    ast::{ArrowFunctionExpression, Class, Function, StaticBlock},
-    AstKind,
-  },
+  ast::ast::{ArrowFunctionExpression, Class, Function, StaticBlock},
   semantic::ScopeId,
   span::{GetSpan, Span},
 };
@@ -47,12 +45,12 @@ impl GetSpan for FunctionEntitySource<'_> {
 impl<'a> FunctionEntitySource<'a> {
   pub fn into_dep_id(self) -> DepId {
     match self {
-      FunctionEntitySource::Function(node) => AstKind::Function(node).into(),
+      FunctionEntitySource::Function(node) => AstKind2::Function(node).into(),
       FunctionEntitySource::ArrowFunctionExpression(node) => {
-        AstKind::ArrowFunctionExpression(node).into()
+        AstKind2::ArrowFunctionExpression(node).into()
       }
-      FunctionEntitySource::StaticBlock(node) => AstKind::StaticBlock(node).into(),
-      FunctionEntitySource::ClassConstructor(node) => AstKind::Class(node).into(),
+      FunctionEntitySource::StaticBlock(node) => AstKind2::StaticBlock(node).into(),
+      FunctionEntitySource::ClassConstructor(node) => AstKind2::Class(node).into(),
       FunctionEntitySource::Module => DepId::Environment,
     }
   }

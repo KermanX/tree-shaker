@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, build_effect, entity::Entity, transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, LogicalExpression, LogicalOperator};
 
@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
 
     let forward_left = |analyzer: &mut Analyzer<'a>| {
       analyzer.forward_logical_left_val(
-        (AstType2::LogicalExpressionLeft, &node.left),
+        AstKind2::LogicalExpressionLeft(node),
         left,
         maybe_left,
         maybe_right,
@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
     };
 
     let conditional_dep = self.push_logical_right_cf_cope(
-      (AstType2::LogicalExpressionLeft, &node.left),
+      AstKind2::LogicalExpressionLeft(node),
       left.clone(),
       maybe_left,
       maybe_right,
@@ -72,7 +72,7 @@ impl<'a> Transformer<'a> {
     let LogicalExpression { span, left, operator, right, .. } = node;
 
     let (need_left_test_val, maybe_left, maybe_right) =
-      self.get_conditional_result((AstType2::LogicalExpressionLeft, &node.left));
+      self.get_conditional_result(AstKind2::LogicalExpressionLeft(node));
 
     let need_left_val = (need_val && maybe_left) || need_left_test_val;
     let left = self.transform_expression(left, need_left_val);

@@ -1,8 +1,11 @@
 use crate::{
-  analyzer::Analyzer, ast::DeclarationKind, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer,
+  ast::{AstKind2, DeclarationKind},
+  consumable::box_consumable,
+  entity::Entity,
   transformer::Transformer,
 };
-use oxc::ast::{ast::BindingIdentifier, AstKind};
+use oxc::ast::ast::BindingIdentifier;
 
 impl<'a> Analyzer<'a> {
   pub fn declare_binding_identifier(
@@ -12,7 +15,7 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
   ) {
     let symbol = node.symbol_id.get().unwrap();
-    let dep = box_consumable(AstKind::BindingIdentifier(node));
+    let dep = box_consumable(AstKind2::BindingIdentifier(node));
     self.declare_symbol(symbol, dep, exporting, kind, None);
   }
 
@@ -22,7 +25,7 @@ impl<'a> Analyzer<'a> {
     init: Option<Entity<'a>>,
   ) {
     let symbol = node.symbol_id.get().unwrap();
-    let dep = box_consumable(AstKind::BindingIdentifier(node));
+    let dep = box_consumable(AstKind2::BindingIdentifier(node));
     self.init_symbol(symbol, init, dep);
   }
 }
@@ -39,7 +42,7 @@ impl<'a> Transformer<'a> {
       var_decls.remove(&symbol);
     }
 
-    let referred = self.is_referred(AstKind::BindingIdentifier(&node));
+    let referred = self.is_referred(AstKind2::BindingIdentifier(&node));
     referred.then(|| self.clone_node(node))
   }
 }

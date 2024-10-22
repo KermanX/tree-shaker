@@ -1,5 +1,5 @@
-use crate::{analyzer::Analyzer, ast::AstType2, data::get_node_ptr, transformer::Transformer};
-use oxc::{ast::AstKind, span::GetSpan};
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
+use oxc::span::GetSpan;
 use std::{
   fmt::Debug,
   hash::Hash,
@@ -10,7 +10,6 @@ use std::{
 pub enum DepId {
   Environment,
   AstKind((usize, usize)),
-  AstType(AstType2, usize),
   Index(usize),
 }
 
@@ -21,12 +20,8 @@ impl Debug for DepId {
         f.write_str("Environment")?;
       }
       DepId::AstKind(node) => {
-        let node = unsafe { std::mem::transmute::<_, AstKind<'static>>(*node) };
+        let node = unsafe { std::mem::transmute::<_, AstKind2<'static>>(*node) };
         node.span().fmt(f)?;
-      }
-      DepId::AstType(t, s) => {
-        (*t).fmt(f)?;
-        s.fmt(f)?;
       }
       DepId::Index(c) => {
         c.fmt(f)?;
@@ -36,15 +31,9 @@ impl Debug for DepId {
   }
 }
 
-impl<'a> From<AstKind<'a>> for DepId {
-  fn from(node: AstKind<'a>) -> Self {
+impl<'a> From<AstKind2<'a>> for DepId {
+  fn from(node: AstKind2<'a>) -> Self {
     DepId::AstKind(unsafe { std::mem::transmute(node) })
-  }
-}
-
-impl<T: GetSpan> From<(AstType2, &T)> for DepId {
-  fn from((ty, node): (AstType2, &T)) -> Self {
-    DepId::AstType(ty, get_node_ptr(node))
   }
 }
 

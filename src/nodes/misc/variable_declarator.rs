@@ -1,8 +1,10 @@
-use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
-use oxc::{
-  ast::{ast::VariableDeclarator, AstKind},
-  span::GetSpan,
+use crate::{
+  analyzer::Analyzer,
+  ast::{AstKind2, DeclarationKind},
+  entity::Entity,
+  transformer::Transformer,
 };
+use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_variable_declarator(
@@ -30,7 +32,7 @@ impl<'a> Analyzer<'a> {
       }
       None => node.init.as_ref().map(|init| {
         let val = self.exec_expression(init);
-        self.factory.computed(val, AstKind::VariableDeclarator(node))
+        self.factory.computed(val, AstKind2::VariableDeclarator(node))
       }),
     };
 
@@ -52,7 +54,7 @@ impl<'a> Transformer<'a> {
       None
     } else {
       init.as_ref().and_then(|init| {
-        self.transform_expression(init, self.is_referred(AstKind::VariableDeclarator(node)))
+        self.transform_expression(init, self.is_referred(AstKind2::VariableDeclarator(node)))
       })
     };
 

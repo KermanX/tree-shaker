@@ -1,15 +1,13 @@
 use crate::{
-  analyzer::Analyzer, consumable::box_consumable, entity::Entity, transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::Entity,
+  transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{ArrayExpressionElement, SpreadElement},
-  AstKind,
-};
+use oxc::ast::ast::{ArrayExpressionElement, SpreadElement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_spread_element(&mut self, node: &'a SpreadElement<'a>) -> Option<Entity<'a>> {
     let argument = self.exec_expression(&node.argument);
-    argument.iterate_result_union(self, box_consumable(AstKind::SpreadElement(node)))
+    argument.iterate_result_union(self, box_consumable(AstKind2::SpreadElement(node)))
   }
 }
 
@@ -21,7 +19,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<ArrayExpressionElement<'a>> {
     let SpreadElement { span, argument } = node;
 
-    let need_spread = need_val || self.is_referred(AstKind::SpreadElement(node));
+    let need_spread = need_val || self.is_referred(AstKind2::SpreadElement(node));
 
     let argument = self.transform_expression(argument, need_spread);
 

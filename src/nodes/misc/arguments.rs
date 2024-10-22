@@ -1,9 +1,11 @@
-use crate::{ast::Arguments, entity::Entity, transformer::Transformer, Analyzer};
+use crate::{
+  ast::{Arguments, AstKind2},
+  entity::Entity,
+  transformer::Transformer,
+  Analyzer,
+};
 use oxc::{
-  ast::{
-    ast::{Argument, Expression},
-    AstKind,
-  },
+  ast::ast::{Argument, Expression},
   span::GetSpan,
 };
 
@@ -15,7 +17,7 @@ impl<'a> Analyzer<'a> {
         Argument::SpreadElement(node) => (true, self.exec_expression(&node.argument)),
         node => (false, self.exec_expression(node.to_expression())),
       };
-      let dep = AstKind::Argument(argument);
+      let dep = AstKind2::Argument(argument);
       arguments.push((spread, self.factory.computed(val, dep)));
     }
     self.factory.arguments(arguments)
@@ -40,7 +42,7 @@ impl<'a> Transformer<'a> {
     node: &'a Argument<'a>,
     preserve_args_num: bool,
   ) -> Option<Argument<'a>> {
-    let is_referred = self.is_referred(AstKind::Argument(&node));
+    let is_referred = self.is_referred(AstKind2::Argument(&node));
     let span = node.span();
     match node {
       Argument::SpreadElement(node) => {

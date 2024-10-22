@@ -1,6 +1,5 @@
 use super::{Consumable, ConsumableTrait};
-use crate::{analyzer::Analyzer, dep::DepId, entity::Entity};
-use oxc::ast::AstKind;
+use crate::{analyzer::Analyzer, ast::AstKind2, dep::DepId, entity::Entity};
 use std::{cell::RefCell, rc::Rc};
 
 impl<'a> ConsumableTrait<'a> for () {
@@ -106,7 +105,7 @@ impl<'a> ConsumableTrait<'a> for DepId {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for AstKind<'a> {
+impl<'a> ConsumableTrait<'a> for AstKind2<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.refer_dep(*self);
   }

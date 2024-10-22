@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  ast::AstType2,
+  ast::AstKind2,
   consumable::box_consumable,
   data::StatementVecData,
   entity::{Entity, FunctionEntitySource},
@@ -8,11 +8,9 @@ use crate::{
 };
 use oxc::ast::ast::StaticBlock;
 
-const AST_TYPE: AstType2 = AstType2::StaticBlock;
-
 impl<'a> Analyzer<'a> {
   pub fn exec_static_block(&mut self, node: &'a StaticBlock<'a>, class: Entity<'a>) {
-    let data = self.load_data::<StatementVecData>(AST_TYPE, node);
+    let data = self.load_data::<StatementVecData>(AstKind2::StaticBlock(node));
 
     let variable_scope_stack = self.scope_context.variable.stack.clone();
     self.push_call_scope(
@@ -34,7 +32,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_static_block(&self, node: &'a StaticBlock<'a>) -> Option<StaticBlock<'a>> {
-    let data = self.get_data::<StatementVecData>(AST_TYPE, node);
+    let data = self.get_data::<StatementVecData>(AstKind2::StaticBlock(node));
 
     let StaticBlock { span, body, .. } = node;
 

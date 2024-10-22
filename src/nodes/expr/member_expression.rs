@@ -1,19 +1,14 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, build_effect, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
   transformer::Transformer,
 };
 use oxc::{
-  ast::{
-    ast::{
-      ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
-      StaticMemberExpression,
-    },
-    AstKind,
+  ast::ast::{
+    ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
+    StaticMemberExpression,
   },
   span::{GetSpan, SPAN},
 };
-
-const AST_TYPE_READ: AstType2 = AstType2::MemberExpressionRead;
 
 #[derive(Debug, Default)]
 struct DataRead {
@@ -57,7 +52,7 @@ impl<'a> Analyzer<'a> {
       false
     };
 
-    let data = self.load_data::<DataRead>(AST_TYPE_READ, node);
+    let data = self.load_data::<DataRead>(AstKind2::MemberExpressionRead(node));
     data.need_access = true;
     data.need_optional |= self_indeterminate;
 
@@ -75,7 +70,7 @@ impl<'a> Analyzer<'a> {
       self.pop_cf_scope();
     }
 
-    let value = object.get_property(self, box_consumable(AstKind::MemberExpression(node)), key);
+    let value = object.get_property(self, box_consumable(AstKind2::MemberExpression(node)), key);
     let cache = Some((object, key));
 
     if indeterminate {
@@ -102,7 +97,7 @@ impl<'a> Analyzer<'a> {
       (object, key)
     });
 
-    object.set_property(self, box_consumable(AstKind::MemberExpression(node)), key, value);
+    object.set_property(self, box_consumable(AstKind2::MemberExpression(node)), key, value);
   }
 
   fn exec_key(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {
@@ -124,7 +119,7 @@ impl<'a> Transformer<'a> {
     node: &'a MemberExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<DataRead>(AST_TYPE_READ, node);
+    let data = self.get_data::<DataRead>(AstKind2::MemberExpressionRead(node));
 
     if !data.need_access {
       return if need_val {
@@ -143,7 +138,7 @@ impl<'a> Transformer<'a> {
       };
     }
 
-    let need_read = need_val || self.is_referred(AstKind::MemberExpression(node));
+    let need_read = need_val || self.is_referred(AstKind2::MemberExpression(node));
 
     match node {
       MemberExpression::ComputedMemberExpression(node) => {
@@ -204,7 +199,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a MemberExpression<'a>,
   ) -> Option<MemberExpression<'a>> {
-    let need_write = self.is_referred(AstKind::MemberExpression(node));
+    let need_write = self.is_referred(AstKind2::MemberExpression(node));
 
     match node {
       MemberExpression::ComputedMemberExpression(node) => {

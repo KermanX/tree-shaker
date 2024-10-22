@@ -1,11 +1,11 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, build_effect_from_arr, consumable::box_consumable, dep::DepId,
+  analyzer::Analyzer, ast::AstKind2, build_effect_from_arr, consumable::box_consumable, dep::DepId,
   entity::Entity, transformer::Transformer,
 };
 use oxc::{
   ast::{
     ast::{Expression, TaggedTemplateExpression, TemplateLiteral},
-    AstKind, NONE,
+    NONE,
   },
   span::GetSpan,
 };
@@ -24,13 +24,13 @@ impl<'a> Analyzer<'a> {
 
       for expr in &node.quasi.expressions {
         let value = self.exec_expression(expr);
-        let dep = DepId::from((AstType2::ExpressionInTaggedTemplate, expr));
+        let dep = DepId::from(AstKind2::ExpressionInTaggedTemplate(expr));
         arguments.push((false, self.factory.computed(value, dep)));
       }
 
       let value = tag.call(
         self,
-        box_consumable(AstKind::TaggedTemplateExpression(node)),
+        box_consumable(AstKind2::TaggedTemplateExpression(node)),
         this,
         self.factory.arguments(arguments),
       );
@@ -55,7 +55,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let TaggedTemplateExpression { span, tag, quasi, .. } = node;
 
-    let need_call = need_val || self.is_referred(AstKind::TaggedTemplateExpression(node));
+    let need_call = need_val || self.is_referred(AstKind2::TaggedTemplateExpression(node));
 
     if need_call {
       let tag = self.transform_callee(tag, true).unwrap();
@@ -82,7 +82,7 @@ impl<'a> Transformer<'a> {
     let mut transformed_expressions = self.ast_builder.vec();
     for expr in expressions {
       let expr_span = expr.span();
-      let referred = self.is_referred((AstType2::ExpressionInTaggedTemplate, expr));
+      let referred = self.is_referred(AstKind2::ExpressionInTaggedTemplate(expr));
       transformed_expressions.push(
         self
           .transform_expression(expr, referred)

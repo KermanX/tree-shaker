@@ -1,9 +1,8 @@
-use crate::{analyzer::Analyzer, consumable::box_consumable, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, transformer::Transformer,
+};
 use oxc::{
-  ast::{
-    ast::{Statement, ThrowStatement},
-    AstKind,
-  },
+  ast::ast::{Statement, ThrowStatement},
   span::GetSpan,
 };
 
@@ -11,7 +10,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_throw_statement(&mut self, node: &'a ThrowStatement<'a>) {
     let value = self.exec_expression(&node.argument);
 
-    let dep = box_consumable(AstKind::ThrowStatement(node));
+    let dep = box_consumable(AstKind2::ThrowStatement(node));
 
     self.explicit_throw(self.factory.computed(value, dep));
   }
@@ -19,7 +18,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_throw_statement(&self, node: &'a ThrowStatement<'a>) -> Option<Statement<'a>> {
-    let need_val = self.is_referred(AstKind::ThrowStatement(&node));
+    let need_val = self.is_referred(AstKind2::ThrowStatement(&node));
 
     let ThrowStatement { span, argument, .. } = node;
 

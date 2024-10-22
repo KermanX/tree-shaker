@@ -1,16 +1,11 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, scope::CfScopeKind,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::{
-  ast::{
-    ast::{ForOfStatement, Statement},
-    AstKind,
-  },
+  ast::ast::{ForOfStatement, Statement},
   span::GetSpan,
 };
-
-const AST_TYPE: AstType2 = AstType2::ForOfStatement;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -21,7 +16,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_for_of_statement(&mut self, node: &'a ForOfStatement<'a>) {
     let labels = self.take_labels();
 
-    let dep = AstKind::ForOfStatement(node);
+    let dep = AstKind2::ForOfStatement(node);
 
     let right = self.exec_expression(&node.right);
     let right = if node.r#await {
@@ -39,7 +34,7 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
+    let data = self.load_data::<Data>(AstKind2::ForOfStatement(node));
     data.need_loop = true;
 
     self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
@@ -59,7 +54,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_for_of_statement(&self, node: &'a ForOfStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::ForOfStatement(node));
 
     let ForOfStatement { span, r#await, left, right, body, .. } = node;
 
@@ -70,7 +65,7 @@ impl<'a> Transformer<'a> {
     let body = self.transform_statement(body);
 
     if (!data.need_loop || (left.is_none() && body.is_none())) && !r#await {
-      return if self.is_referred(AstKind::ForOfStatement(node)) {
+      return if self.is_referred(AstKind2::ForOfStatement(node)) {
         let right_span = right.span();
         let right = self.transform_expression(right, true).unwrap();
         Some(

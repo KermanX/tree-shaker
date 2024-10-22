@@ -1,17 +1,15 @@
 use crate::{
   analyzer::Analyzer,
+  ast::AstKind2,
   build_effect,
   consumable::box_consumable,
   entity::{Entity, EntityTrait},
   transformer::Transformer,
 };
 use oxc::{
-  ast::{
-    ast::{
-      Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, PropertyKey, PropertyKind,
-      SpreadElement,
-    },
-    AstKind,
+  ast::ast::{
+    Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, PropertyKey, PropertyKind,
+    SpreadElement,
   },
   span::{GetSpan, SPAN},
 };
@@ -27,7 +25,7 @@ impl<'a> Analyzer<'a> {
         ObjectPropertyKind::ObjectProperty(node) => {
           let key = self.exec_property_key(&node.key);
           let value = self.exec_expression(&node.value);
-          let value = self.factory.computed(value, AstKind::ObjectProperty(node));
+          let value = self.factory.computed(value, AstKind2::ObjectProperty(node));
 
           match &node.key {
             PropertyKey::StaticIdentifier(node) if node.name == "__proto__" => {
@@ -42,7 +40,7 @@ impl<'a> Analyzer<'a> {
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(self, box_consumable(AstKind::SpreadElement(node)), argument);
+          object.init_spread(self, box_consumable(AstKind2::SpreadElement(node)), argument);
         }
       }
     }
@@ -74,7 +72,7 @@ impl<'a> Transformer<'a> {
           let value_span = value.span();
 
           let transformed_value =
-            self.transform_expression(value, self.is_referred(AstKind::ObjectProperty(node)));
+            self.transform_expression(value, self.is_referred(AstKind2::ObjectProperty(node)));
 
           if let Some(mut transformed_value) = transformed_value {
             if *kind == PropertyKind::Set {
@@ -120,7 +118,7 @@ impl<'a> Transformer<'a> {
         ObjectPropertyKind::SpreadProperty(node) => {
           let SpreadElement { span, argument, .. } = node.as_ref();
 
-          let referred = self.is_referred(AstKind::SpreadElement(node));
+          let referred = self.is_referred(AstKind2::SpreadElement(node));
 
           let argument = self.transform_expression(argument, referred);
 

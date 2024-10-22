@@ -1,15 +1,13 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, data::StatementVecData, scope::CfScopeKind,
+  analyzer::Analyzer, ast::AstKind2, data::StatementVecData, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::ast::ast::BlockStatement;
 
-const AST_TYPE: AstType2 = AstType2::BlockStatement;
-
 impl<'a> Analyzer<'a> {
   pub fn exec_block_statement(&mut self, node: &'a BlockStatement) {
     let labels = self.take_labels();
-    let data = self.load_data::<StatementVecData>(AST_TYPE, node);
+    let data = self.load_data::<StatementVecData>(AstKind2::BlockStatement(node));
 
     self.push_cf_scope(CfScopeKind::Block, labels, Some(false));
     self.exec_statement_vec(data, &node.body);
@@ -22,7 +20,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a BlockStatement<'a>,
   ) -> Option<BlockStatement<'a>> {
-    let data = self.get_data::<StatementVecData>(AST_TYPE, node);
+    let data = self.get_data::<StatementVecData>(AstKind2::BlockStatement(node));
 
     let BlockStatement { span, body, .. } = node;
 

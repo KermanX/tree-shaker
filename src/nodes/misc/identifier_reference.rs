@@ -1,10 +1,8 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::Entity,
   transformer::Transformer,
 };
-use oxc::ast::{ast::IdentifierReference, AstKind};
-
-const AST_TYPE: AstType2 = AstType2::IdentifierReference;
+use oxc::ast::ast::IdentifierReference;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -24,7 +22,7 @@ impl<'a> Analyzer<'a> {
       if let Some(value) = self.read_symbol(symbol) {
         value
       } else {
-        self.set_data(AST_TYPE, node, Data { has_effect: true });
+        self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
         self.factory.unknown
       }
     } else if node.name == "arguments" {
@@ -38,7 +36,7 @@ impl<'a> Analyzer<'a> {
     } else {
       // Unknown global
       if self.config.unknown_global_side_effects {
-        self.set_data(AST_TYPE, node, Data { has_effect: true });
+        self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
         self.refer_to_global();
         self.may_throw();
       }
@@ -51,7 +49,7 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
     value: Entity<'a>,
   ) {
-    let dep = box_consumable(AstKind::IdentifierReference(node));
+    let dep = box_consumable(AstKind2::IdentifierReference(node));
     let value = self.factory.computed(value, dep);
 
     let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
@@ -65,7 +63,7 @@ impl<'a> Analyzer<'a> {
         "Should not write to builtin object, it may cause unexpected tree-shaking behavior",
       );
     } else {
-      self.set_data(AST_TYPE, node, Data { has_effect: true });
+      self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
       value.consume(self);
       self.may_throw();
       self.refer_to_global();
@@ -79,7 +77,7 @@ impl<'a> Transformer<'a> {
     node: &'a IdentifierReference<'a>,
     need_val: bool,
   ) -> Option<IdentifierReference<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::IdentifierReference(node));
 
     (data.has_effect || need_val).then(|| self.clone_node(node))
   }
@@ -88,9 +86,9 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a IdentifierReference<'a>,
   ) -> Option<IdentifierReference<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::IdentifierReference(node));
 
-    let referred = self.is_referred(AstKind::IdentifierReference(node));
+    let referred = self.is_referred(AstKind2::IdentifierReference(node));
 
     (data.has_effect || referred).then(|| self.clone_node(node))
   }

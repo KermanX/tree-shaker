@@ -1,5 +1,5 @@
-use crate::dep::DepId;
-use oxc::ast::{ast::LabelIdentifier, AstKind};
+use crate::{ast::AstKind2, dep::DepId};
+use oxc::ast::ast::LabelIdentifier;
 
 #[derive(Debug, Clone, Copy)]
 pub struct LabelEntity<'a> {
@@ -13,6 +13,6 @@ impl<'a> LabelEntity<'a> {
   }
 
   pub fn dep_id(&self) -> DepId {
-    AstKind::LabelIdentifier(self.node).into()
+    AstKind2::LabelIdentifier(self.node).into()
   }
 }

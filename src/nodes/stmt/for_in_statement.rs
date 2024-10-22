@@ -1,13 +1,11 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, entity::TypeofResult, scope::CfScopeKind,
+  analyzer::Analyzer, ast::AstKind2, entity::TypeofResult, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::{
   ast::ast::{ForInStatement, Statement},
   span::GetSpan,
 };
-
-const AST_TYPE: AstType2 = AstType2::ForInStatement;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -35,7 +33,7 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
+    let data = self.load_data::<Data>(AstKind2::ForInStatement(node));
     data.need_loop = true;
 
     self.declare_for_statement_left(&node.left);
@@ -55,7 +53,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_for_in_statement(&self, node: &'a ForInStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::ForInStatement(node));
 
     let ForInStatement { span, left, right, body, .. } = node;
 

@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  ast::DeclarationKind,
+  ast::{AstKind2, DeclarationKind},
   consumable::{box_consumable, ConsumableTrait},
   entity::{ClassEntity, Entity, FunctionEntitySource},
   transformer::Transformer,
@@ -11,7 +11,7 @@ use oxc::{
       Class, ClassBody, ClassElement, ClassType, MethodDefinitionKind, PropertyDefinitionType,
       PropertyKind,
     },
-    AstKind, NONE,
+    NONE,
   },
   span::GetSpan,
 };
@@ -64,7 +64,12 @@ impl<'a> Analyzer<'a> {
           if let Some(value) = &node.value {
             let key = keys[index].unwrap();
             let value = self.exec_expression(value);
-            class.set_property(self, box_consumable(AstKind::PropertyDefinition(node)), key, value);
+            class.set_property(
+              self,
+              box_consumable(AstKind2::PropertyDefinition(node)),
+              key,
+              value,
+            );
           }
         }
         _ => {}
@@ -93,7 +98,7 @@ impl<'a> Analyzer<'a> {
   pub fn construct_class(&mut self, class: &ClassEntity<'a>) -> Entity<'a> {
     let node = class.node;
 
-    self.consume(AstKind::Class(node));
+    self.consume(AstKind2::Class(node));
 
     class.super_class.consume(self);
 
@@ -179,7 +184,7 @@ impl<'a> Transformer<'a> {
         transformed_id
       };
 
-      let ever_constructed = self.is_referred(AstKind::Class(node));
+      let ever_constructed = self.is_referred(AstKind2::Class(node));
 
       let super_class = super_class.as_ref().and_then(|node| {
         if ever_constructed || self.transform_expression(node, false).is_some() {
