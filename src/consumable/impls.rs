@@ -102,7 +102,7 @@ impl<
     self.3.consume(analyzer);
   }
   fn cloned(&self) -> Consumable<'a> {
-    Box::new((self.0.cloned(), self.1.cloned(), self.2.cloned()))
+    Box::new((self.0.cloned(), self.1.cloned(), self.2.cloned(), self.3.cloned()))
   }
 }
 
