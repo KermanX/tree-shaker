@@ -43,8 +43,7 @@ impl<'a> ScopeContext<'a> {
     let mut variable = ScopeTree::new();
     let body_variable_scope = variable.push({
       let mut scope = VariableScope::new();
-      // FIXME: verify this
-      scope.this = Some(factory.undefined);
+      scope.this = Some(factory.unknown);
       scope
     });
     let object_scope_id = variable.add_special(VariableScope::new());
