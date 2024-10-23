@@ -7,7 +7,7 @@ const process = require('process');
 const path = require('path');
 const { readFileSync } = require('fs');
 
-const do_minify = true;
+const do_minify = false;
 
 function treeShakeEval(input, tree_shake) {
   return input.replace(/eval\('(.*)'\)/, (_, content) => {treeShake(content, tree_shake, do_minify, true).output});
