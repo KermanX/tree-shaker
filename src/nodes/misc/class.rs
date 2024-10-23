@@ -25,6 +25,9 @@ impl<'a> Analyzer<'a> {
       keys.push(element.property_key().map(|key| self.exec_property_key(key)));
     }
 
+    self.push_variable_scope();
+    self.variable_scope_mut().super_class = super_class;
+
     let statics = self.new_empty_object(&self.builtins.prototypes.function);
     for (index, element) in node.body.body.iter().enumerate() {
       if let ClassElement::MethodDefinition(node) = element {
@@ -41,6 +44,8 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
+
+    self.pop_variable_scope();
 
     let class = self.factory.class(
       node,
