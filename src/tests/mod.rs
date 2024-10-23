@@ -16,7 +16,6 @@ fn tree_shake(input: String) -> String {
     tree_shake: true,
     minify: do_minify.then(|| MinifierOptions::default()),
     code_gen: CodegenOptions::default(),
-    eval_mode: false,
     logging: true,
   });
   result.codegen_return.code
