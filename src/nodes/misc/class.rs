@@ -50,15 +50,26 @@ impl<'a> Analyzer<'a> {
       statics,
     );
 
+    let variable_scope_stack = self.scope_context.variable.stack.clone();
+    self.push_call_scope(
+      FunctionEntitySource::ClassStatics(node),
+      box_consumable(()),
+      variable_scope_stack,
+      class,
+      (self.factory.unknown, vec![]),
+      false,
+      false,
+      false,
+    );
+
     if let Some(id) = &node.id {
-      self.push_variable_scope();
       self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
       self.init_binding_identifier(id, Some(class));
     }
 
     for (index, element) in node.body.body.iter().enumerate() {
       match element {
-        ClassElement::StaticBlock(node) => self.exec_static_block(node, class),
+        ClassElement::StaticBlock(node) => self.exec_static_block(node),
         ClassElement::MethodDefinition(_node) => {}
         ClassElement::PropertyDefinition(node) if node.r#static => {
           if let Some(value) = &node.value {
@@ -76,9 +87,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    if node.id.is_some() {
-      self.pop_variable_scope();
-    }
+    self.pop_call_scope();
 
     class
   }

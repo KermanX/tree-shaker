@@ -11,7 +11,7 @@ use crate::{
   use_consumed_flag,
 };
 use oxc::{
-  ast::ast::{ArrowFunctionExpression, Class, Function, StaticBlock},
+  ast::ast::{ArrowFunctionExpression, Class, Function},
   semantic::ScopeId,
   span::{GetSpan, Span},
 };
@@ -25,7 +25,7 @@ use std::{
 pub enum FunctionEntitySource<'a> {
   Function(&'a Function<'a>),
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
-  StaticBlock(&'a StaticBlock<'a>),
+  ClassStatics(&'a Class<'a>),
   ClassConstructor(&'a Class<'a>),
   Module,
 }
@@ -35,7 +35,7 @@ impl GetSpan for FunctionEntitySource<'_> {
     match self {
       FunctionEntitySource::Function(node) => node.span(),
       FunctionEntitySource::ArrowFunctionExpression(node) => node.span(),
-      FunctionEntitySource::StaticBlock(node) => node.span(),
+      FunctionEntitySource::ClassStatics(node) => node.span(),
       FunctionEntitySource::ClassConstructor(node) => node.span(),
       FunctionEntitySource::Module => Span::default(),
     }
@@ -49,7 +49,7 @@ impl<'a> FunctionEntitySource<'a> {
       FunctionEntitySource::ArrowFunctionExpression(node) => {
         AstKind2::ArrowFunctionExpression(node)
       }
-      FunctionEntitySource::StaticBlock(node) => AstKind2::StaticBlock(node),
+      FunctionEntitySource::ClassStatics(node) => AstKind2::Class(node),
       FunctionEntitySource::ClassConstructor(node) => AstKind2::Class(node),
       FunctionEntitySource::Module => AstKind2::Environment,
     }
@@ -62,7 +62,7 @@ impl<'a> FunctionEntitySource<'a> {
         node.id.as_ref().map_or("<unknown>", |id| &id.name).to_string()
       }
       FunctionEntitySource::ArrowFunctionExpression(_) => "<anonymous>".to_string(),
-      FunctionEntitySource::StaticBlock(_) => "<StaticBlock>".to_string(),
+      FunctionEntitySource::ClassStatics(_) => "<ClassStatics>".to_string(),
       FunctionEntitySource::ClassConstructor(_) => "<ClassConstructor>".to_string(),
       FunctionEntitySource::Module => "<Module>".to_string(),
     }
@@ -80,7 +80,7 @@ impl PartialEq for FunctionEntitySource<'_> {
         FunctionEntitySource::ArrowFunctionExpression(a),
         FunctionEntitySource::ArrowFunctionExpression(b),
       ) => a.span() == b.span(),
-      (FunctionEntitySource::StaticBlock(a), FunctionEntitySource::StaticBlock(b)) => {
+      (FunctionEntitySource::ClassStatics(a), FunctionEntitySource::ClassStatics(b)) => {
         a.span() == b.span()
       }
       _ => false,
