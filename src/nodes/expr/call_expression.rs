@@ -22,7 +22,12 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a CallExpression,
   ) -> (Option<bool>, Entity<'a>) {
+    let pure = self.has_pure_notation(node.span);
+    self.scope_context.pure += pure;
+
     if let Some((callee_indeterminate, callee, this)) = self.exec_callee(&node.callee) {
+      self.scope_context.pure -= pure;
+
       let self_indeterminate = if node.optional {
         match callee.test_nullish() {
           Some(true) => return (Some(true), self.factory.undefined),
@@ -43,7 +48,10 @@ impl<'a> Analyzer<'a> {
       }
 
       let args = self.exec_arguments(&node.arguments);
+
+      self.scope_context.pure += pure;
       let ret_val = callee.call(self, box_consumable(AstKind2::CallExpression(node)), this, args);
+      self.scope_context.pure -= pure;
 
       if indeterminate {
         self.pop_cf_scope();

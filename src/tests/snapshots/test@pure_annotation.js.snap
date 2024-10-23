@@ -1,0 +1,21 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(input)
+input_file: src/tests/fixtures/pure_annotation.js
+---
+other1();
+other2();
+other4();
+export const a = unknown4.g?.(1, other5());
+function simple() {
+	return a;
+}
+other1();
+export const b = /*#__PURE__*/ simple(other2());
+export const c = /*#__PURE__*/ simple();
+function mutate(obj) {
+	obj.a = b;
+	delete obj.g;
+	return obj.f();
+}
+export const d = /*#__PURE__*/ mutate({ f: effect });

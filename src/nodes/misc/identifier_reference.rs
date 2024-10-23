@@ -35,12 +35,16 @@ impl<'a> Analyzer<'a> {
       global
     } else {
       // Unknown global
-      if self.config.unknown_global_side_effects {
-        self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
-        self.refer_to_global();
-        self.may_throw();
+      if self.is_inside_pure() {
+        self.factory.computed_unknown(AstKind2::IdentifierReference(node))
+      } else {
+        if self.config.unknown_global_side_effects {
+          self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
+          self.refer_to_global();
+          self.may_throw();
+        }
+        self.factory.unknown
       }
-      self.factory.unknown
     }
   }
 

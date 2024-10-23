@@ -13,6 +13,10 @@ pub fn get_property<'a>(
   dep: Consumable<'a>,
   key: Entity<'a>,
 ) -> Entity<'a> {
+  if analyzer.is_inside_pure() {
+    return analyzer.factory.computed_unknown((dep, key));
+  }
+
   if analyzer.config.unknown_property_read_side_effects {
     analyzer.may_throw();
     analyzer.consume(dep);
@@ -67,6 +71,10 @@ pub fn call<'a>(
   this: Entity<'a>,
   args: Entity<'a>,
 ) -> Entity<'a> {
+  if analyzer.is_inside_pure() {
+    return analyzer.factory.computed_unknown((dep, this, args));
+  }
+
   analyzer.may_throw();
   analyzer.consume(dep);
   analyzer.refer_to_global();
@@ -76,6 +84,10 @@ pub fn call<'a>(
 }
 
 pub fn construct<'a>(analyzer: &mut Analyzer<'a>, args: Entity<'a>) -> Entity<'a> {
+  if analyzer.is_inside_pure() {
+    return analyzer.factory.computed_unknown(args);
+  }
+
   analyzer.may_throw();
   analyzer.refer_to_global();
   args.consume(analyzer);
