@@ -111,7 +111,7 @@ impl<'a> Analyzer<'a> {
     value
   }
 
-  pub fn construct_class(&mut self, class: &ClassEntity<'a>) -> Entity<'a> {
+  pub fn construct_class(&mut self, class: &ClassEntity<'a>) {
     let node = class.node;
 
     self.consume(AstKind2::Class(node));
@@ -180,8 +180,6 @@ impl<'a> Analyzer<'a> {
     if node.id.is_some() {
       self.pop_variable_scope();
     }
-
-    self.factory.unknown
   }
 }
 

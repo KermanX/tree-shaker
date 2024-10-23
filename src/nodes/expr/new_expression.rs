@@ -1,15 +1,24 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, build_effect_from_arr, consumable::box_consumable,
+  entity::Entity, transformer::Transformer,
+};
 use oxc::ast::ast::{Expression, NewExpression, TSTypeParameterInstantiation};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_new_expression(&mut self, node: &'a NewExpression<'a>) -> Entity<'a> {
+    let pure = self.has_pure_notation(node.span);
+
+    self.scope_context.pure += pure;
     let callee = self.exec_expression(&node.callee);
+    self.scope_context.pure -= pure;
+
     let arguments = self.exec_arguments(&node.arguments);
 
-    callee.construct(self, arguments);
-    arguments.consume(self);
+    self.scope_context.pure += pure;
+    let value = callee.construct(self, box_consumable(AstKind2::NewExpression(node)), arguments);
+    self.scope_context.pure -= pure;
 
-    self.factory.unknown_object
+    value
   }
 }
 
@@ -17,18 +26,24 @@ impl<'a> Transformer<'a> {
   pub fn transform_new_expression(
     &self,
     node: &'a NewExpression<'a>,
-    _need_val: bool,
+    need_val: bool,
   ) -> Option<Expression<'a>> {
     let NewExpression { span, callee, arguments, .. } = node;
 
-    let callee = self.transform_expression(callee, true);
-    let arguments = self.transform_arguments_need_call(arguments);
+    if need_val || self.is_referred(AstKind2::NewExpression(node)) {
+      let callee = self.transform_expression(callee, true);
+      let arguments = self.transform_arguments_need_call(arguments);
 
-    Some(self.ast_builder.expression_new(
-      *span,
-      callee.unwrap(),
-      arguments,
-      None::<TSTypeParameterInstantiation>,
-    ))
+      Some(self.ast_builder.expression_new(
+        *span,
+        callee.unwrap(),
+        arguments,
+        None::<TSTypeParameterInstantiation>,
+      ))
+    } else {
+      let callee = self.transform_expression(callee, false);
+      let arguments = self.transform_arguments_no_call(arguments);
+      build_effect_from_arr!(self.ast_builder, *span, vec![callee], arguments)
+    }
   }
 }

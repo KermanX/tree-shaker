@@ -15,9 +15,13 @@ impl<'a> TryScope<'a> {
 
   pub fn thrown_val(self, analyzer: &Analyzer<'a>) -> Option<Entity<'a>> {
     // Always unknown here
-    self
-      .may_throw
-      .then(|| analyzer.factory.computed_unknown(ConsumableNode::new(self.thrown_values)))
+    self.may_throw.then(|| {
+      if self.thrown_values.is_empty() {
+        analyzer.factory.unknown
+      } else {
+        analyzer.factory.computed_unknown(ConsumableNode::new(self.thrown_values))
+      }
+    })
   }
 }
 

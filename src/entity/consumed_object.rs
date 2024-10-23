@@ -66,32 +66,38 @@ pub fn delete_property<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key
 }
 
 pub fn call<'a>(
+  rc: Entity<'a>,
   analyzer: &mut Analyzer<'a>,
   dep: Consumable<'a>,
   this: Entity<'a>,
   args: Entity<'a>,
 ) -> Entity<'a> {
+  let dep = (rc, dep, this, args);
   if analyzer.is_inside_pure() {
-    return analyzer.factory.computed_unknown((dep, this, args));
+    analyzer.factory.computed_unknown(dep)
+  } else {
+    analyzer.consume(dep);
+    analyzer.may_throw();
+    analyzer.refer_to_global();
+    analyzer.factory.unknown
   }
-
-  analyzer.may_throw();
-  analyzer.consume(dep);
-  analyzer.refer_to_global();
-  this.consume(analyzer);
-  args.consume(analyzer);
-  analyzer.factory.unknown
 }
 
-pub fn construct<'a>(analyzer: &mut Analyzer<'a>, args: Entity<'a>) -> Entity<'a> {
+pub fn construct<'a>(
+  rc: Entity<'a>,
+  analyzer: &mut Analyzer<'a>,
+  dep: Consumable<'a>,
+  args: Entity<'a>,
+) -> Entity<'a> {
+  let dep = (rc, dep, args);
   if analyzer.is_inside_pure() {
-    return analyzer.factory.computed_unknown(args);
+    analyzer.factory.computed_unknown(dep)
+  } else {
+    analyzer.consume(dep);
+    analyzer.may_throw();
+    analyzer.refer_to_global();
+    analyzer.factory.unknown
   }
-
-  analyzer.may_throw();
-  analyzer.refer_to_global();
-  args.consume(analyzer);
-  analyzer.factory.unknown
 }
 
 pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {

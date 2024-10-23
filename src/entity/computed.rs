@@ -70,6 +70,16 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     self.val.call(analyzer, box_consumable((self.dep.cloned(), dep)), this, args)
   }
 
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    self.val.construct(analyzer, box_consumable((self.dep.cloned(), dep)), args)
+  }
+
   fn r#await(
     &self,
     _rc: Entity<'a>,

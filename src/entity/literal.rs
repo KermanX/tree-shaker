@@ -110,14 +110,25 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn call(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error(format!("Cannot call a non-function object {:?}", self));
-    consumed_object::call(analyzer, dep, this, args)
+    consumed_object::call(rc, analyzer, dep, this, args)
+  }
+
+  fn construct(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    analyzer.thrown_builtin_error(format!("Cannot construct a non-constructor object {:?}", self));
+    consumed_object::construct(rc, analyzer, dep, args)
   }
 
   fn r#await(

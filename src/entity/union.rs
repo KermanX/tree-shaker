@@ -94,6 +94,23 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     analyzer.factory.union(results)
   }
 
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    let mut results = Vec::new();
+    for entity in &self.values {
+      results.push(
+        analyzer
+          .exec_indeterminately(|analyzer| entity.construct(analyzer, dep.cloned(), args.clone())),
+      );
+    }
+    analyzer.factory.union(results)
+  }
+
   fn r#await(
     &self,
     _rc: Entity<'a>,

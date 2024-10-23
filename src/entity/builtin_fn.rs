@@ -71,6 +71,16 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     self.call_impl(analyzer, dep, this, args)
   }
 
+  fn construct(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    consumed_object::construct(rc, analyzer, dep, args)
+  }
+
   fn r#await(
     &self,
     rc: Entity<'a>,

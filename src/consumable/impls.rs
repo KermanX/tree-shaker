@@ -80,7 +80,26 @@ impl<
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.0.consume(analyzer);
     self.1.consume(analyzer);
-    self.2.consume(analyzer)
+    self.2.consume(analyzer);
+  }
+  fn cloned(&self) -> Consumable<'a> {
+    Box::new((self.0.cloned(), self.1.cloned(), self.2.cloned()))
+  }
+}
+
+impl<
+    'a,
+    T1: ConsumableTrait<'a> + 'a,
+    T2: ConsumableTrait<'a> + 'a,
+    T3: ConsumableTrait<'a> + 'a,
+    T4: ConsumableTrait<'a> + 'a,
+  > ConsumableTrait<'a> for (T1, T2, T3, T4)
+{
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    self.0.consume(analyzer);
+    self.1.consume(analyzer);
+    self.2.consume(analyzer);
+    self.3.consume(analyzer);
   }
   fn cloned(&self) -> Consumable<'a> {
     Box::new((self.0.cloned(), self.1.cloned(), self.2.cloned()))

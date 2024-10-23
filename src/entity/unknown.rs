@@ -95,7 +95,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
 
   fn call(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
@@ -104,8 +104,20 @@ impl<'a> EntityTrait<'a> for UnknownEntity {
     if !self.maybe_object() {
       analyzer.thrown_builtin_error("Cannot call non-object");
     }
-    self.consume(analyzer);
-    consumed_object::call(analyzer, dep, this, args)
+    consumed_object::call(rc, analyzer, dep, this, args)
+  }
+
+  fn construct(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    if !self.maybe_object() {
+      analyzer.thrown_builtin_error("Cannot construct non-object");
+    }
+    consumed_object::construct(rc, analyzer, dep, args)
   }
 
   fn r#await(

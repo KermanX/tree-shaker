@@ -73,8 +73,19 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    let ret_cal = self.val.call(analyzer, dep, this, args);
-    self.forward(ret_cal, analyzer)
+    let value = self.val.call(analyzer, dep, this, args);
+    self.forward(value, analyzer)
+  }
+
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    let value = self.val.construct(analyzer, dep, args);
+    self.forward(value, analyzer)
   }
 
   fn r#await(

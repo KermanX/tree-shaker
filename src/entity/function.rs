@@ -162,16 +162,26 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     args: Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::call(analyzer, dep, this, args);
+      return consumed_object::call(rc, analyzer, dep, this, args);
     }
 
     let recursed = analyzer.scope_context.call.iter().any(|scope| scope.source == self.source);
     if recursed {
       self.call_in_recursion(analyzer);
-      return consumed_object::call(analyzer, dep, this, args);
+      return consumed_object::call(rc, analyzer, dep, this, args);
     }
 
     self.call_impl(rc, analyzer, dep, this, args, false)
+  }
+
+  fn construct(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    consumed_object::construct(rc, analyzer, dep, args)
   }
 
   fn r#await(

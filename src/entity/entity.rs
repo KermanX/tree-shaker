@@ -1,4 +1,4 @@
-use super::{consumed_object, EntityFactory, LiteralEntity, TypeofResult};
+use super::{EntityFactory, LiteralEntity, TypeofResult};
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait},
@@ -50,11 +50,9 @@ pub trait EntityTrait<'a>: Debug {
     &self,
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
     args: Entity<'a>,
-  ) -> Entity<'a> {
-    self.consume(analyzer);
-    consumed_object::construct(analyzer, args)
-  }
+  ) -> Entity<'a>;
   fn r#await(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>)
     -> Entity<'a>;
   fn iterate(
@@ -171,8 +169,13 @@ impl<'a> Entity<'a> {
     self.0.call(*self, analyzer, dep.into(), this, args)
   }
 
-  pub fn construct(&self, analyzer: &mut Analyzer<'a>, args: Entity<'a>) -> Entity<'a> {
-    self.0.construct(*self, analyzer, args)
+  pub fn construct(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl Into<Consumable<'a>>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    self.0.construct(*self, analyzer, dep.into(), args)
   }
 
   pub fn r#await(&self, analyzer: &mut Analyzer<'a>, dep: impl Into<Consumable<'a>>) -> Entity<'a> {

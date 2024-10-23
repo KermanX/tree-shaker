@@ -63,6 +63,16 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.call(analyzer, dep, this, args)
   }
 
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    self.value.construct(analyzer, dep, args)
+  }
+
   fn r#await(
     &self,
     _rc: Entity<'a>,

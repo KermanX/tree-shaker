@@ -23,11 +23,12 @@ impl<'a> Analyzer<'a> {
     node: &'a CallExpression,
   ) -> (Option<bool>, Entity<'a>) {
     let pure = self.has_pure_notation(node.span);
+
     self.scope_context.pure += pure;
+    let callee = self.exec_callee(&node.callee);
+    self.scope_context.pure -= pure;
 
-    if let Some((callee_indeterminate, callee, this)) = self.exec_callee(&node.callee) {
-      self.scope_context.pure -= pure;
-
+    if let Some((callee_indeterminate, callee, this)) = callee {
       let self_indeterminate = if node.optional {
         match callee.test_nullish() {
           Some(true) => return (Some(true), self.factory.undefined),
