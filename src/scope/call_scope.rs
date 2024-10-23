@@ -5,7 +5,7 @@ use crate::{
   dep::DepId,
   entity::{Entity, FunctionEntitySource},
 };
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::semantic::ScopeId;
 use std::mem;
 
 #[derive(Debug)]
@@ -15,8 +15,6 @@ pub struct CallScope<'a> {
   pub old_variable_scope_stack: Vec<ScopeId>,
   pub cf_scope_depth: usize,
   pub body_variable_scope: ScopeId,
-  pub this: Entity<'a>,
-  pub args: (Entity<'a>, Vec<SymbolId>),
   pub returned_values: Vec<Entity<'a>>,
   pub is_async: bool,
   pub is_generator: bool,
@@ -31,8 +29,6 @@ impl<'a> CallScope<'a> {
     old_variable_scope_stack: Vec<ScopeId>,
     cf_scope_depth: usize,
     body_variable_scope: ScopeId,
-    this: Entity<'a>,
-    args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
     is_generator: bool,
   ) -> Self {
@@ -42,8 +38,6 @@ impl<'a> CallScope<'a> {
       old_variable_scope_stack,
       cf_scope_depth,
       body_variable_scope,
-      this,
-      args,
       returned_values: Vec::new(),
       is_async,
       is_generator,
@@ -113,17 +107,7 @@ impl<'a> Analyzer<'a> {
     } else {
       self.call_scope()
     };
-    let body_variable_scope = call_scope.body_variable_scope;
-    let (args_entity, args_symbols) = call_scope.args.clone();
-    args_entity.consume(self);
-    let mut arguments_consumed = true;
-    for symbol in args_symbols {
-      if !self.consume_on_scope(body_variable_scope, symbol) {
-        // Still inside parameter declaration
-        arguments_consumed = false;
-      }
-    }
-    arguments_consumed
+    self.consume_arguments_on_scope(call_scope.body_variable_scope)
   }
 
   pub fn consume_return_values(&mut self) {

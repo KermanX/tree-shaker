@@ -55,12 +55,14 @@ impl<'a> Analyzer<'a> {
       FunctionEntitySource::ClassStatics(node),
       box_consumable(()),
       variable_scope_stack,
-      class,
-      (self.factory.unknown, vec![]),
       false,
       false,
       false,
     );
+
+    let variable_scope = self.variable_scope_mut();
+    variable_scope.this = Some(class);
+    variable_scope.super_class = super_class;
 
     if let Some(id) = &node.id {
       self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
@@ -143,12 +145,16 @@ impl<'a> Analyzer<'a> {
         FunctionEntitySource::ClassConstructor(node),
         box_consumable(()),
         variable_scope_stack.as_ref().clone(),
-        analyzer.factory.unknown,
-        (analyzer.factory.unknown, vec![]),
         false,
         false,
         false,
       );
+
+      let unknown = analyzer.factory.unknown;
+      let variable_scope = analyzer.variable_scope_mut();
+      variable_scope.this = Some(unknown);
+      variable_scope.arguments = Some((unknown, vec![]));
+      variable_scope.super_class = Some(unknown);
 
       for element in &node.body.body {
         if let ClassElement::PropertyDefinition(node) = element {

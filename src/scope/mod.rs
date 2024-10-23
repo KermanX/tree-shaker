@@ -41,7 +41,12 @@ impl<'a> ScopeContext<'a> {
     let mut cf = ScopeTree::new();
     cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
     let mut variable = ScopeTree::new();
-    let body_variable_scope = variable.push(VariableScope::new());
+    let body_variable_scope = variable.push({
+      let mut scope = VariableScope::new();
+      // FIXME: verify this
+      scope.this = Some(factory.undefined);
+      scope
+    });
     let object_scope_id = variable.add_special(VariableScope::new());
     ScopeContext {
       call: vec![CallScope::new(
@@ -50,9 +55,6 @@ impl<'a> ScopeContext<'a> {
         vec![],
         0,
         body_variable_scope,
-        // TODO: global this
-        factory.unknown,
-        (factory.unknown, vec![]),
         true,
         false,
       )],
@@ -127,8 +129,6 @@ impl<'a> Analyzer<'a> {
     source: FunctionEntitySource<'a>,
     call_dep: Consumable<'a>,
     variable_scope_stack: Vec<ScopeId>,
-    this: Entity<'a>,
-    args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
     is_generator: bool,
     consume: bool,
@@ -162,8 +162,6 @@ impl<'a> Analyzer<'a> {
       old_variable_scope_stack,
       cf_scope_depth,
       body_variable_scope,
-      this,
-      args,
       is_async,
       is_generator,
     ));

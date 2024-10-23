@@ -34,13 +34,10 @@ impl<'a> Analyzer<'a> {
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    let parent_call_scope = self.call_scope();
     self.push_call_scope(
       source,
       call_dep,
       variable_scopes.as_ref().clone(),
-      parent_call_scope.this.clone(),
-      parent_call_scope.args.clone(),
       node.r#async,
       false,
       consume,

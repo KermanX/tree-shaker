@@ -45,12 +45,15 @@ impl<'a> Analyzer<'a> {
           source,
           call_dep.cloned(),
           variable_scopes.as_ref().clone(),
-          this.clone(),
-          (args.clone(), vec![ /* later filled by formal parameters */]),
           node.r#async,
           node.generator,
           consume,
         );
+
+        let variable_scope = analyzer.variable_scope_mut();
+        variable_scope.this = Some(this);
+        variable_scope.arguments =
+          Some((args.clone(), vec![ /* later filled by formal parameters */]));
 
         let declare_in_body = node.r#type == FunctionType::FunctionExpression && node.id.is_some();
         if declare_in_body {

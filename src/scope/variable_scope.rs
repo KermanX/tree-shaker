@@ -31,8 +31,12 @@ impl Clone for Variable<'_> {
   }
 }
 
+#[derive(Default)]
 pub struct VariableScope<'a> {
   pub variables: FxHashMap<SymbolId, Variable<'a>>,
+  pub this: Option<Entity<'a>>,
+  pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
+  pub super_class: Option<Entity<'a>>,
   pub exhaustive_deps: FxHashMap<SymbolId, FxHashSet<TrackerRunner<'a>>>,
 }
 
@@ -48,7 +52,7 @@ impl fmt::Debug for VariableScope<'_> {
 
 impl<'a> VariableScope<'a> {
   pub fn new() -> Self {
-    Self { variables: Default::default(), exhaustive_deps: Default::default() }
+    Self::default()
   }
 }
 
@@ -251,6 +255,23 @@ impl<'a> Analyzer<'a> {
     let old = self.variable_scope_mut().variables.insert(symbol, variable);
     debug_assert!(old.is_none());
   }
+
+  pub fn consume_arguments_on_scope(&mut self, id: ScopeId) -> bool {
+    if let Some((args_entity, args_symbols)) = self.scope_context.variable.get(id).arguments.clone()
+    {
+      args_entity.consume(self);
+      let mut arguments_consumed = true;
+      for symbol in args_symbols {
+        if !self.consume_on_scope(id, symbol) {
+          // Still inside parameter declaration
+          arguments_consumed = false;
+        }
+      }
+      arguments_consumed
+    } else {
+      true
+    }
+  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -266,7 +287,9 @@ impl<'a> Analyzer<'a> {
       self.named_exports.push(symbol);
     }
     if kind == DeclarationKind::FunctionParameter {
-      self.call_scope_mut().args.1.push(symbol);
+      if let Some(arguments) = &mut self.variable_scope_mut().arguments {
+        arguments.1.push(symbol);
+      }
     }
     if kind == DeclarationKind::Var {
       self.insert_var_decl(symbol);
@@ -330,5 +353,25 @@ impl<'a> Analyzer<'a> {
       self.thrown_builtin_error("Cannot access variable before initialization");
     }
     self.refer_to_global();
+  }
+
+  pub fn get_this(&self) -> Entity<'a> {
+    for depth in (0..self.scope_context.variable.stack.len()).rev() {
+      let scope = self.scope_context.variable.get_from_depth(depth);
+      if let Some(this) = scope.this {
+        return this;
+      }
+    }
+    unreachable!()
+  }
+
+  pub fn get_super(&self) -> Entity<'a> {
+    for depth in (0..self.scope_context.variable.stack.len()).rev() {
+      let scope = self.scope_context.variable.get_from_depth(depth);
+      if let Some(super_class) = scope.super_class {
+        return super_class;
+      }
+    }
+    self.factory.unknown
   }
 }
