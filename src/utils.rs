@@ -1,5 +1,5 @@
 use crate::analyzer::Analyzer;
-use oxc::{ast::CommentKind, span::Span};
+use oxc::span::Span;
 use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Copy, Clone)]
