@@ -6,10 +6,7 @@ use crate::{
   entity::LabelEntity,
   logger::{DebuggerEvent, Logger},
 };
-use oxc::{
-  semantic::{ScopeId, SymbolId},
-  syntax::scope,
-};
+use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
 use std::{mem, rc::Rc};
 
