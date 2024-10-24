@@ -77,7 +77,7 @@ impl<'a> CallScope<'a> {
     };
     (
       self.old_variable_scope_stack,
-      if let Some(promise_error) = promise_error {
+      if self.is_async {
         analyzer.factory.computed_unknown((value, promise_error))
       } else {
         value
