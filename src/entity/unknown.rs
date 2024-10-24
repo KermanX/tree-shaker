@@ -21,6 +21,14 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
   }
 
+  fn mutate(&self, dep: Consumable<'a>) {
+    if let Some(deps) = &self.deps {
+      deps.borrow_mut().push(dep);
+    } else {
+      // TODO: What to do?
+    }
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,

@@ -27,6 +27,10 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.val.consume(analyzer)
   }
 
+  fn mutate(&self, dep: Consumable<'a>) {
+    self.val.mutate(dep)
+  }
+
   fn get_property(
     &self,
     _rc: Entity<'a>,

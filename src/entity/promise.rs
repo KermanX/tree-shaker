@@ -24,6 +24,10 @@ impl<'a> EntityTrait<'a> for PromiseEntity<'a> {
     }
   }
 
+  fn mutate(&self, _dep: Consumable<'a>) {
+    todo!()
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,

@@ -23,6 +23,10 @@ pub enum PrimitiveEntity {
 impl<'a> EntityTrait<'a> for PrimitiveEntity {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
+  fn mutate(&self, _dep: Consumable<'a>) {
+    // No effect
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,

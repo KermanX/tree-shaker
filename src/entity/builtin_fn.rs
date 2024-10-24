@@ -22,6 +22,10 @@ pub trait BuiltinFnEntity<'a>: Debug {
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
+  fn mutate(&self, _dep: Consumable<'a>) {
+    // No effect
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,

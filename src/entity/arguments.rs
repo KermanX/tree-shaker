@@ -16,6 +16,12 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     }
   }
 
+  fn mutate(&self, dep: Consumable<'a>) {
+    for (_, entity) in &self.arguments {
+      entity.mutate(dep.cloned());
+    }
+  }
+
   fn get_property(
     &self,
     _rc: Entity<'a>,

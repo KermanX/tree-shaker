@@ -27,6 +27,12 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     }
   }
 
+  fn mutate(&self, dep: Consumable<'a>) {
+    for value in &self.values {
+      value.mutate(dep.cloned());
+    }
+  }
+
   fn get_property(
     &self,
     _rc: Entity<'a>,

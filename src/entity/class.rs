@@ -29,6 +29,10 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
     analyzer.construct_class(self);
   }
 
+  fn mutate(&self, dep: Consumable<'a>) {
+    self.statics.mutate(dep)
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,

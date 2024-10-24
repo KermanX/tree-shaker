@@ -111,6 +111,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     self.call_in_recursion(analyzer);
   }
 
+  fn mutate(&self, _dep: Consumable<'a>) {
+    // No effect
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,

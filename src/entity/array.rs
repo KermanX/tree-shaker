@@ -51,6 +51,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
   }
 
+  fn mutate(&self, dep: Consumable<'a>) {
+    self.deps.borrow_mut().push(dep);
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,

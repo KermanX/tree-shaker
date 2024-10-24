@@ -18,6 +18,10 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.consume(analyzer);
   }
 
+  fn mutate(&self, dep: Consumable<'a>) {
+    self.value.mutate(dep);
+  }
+
   fn get_property(
     &self,
     _rc: Entity<'a>,
