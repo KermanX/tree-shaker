@@ -1,3 +1,4 @@
+use super::cf_scope::ReferredState;
 use crate::{analyzer::Analyzer, entity::Entity, scope::CfScopeKind};
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
@@ -31,7 +32,7 @@ impl<'a> Analyzer<'a> {
     self.exec_exhaustively(runner.clone(), false);
 
     let cf_scope = self.cf_scope();
-    if !cf_scope.referred_clean && cf_scope.deps.may_not_referred() {
+    if cf_scope.referred_state != ReferredState::ReferredClean && cf_scope.deps.may_not_referred() {
       self.push_indeterminate_cf_scope();
       runner(self);
       self.pop_cf_scope();

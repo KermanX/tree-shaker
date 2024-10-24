@@ -32,12 +32,19 @@ pub struct ExhaustiveData {
   pub deps: FxHashSet<(ScopeId, SymbolId)>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ReferredState {
+  Never,
+  ReferredClean,
+  ReferredDirty,
+}
+
 #[derive(Debug)]
 pub struct CfScope<'a> {
   pub kind: CfScopeKind,
   pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
   pub deps: ConsumableCollector<'a>,
-  pub referred_clean: bool,
+  pub referred_state: ReferredState,
   pub exited: Option<bool>,
   /// Exits that have been stopped by this scope's indeterminate state.
   /// Only available when `kind` is `If`.
@@ -56,7 +63,7 @@ impl<'a> CfScope<'a> {
       kind,
       labels,
       deps: ConsumableCollector::new(deps),
-      referred_clean: false,
+      referred_state: ReferredState::Never,
       exited,
       blocked_exit: None,
       exhaustive_data: if kind == CfScopeKind::Exhaustive {
@@ -78,7 +85,7 @@ impl<'a> CfScope<'a> {
       self.exited = exited;
       if let Some(dep) = get_dep() {
         self.deps.push(dep);
-        self.referred_clean = false;
+        self.referred_state = ReferredState::ReferredDirty;
       }
 
       if let Some(logger) = logger {
@@ -302,12 +309,20 @@ impl<'a> Analyzer<'a> {
 
     for depth in (0..self.scope_context.cf.stack.len()).rev() {
       let scope = self.scope_context.cf.get_mut_from_depth(depth);
-      if scope.referred_clean {
-        break;
+      match scope.referred_state {
+        ReferredState::Never => {
+          scope.referred_state = ReferredState::ReferredClean;
+          let mut deps = mem::take(&mut scope.deps);
+          deps.consume_all(self);
+        }
+        ReferredState::ReferredClean => break,
+        ReferredState::ReferredDirty => {
+          scope.referred_state = ReferredState::ReferredClean;
+          let mut deps = mem::take(&mut scope.deps);
+          deps.consume_all(self);
+          break;
+        }
       }
-      scope.referred_clean = true;
-      let mut deps = mem::take(&mut scope.deps);
-      deps.consume_all(self);
     }
   }
 }
