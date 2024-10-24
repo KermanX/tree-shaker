@@ -22,14 +22,15 @@ impl<'a> Analyzer<'a> {
       if let Some(value) = self.read_symbol(symbol) {
         value
       } else {
+        // TDZ
         self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
-        self.factory.unknown
+        self.factory.unknown()
       }
     } else if node.name == "arguments" {
       // The `arguments` object
       let arguments_consumed = self.consume_arguments(None);
       self.call_scope_mut().need_consume_arguments = !arguments_consumed;
-      self.factory.unknown
+      self.factory.unknown()
     } else if let Some(global) = self.builtins.get_global(node.name.as_str()) {
       // Known global
       global
@@ -43,7 +44,7 @@ impl<'a> Analyzer<'a> {
           self.refer_to_global();
           self.may_throw();
         }
-        self.factory.unknown
+        self.factory.unknown()
       }
     }
   }

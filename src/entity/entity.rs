@@ -96,9 +96,6 @@ pub trait EntityTrait<'a>: Debug {
       (false, false) => Some(false),
     }
   }
-  fn test_is_completely_unknown(&self) -> bool {
-    false
-  }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -236,10 +233,6 @@ impl<'a> Entity<'a> {
 
   pub fn test_is_undefined(&self) -> Option<bool> {
     self.0.test_is_undefined()
-  }
-
-  pub fn test_is_completely_unknown(&self) -> bool {
-    self.0.test_is_completely_unknown()
   }
 
   pub fn destruct_as_array(

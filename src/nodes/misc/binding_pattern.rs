@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.thrown_builtin_error("Missing initializer in destructuring declaration");
-          self.factory.unknown
+          self.factory.unknown()
         });
 
         let is_nullish = init.test_nullish();
@@ -106,7 +106,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ArrayPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.thrown_builtin_error("Missing initializer in destructuring declaration");
-          self.factory.unknown
+          self.factory.unknown()
         });
 
         let (element_values, rest_value, dep) = init.destruct_as_array(

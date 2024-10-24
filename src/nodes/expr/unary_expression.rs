@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
             }
           } else {
             // Maybe number or bigint
-            self.factory.unknown
+            self.factory.unknown_primitive
           },
           argument,
         )

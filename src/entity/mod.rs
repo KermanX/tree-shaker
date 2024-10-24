@@ -14,6 +14,7 @@ mod literal;
 mod logical_result;
 mod object;
 mod operations;
+mod primitive;
 mod promise;
 mod symbol;
 mod typeof_result;
@@ -32,6 +33,7 @@ pub use label::LabelEntity;
 pub use literal::LiteralEntity;
 pub use object::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
 pub use operations::EntityOpHost;
+pub use primitive::PrimitiveEntity;
 pub use typeof_result::TypeofResult;
 pub use unknown::UnknownEntity;
 

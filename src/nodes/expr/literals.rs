@@ -30,6 +30,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_regexp_literal(&mut self, _node: &'a RegExpLiteral<'a>) -> Entity<'a> {
-    self.factory.unknown_regexp
+    self.factory.immutable_unknown
   }
 }

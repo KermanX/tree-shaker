@@ -323,7 +323,11 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     unknown_keyed.extend(self.rest.borrow().get_value(analyzer, dep.cloned(), this));
     let mut result = Vec::new();
     if unknown_keyed.len() > 0 {
-      result.push((false, analyzer.factory.unknown, analyzer.factory.union(unknown_keyed)));
+      result.push((
+        false,
+        analyzer.factory.unknown_primitive,
+        analyzer.factory.union(unknown_keyed),
+      ));
     }
     for (key, properties) in self.string_keyed.borrow().iter() {
       let values = properties.get_value(analyzer, dep.cloned(), this);
@@ -569,30 +573,24 @@ impl<'a> ObjectEntity<'a> {
       analyzer: &mut Analyzer<'a>,
       dep: Consumable<'a>,
       property: &ObjectProperty<'a>,
-      this: Entity<'a>,
     ) {
       for property in &property.values {
         if let ObjectPropertyValue::Property(_, Some(setter)) = property {
           setter.call(
             analyzer,
             dep.cloned(),
-            this,
-            analyzer.factory.arguments(vec![(false, analyzer.factory.unknown)]),
+            analyzer.factory.unknown(),
+            analyzer.factory.arguments(vec![(false, analyzer.factory.unknown())]),
           );
         }
       }
     }
 
     for property in self.string_keyed.borrow().values() {
-      apply_unknown_to_vec(analyzer, dep.cloned(), property, analyzer.factory.unknown);
+      apply_unknown_to_vec(analyzer, dep.cloned(), property);
     }
-    apply_unknown_to_vec(
-      analyzer,
-      dep.cloned(),
-      &mut self.unknown_keyed.borrow(),
-      analyzer.factory.unknown,
-    );
-    apply_unknown_to_vec(analyzer, dep.cloned(), &self.rest.borrow(), analyzer.factory.unknown);
+    apply_unknown_to_vec(analyzer, dep.cloned(), &mut self.unknown_keyed.borrow());
+    apply_unknown_to_vec(analyzer, dep.cloned(), &self.rest.borrow());
   }
 
   fn add_assignment_dep<T: ConsumableTrait<'a> + 'a>(

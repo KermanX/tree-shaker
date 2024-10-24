@@ -38,9 +38,9 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
   prototype.insert("bind", factory.pure_fn_returns_unknown);
   // FIXME: Consume self / warn
   prototype.insert("length", factory.unknown_number);
-  prototype.insert("arguments", factory.unknown);
-  prototype.insert("caller", factory.unknown);
-  prototype.insert("name", factory.unknown);
+  prototype.insert("arguments", factory.immutable_unknown);
+  prototype.insert("caller", factory.immutable_unknown);
+  prototype.insert("name", factory.unknown_string);
 
   prototype
 }

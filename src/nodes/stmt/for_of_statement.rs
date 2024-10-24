@@ -22,7 +22,7 @@ impl<'a> Analyzer<'a> {
     let right = if node.r#await {
       right.consume(self);
       self.refer_dep(dep);
-      self.factory.unknown
+      self.factory.immutable_unknown
     } else {
       right
     };

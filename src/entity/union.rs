@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait},
+  consumable::{box_consumable, Consumable, ConsumableTrait},
   use_consumed_flag,
 };
 use rustc_hash::FxHashSet;
@@ -248,12 +248,7 @@ impl<'a> EntityFactory<'a> {
       Some(if values.len() == 1 {
         values.first().unwrap().clone()
       } else {
-        let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
-        if has_unknown {
-          self.computed_unknown(ConsumableNode::new(values))
-        } else {
-          self.entity(UnionEntity { values, consumed: Cell::new(false) })
-        }
+        self.entity(UnionEntity { values, consumed: Cell::new(false) })
       })
     }
   }

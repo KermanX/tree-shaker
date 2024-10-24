@@ -8,7 +8,7 @@ pub fn create_globals<'a>(factory: &EntityFactory<'a>) -> FxHashMap<&'static str
   globals.insert("Infinity", factory.infinity(true));
   globals.insert("NaN", factory.nan);
   globals.insert("undefined", factory.undefined);
-  globals.insert("eval", factory.unknown_function);
+  globals.insert("eval", factory.immutable_unknown);
 
   globals
 }

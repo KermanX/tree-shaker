@@ -130,7 +130,7 @@ impl<'a> Analyzer<'a> {
     if let Some(id) = &node.id {
       self.push_variable_scope();
       self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
-      self.init_binding_identifier(id, Some(self.factory.unknown));
+      self.init_binding_identifier(id, Some(self.factory.unknown()));
     }
 
     // Non-static methods
@@ -155,11 +155,13 @@ impl<'a> Analyzer<'a> {
         false,
       );
 
-      let unknown = analyzer.factory.unknown;
+      let this = analyzer.factory.unknown();
+      let arguments = analyzer.factory.immutable_unknown;
+      let super_class = analyzer.factory.unknown();
       let variable_scope = analyzer.variable_scope_mut();
-      variable_scope.this = Some(unknown);
-      variable_scope.arguments = Some((unknown, vec![]));
-      variable_scope.super_class = Some(unknown);
+      variable_scope.this = Some(this);
+      variable_scope.arguments = Some((arguments, vec![]));
+      variable_scope.super_class = Some(super_class);
 
       for element in &node.body.body {
         if let ClassElement::PropertyDefinition(node) = element {

@@ -314,11 +314,11 @@ impl<'a> FunctionEntity<'a> {
     let self_cloned = self.clone();
     analyzer.exec_consumed_fn(move |analyzer| {
       self_cloned.call_impl(
-        analyzer.factory.unknown,
+        analyzer.factory.unknown(),
         analyzer,
         box_consumable(()),
-        analyzer.factory.unknown,
-        analyzer.factory.unknown,
+        analyzer.factory.unknown(),
+        analyzer.factory.unknown(),
         true,
       )
     });

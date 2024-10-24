@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
         self.push_indeterminate_cf_scope();
       }
 
-      let mut arguments = vec![(false, self.factory.unknown)];
+      let mut arguments = vec![(false, self.factory.unknown())];
 
       for expr in &node.quasi.expressions {
         let value = self.exec_expression(expr);

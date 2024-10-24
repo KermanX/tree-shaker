@@ -165,7 +165,7 @@ impl<'a> EntityFactory<'a> {
 
 #[derive(Debug, Clone)]
 pub struct PureBuiltinFnEntity<'a> {
-  return_value: Entity<'a>,
+  return_value: fn(&EntityFactory<'a>) -> Entity<'a>,
 }
 
 impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
@@ -179,12 +179,12 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     analyzer.consume(dep);
     this.consume(analyzer);
     args.consume(analyzer);
-    self.return_value.clone()
+    (self.return_value)(&analyzer.factory)
   }
 }
 
 impl<'a> PureBuiltinFnEntity<'a> {
-  pub fn new(return_value: Entity<'a>) -> Self {
+  pub fn new(return_value: fn(&EntityFactory<'a>) -> Entity<'a>) -> Self {
     Self { return_value }
   }
 }

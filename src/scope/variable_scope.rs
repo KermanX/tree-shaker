@@ -200,7 +200,7 @@ impl<'a> Analyzer<'a> {
             let variable =
               self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
             variable.exhausted = true;
-            variable.value = Some(self.factory.unknown);
+            variable.value = Some(self.factory.unknown());
           } else {
             let variable =
               self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
@@ -235,7 +235,7 @@ impl<'a> Analyzer<'a> {
         }
         let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
         variable.exhausted = true;
-        variable.value = Some(self.factory.unknown);
+        variable.value = Some(self.factory.unknown());
       }
       true
     } else {
@@ -249,7 +249,7 @@ impl<'a> Analyzer<'a> {
       exhausted: true,
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scope_context.cf.stack[cf_scope_depth],
-      value: Some(self.factory.unknown),
+      value: Some(self.factory.unknown()),
       decl_dep: box_consumable(()),
     };
     let old = self.variable_scope_mut().variables.insert(symbol, variable);
@@ -318,7 +318,7 @@ impl<'a> Analyzer<'a> {
       }
     }
     self.mark_unresolved_reference(symbol);
-    Some(self.factory.unknown)
+    Some(self.factory.unknown())
   }
 
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
@@ -372,6 +372,6 @@ impl<'a> Analyzer<'a> {
         return super_class;
       }
     }
-    self.factory.unknown
+    self.factory.unknown()
   }
 }

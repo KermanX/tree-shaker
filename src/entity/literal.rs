@@ -200,7 +200,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::Null => analyzer.factory.number(0.0, Some("0")),
       LiteralEntity::Symbol(_, _) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
-        analyzer.factory.unknown
+        analyzer.factory.unknown()
       }
       LiteralEntity::Undefined => analyzer.factory.nan,
     }
