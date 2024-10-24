@@ -46,6 +46,11 @@ impl<'a> ConsumableCollector<'a> {
     }
   }
 
+  pub fn force_clean(&mut self) {
+    self.current.clear();
+    self.node = None;
+  }
+
   pub fn may_not_referred(&self) -> bool {
     if !self.current.is_empty() {
       return true;

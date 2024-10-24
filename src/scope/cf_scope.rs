@@ -6,7 +6,10 @@ use crate::{
   entity::LabelEntity,
   logger::{DebuggerEvent, Logger},
 };
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::{
+  semantic::{ScopeId, SymbolId},
+  syntax::scope,
+};
 use rustc_hash::FxHashSet;
 use std::{mem, rc::Rc};
 
@@ -320,6 +323,14 @@ impl<'a> Analyzer<'a> {
           scope.referred_state = ReferredState::ReferredClean;
           let mut deps = mem::take(&mut scope.deps);
           deps.consume_all(self);
+          for depth in (0..depth).rev() {
+            let scope = self.scope_context.cf.get_mut_from_depth(depth);
+            match scope.referred_state {
+              ReferredState::Never => unreachable!(),
+              ReferredState::ReferredClean => break,
+              ReferredState::ReferredDirty => scope.deps.force_clean(),
+            }
+          }
           break;
         }
       }
