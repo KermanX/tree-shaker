@@ -15,7 +15,7 @@ pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable
 
 pub trait EntityTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
-  fn mutate(&self, dep: Consumable<'a>);
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>);
 
   fn get_property(
     &self,
@@ -121,8 +121,8 @@ impl<'a> Entity<'a> {
     self.0.consume(analyzer)
   }
 
-  pub fn mutate(&self, dep: Consumable<'a>) {
-    self.0.mutate(dep)
+  pub fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    self.0.unknown_mutate(analyzer, dep)
   }
 
   pub fn get_property(

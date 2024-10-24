@@ -111,7 +111,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     consume_property(&self.unknown_keyed.borrow(), analyzer);
   }
 
-  fn mutate(&self, dep: Consumable<'a>) {
+  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     self.deps.borrow_mut().push(dep);
   }
 

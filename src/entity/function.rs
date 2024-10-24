@@ -111,8 +111,14 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     self.call_in_recursion(analyzer);
   }
 
-  fn mutate(&self, _dep: Consumable<'a>) {
-    // No effect
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    if self.consumed.get() {
+      return;
+    }
+
+    analyzer.push_dependent_cf_scope(dep);
+    self.call_in_recursion(analyzer);
+    analyzer.pop_cf_scope();
   }
 
   fn get_property(

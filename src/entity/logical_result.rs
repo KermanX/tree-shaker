@@ -18,8 +18,8 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.consume(analyzer);
   }
 
-  fn mutate(&self, dep: Consumable<'a>) {
-    self.value.mutate(dep);
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    self.value.unknown_mutate(analyzer, dep);
   }
 
   fn get_property(

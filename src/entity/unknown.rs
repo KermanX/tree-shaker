@@ -21,7 +21,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
   }
 
-  fn mutate(&self, dep: Consumable<'a>) {
+  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if let Some(deps) = &self.deps {
       deps.borrow_mut().push(dep);
     } else {

@@ -29,8 +29,16 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
     analyzer.construct_class(self);
   }
 
-  fn mutate(&self, dep: Consumable<'a>) {
-    self.statics.mutate(dep)
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    if self.consumed.get() {
+      return;
+    }
+
+    self.statics.unknown_mutate(analyzer, dep.cloned());
+
+    analyzer.push_dependent_cf_scope(dep);
+    analyzer.construct_class(self);
+    analyzer.pop_cf_scope();
   }
 
   fn get_property(

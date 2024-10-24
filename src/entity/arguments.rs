@@ -16,9 +16,9 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     }
   }
 
-  fn mutate(&self, dep: Consumable<'a>) {
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     for (_, entity) in &self.arguments {
-      entity.mutate(dep.cloned());
+      entity.unknown_mutate(analyzer, dep.cloned());
     }
   }
 

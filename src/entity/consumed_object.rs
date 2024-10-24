@@ -15,7 +15,7 @@ pub fn get_property<'a>(
 ) -> Entity<'a> {
   let dep = (rc, dep, key);
   if analyzer.is_inside_pure() || !analyzer.config.unknown_property_read_side_effects {
-    rc.mutate(dep.cloned());
+    rc.unknown_mutate(analyzer, dep.cloned());
     analyzer.factory.computed_unknown(dep)
   } else {
     analyzer.may_throw();
@@ -71,8 +71,8 @@ pub fn call<'a>(
 ) -> Entity<'a> {
   let dep = (rc, dep, this, args);
   if analyzer.is_inside_pure() {
-    this.mutate(dep.cloned());
-    args.mutate(dep.cloned());
+    this.unknown_mutate(analyzer, dep.cloned());
+    args.unknown_mutate(analyzer, dep.cloned());
     analyzer.factory.computed_unknown(dep)
   } else {
     analyzer.consume(dep);
@@ -90,7 +90,7 @@ pub fn construct<'a>(
 ) -> Entity<'a> {
   let dep = (rc, dep, args);
   if analyzer.is_inside_pure() {
-    args.mutate(dep.cloned());
+    args.unknown_mutate(analyzer, dep.cloned());
     analyzer.factory.computed_unknown(dep)
   } else {
     analyzer.consume(dep);

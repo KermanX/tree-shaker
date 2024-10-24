@@ -37,7 +37,7 @@ pub enum LiteralEntity<'a> {
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn mutate(&self, _dep: Consumable<'a>) {
+  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
     // No effect
   }
 

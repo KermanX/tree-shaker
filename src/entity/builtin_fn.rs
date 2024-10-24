@@ -22,7 +22,7 @@ pub trait BuiltinFnEntity<'a>: Debug {
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn mutate(&self, _dep: Consumable<'a>) {
+  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
     // No effect
   }
 
@@ -180,10 +180,16 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.consume(dep);
-    this.consume(analyzer);
-    args.consume(analyzer);
-    (self.return_value)(&analyzer.factory)
+    let ret_val = (self.return_value)(&analyzer.factory);
+    let dep = box_consumable((dep, this, args));
+    if analyzer.is_inside_pure() {
+      this.unknown_mutate(analyzer, dep.cloned());
+      args.unknown_mutate(analyzer, dep.cloned());
+      analyzer.factory.computed(ret_val, dep)
+    } else {
+      analyzer.consume(dep);
+      ret_val
+    }
   }
 }
 

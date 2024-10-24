@@ -25,9 +25,9 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     self.dep.consume(analyzer);
   }
 
-  fn mutate(&self, dep: Consumable<'a>) {
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     // NOTE: box_consumable((self.dep.cloned(), dep)) is unnecessary
-    self.val.mutate(dep);
+    self.val.unknown_mutate(analyzer, dep);
   }
 
   fn get_property(

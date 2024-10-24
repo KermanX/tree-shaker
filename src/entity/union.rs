@@ -27,9 +27,9 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     }
   }
 
-  fn mutate(&self, dep: Consumable<'a>) {
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     for value in &self.values {
-      value.mutate(dep.cloned());
+      value.unknown_mutate(analyzer, dep.cloned());
     }
   }
 

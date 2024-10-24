@@ -51,7 +51,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
   }
 
-  fn mutate(&self, dep: Consumable<'a>) {
+  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     self.deps.borrow_mut().push(dep);
   }
 
