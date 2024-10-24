@@ -85,7 +85,9 @@ impl<'a> CfScope<'a> {
       self.exited = exited;
       if let Some(dep) = get_dep() {
         self.deps.push(dep);
-        self.referred_state = ReferredState::ReferredDirty;
+        if self.referred_state == ReferredState::ReferredClean {
+          self.referred_state = ReferredState::ReferredDirty;
+        }
       }
 
       if let Some(logger) = logger {
@@ -325,7 +327,10 @@ impl<'a> Analyzer<'a> {
             match scope.referred_state {
               ReferredState::Never => unreachable!(),
               ReferredState::ReferredClean => break,
-              ReferredState::ReferredDirty => scope.deps.force_clean(),
+              ReferredState::ReferredDirty => {
+                scope.deps.force_clean();
+                scope.referred_state = ReferredState::ReferredClean;
+              }
             }
           }
           break;
