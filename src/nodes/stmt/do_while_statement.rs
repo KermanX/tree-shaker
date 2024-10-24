@@ -1,12 +1,10 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, build_effect, scope::CfScopeKind, transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, scope::CfScopeKind, transformer::Transformer,
 };
 use oxc::{
   ast::ast::{DoWhileStatement, Statement},
   span::GetSpan,
 };
-
-const AST_TYPE: AstType2 = AstType2::DoWhileStatement;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -29,7 +27,7 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
+    let data = self.load_data::<Data>(AstKind2::DoWhileStatement(node));
     data.need_test = true;
     let test = self.exec_expression(&node.test);
 
@@ -60,7 +58,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a DoWhileStatement<'a>,
   ) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::DoWhileStatement(node));
 
     let DoWhileStatement { span, test, body, .. } = node;
     let body_span = body.span();

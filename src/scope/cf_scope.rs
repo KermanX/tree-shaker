@@ -85,7 +85,9 @@ impl<'a> CfScope<'a> {
       self.exited = exited;
       if let Some(dep) = get_dep() {
         self.deps.push(dep);
-        self.referred_state = ReferredState::ReferredDirty;
+        if self.referred_state == ReferredState::ReferredClean {
+          self.referred_state = ReferredState::ReferredDirty;
+        }
       }
 
       if let Some(logger) = logger {
@@ -303,7 +305,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn refer_to_global(&mut self) {
-    self.may_throw();
+    if self.is_inside_pure() {
+      return;
+    }
+
     for depth in (0..self.scope_context.cf.stack.len()).rev() {
       let scope = self.scope_context.cf.get_mut_from_depth(depth);
       match scope.referred_state {
@@ -317,6 +322,17 @@ impl<'a> Analyzer<'a> {
           scope.referred_state = ReferredState::ReferredClean;
           let mut deps = mem::take(&mut scope.deps);
           deps.consume_all(self);
+          for depth in (0..depth).rev() {
+            let scope = self.scope_context.cf.get_mut_from_depth(depth);
+            match scope.referred_state {
+              ReferredState::Never => unreachable!(),
+              ReferredState::ReferredClean => break,
+              ReferredState::ReferredDirty => {
+                scope.deps.force_clean();
+                scope.referred_state = ReferredState::ReferredClean;
+              }
+            }
+          }
           break;
         }
       }

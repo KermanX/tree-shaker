@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, dep::DepId, entity::Entity,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, dep::DepId, entity::Entity,
   transformer::Transformer,
 };
 use oxc::{
@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
-    let dep = box_consumable(DepId::from((AstType2::AssignmentTargetProperty, node)));
+    let dep = box_consumable(DepId::from(AstKind2::AssignmentTargetProperty(node)));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = self.factory.string(node.binding.name.as_str());
@@ -34,8 +34,8 @@ impl<'a> Analyzer<'a> {
           (false, value)
         };
 
-        let data = self
-          .load_data::<IdentifierData>(AstType2::AssignmentTargetPropertyIdentifier, node.as_ref());
+        let data =
+          self.load_data::<IdentifierData>(AstKind2::AssignmentTargetPropertyIdentifier(node));
         data.need_init |= need_init;
 
         self.exec_identifier_reference_write(&node.binding, value);
@@ -61,11 +61,11 @@ impl<'a> Transformer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     has_rest: bool,
   ) -> Option<AssignmentTargetProperty<'a>> {
-    let need_binding = has_rest || self.is_referred((AstType2::AssignmentTargetProperty, node));
+    let need_binding = has_rest || self.is_referred(AstKind2::AssignmentTargetProperty(node));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
-        let data = self
-          .get_data::<IdentifierData>(AstType2::AssignmentTargetPropertyIdentifier, node.as_ref());
+        let data =
+          self.get_data::<IdentifierData>(AstKind2::AssignmentTargetPropertyIdentifier(node));
 
         let AssignmentTargetPropertyIdentifier { span, binding, init, .. } = node.as_ref();
 

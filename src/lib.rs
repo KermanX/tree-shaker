@@ -22,7 +22,6 @@ use data::Diagnostics;
 use logger::Logger;
 use oxc::{
   allocator::Allocator,
-  ast::AstBuilder,
   codegen::{CodeGenerator, CodegenOptions, CodegenReturn},
   minifier::{Minifier, MinifierOptions, MinifierReturn},
   parser::Parser,
@@ -30,7 +29,6 @@ use oxc::{
   span::SourceType,
 };
 use transformer::Transformer;
-use utils::{transform_eval_mode_decode, transform_eval_mode_encode};
 
 pub struct TreeShakeOptions<'a> {
   pub config: TreeShakeConfig,
@@ -40,7 +38,6 @@ pub struct TreeShakeOptions<'a> {
   pub tree_shake: bool,
   pub minify: Option<MinifierOptions>,
   pub code_gen: CodegenOptions,
-  pub eval_mode: bool,
   pub logging: bool,
 }
 
@@ -60,19 +57,13 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
     tree_shake,
     minify,
     code_gen,
-    eval_mode,
     logging,
   } = options;
 
-  let ast_builder = AstBuilder::new(allocator);
   let logger = logging.then(|| &*allocator.alloc(Logger::new()));
 
   let parser = Parser::new(&allocator, source_text.as_str(), source_type);
   let mut ast = allocator.alloc(parser.parse().program);
-
-  if eval_mode {
-    transform_eval_mode_encode(&ast_builder, ast);
-  }
 
   let semantic_builder = SemanticBuilder::new();
   let semantic = semantic_builder.build(ast).semantic;
@@ -93,10 +84,6 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
     let minifier = Minifier::new(options);
     minifier.build(&allocator, ast)
   });
-
-  if eval_mode {
-    transform_eval_mode_decode(&ast_builder, ast);
-  }
 
   // Step 4: Generate output
   let codegen = CodeGenerator::new().with_options(code_gen);

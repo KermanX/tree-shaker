@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, data::StatementVecData, scope::CfScopeKind,
+  analyzer::Analyzer, ast::AstKind2, data::StatementVecData, scope::CfScopeKind,
   transformer::Transformer,
 };
 use oxc::{
@@ -7,8 +7,6 @@ use oxc::{
   span::Span,
 };
 use rustc_hash::FxHashSet;
-
-const AST_TYPE: AstType2 = AstType2::SwitchStatement;
 
 #[derive(Debug, Default)]
 pub struct Data {
@@ -19,7 +17,7 @@ pub struct Data {
 impl<'a> Analyzer<'a> {
   pub fn exec_switch_statement(&mut self, node: &'a SwitchStatement<'a>) {
     let labels = self.take_labels();
-    let data = self.load_data::<Data>(AST_TYPE, node);
+    let data = self.load_data::<Data>(AstKind2::SwitchStatement(node));
 
     // 1. discriminant
     let discriminant = self.exec_expression(&node.discriminant);
@@ -93,7 +91,7 @@ impl<'a> Analyzer<'a> {
       if entered != Some(false) {
         data.need_consequent.insert(index);
 
-        let data = self.load_data::<StatementVecData>(AstType2::SwitchCase, case);
+        let data = self.load_data::<StatementVecData>(AstKind2::SwitchCase(case));
 
         if entered == None {
           self.push_indeterminate_cf_scope();
@@ -112,7 +110,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_switch_statement(&self, node: &'a SwitchStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::SwitchStatement(node));
 
     let SwitchStatement { span, discriminant, cases, .. } = node;
 
@@ -125,7 +123,7 @@ impl<'a> Transformer<'a> {
       let need_test = data.need_test.contains(&index);
       let need_consequent = data.need_consequent.contains(&index);
 
-      let data = self.get_data::<StatementVecData>(AstType2::SwitchCase, case);
+      let data = self.get_data::<StatementVecData>(AstKind2::SwitchCase(case));
 
       let SwitchCase { test, consequent, .. } = case;
 

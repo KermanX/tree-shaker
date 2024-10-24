@@ -1,14 +1,13 @@
 use crate::{
   analyzer::Analyzer,
-  ast::DeclarationKind,
+  ast::{AstKind2, DeclarationKind},
   consumable::{box_consumable, Consumable},
   entity::{Entity, FunctionEntitySource},
   transformer::Transformer,
 };
 use oxc::{
-  ast::{
-    ast::{Function, FunctionType, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration},
-    AstKind,
+  ast::ast::{
+    Function, FunctionType, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration,
   },
   semantic::ScopeId,
 };
@@ -22,7 +21,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
-    let dep = box_consumable(AstKind::Function(node));
+    let dep = box_consumable(AstKind2::Function(node));
     let entity = self.exec_function(node);
 
     let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
@@ -46,12 +45,15 @@ impl<'a> Analyzer<'a> {
           source,
           call_dep.cloned(),
           variable_scopes.as_ref().clone(),
-          this.clone(),
-          (args.clone(), vec![ /* later filled by formal parameters */]),
           node.r#async,
           node.generator,
           consume,
         );
+
+        let variable_scope = analyzer.variable_scope_mut();
+        variable_scope.this = Some(this);
+        variable_scope.arguments =
+          Some((args.clone(), vec![ /* later filled by formal parameters */]));
 
         let declare_in_body = node.r#type == FunctionType::FunctionExpression && node.id.is_some();
         if declare_in_body {
@@ -84,7 +86,7 @@ impl<'a> Analyzer<'a> {
       self.exec_async_or_generator_fn(move |analyzer| {
         runner(analyzer).consume(analyzer);
       });
-      self.factory.unknown
+      self.factory.unknown()
     } else {
       runner(self)
     }
@@ -93,7 +95,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_function(&self, node: &'a Function<'a>, need_val: bool) -> Option<Function<'a>> {
-    if need_val || self.is_referred(AstKind::Function(&node)) {
+    if need_val || self.is_referred(AstKind2::Function(&node)) {
       let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
 
       self.call_stack.borrow_mut().push(FunctionEntitySource::Function(node));

@@ -1,13 +1,11 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, build_effect_from_arr, consumable::box_consumable,
+  analyzer::Analyzer, ast::AstKind2, build_effect_from_arr, consumable::box_consumable,
   entity::Entity, transformer::Transformer,
 };
 use oxc::ast::{
   ast::{CallExpression, Expression},
-  AstKind, NONE,
+  NONE,
 };
-
-const AST_TYPE: AstType2 = AstType2::CallExpression;
 
 #[derive(Debug, Default)]
 pub struct Data {
@@ -24,7 +22,13 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a CallExpression,
   ) -> (Option<bool>, Entity<'a>) {
-    if let Some((callee_indeterminate, callee, this)) = self.exec_callee(&node.callee) {
+    let pure = self.has_pure_notation(node.span);
+
+    self.scope_context.pure += pure;
+    let callee = self.exec_callee(&node.callee);
+    self.scope_context.pure -= pure;
+
+    if let Some((callee_indeterminate, callee, this)) = callee {
       let self_indeterminate = if node.optional {
         match callee.test_nullish() {
           Some(true) => return (Some(true), self.factory.undefined),
@@ -35,7 +39,7 @@ impl<'a> Analyzer<'a> {
         false
       };
 
-      let data = self.load_data::<Data>(AST_TYPE, node);
+      let data = self.load_data::<Data>(AstKind2::CallExpression(node));
       data.need_optional |= self_indeterminate;
 
       let indeterminate = callee_indeterminate || self_indeterminate;
@@ -45,7 +49,10 @@ impl<'a> Analyzer<'a> {
       }
 
       let args = self.exec_arguments(&node.arguments);
-      let ret_val = callee.call(self, box_consumable(AstKind::CallExpression(node)), this, args);
+
+      self.scope_context.pure += pure;
+      let ret_val = callee.call(self, box_consumable(AstKind2::CallExpression(node)), this, args);
+      self.scope_context.pure -= pure;
 
       if indeterminate {
         self.pop_cf_scope();
@@ -65,11 +72,11 @@ impl<'a> Transformer<'a> {
     node: &'a CallExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::CallExpression(node));
 
     let CallExpression { span, callee, arguments, .. } = node;
 
-    let need_call = need_val || self.is_referred(AstKind::CallExpression(node));
+    let need_call = need_val || self.is_referred(AstKind2::CallExpression(node));
 
     if need_call {
       // Need call

@@ -51,6 +51,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
   }
 
+  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    self.deps.borrow_mut().push(dep);
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,
@@ -236,14 +240,23 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
   fn call(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    self.consume(analyzer);
-    consumed_object::call(analyzer, dep, this, args)
+    consumed_object::call(rc, analyzer, dep, this, args)
+  }
+
+  fn construct(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    consumed_object::construct(rc, analyzer, dep, args)
   }
 
   fn r#await(

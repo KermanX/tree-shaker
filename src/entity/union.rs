@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait},
+  consumable::{box_consumable, Consumable, ConsumableTrait},
   use_consumed_flag,
 };
 use rustc_hash::FxHashSet;
@@ -24,6 +24,12 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 
     for value in &self.values {
       value.consume(analyzer);
+    }
+  }
+
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    for value in &self.values {
+      value.unknown_mutate(analyzer, dep.cloned());
     }
   }
 
@@ -89,6 +95,23 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     for entity in &self.values {
       results.push(
         analyzer.exec_indeterminately(|analyzer| entity.call(analyzer, dep.cloned(), this, args)),
+      );
+    }
+    analyzer.factory.union(results)
+  }
+
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    let mut results = Vec::new();
+    for entity in &self.values {
+      results.push(
+        analyzer
+          .exec_indeterminately(|analyzer| entity.construct(analyzer, dep.cloned(), args.clone())),
       );
     }
     analyzer.factory.union(results)
@@ -231,12 +254,7 @@ impl<'a> EntityFactory<'a> {
       Some(if values.len() == 1 {
         values.first().unwrap().clone()
       } else {
-        let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
-        if has_unknown {
-          self.computed_unknown(ConsumableNode::new(values))
-        } else {
-          self.entity(UnionEntity { values, consumed: Cell::new(false) })
-        }
+        self.entity(UnionEntity { values, consumed: Cell::new(false) })
       })
     }
   }

@@ -1,5 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstType2, data::get_node_ptr, transformer::Transformer};
-use oxc::{ast::AstKind, span::GetSpan};
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
 use std::{
   fmt::Debug,
   hash::Hash,
@@ -7,44 +6,18 @@ use std::{
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub enum DepId {
-  Environment,
-  AstKind((usize, usize)),
-  AstType(AstType2, usize),
-  Index(usize),
-}
+pub struct DepId((usize, usize));
 
 impl Debug for DepId {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match self {
-      DepId::Environment => {
-        f.write_str("Environment")?;
-      }
-      DepId::AstKind(node) => {
-        let node = unsafe { std::mem::transmute::<_, AstKind<'static>>(*node) };
-        node.span().fmt(f)?;
-      }
-      DepId::AstType(t, s) => {
-        (*t).fmt(f)?;
-        s.fmt(f)?;
-      }
-      DepId::Index(c) => {
-        c.fmt(f)?;
-      }
-    }
-    Ok(())
+    let ast_kind: AstKind2<'static> = unsafe { std::mem::transmute(*self) };
+    ast_kind.fmt(f)
   }
 }
 
-impl<'a> From<AstKind<'a>> for DepId {
-  fn from(node: AstKind<'a>) -> Self {
-    DepId::AstKind(unsafe { std::mem::transmute(node) })
-  }
-}
-
-impl<T: GetSpan> From<(AstType2, &T)> for DepId {
-  fn from((ty, node): (AstType2, &T)) -> Self {
-    DepId::AstType(ty, get_node_ptr(node))
+impl<'a> From<AstKind2<'a>> for DepId {
+  fn from(node: AstKind2<'a>) -> Self {
+    DepId(unsafe { std::mem::transmute(node) })
   }
 }
 
@@ -52,7 +25,7 @@ static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl DepId {
   pub fn from_counter() -> Self {
-    DepId::Index(COUNTER.fetch_add(1, Ordering::Relaxed))
+    AstKind2::Index(COUNTER.fetch_add(1, Ordering::Relaxed)).into()
   }
 }
 

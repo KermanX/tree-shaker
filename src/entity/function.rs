@@ -5,15 +5,13 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
+  ast::AstKind2,
   consumable::{box_consumable, Consumable},
   dep::DepId,
   use_consumed_flag,
 };
 use oxc::{
-  ast::{
-    ast::{ArrowFunctionExpression, Class, Function, StaticBlock},
-    AstKind,
-  },
+  ast::ast::{ArrowFunctionExpression, Class, Function},
   semantic::ScopeId,
   span::{GetSpan, Span},
 };
@@ -27,7 +25,7 @@ use std::{
 pub enum FunctionEntitySource<'a> {
   Function(&'a Function<'a>),
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
-  StaticBlock(&'a StaticBlock<'a>),
+  ClassStatics(&'a Class<'a>),
   ClassConstructor(&'a Class<'a>),
   Module,
 }
@@ -37,7 +35,7 @@ impl GetSpan for FunctionEntitySource<'_> {
     match self {
       FunctionEntitySource::Function(node) => node.span(),
       FunctionEntitySource::ArrowFunctionExpression(node) => node.span(),
-      FunctionEntitySource::StaticBlock(node) => node.span(),
+      FunctionEntitySource::ClassStatics(node) => node.span(),
       FunctionEntitySource::ClassConstructor(node) => node.span(),
       FunctionEntitySource::Module => Span::default(),
     }
@@ -47,14 +45,15 @@ impl GetSpan for FunctionEntitySource<'_> {
 impl<'a> FunctionEntitySource<'a> {
   pub fn into_dep_id(self) -> DepId {
     match self {
-      FunctionEntitySource::Function(node) => AstKind::Function(node).into(),
+      FunctionEntitySource::Function(node) => AstKind2::Function(node),
       FunctionEntitySource::ArrowFunctionExpression(node) => {
-        AstKind::ArrowFunctionExpression(node).into()
+        AstKind2::ArrowFunctionExpression(node)
       }
-      FunctionEntitySource::StaticBlock(node) => AstKind::StaticBlock(node).into(),
-      FunctionEntitySource::ClassConstructor(node) => AstKind::Class(node).into(),
-      FunctionEntitySource::Module => DepId::Environment,
+      FunctionEntitySource::ClassStatics(node) => AstKind2::Class(node),
+      FunctionEntitySource::ClassConstructor(node) => AstKind2::Class(node),
+      FunctionEntitySource::Module => AstKind2::Environment,
     }
+    .into()
   }
 
   pub fn name(&self) -> String {
@@ -63,7 +62,7 @@ impl<'a> FunctionEntitySource<'a> {
         node.id.as_ref().map_or("<unknown>", |id| &id.name).to_string()
       }
       FunctionEntitySource::ArrowFunctionExpression(_) => "<anonymous>".to_string(),
-      FunctionEntitySource::StaticBlock(_) => "<StaticBlock>".to_string(),
+      FunctionEntitySource::ClassStatics(_) => "<ClassStatics>".to_string(),
       FunctionEntitySource::ClassConstructor(_) => "<ClassConstructor>".to_string(),
       FunctionEntitySource::Module => "<Module>".to_string(),
     }
@@ -81,7 +80,7 @@ impl PartialEq for FunctionEntitySource<'_> {
         FunctionEntitySource::ArrowFunctionExpression(a),
         FunctionEntitySource::ArrowFunctionExpression(b),
       ) => a.span() == b.span(),
-      (FunctionEntitySource::StaticBlock(a), FunctionEntitySource::StaticBlock(b)) => {
+      (FunctionEntitySource::ClassStatics(a), FunctionEntitySource::ClassStatics(b)) => {
         a.span() == b.span()
       }
       _ => false,
@@ -110,6 +109,16 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     use_consumed_flag!(self);
 
     self.call_in_recursion(analyzer);
+  }
+
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    if self.consumed.get() {
+      return;
+    }
+
+    analyzer.push_dependent_cf_scope(dep);
+    self.call_in_recursion(analyzer);
+    analyzer.pop_cf_scope();
   }
 
   fn get_property(
@@ -163,16 +172,26 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     args: Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::call(analyzer, dep, this, args);
+      return consumed_object::call(rc, analyzer, dep, this, args);
     }
 
     let recursed = analyzer.scope_context.call.iter().any(|scope| scope.source == self.source);
     if recursed {
       self.call_in_recursion(analyzer);
-      return consumed_object::call(analyzer, dep, this, args);
+      return consumed_object::call(rc, analyzer, dep, this, args);
     }
 
     self.call_impl(rc, analyzer, dep, this, args, false)
+  }
+
+  fn construct(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    consumed_object::construct(rc, analyzer, dep, args)
   }
 
   fn r#await(
@@ -305,11 +324,11 @@ impl<'a> FunctionEntity<'a> {
     let self_cloned = self.clone();
     analyzer.exec_consumed_fn(move |analyzer| {
       self_cloned.call_impl(
-        analyzer.factory.unknown,
+        analyzer.factory.unknown(),
         analyzer,
         box_consumable(()),
-        analyzer.factory.unknown,
-        analyzer.factory.unknown,
+        analyzer.factory.unknown(),
+        analyzer.factory.unknown(),
         true,
       )
     });

@@ -31,6 +31,7 @@ pub struct ScopeContext<'a> {
   pub call: Vec<CallScope<'a>>,
   pub variable: ScopeTree<VariableScope<'a>>,
   pub cf: ScopeTree<CfScope<'a>>,
+  pub pure: usize,
 
   pub object_scope_id: ScopeId,
   pub object_symbol_counter: usize,
@@ -41,7 +42,11 @@ impl<'a> ScopeContext<'a> {
     let mut cf = ScopeTree::new();
     cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
     let mut variable = ScopeTree::new();
-    let body_variable_scope = variable.push(VariableScope::new());
+    let body_variable_scope = variable.push({
+      let mut scope = VariableScope::new();
+      scope.this = Some(factory.unknown());
+      scope
+    });
     let object_scope_id = variable.add_special(VariableScope::new());
     ScopeContext {
       call: vec![CallScope::new(
@@ -50,14 +55,12 @@ impl<'a> ScopeContext<'a> {
         vec![],
         0,
         body_variable_scope,
-        // TODO: global this
-        factory.unknown,
-        (factory.unknown, vec![]),
         true,
         false,
       )],
       variable,
       cf,
+      pure: 0,
 
       object_scope_id,
       object_symbol_counter: 128,
@@ -68,6 +71,7 @@ impl<'a> ScopeContext<'a> {
     debug_assert_eq!(self.call.len(), 1);
     debug_assert_eq!(self.variable.current_depth(), 0);
     debug_assert_eq!(self.cf.current_depth(), 0);
+    debug_assert_eq!(self.pure, 0);
   }
 
   pub fn alloc_object_id(&mut self) -> SymbolId {
@@ -114,6 +118,10 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable.get_current_mut()
   }
 
+  pub fn is_inside_pure(&self) -> bool {
+    self.scope_context.pure > 0
+  }
+
   fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId> {
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::ReplaceVarScopeStack(new_stack.clone()));
@@ -127,8 +135,6 @@ impl<'a> Analyzer<'a> {
     source: FunctionEntitySource<'a>,
     call_dep: Consumable<'a>,
     variable_scope_stack: Vec<ScopeId>,
-    this: Entity<'a>,
-    args: (Entity<'a>, Vec<SymbolId>),
     is_async: bool,
     is_generator: bool,
     consume: bool,
@@ -162,8 +168,6 @@ impl<'a> Analyzer<'a> {
       old_variable_scope_stack,
       cf_scope_depth,
       body_variable_scope,
-      this,
-      args,
       is_async,
       is_generator,
     ));

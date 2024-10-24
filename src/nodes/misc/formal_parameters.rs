@@ -61,7 +61,7 @@ impl<'a> Transformer<'a> {
         used_length = index + 1;
         pattern
       } else {
-        self.build_unused_binding_identifier(*span)
+        self.build_unused_binding_pattern(*span)
       };
       let pattern_is_assignment = matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_));
 

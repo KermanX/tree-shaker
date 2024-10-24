@@ -1,19 +1,16 @@
 use crate::{
-  analyzer::Analyzer, build_effect, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
   transformer::Transformer,
 };
 use oxc::{
-  ast::{
-    ast::{Expression, UnaryExpression, UnaryOperator},
-    AstKind,
-  },
+  ast::ast::{Expression, UnaryExpression, UnaryOperator},
   span::SPAN,
 };
 
 impl<'a> Analyzer<'a> {
   pub fn exec_unary_expression(&mut self, node: &'a UnaryExpression) -> Entity<'a> {
     if node.operator == UnaryOperator::Delete {
-      let dep = AstKind::UnaryExpression(node);
+      let dep = AstKind2::UnaryExpression(node);
 
       match &node.argument {
         Expression::StaticMemberExpression(node) => {
@@ -57,7 +54,7 @@ impl<'a> Analyzer<'a> {
             }
           } else {
             // Maybe number or bigint
-            self.factory.unknown
+            self.factory.unknown_primitive
           },
           argument,
         )
@@ -87,7 +84,7 @@ impl<'a> Transformer<'a> {
     let UnaryExpression { span, operator, argument } = node;
 
     if *operator == UnaryOperator::Delete {
-      return if self.is_referred(AstKind::UnaryExpression(node)) {
+      return if self.is_referred(AstKind2::UnaryExpression(node)) {
         let argument = match &node.argument {
           Expression::StaticMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();

@@ -4,7 +4,7 @@ use crate::entity::EntityFactory;
 pub fn create_object_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
   let mut prototype = create_null_prototype(factory);
 
-  prototype.insert("constructor", factory.pure_fn_returns_object);
+  prototype.insert("constructor", factory.immutable_unknown);
   prototype.insert("hasOwnProperty", factory.pure_fn_returns_boolean);
   prototype.insert("isPrototypeOf", factory.pure_fn_returns_boolean);
   prototype.insert("propertyIsEnumerable", factory.pure_fn_returns_boolean);

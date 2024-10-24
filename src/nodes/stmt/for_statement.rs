@@ -1,10 +1,8 @@
-use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{ForStatement, ForStatementInit, Statement},
   span::GetSpan,
 };
-
-const AST_TYPE: AstType2 = AstType2::ForStatement;
 
 #[derive(Debug, Default)]
 pub struct Data {
@@ -15,7 +13,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_for_statement(&mut self, node: &'a ForStatement<'a>) {
     let labels = self.take_labels();
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
+    let data = self.load_data::<Data>(AstKind2::ForStatement(node));
 
     if let Some(init) = &node.init {
       match init {
@@ -59,7 +57,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_for_statement(&self, node: &'a ForStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::ForStatement(node));
 
     let ForStatement { span, init, test, update, body, .. } = node;
 

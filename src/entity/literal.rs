@@ -37,6 +37,10 @@ pub enum LiteralEntity<'a> {
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
+  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
+    // No effect
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,
@@ -110,14 +114,25 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn call(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error(format!("Cannot call a non-function object {:?}", self));
-    consumed_object::call(analyzer, dep, this, args)
+    consumed_object::call(rc, analyzer, dep, this, args)
+  }
+
+  fn construct(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    analyzer.thrown_builtin_error(format!("Cannot construct a non-constructor object {:?}", self));
+    consumed_object::construct(rc, analyzer, dep, args)
   }
 
   fn r#await(
@@ -189,7 +204,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::Null => analyzer.factory.number(0.0, Some("0")),
       LiteralEntity::Symbol(_, _) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
-        analyzer.factory.unknown
+        analyzer.factory.unknown()
       }
       LiteralEntity::Undefined => analyzer.factory.nan,
     }

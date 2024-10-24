@@ -16,6 +16,12 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     }
   }
 
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    for (_, entity) in &self.arguments {
+      entity.unknown_mutate(analyzer, dep.cloned());
+    }
+  }
+
   fn get_property(
     &self,
     _rc: Entity<'a>,
@@ -56,6 +62,16 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
     _this: Entity<'a>,
+    _args: Entity<'a>,
+  ) -> Entity<'a> {
+    unreachable!()
+  }
+
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    _analyzer: &mut Analyzer<'a>,
+    _dep: Consumable<'a>,
     _args: Entity<'a>,
   ) -> Entity<'a> {
     unreachable!()

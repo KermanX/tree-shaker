@@ -9,10 +9,6 @@ const { readFileSync } = require('fs');
 
 const do_minify = true;
 
-function treeShakeEval(input, tree_shake) {
-  return input.replace(/eval\('(.*)'\)/, (_, content) => {treeShake(content, tree_shake, do_minify, true).output});
-}
-
 function printDiff(diff) {
   let t1 = ""
   diff.forEach((part) => {
@@ -72,9 +68,9 @@ module.exports = function(test) {
     if (process.env.CI) {
       process.stderr.write(`[TREESHAKE] ${test.file}\n`)
     }
-    let minified = treeShake(treeShakeEval(main, null), null, do_minify, false).output;
+    let minified = treeShake(main, null, do_minify).output;
     let startTime = Date.now();
-    let treeShaked = treeShake(treeShakeEval(main, "safest"), "safest", do_minify, false).output;
+    let treeShaked = treeShake(main, "safest", do_minify).output;
     let endTime = Date.now();
 
     minifiedTotal += minified.length;

@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  ast::DeclarationKind,
+  ast::{AstKind2, DeclarationKind},
   consumable::Consumable,
   entity::{Entity, FunctionEntitySource},
   transformer::Transformer,
@@ -8,7 +8,7 @@ use crate::{
 use oxc::{
   ast::{
     ast::{ArrowFunctionExpression, Expression},
-    AstKind, NONE,
+    NONE,
   },
   semantic::ScopeId,
 };
@@ -34,13 +34,10 @@ impl<'a> Analyzer<'a> {
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    let parent_call_scope = self.call_scope();
     self.push_call_scope(
       source,
       call_dep,
       variable_scopes.as_ref().clone(),
-      parent_call_scope.this.clone(),
-      parent_call_scope.args.clone(),
       node.r#async,
       false,
       consume,
@@ -67,7 +64,7 @@ impl<'a> Transformer<'a> {
     node: &'a ArrowFunctionExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    if need_val || self.is_referred(AstKind::ArrowFunctionExpression(node)) {
+    if need_val || self.is_referred(AstKind2::ArrowFunctionExpression(node)) {
       let ArrowFunctionExpression { span, expression, r#async, params, body, .. } = node;
 
       self.call_stack.borrow_mut().push(FunctionEntitySource::ArrowFunctionExpression(node));

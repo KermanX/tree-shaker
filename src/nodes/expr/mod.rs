@@ -26,7 +26,7 @@ mod yield_expression;
 
 use crate::{
   analyzer::Analyzer,
-  ast::AstType2,
+  ast::AstKind2,
   build_effect,
   entity::{Entity, LiteralCollector, LiteralEntity},
   transformer::Transformer,
@@ -36,8 +36,6 @@ use oxc::{
   ast::{ast::Expression, match_member_expression},
   span::GetSpan,
 };
-
-const AST_TYPE: AstType2 = AstType2::Expression;
 
 #[derive(Debug, Default)]
 struct Data<'a> {
@@ -93,7 +91,7 @@ impl<'a> Analyzer<'a> {
       | Expression::TSSatisfiesExpression(_) => unreachable!(),
     };
     self.pop_expr_span();
-    let data = self.load_data::<Data>(AST_TYPE, node);
+    let data = self.load_data::<Data>(AstKind2::Expression(node));
     data.collector.collect(self, entity)
   }
 }
@@ -104,7 +102,7 @@ impl<'a> Transformer<'a> {
     node: &'a Expression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::Expression(node));
 
     let span = node.span();
     let literal = need_val.then(|| data.collector.build_expr(&self.ast_builder, span)).flatten();
@@ -190,7 +188,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &Expression<'a>,
   ) -> Option<LiteralEntity<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::Expression(node));
     data.collector.collected()
   }
 }

@@ -1,11 +1,8 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::Entity,
   transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{ArrayAssignmentTarget, AssignmentTargetPattern, ObjectAssignmentTarget},
-  AstKind,
-};
+use oxc::ast::ast::{ArrayAssignmentTarget, AssignmentTargetPattern, ObjectAssignmentTarget};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_assignment_target_pattern_write(
@@ -17,7 +14,7 @@ impl<'a> Analyzer<'a> {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
         let (element_values, rest_value, dep) = value.destruct_as_array(
           self,
-          box_consumable(AstKind::ArrayAssignmentTarget(node)),
+          box_consumable(AstKind2::ArrayAssignmentTarget(node)),
           node.elements.len(),
         );
 
@@ -43,7 +40,7 @@ impl<'a> Analyzer<'a> {
             self.may_throw();
           }
           value.consume(self);
-          self.refer_dep(AstKind::ObjectAssignmentTarget(node));
+          self.refer_dep(AstKind2::ObjectAssignmentTarget(node));
         }
 
         let mut enumerated = vec![];
@@ -51,7 +48,7 @@ impl<'a> Analyzer<'a> {
           enumerated.push(self.exec_assignment_target_property(property, value.clone()));
         }
         if let Some(rest) = &node.rest {
-          let dep = (AstType2::AssignmentTargetRest, node.as_ref());
+          let dep = AstKind2::ObjectAssignmentTarget(node);
           let init = self.exec_object_rest(dep, value, enumerated);
           self.exec_assignment_target_rest(rest, init);
         }
@@ -71,7 +68,7 @@ impl<'a> Transformer<'a> {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
         let ArrayAssignmentTarget { span, elements, rest, trailing_comma, .. } = node.as_ref();
 
-        let is_referred = self.is_referred(AstKind::ArrayAssignmentTarget(node));
+        let is_referred = self.is_referred(AstKind2::ArrayAssignmentTarget(node));
 
         let mut transformed_elements = self.ast_builder.vec();
         for element in elements {
@@ -108,12 +105,12 @@ impl<'a> Transformer<'a> {
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
         let ObjectAssignmentTarget { span, properties, rest, .. } = node.as_ref();
 
-        let is_referred = self.is_referred(AstKind::ObjectAssignmentTarget(node));
+        let is_referred = self.is_referred(AstKind2::ObjectAssignmentTarget(node));
 
         let rest = rest.as_ref().and_then(|rest| {
           self.transform_assignment_target_rest(
             rest,
-            self.is_referred((AstType2::AssignmentTargetRest, node.as_ref())),
+            self.is_referred(AstKind2::ObjectAssignmentTarget(node)),
           )
         });
 

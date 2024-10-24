@@ -20,7 +20,6 @@ pub fn tree_shake(input: String, do_tree_shake: bool, do_minify: bool, logging: 
     tree_shake: do_tree_shake,
     minify: do_minify.then(|| MinifierOptions::default()),
     code_gen: CodegenOptions { minify: do_minify, ..Default::default() },
-    eval_mode: false,
     logging,
   });
   Result {

@@ -17,3 +17,11 @@ export const fn4 = (a) => 4
 
 const f5 = (a) => a ? (effect, 1) : 2
 f5(true)
+
+function g() {
+  function f() {
+    return () => this
+  }
+  return f.call(1)()
+}
+t = g.call(2)

@@ -1,10 +1,8 @@
 use crate::{
-  analyzer::Analyzer, build_effect, entity::Entity, scope::CfScopeKind, transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, scope::CfScopeKind,
+  transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{ConditionalExpression, Expression, LogicalOperator},
-  AstKind,
-};
+use oxc::ast::ast::{ConditionalExpression, Expression, LogicalOperator};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_conditional_expression(&mut self, node: &'a ConditionalExpression<'a>) -> Entity<'a> {
@@ -18,7 +16,7 @@ impl<'a> Analyzer<'a> {
 
     let exec_consequent = move |analyzer: &mut Analyzer<'a>| {
       let conditional_dep = analyzer.push_if_like_branch_cf_scope(
-        AstKind::ConditionalExpression(node),
+        AstKind2::ConditionalExpression(node),
         CfScopeKind::ConditionalExprBranch,
         test.clone(),
         maybe_true,
@@ -33,7 +31,7 @@ impl<'a> Analyzer<'a> {
 
     let exec_alternate = move |analyzer: &mut Analyzer<'a>| {
       let conditional_dep = analyzer.push_if_like_branch_cf_scope(
-        AstKind::ConditionalExpression(node),
+        AstKind2::ConditionalExpression(node),
         CfScopeKind::ConditionalExprBranch,
         test.clone(),
         maybe_true,
@@ -68,7 +66,7 @@ impl<'a> Transformer<'a> {
     let ConditionalExpression { span, test, consequent, alternate, .. } = node;
 
     let (need_test_val, maybe_true, maybe_false) =
-      self.get_conditional_result(AstKind::ConditionalExpression(node));
+      self.get_conditional_result(AstKind2::ConditionalExpression(node));
 
     let test = self.transform_expression(test, need_test_val);
     let consequent = maybe_true.then(|| self.transform_expression(consequent, need_val)).flatten();

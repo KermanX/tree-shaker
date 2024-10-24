@@ -23,7 +23,7 @@ pub fn create_import_meta<'a>(
     .rest
     .borrow_mut()
     .values
-    .push(ObjectPropertyValue::Property(Some(factory.unknown), Some(factory.unknown)));
+    .push(ObjectPropertyValue::Property(Some(factory.unknown_primitive), Some(factory.unknown())));
 
   factory.entity(object)
 }

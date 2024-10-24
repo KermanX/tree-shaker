@@ -18,7 +18,6 @@ pub fn tree_shake(
   input: String,
   tree_shake: Option<String>,
   do_minify: bool,
-  eval_mode: bool,
 ) -> TreeShakeResultBinding {
   let result = tree_shake::tree_shake(tree_shake::TreeShakeOptions {
     config: match tree_shake.as_deref() {
@@ -34,7 +33,6 @@ pub fn tree_shake(
     tree_shake: tree_shake.is_some(),
     minify: do_minify.then(MinifierOptions::default),
     code_gen: CodegenOptions { minify: do_minify, ..Default::default() },
-    eval_mode,
     logging: true,
   });
   TreeShakeResultBinding {

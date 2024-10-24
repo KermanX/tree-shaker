@@ -1,5 +1,5 @@
 use crate::{
-  ast::{AstType2, DeclarationKind},
+  ast::{AstKind2, DeclarationKind},
   consumable::box_consumable,
   dep::DepId,
   entity::Entity,
@@ -12,7 +12,7 @@ use oxc::{
       ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,
       ObjectPattern,
     },
-    AstKind, NONE,
+    NONE,
   },
   span::GetSpan,
 };
@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.thrown_builtin_error("Missing initializer in destructuring declaration");
-          self.factory.unknown
+          self.factory.unknown()
         });
 
         let is_nullish = init.test_nullish();
@@ -81,13 +81,13 @@ impl<'a> Analyzer<'a> {
             self.may_throw();
           }
           init.consume(self);
-          let data = self.load_data::<ObjectPatternData>(AstType2::ObjectPattern, node.as_ref());
+          let data = self.load_data::<ObjectPatternData>(AstKind2::ObjectPattern(node.as_ref()));
           data.need_destruct = true;
         }
 
         let mut enumerated = vec![];
         for property in &node.properties {
-          let dep = box_consumable(DepId::from((AstType2::BindingProperty, property)));
+          let dep = box_consumable(DepId::from(AstKind2::BindingProperty(property)));
 
           self.push_dependent_cf_scope(init.clone());
           let key = self.exec_property_key(&property.key);
@@ -98,7 +98,7 @@ impl<'a> Analyzer<'a> {
           self.init_binding_pattern(&property.value, Some(init));
         }
         if let Some(rest) = &node.rest {
-          let dep = AstKind::BindingRestElement(rest.as_ref());
+          let dep = AstKind2::BindingRestElement(rest.as_ref());
           let init = self.exec_object_rest(dep, init, enumerated);
           self.init_binding_rest_element(rest, init);
         }
@@ -106,12 +106,12 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ArrayPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.thrown_builtin_error("Missing initializer in destructuring declaration");
-          self.factory.unknown
+          self.factory.unknown()
         });
 
         let (element_values, rest_value, dep) = init.destruct_as_array(
           self,
-          box_consumable(AstKind::ArrayPattern(node)),
+          box_consumable(AstKind2::ArrayPattern(node)),
           node.elements.len(),
         );
 
@@ -130,7 +130,7 @@ impl<'a> Analyzer<'a> {
         let (need_right, binding_val) = self.exec_with_default(&node.right, init.unwrap());
 
         let data =
-          self.load_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
+          self.load_data::<AssignmentPatternData>(AstKind2::AssignmentPattern(node.as_ref()));
         data.need_right |= need_right;
 
         self.init_binding_pattern(&node.left, Some(binding_val));
@@ -160,7 +160,7 @@ impl<'a> Transformer<'a> {
         });
 
         if need_binding {
-          Some(result.unwrap_or_else(|| self.build_unused_binding_identifier(span)))
+          Some(result.unwrap_or_else(|| self.build_unused_binding_pattern(span)))
         } else {
           result
         }
@@ -168,18 +168,18 @@ impl<'a> Transformer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         let ObjectPattern { span, properties, rest, .. } = node.as_ref();
 
-        let data = self.get_data::<ObjectPatternData>(AstType2::ObjectPattern, node.as_ref());
+        let data = self.get_data::<ObjectPatternData>(AstKind2::ObjectPattern(node.as_ref()));
 
         let rest = rest.as_ref().and_then(|rest| {
           self.transform_binding_rest_element(
             rest,
-            self.is_referred(AstKind::BindingRestElement(rest.as_ref())),
+            self.is_referred(AstKind2::BindingRestElement(rest.as_ref())),
           )
         });
 
         let mut transformed_properties = self.ast_builder.vec();
         for property in properties {
-          let dep = (AstType2::BindingProperty, property);
+          let dep = AstKind2::BindingProperty(property);
           let need_property = rest.is_some() || self.is_referred(dep);
 
           let BindingProperty { span, key, value, shorthand, computed, .. } = property;
@@ -224,7 +224,7 @@ impl<'a> Transformer<'a> {
       BindingPatternKind::ArrayPattern(node) => {
         let ArrayPattern { span, elements, rest, .. } = node.as_ref();
 
-        let is_referred = self.is_referred(AstKind::ArrayPattern(node));
+        let is_referred = self.is_referred(AstKind2::ArrayPattern(node));
 
         let mut transformed_elements = self.ast_builder.vec();
         for element in elements {
@@ -254,7 +254,7 @@ impl<'a> Transformer<'a> {
       }
       BindingPatternKind::AssignmentPattern(node) => {
         let data =
-          self.get_data::<AssignmentPatternData>(AstType2::AssignmentPattern, node.as_ref());
+          self.get_data::<AssignmentPatternData>(AstKind2::AssignmentPattern(node.as_ref()));
 
         let AssignmentPattern { span, left, right, .. } = node.as_ref();
 

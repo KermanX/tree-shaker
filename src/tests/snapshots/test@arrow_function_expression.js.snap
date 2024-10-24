@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/arrow_function_expression.js
 ---
@@ -16,3 +15,4 @@ export const fn3 = (__unused_6FFE) => {
 export const fn4 = (__unused_0C10) => 4;
 const f5 = (__unused_1670) => effect;
 f5();
+t = 1;

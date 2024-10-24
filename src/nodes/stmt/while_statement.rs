@@ -1,10 +1,8 @@
-use crate::{analyzer::Analyzer, ast::AstType2, scope::CfScopeKind, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{Statement, WhileStatement},
   span::GetSpan,
 };
-
-const AST_TYPE: AstType2 = AstType2::WhileStatement;
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -25,7 +23,7 @@ impl<'a> Analyzer<'a> {
     }
     test.consume(self);
 
-    let data = self.load_data::<Data>(AST_TYPE, node);
+    let data = self.load_data::<Data>(AstKind2::WhileStatement(node));
     data.need_loop = true;
 
     self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
@@ -43,7 +41,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_while_statement(&self, node: &'a WhileStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AST_TYPE, node);
+    let data = self.get_data::<Data>(AstKind2::WhileStatement(node));
 
     let WhileStatement { span, test, body, .. } = node;
     let body_span = body.span();

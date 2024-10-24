@@ -1,11 +1,9 @@
 use crate::{
-  analyzer::Analyzer, consumable::ConsumableNode, scope::CfScopeKind, transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, consumable::ConsumableNode, scope::CfScopeKind,
+  transformer::Transformer,
 };
 use oxc::{
-  ast::{
-    ast::{IfStatement, Statement},
-    AstKind,
-  },
+  ast::ast::{IfStatement, Statement},
   span::GetSpan,
 };
 
@@ -29,7 +27,7 @@ impl<'a> Analyzer<'a> {
 
     if maybe_consequent {
       self.push_if_like_branch_cf_scope(
-        AstKind::IfStatement(node),
+        AstKind2::IfStatement(node),
         CfScopeKind::IfBranch,
         test.clone(),
         maybe_consequent,
@@ -51,7 +49,7 @@ impl<'a> Analyzer<'a> {
     }
     if maybe_alternate {
       self.push_if_like_branch_cf_scope(
-        AstKind::IfStatement(node),
+        AstKind2::IfStatement(node),
         CfScopeKind::IfBranch,
         test,
         maybe_consequent,
@@ -95,7 +93,7 @@ impl<'a> Transformer<'a> {
     let IfStatement { span, test, consequent, alternate, .. } = node;
 
     let (need_test_val, maybe_consequent, maybe_alternate) =
-      self.get_conditional_result(AstKind::IfStatement(node));
+      self.get_conditional_result(AstKind2::IfStatement(node));
 
     let test = self.transform_expression(test, need_test_val);
     let consequent = if maybe_consequent { self.transform_statement(consequent) } else { None };

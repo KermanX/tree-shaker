@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  ast::DeclarationKind,
+  ast::{AstKind2, DeclarationKind},
   consumable::{box_consumable, ConsumableTrait},
   entity::{ClassEntity, Entity, FunctionEntitySource},
   transformer::Transformer,
@@ -8,9 +8,10 @@ use crate::{
 use oxc::{
   ast::{
     ast::{
-      Class, ClassBody, ClassElement, MethodDefinitionKind, PropertyDefinitionType, PropertyKind,
+      Class, ClassBody, ClassElement, ClassType, MethodDefinitionKind, PropertyDefinitionType,
+      PropertyKind,
     },
-    AstKind, NONE,
+    NONE,
   },
   span::GetSpan,
 };
@@ -23,6 +24,9 @@ impl<'a> Analyzer<'a> {
     for element in &node.body.body {
       keys.push(element.property_key().map(|key| self.exec_property_key(key)));
     }
+
+    self.push_variable_scope();
+    self.variable_scope_mut().super_class = super_class;
 
     let statics = self.new_empty_object(&self.builtins.prototypes.function);
     for (index, element) in node.body.body.iter().enumerate() {
@@ -41,6 +45,8 @@ impl<'a> Analyzer<'a> {
       }
     }
 
+    self.pop_variable_scope();
+
     let class = self.factory.class(
       node,
       keys.clone(),
@@ -49,20 +55,46 @@ impl<'a> Analyzer<'a> {
       statics,
     );
 
+    let variable_scope_stack = self.scope_context.variable.stack.clone();
+    self.push_call_scope(
+      FunctionEntitySource::ClassStatics(node),
+      box_consumable(()),
+      variable_scope_stack,
+      false,
+      false,
+      false,
+    );
+
+    let variable_scope = self.variable_scope_mut();
+    variable_scope.this = Some(class);
+    variable_scope.super_class = super_class;
+
+    if let Some(id) = &node.id {
+      self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
+      self.init_binding_identifier(id, Some(class));
+    }
+
     for (index, element) in node.body.body.iter().enumerate() {
       match element {
-        ClassElement::StaticBlock(node) => self.exec_static_block(node, class),
+        ClassElement::StaticBlock(node) => self.exec_static_block(node),
         ClassElement::MethodDefinition(_node) => {}
         ClassElement::PropertyDefinition(node) if node.r#static => {
           if let Some(value) = &node.value {
             let key = keys[index].unwrap();
             let value = self.exec_expression(value);
-            class.set_property(self, box_consumable(AstKind::PropertyDefinition(node)), key, value);
+            class.set_property(
+              self,
+              box_consumable(AstKind2::PropertyDefinition(node)),
+              key,
+              value,
+            );
           }
         }
         _ => {}
       }
     }
+
+    self.pop_call_scope();
 
     class
   }
@@ -79,10 +111,10 @@ impl<'a> Analyzer<'a> {
     value
   }
 
-  pub fn construct_class(&mut self, class: &ClassEntity<'a>) -> Entity<'a> {
+  pub fn construct_class(&mut self, class: &ClassEntity<'a>) {
     let node = class.node;
 
-    self.consume(AstKind::Class(node));
+    self.consume(AstKind2::Class(node));
 
     class.super_class.consume(self);
 
@@ -98,7 +130,7 @@ impl<'a> Analyzer<'a> {
     if let Some(id) = &node.id {
       self.push_variable_scope();
       self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
-      self.init_binding_identifier(id, Some(self.factory.unknown));
+      self.init_binding_identifier(id, Some(self.factory.unknown()));
     }
 
     // Non-static methods
@@ -118,12 +150,18 @@ impl<'a> Analyzer<'a> {
         FunctionEntitySource::ClassConstructor(node),
         box_consumable(()),
         variable_scope_stack.as_ref().clone(),
-        analyzer.factory.unknown,
-        (analyzer.factory.unknown, vec![]),
         false,
         false,
         false,
       );
+
+      let this = analyzer.factory.unknown();
+      let arguments = analyzer.factory.immutable_unknown;
+      let super_class = analyzer.factory.unknown();
+      let variable_scope = analyzer.variable_scope_mut();
+      variable_scope.this = Some(this);
+      variable_scope.arguments = Some((arguments, vec![]));
+      variable_scope.super_class = Some(super_class);
 
       for element in &node.body.body {
         if let ClassElement::PropertyDefinition(node) = element {
@@ -144,8 +182,6 @@ impl<'a> Analyzer<'a> {
     if node.id.is_some() {
       self.pop_variable_scope();
     }
-
-    self.factory.unknown
   }
 }
 
@@ -156,10 +192,19 @@ impl<'a> Transformer<'a> {
     let transformed_id = id.as_ref().and_then(|node| self.transform_binding_identifier(node));
 
     if need_val || transformed_id.is_some() {
-      let id =
-        if self.config.preserve_function_name { self.clone_node(id) } else { transformed_id };
+      let id = if self.config.preserve_function_name {
+        self.clone_node(id)
+      } else if node.r#type == ClassType::ClassDeclaration {
+        // Id cannot be omitted for class declaration
+        Some(
+          transformed_id
+            .unwrap_or_else(|| self.build_unused_binding_identifier(id.as_ref().unwrap().span)),
+        )
+      } else {
+        transformed_id
+      };
 
-      let ever_constructed = self.is_referred(AstKind::Class(node));
+      let ever_constructed = self.is_referred(AstKind2::Class(node));
 
       let super_class = super_class.as_ref().and_then(|node| {
         if ever_constructed || self.transform_expression(node, false).is_some() {
@@ -216,7 +261,7 @@ impl<'a> Transformer<'a> {
         *r#type,
         *span,
         self.ast_builder.vec(),
-        id.clone(),
+        id,
         NONE,
         super_class,
         NONE,
@@ -272,7 +317,8 @@ impl<'a> Transformer<'a> {
             *r#type,
             *span,
             self.ast_builder.vec(),
-            None,
+            (node.r#type == ClassType::ClassDeclaration)
+              .then(|| self.build_unused_binding_identifier(id.as_ref().unwrap().span)),
             NONE,
             None,
             NONE,

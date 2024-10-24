@@ -25,6 +25,11 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     self.dep.consume(analyzer);
   }
 
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    // NOTE: self.forward_dep(dep) is unnecessary
+    self.val.unknown_mutate(analyzer, dep);
+  }
+
   fn get_property(
     &self,
     _rc: Entity<'a>,
@@ -32,7 +37,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    self.val.get_property(analyzer, box_consumable((self.dep.cloned(), dep)), key)
+    self.val.get_property(analyzer, self.forward_dep(dep), key)
   }
 
   fn set_property(
@@ -43,7 +48,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.val.set_property(analyzer, box_consumable((self.dep.cloned(), dep)), key, value);
+    self.val.set_property(analyzer, self.forward_dep(dep), key, value);
   }
 
   fn enumerate_properties(
@@ -52,11 +57,11 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
-    self.val.enumerate_properties(analyzer, box_consumable((self.dep.cloned(), dep)))
+    self.val.enumerate_properties(analyzer, self.forward_dep(dep))
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-    self.val.delete_property(analyzer, box_consumable((self.dep.cloned(), dep)), key)
+    self.val.delete_property(analyzer, self.forward_dep(dep), key)
   }
 
   fn call(
@@ -67,7 +72,17 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    self.val.call(analyzer, box_consumable((self.dep.cloned(), dep)), this, args)
+    self.val.call(analyzer, self.forward_dep(dep), this, args)
+  }
+
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    self.val.construct(analyzer, self.forward_dep(dep), args)
   }
 
   fn r#await(
@@ -76,7 +91,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
-    self.val.r#await(analyzer, box_consumable((self.dep.cloned(), dep)))
+    self.val.r#await(analyzer, self.forward_dep(dep))
   }
 
   fn iterate(
@@ -85,31 +100,31 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> IteratedElements<'a> {
-    self.val.iterate(analyzer, box_consumable((self.dep.cloned(), dep)))
+    self.val.iterate(analyzer, self.forward_dep(dep))
   }
 
   fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    self.val.get_destructable(box_consumable((self.dep.cloned(), dep)))
+    self.val.get_destructable(self.forward_dep(dep))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward(self.val.get_typeof(analyzer), analyzer)
+    self.forward_value(self.val.get_typeof(analyzer), analyzer)
   }
 
   fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward(self.val.get_to_string(analyzer), analyzer)
+    self.forward_value(self.val.get_to_string(analyzer), analyzer)
   }
 
   fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward(self.val.get_to_numeric(analyzer), analyzer)
+    self.forward_value(self.val.get_to_numeric(analyzer), analyzer)
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward(self.val.get_to_boolean(analyzer), analyzer)
+    self.forward_value(self.val.get_to_boolean(analyzer), analyzer)
   }
 
   fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward(self.val.get_to_property_key(analyzer), analyzer)
+    self.forward_value(self.val.get_to_property_key(analyzer), analyzer)
   }
 
   fn get_to_literals(
@@ -134,7 +149,15 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
 }
 
 impl<'a, T: ConsumableTrait<'a> + 'a> ComputedEntity<'a, T> {
-  pub fn forward(&self, val: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  pub fn forward_dep(&self, dep: Consumable<'a>) -> Consumable<'a> {
+    if self.consumed.get() {
+      dep
+    } else {
+      box_consumable((self.dep.cloned(), dep))
+    }
+  }
+
+  pub fn forward_value(&self, val: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.computed(val, self.dep.cloned())
   }
 }

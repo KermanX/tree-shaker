@@ -1,9 +1,8 @@
 use crate::{
   analyzer::Analyzer,
-  ast::AstType2,
-  data::{
-    get_node_ptr, DataPlaceholder, ExtraData, ReferredNodes, StatementVecData, VarDeclarations,
-  },
+  ast::AstKind2,
+  data::{DataPlaceholder, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
+  dep::DepId,
   entity::FunctionEntitySource,
   logger::Logger,
   scope::conditional::ConditionalDataMap,
@@ -13,8 +12,8 @@ use oxc::{
   allocator::{Allocator, CloneIn},
   ast::{
     ast::{
-      AssignmentTarget, BindingPattern, Expression, ForStatementLeft, IdentifierReference,
-      NumberBase, Program, SimpleAssignmentTarget, Statement, UnaryOperator,
+      AssignmentTarget, BindingIdentifier, BindingPattern, Expression, ForStatementLeft,
+      IdentifierReference, NumberBase, Program, SimpleAssignmentTarget, Statement, UnaryOperator,
       VariableDeclarationKind,
     },
     AstBuilder, NONE,
@@ -85,7 +84,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_program(&self, node: &'a Program<'a>) -> Program<'a> {
     let Program { span, source_type, source_text, comments, hashbang, directives, body, .. } = node;
 
-    let data = self.get_data::<StatementVecData>(AstType2::Program, node);
+    let data = self.get_data::<StatementVecData>(AstKind2::Program(node));
     let mut body = self.transform_statement_vec(data, body);
 
     self.patch_var_declarations(&mut body);
@@ -162,20 +161,22 @@ impl<'a> Transformer<'a> {
     node.clone_in(self.allocator)
   }
 
-  pub fn build_unused_binding_identifier(&self, span: Span) -> BindingPattern<'a> {
+  pub fn build_unused_binding_identifier(&self, span: Span) -> BindingIdentifier<'a> {
     let mut hasher = DefaultHasher::new();
     hasher.write_u32(span.start);
     hasher.write_u32(span.end);
     let name = format!("__unused_{:04X}", hasher.finish() % 0xFFFF);
-    self.ast_builder.binding_pattern(
-      self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
-      NONE,
-      false,
-    )
+    self.ast_builder.binding_identifier(span, name)
   }
 
   pub fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
-    self.build_unused_binding_identifier(span)
+    self.ast_builder.binding_pattern(
+      self
+        .ast_builder
+        .binding_pattern_kind_from_binding_identifier(self.build_unused_binding_identifier(span)),
+      NONE,
+      false,
+    )
   }
 
   pub fn build_unused_assignment_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
@@ -245,20 +246,11 @@ impl<'a> Transformer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn get_data<D: Default + 'a>(&self, ast_type: AstType2, node: &impl GetSpan) -> &'a D {
-    let key = (ast_type, get_node_ptr(node));
-    let existing = self.data.get(&key);
+  pub fn get_data<D: Default + 'a>(&self, key: impl Into<DepId>) -> &'a D {
+    let existing = self.data.get(&key.into());
     match existing {
       Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },
       None => self.allocator.alloc(D::default()),
-    }
-  }
-  pub fn get_data2<D: Default + 'a>(&self, ast_type: AstType2, node: &impl GetSpan) -> &'a D {
-    let key = (ast_type, get_node_ptr(node));
-    let existing = self.data.get(&key);
-    match existing {
-      Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },
-      None => panic!("Data not found @{:?}", node.span()),
     }
   }
 }

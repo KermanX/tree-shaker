@@ -13,7 +13,7 @@ impl<'a> Analyzer<'a> {
           for specifier in specifiers {
             let local = specifier.local();
             self.declare_binding_identifier(local, false, DeclarationKind::Import);
-            self.init_binding_identifier(local, Some(self.factory.unknown));
+            self.init_binding_identifier(local, Some(self.factory.unknown()));
           }
         }
       }

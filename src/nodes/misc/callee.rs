@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, dep::DepId, entity::Entity,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, dep::DepId, entity::Entity,
   transformer::Transformer,
 };
 use oxc::{
@@ -9,8 +9,6 @@ use oxc::{
   },
   span::{GetSpan, SPAN},
 };
-
-const AST_TYPE: AstType2 = AstType2::Callee;
 
 fn unwrap_to_member_expression<'a>(node: &'a Expression<'a>) -> Option<&'a MemberExpression<'a>> {
   match node {
@@ -30,7 +28,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a Expression<'a>,
   ) -> Option<(bool, Entity<'a>, Entity<'a>)> {
-    let dep = box_consumable(DepId::from((AST_TYPE, node)));
+    let dep = box_consumable(DepId::from(AstKind2::Callee(node)));
     if let Some(member_expr) = unwrap_to_member_expression(node) {
       let (short_circuit, callee, cache) =
         self.exec_member_expression_read_in_chain(member_expr, false);
@@ -59,7 +57,7 @@ impl<'a> Transformer<'a> {
     if need_val {
       let transformed_expr = self.transform_expression(node, true).unwrap();
 
-      let is_referred = self.is_referred((AST_TYPE, node));
+      let is_referred = self.is_referred(AstKind2::Callee(node));
       let was_member_expression = unwrap_to_member_expression(node).is_some();
       let is_member_expression = unwrap_to_member_expression(&transformed_expr).is_some();
       Some(if is_referred && !was_member_expression && is_member_expression {

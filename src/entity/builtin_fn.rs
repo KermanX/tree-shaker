@@ -22,6 +22,10 @@ pub trait BuiltinFnEntity<'a>: Debug {
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 
+  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
+    // No effect
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,
@@ -69,6 +73,16 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     args: Entity<'a>,
   ) -> Entity<'a> {
     self.call_impl(analyzer, dep, this, args)
+  }
+
+  fn construct(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    consumed_object::construct(rc, analyzer, dep, args)
   }
 
   fn r#await(
@@ -155,7 +169,7 @@ impl<'a> EntityFactory<'a> {
 
 #[derive(Debug, Clone)]
 pub struct PureBuiltinFnEntity<'a> {
-  return_value: Entity<'a>,
+  return_value: fn(&EntityFactory<'a>) -> Entity<'a>,
 }
 
 impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
@@ -166,15 +180,21 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.consume(dep);
-    this.consume(analyzer);
-    args.consume(analyzer);
-    self.return_value.clone()
+    let ret_val = (self.return_value)(&analyzer.factory);
+    let dep = box_consumable((dep, this, args));
+    if analyzer.is_inside_pure() {
+      this.unknown_mutate(analyzer, dep.cloned());
+      args.unknown_mutate(analyzer, dep.cloned());
+      analyzer.factory.computed(ret_val, dep)
+    } else {
+      analyzer.consume(dep);
+      ret_val
+    }
   }
 }
 
 impl<'a> PureBuiltinFnEntity<'a> {
-  pub fn new(return_value: Entity<'a>) -> Self {
+  pub fn new(return_value: fn(&EntityFactory<'a>) -> Entity<'a>) -> Self {
     Self { return_value }
   }
 }

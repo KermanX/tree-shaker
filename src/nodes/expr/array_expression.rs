@@ -1,11 +1,9 @@
 use crate::{
-  analyzer::Analyzer, consumable::box_consumable, entity::Entity, transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::Entity,
+  transformer::Transformer,
 };
 use oxc::{
-  ast::{
-    ast::{ArrayExpression, ArrayExpressionElement, Expression, SpreadElement},
-    AstKind,
-  },
+  ast::ast::{ArrayExpression, ArrayExpressionElement, Expression, SpreadElement},
   span::GetSpan,
 };
 
@@ -30,7 +28,7 @@ impl<'a> Analyzer<'a> {
           }
         }
         _ => {
-          let dep = box_consumable(AstKind::ArrayExpressionElement(element));
+          let dep = box_consumable(AstKind2::ArrayExpressionElement(element));
           let value = self.exec_expression(element.to_expression());
           let element = self.factory.computed(value, dep);
           if rest.is_empty() {
@@ -74,7 +72,7 @@ impl<'a> Transformer<'a> {
           }
         }
         _ => {
-          let referred = self.is_referred(AstKind::ArrayExpressionElement(element));
+          let referred = self.is_referred(AstKind2::ArrayExpressionElement(element));
           let element = self.transform_expression(element.to_expression(), need_val && referred);
           if let Some(inner) = element {
             transformed_elements.push(self.ast_builder.array_expression_element_expression(inner));

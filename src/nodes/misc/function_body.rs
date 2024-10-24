@@ -1,17 +1,12 @@
 use crate::{
-  analyzer::Analyzer, ast::AstType2, consumable::box_consumable, data::StatementVecData,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, data::StatementVecData,
   transformer::Transformer,
 };
-use oxc::ast::{
-  ast::{ExpressionStatement, FunctionBody, Statement},
-  AstKind,
-};
-
-const AST_TYPE: AstType2 = AstType2::FunctionBody;
+use oxc::ast::ast::{ExpressionStatement, FunctionBody, Statement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function_body(&mut self, node: &'a FunctionBody<'a>) {
-    let data = self.load_data::<StatementVecData>(AST_TYPE, node);
+    let data = self.load_data::<StatementVecData>(AstKind2::FunctionBody(node));
 
     self.exec_statement_vec(data, &node.statements);
   }
@@ -19,7 +14,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_function_expression_body(&mut self, node: &'a FunctionBody<'a>) {
     debug_assert!(node.statements.len() == 1);
     if let Some(Statement::ExpressionStatement(expr)) = node.statements.first() {
-      let dep = box_consumable(AstKind::FunctionBody(node));
+      let dep = box_consumable(AstKind2::FunctionBody(node));
       let value = self.exec_expression(&expr.expression);
       let value = self.factory.computed(value, dep);
       let call_scope = self.call_scope_mut();
@@ -32,7 +27,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_function_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {
-    let data = self.get_data::<StatementVecData>(AST_TYPE, node);
+    let data = self.get_data::<StatementVecData>(AstKind2::FunctionBody(node));
 
     let FunctionBody { span, directives, statements, .. } = node;
 
@@ -44,7 +39,7 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn transform_function_expression_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {
-    let need_val = self.is_referred(AstKind::FunctionBody(&node));
+    let need_val = self.is_referred(AstKind2::FunctionBody(&node));
 
     let FunctionBody { span, directives, statements, .. } = node;
 

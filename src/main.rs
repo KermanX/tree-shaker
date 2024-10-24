@@ -29,7 +29,6 @@ fn main() {
     tree_shake: true,
     minify: None,
     code_gen: Default::default(),
-    eval_mode: false,
     logging: false,
   });
 
