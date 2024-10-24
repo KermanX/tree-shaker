@@ -15,7 +15,6 @@ mod logical_result;
 mod object;
 mod operations;
 mod primitive;
-mod promise;
 mod symbol;
 mod typeof_result;
 mod union;
