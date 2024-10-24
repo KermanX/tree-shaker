@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableTrait},
+  consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait},
 };
 
 pub fn get_property<'a>(
@@ -69,13 +69,16 @@ pub fn call<'a>(
   this: Entity<'a>,
   args: Entity<'a>,
 ) -> Entity<'a> {
-  let dep = (rc, dep, this, args);
   if analyzer.is_inside_pure() {
+    let dep = ConsumableNode::new((rc, dep, this, args));
     this.unknown_mutate(analyzer, dep.cloned());
     args.unknown_mutate(analyzer, dep.cloned());
     analyzer.factory.computed_unknown(dep)
   } else {
+    analyzer.consume(rc);
     analyzer.consume(dep);
+    analyzer.consume(this);
+    analyzer.consume(args);
     analyzer.may_throw();
     analyzer.refer_to_global();
     analyzer.factory.unknown()
