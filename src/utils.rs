@@ -37,6 +37,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn has_pure_notation(&self, span: Span) -> usize {
+    return 0;
+
     let Some(comment) = self.semantic.comments_range(..span.start).next_back() else {
       return 0;
     };
