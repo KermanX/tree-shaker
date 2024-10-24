@@ -180,9 +180,13 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.consume(dep);
-    this.consume(analyzer);
-    args.consume(analyzer);
+    let dep = box_consumable((dep, this, args));
+    if analyzer.is_inside_pure() {
+      this.mutate(dep.cloned());
+      args.mutate(dep);
+    } else {
+      analyzer.consume(dep);
+    }
     (self.return_value)(&analyzer.factory)
   }
 }
