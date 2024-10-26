@@ -41,7 +41,7 @@ Although the code above is very simple to analyze, but achieving this effect cor
 
 ## Comparison
 
-- **Rollup**: Rollup is a great but somehow I can't understand its codebase. I hope this project can be more readable and maintainable. Currently, for the same code, this project can produce code roughly 2% smaller than Rollup (both after minification via `uglify-js`) for a Vue starter app.
+- **Rollup**: Rollup is great but somehow I couldn't understand its codebase. I hope this project can be more readable and maintainable. Currently, for the same code, this project can produce code roughly 2% smaller than Rollup (both after minification via `uglify-js`) for a Vue starter app.
 - **Closure Compiler**: Closure Compiler can be considered as a tree shaker + minifier, while this project is only a tree shaker (for the minifier, we have `oxc_minifier`). Theoretically, we can shake more than Closure Compiler, but we cannot compare them directly because we don't have a equivalent minifier. Also, it's written in Java, which is hard to be integrated into the JS ecosystem.
 - **swc**: swc can also be considered as a tree shaker + minifier. TBH, currently swc is much faster than this project and more complete. But it's rule-based, which is a different approach from this project. It's also not compatible with the Oxc project, thus a new tree shaker is needed.
 
