@@ -125,6 +125,7 @@ impl<'a> Transformer<'a> {
     let key = call_stack.last().unwrap();
     if let Some(var_decls) = self.var_decls.borrow().get(key) {
       if !var_decls.is_empty() {
+        println!("PATCHING");
         statements.push(self.ast_builder.statement_declaration(
           self.ast_builder.declaration_variable(
             SPAN,
