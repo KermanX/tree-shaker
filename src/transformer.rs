@@ -1,9 +1,8 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
-  data::{DataPlaceholder, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
+  data::{DataPlaceholder, ExtraData, ReferredNodes, StatementVecData},
   dep::DepId,
-  entity::FunctionEntitySource,
   logger::Logger,
   scope::conditional::ConditionalDataMap,
   TreeShakeConfig,
@@ -18,9 +17,10 @@ use oxc::{
     },
     AstBuilder, NONE,
   },
-  semantic::Semantic,
+  semantic::{ScopeId, Semantic, SymbolId},
   span::{GetSpan, Span, SPAN},
 };
+use rustc_hash::FxHashMap;
 use std::{
   cell::{Cell, RefCell},
   hash::{DefaultHasher, Hasher},
@@ -35,10 +35,9 @@ pub struct Transformer<'a> {
   pub data: ExtraData<'a>,
   pub referred_nodes: ReferredNodes<'a>,
   pub conditional_data: ConditionalDataMap<'a>,
-  pub var_decls: RefCell<VarDeclarations<'a>>,
+  pub var_decls: RefCell<FxHashMap<SymbolId, bool>>,
   pub logger: Option<&'a Logger>,
 
-  pub call_stack: RefCell<Vec<FunctionEntitySource<'a>>>,
   /// The block statement has already exited, so we can and only can transform declarations themselves
   pub declaration_only: Cell<bool>,
   pub need_unused_assignment_target: Cell<bool>,
@@ -53,7 +52,6 @@ impl<'a> Transformer<'a> {
       data,
       referred_nodes,
       conditional_data,
-      var_decls,
       logger,
       ..
     } = analyzer;
@@ -72,10 +70,9 @@ impl<'a> Transformer<'a> {
       data,
       referred_nodes,
       conditional_data,
-      var_decls: RefCell::new(var_decls),
+      var_decls: Default::default(),
       logger,
 
-      call_stack: RefCell::new(vec![FunctionEntitySource::Module]),
       declaration_only: Cell::new(false),
       need_unused_assignment_target: Cell::new(false),
     }
@@ -87,7 +84,7 @@ impl<'a> Transformer<'a> {
     let data = self.get_data::<StatementVecData>(AstKind2::Program(node));
     let mut body = self.transform_statement_vec(data, body);
 
-    self.patch_var_declarations(&mut body);
+    self.patch_var_declarations(node.scope_id.get().unwrap(), &mut body);
 
     if self.need_unused_assignment_target.get() {
       body.push(self.ast_builder.statement_declaration(self.ast_builder.declaration_variable(
@@ -119,40 +116,55 @@ impl<'a> Transformer<'a> {
     )
   }
 
+  pub fn update_var_decl_state(&self, symbol: SymbolId, is_declaration: bool) {
+    let mut var_decls = self.var_decls.borrow_mut();
+    if is_declaration {
+      var_decls.insert(symbol, false);
+    } else {
+      var_decls.entry(symbol).or_insert(true);
+    }
+  }
+
   /// Append missing var declarations at the end of the function body or program
-  pub fn patch_var_declarations(&self, statements: &mut oxc::allocator::Vec<'a, Statement<'a>>) {
-    let call_stack = self.call_stack.borrow();
-    let key = call_stack.last().unwrap();
-    if let Some(var_decls) = self.var_decls.borrow().get(key) {
-      if !var_decls.is_empty() {
-        println!("PATCHING");
-        statements.push(self.ast_builder.statement_declaration(
-          self.ast_builder.declaration_variable(
-            SPAN,
-            VariableDeclarationKind::Var,
-            {
-              let mut decls = self.ast_builder.vec();
-              for symbol_id in var_decls.iter() {
-                let name = self.semantic.symbols().get_name(*symbol_id);
-                let span = self.semantic.symbols().get_span(*symbol_id);
-                decls.push(self.ast_builder.variable_declarator(
-                  span,
-                  VariableDeclarationKind::Var,
-                  self.ast_builder.binding_pattern(
-                    self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
-                    NONE,
-                    false,
-                  ),
-                  None,
-                  false,
-                ));
-              }
-              decls
-            },
+  pub fn patch_var_declarations(
+    &self,
+    scope_id: ScopeId,
+    statements: &mut oxc::allocator::Vec<'a, Statement<'a>>,
+  ) {
+    let bindings = self.semantic.scopes().get_bindings(scope_id);
+    if bindings.is_empty() {
+      return;
+    }
+
+    let var_decls = self.var_decls.borrow();
+    let mut declarations = self.ast_builder.vec();
+    for symbol_id in bindings.values() {
+      if var_decls.get(symbol_id) == Some(&true) {
+        let name = self.semantic.symbols().get_name(*symbol_id);
+        let span = self.semantic.symbols().get_span(*symbol_id);
+        declarations.push(self.ast_builder.variable_declarator(
+          span,
+          VariableDeclarationKind::Var,
+          self.ast_builder.binding_pattern(
+            self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
+            NONE,
             false,
           ),
+          None,
+          false,
         ));
       }
+    }
+
+    if !declarations.is_empty() {
+      statements.push(self.ast_builder.statement_declaration(
+        self.ast_builder.declaration_variable(
+          SPAN,
+          VariableDeclarationKind::Var,
+          declarations,
+          false,
+        ),
+      ));
     }
   }
 }

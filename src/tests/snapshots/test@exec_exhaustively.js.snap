@@ -24,9 +24,7 @@ else effect2();
 	if (a) effect1();
 else effect2();
 }
-export function f3() {
-	var j;
-}
+export function f3() {}
 export function f4() {
 	let obj = {
 		a: 0,

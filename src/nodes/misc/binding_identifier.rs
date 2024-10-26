@@ -36,11 +36,7 @@ impl<'a> Transformer<'a> {
     node: &'a BindingIdentifier<'a>,
   ) -> Option<BindingIdentifier<'a>> {
     let symbol = node.symbol_id.get().unwrap();
-    let call_stack = self.call_stack.borrow();
-    let key = call_stack.last().unwrap();
-    if let Some(var_decls) = self.var_decls.borrow_mut().get_mut(key) {
-      var_decls.remove(&symbol);
-    }
+    self.update_var_decl_state(symbol, true);
 
     let referred = self.is_referred(AstKind2::BindingIdentifier(&node));
     referred.then(|| self.clone_node(node))

@@ -293,9 +293,6 @@ impl<'a> Analyzer<'a> {
         arguments.1.push(symbol);
       }
     }
-    if kind == DeclarationKind::Var {
-      self.insert_var_decl(symbol);
-    }
 
     let variable_scope = self.scope_context.variable.current_id();
     self.declare_on_scope(variable_scope, kind, symbol, decl_dep, fn_value);
@@ -336,16 +333,10 @@ impl<'a> Analyzer<'a> {
 
   fn mark_unresolved_reference(&mut self, symbol: SymbolId) {
     if self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration() {
-      self.insert_var_decl(symbol);
       self.mark_untracked_on_scope(symbol);
     } else {
       self.thrown_builtin_error("Unresolved identifier reference");
     }
-  }
-
-  fn insert_var_decl(&mut self, symbol: SymbolId) {
-    let key = self.call_scope().source;
-    self.var_decls.entry(key).or_default().insert(symbol);
   }
 
   pub fn handle_tdz(&mut self, target_cf_scope: usize) {
