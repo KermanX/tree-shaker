@@ -117,6 +117,9 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn update_var_decl_state(&self, symbol: SymbolId, is_declaration: bool) {
+    if !self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration() {
+      return;
+    }
     let mut var_decls = self.var_decls.borrow_mut();
     if is_declaration {
       var_decls.insert(symbol, false);

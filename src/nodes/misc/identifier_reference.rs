@@ -101,9 +101,7 @@ impl<'a> Transformer<'a> {
 
       let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
       if let Some(symbol) = reference.symbol_id() {
-        if self.semantic.symbols().get_flags(symbol).is_variable() {
-          self.update_var_decl_state(symbol, false);
-        }
+        self.update_var_decl_state(symbol, false);
       }
 
       Some(self.ast_builder.identifier_reference(*span, name))
