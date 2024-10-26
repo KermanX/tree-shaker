@@ -95,7 +95,6 @@ impl<'a> Transformer<'a> {
 
     let referred = self.is_referred(AstKind2::IdentifierReference(node));
 
-    // (data.has_effect || referred).then(|| self.clone_node(node))
     if data.has_effect || referred {
       let IdentifierReference { span, name, .. } = node;
 
