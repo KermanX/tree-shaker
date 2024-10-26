@@ -95,6 +95,20 @@ impl<'a> Transformer<'a> {
 
     let referred = self.is_referred(AstKind2::IdentifierReference(node));
 
-    (data.has_effect || referred).then(|| self.clone_node(node))
+    // (data.has_effect || referred).then(|| self.clone_node(node))
+    if data.has_effect || referred {
+      let IdentifierReference { span, name, .. } = node;
+
+      let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
+      if let Some(symbol) = reference.symbol_id() {
+        if self.semantic.symbols().get_flags(symbol).is_variable() {
+          self.update_var_decl_state(symbol, false);
+        }
+      }
+
+      Some(self.ast_builder.identifier_reference(*span, name))
+    } else {
+      None
+    }
   }
 }

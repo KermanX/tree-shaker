@@ -9,9 +9,9 @@
 
 ## Features
 
-- Simulate the runtime behavior of the code, instead of apply rules.
+- Simulate the runtime behavior of the code, instead of applying rules.
 - Single AST pass - Analyzer as much information as possible.
-- As accurate as possible.
+- As accurate as possible. [test262](https://github.com/tc39/test262) is used for testing.
 - May not be the fastest. (But I will try my best)
 
 ## Demo
@@ -37,7 +37,13 @@ export function f() {
 }
 ```
 
-Although the code above is simple to analyze, but to achieve this correctly and accurately for every codebase, it requires a lot of work - JS is too dynamic.
+Although the code above is very simple to analyze, but achieving this effect correctly for every codebase requires a lot of work - JS is too dynamic.
+
+## Comparison
+
+- **Rollup**: Rollup is great but somehow I couldn't understand its codebase. I hope this project can be more readable and maintainable. Currently, for the same code, this project can produce code roughly 2% smaller than Rollup (both after minification via `uglify-js`) for a Vue starter app.
+- **Closure Compiler**: Closure Compiler can be considered as a tree shaker + minifier, while this project is only a tree shaker (for the minifier, we have `oxc_minifier`). Theoretically, we can shake more than Closure Compiler, but we cannot compare them directly because we don't have a equivalent minifier. Also, it's written in Java, which is hard to be integrated into the JS ecosystem.
+- **swc**: swc can also be considered as a tree shaker + minifier. TBH, currently swc is much faster than this project and more complete. But it's rule-based, which is a different approach from this project. It's also not compatible with the Oxc project, thus a new tree shaker is needed.
 
 ## Todo
 
@@ -50,7 +56,7 @@ Although the code above is simple to analyze, but to achieve this correctly and 
 - Type narrowing
 - Multiple-module support
 
-## Approach
+## Basic Approach
 
 1. Parse the code via `oxc_parser`.
 2. Build the semantic information via `oxc_semantic`.

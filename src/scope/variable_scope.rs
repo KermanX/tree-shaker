@@ -2,18 +2,18 @@ use super::exhaustive::TrackerRunner;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  consumable::{box_consumable, Consumable},
+  consumable::{box_consumable, Consumable, ConsumableVec},
   entity::{Entity, UNDEFINED_ENTITY},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::{fmt, mem};
+use std::{cell::RefCell, fmt, mem, rc::Rc};
 
 #[derive(Debug)]
 pub struct Variable<'a> {
   pub kind: DeclarationKind,
   pub cf_scope: ScopeId,
-  pub exhausted: bool,
+  pub exhausted: Option<Rc<RefCell<ConsumableVec<'a>>>>,
   pub value: Option<Entity<'a>>,
   pub decl_dep: Consumable<'a>,
 }
@@ -24,7 +24,7 @@ impl Clone for Variable<'_> {
     Self {
       kind: self.kind,
       cf_scope: self.cf_scope,
-      exhausted: self.exhausted,
+      exhausted: self.exhausted.clone(),
       value: self.value.clone(),
       decl_dep: self.decl_dep.cloned(),
     }
@@ -96,7 +96,7 @@ impl<'a> Analyzer<'a> {
         } else {
           self.scope_context.cf.current_id()
         },
-        exhausted: false,
+        exhausted: None,
         value: fn_value,
         decl_dep,
       };
@@ -122,11 +122,8 @@ impl<'a> Analyzer<'a> {
       } else {
         // Do nothing
       }
-    } else if variable.exhausted {
-      if let Some(value) = value {
-        self.consume(value);
-      }
-      self.consume(init_dep);
+    } else if let Some(deps) = variable.exhausted.clone() {
+      deps.borrow_mut().push(box_consumable((init_dep, value)));
     } else {
       variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_dep));
@@ -146,14 +143,23 @@ impl<'a> Analyzer<'a> {
           .then(|| self.factory.computed(self.factory.undefined, variable.decl_dep.cloned()))
       });
 
-      let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
-      if !variable.exhausted {
+      let value = if let Some(dep) = variable.exhausted.clone() {
+        if let Some(value) = value {
+          Some(self.factory.computed(value, dep))
+        } else {
+          self.consume(dep);
+          None
+        }
+      } else {
+        let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
         self.mark_exhaustive_read((id, symbol), target_cf_scope);
-      }
+        value
+      };
 
       if value.is_none() {
         // TDZ
         self.consume(variable.decl_dep.cloned());
+        let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
         self.handle_tdz(target_cf_scope);
       }
 
@@ -173,9 +179,8 @@ impl<'a> Analyzer<'a> {
         let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
         let dep = (self.get_exec_dep(target_cf_scope), variable.decl_dep.cloned());
 
-        if variable.exhausted {
-          self.consume(dep);
-          self.consume(new_val);
+        if let Some(deps) = variable.exhausted {
+          deps.borrow_mut().push(box_consumable((dep, new_val)));
         } else {
           let old_val = variable.value;
           let (should_consume, indeterminate) = if old_val.is_some() {
@@ -191,15 +196,10 @@ impl<'a> Analyzer<'a> {
           };
 
           if should_consume {
-            self.consume(dep);
-            self.consume(new_val);
-            if let Some(old_val) = &old_val {
-              old_val.consume(self);
-            }
-
             let variable =
               self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
-            variable.exhausted = true;
+            variable.exhausted =
+              Some(Rc::new(RefCell::new(vec![box_consumable((dep, new_val, old_val))])));
             variable.value = Some(self.factory.unknown());
           } else {
             let variable =
@@ -228,13 +228,15 @@ impl<'a> Analyzer<'a> {
 
   pub fn consume_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> bool {
     if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).cloned() {
-      if !variable.exhausted {
+      if let Some(dep) = variable.exhausted {
+        self.consume(dep);
+      } else {
         variable.decl_dep.consume(self);
         if let Some(value) = &variable.value {
           value.consume(self);
         }
         let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
-        variable.exhausted = true;
+        variable.exhausted = Some(Default::default());
         variable.value = Some(self.factory.unknown());
       }
       true
@@ -246,7 +248,7 @@ impl<'a> Analyzer<'a> {
   fn mark_untracked_on_scope(&mut self, symbol: SymbolId) {
     let cf_scope_depth = self.call_scope().cf_scope_depth;
     let variable = Variable {
-      exhausted: true,
+      exhausted: Some(Default::default()),
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scope_context.cf.stack[cf_scope_depth],
       value: Some(self.factory.unknown()),
@@ -291,9 +293,6 @@ impl<'a> Analyzer<'a> {
         arguments.1.push(symbol);
       }
     }
-    if kind == DeclarationKind::Var {
-      self.insert_var_decl(symbol);
-    }
 
     let variable_scope = self.scope_context.variable.current_id();
     self.declare_on_scope(variable_scope, kind, symbol, decl_dep, fn_value);
@@ -334,16 +333,10 @@ impl<'a> Analyzer<'a> {
 
   fn mark_unresolved_reference(&mut self, symbol: SymbolId) {
     if self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration() {
-      self.insert_var_decl(symbol);
       self.mark_untracked_on_scope(symbol);
     } else {
       self.thrown_builtin_error("Unresolved identifier reference");
     }
-  }
-
-  fn insert_var_decl(&mut self, symbol: SymbolId) {
-    let key = self.call_scope().source;
-    self.var_decls.entry(key).or_default().insert(symbol);
   }
 
   pub fn handle_tdz(&mut self, target_cf_scope: usize) {

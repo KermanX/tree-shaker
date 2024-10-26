@@ -98,12 +98,10 @@ impl<'a> Transformer<'a> {
     if need_val || self.is_referred(AstKind2::Function(&node)) {
       let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
 
-      self.call_stack.borrow_mut().push(FunctionEntitySource::Function(node));
-
       let params = self.transform_formal_parameters(params);
-      let body = self.transform_function_body(body.as_ref().unwrap());
 
-      self.call_stack.borrow_mut().pop();
+      let body =
+        body.as_ref().map(|body| self.transform_function_body(node.scope_id.get().unwrap(), body));
 
       Some(self.ast_builder.function(
         *r#type,
@@ -116,7 +114,7 @@ impl<'a> Transformer<'a> {
         None::<TSThisParameter>,
         params,
         None::<TSTypeAnnotation>,
-        Some(body),
+        body,
       ))
     } else {
       None

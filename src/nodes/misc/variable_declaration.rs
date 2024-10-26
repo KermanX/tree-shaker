@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
     }
 
     for declarator in &node.declarations {
-      self.exec_variable_declarator(declarator, init.clone());
+      self.init_variable_declarator(declarator, init.clone());
     }
   }
 }

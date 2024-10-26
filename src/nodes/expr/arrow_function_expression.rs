@@ -67,16 +67,12 @@ impl<'a> Transformer<'a> {
     if need_val || self.is_referred(AstKind2::ArrowFunctionExpression(node)) {
       let ArrowFunctionExpression { span, expression, r#async, params, body, .. } = node;
 
-      self.call_stack.borrow_mut().push(FunctionEntitySource::ArrowFunctionExpression(node));
-
       let params = self.transform_formal_parameters(params);
       let body = if *expression {
         self.transform_function_expression_body(body)
       } else {
-        self.transform_function_body(body)
+        self.transform_function_body(node.scope_id.get().unwrap(), body)
       };
-
-      self.call_stack.borrow_mut().pop();
 
       Some(self.ast_builder.expression_arrow_function(
         *span,

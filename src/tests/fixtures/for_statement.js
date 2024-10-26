@@ -1,4 +1,8 @@
 export function main() {
+  for(let i = 0; i < 10; i++) {
+    // Nothing
+  }
+
   for(effect(1);(effect(2), false);effect(3)){
     effect(4);
   }

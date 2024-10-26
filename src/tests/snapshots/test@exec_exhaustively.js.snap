@@ -24,13 +24,7 @@ else effect2();
 	if (a) effect1();
 else effect2();
 }
-export function f3() {
-	label: for (var i = 0; i < 10; ++i) {
-		for (var j = 0; j < 10; ++j) {
-			continue label;
-		}
-	}
-}
+export function f3() {}
 export function f4() {
 	let obj = {
 		a: 0,
@@ -44,8 +38,5 @@ export function f4() {
 	test = typeof obj.b;
 }
 export function f5() {
-	let i = 1;
-	while (a) {
-		i = 2;
-	}
+	while (a);
 }
