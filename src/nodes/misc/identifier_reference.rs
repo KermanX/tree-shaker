@@ -84,7 +84,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<IdentifierReference<'a>> {
     let data = self.get_data::<Data>(AstKind2::IdentifierReference(node));
 
-    (data.has_effect || need_val).then(|| self.clone_node(node))
+    self.transform_identifier_reference(node, data.has_effect || need_val)
   }
 
   pub fn transform_identifier_reference_write(
@@ -95,7 +95,15 @@ impl<'a> Transformer<'a> {
 
     let referred = self.is_referred(AstKind2::IdentifierReference(node));
 
-    if data.has_effect || referred {
+    self.transform_identifier_reference(node, data.has_effect || referred)
+  }
+
+  fn transform_identifier_reference(
+    &self,
+    node: &'a IdentifierReference<'a>,
+    included: bool,
+  ) -> Option<IdentifierReference<'a>> {
+    if included {
       let IdentifierReference { span, name, .. } = node;
 
       let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
