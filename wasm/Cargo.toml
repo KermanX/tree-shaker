@@ -8,5 +8,5 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 tree-shake = { path = "../" }
-oxc = { version = "0.32.0", features = ["codegen", "semantic", "minifier"] }
+oxc = { version = "0.34.0", features = ["codegen", "semantic", "minifier"] }
 wasm-bindgen = "0.2.93"
