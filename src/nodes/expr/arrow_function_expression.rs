@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   consumable::Consumable,
-  entity::{Entity, FunctionEntitySource},
+  entity::{alloc_function_id, Entity, FunctionEntitySource},
   transformer::Transformer,
 };
 use oxc::{
@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
     node: &'a ArrowFunctionExpression<'a>,
   ) -> Entity<'a> {
     self.factory.function(
-      FunctionEntitySource::ArrowFunctionExpression(node),
+      FunctionEntitySource::ArrowFunctionExpression(node, alloc_function_id()),
       self.scope_context.variable.stack.clone(),
     )
   }

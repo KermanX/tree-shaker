@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   consumable::{box_consumable, ConsumableTrait},
-  entity::{ClassEntity, Entity, FunctionEntitySource},
+  entity::{alloc_function_id, ClassEntity, Entity, FunctionEntitySource},
   transformer::Transformer,
 };
 use oxc::{
@@ -57,7 +57,7 @@ impl<'a> Analyzer<'a> {
 
     let variable_scope_stack = self.scope_context.variable.stack.clone();
     self.push_call_scope(
-      FunctionEntitySource::ClassStatics(node),
+      FunctionEntitySource::ClassStatics(node, alloc_function_id()),
       box_consumable(()),
       variable_scope_stack,
       false,
@@ -147,7 +147,7 @@ impl<'a> Analyzer<'a> {
     let variable_scope_stack = class.variable_scope_stack.clone();
     self.exec_consumed_fn(move |analyzer| {
       analyzer.push_call_scope(
-        FunctionEntitySource::ClassConstructor(node),
+        FunctionEntitySource::ClassConstructor(node, alloc_function_id()),
         box_consumable(()),
         variable_scope_stack.as_ref().clone(),
         false,

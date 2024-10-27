@@ -19,24 +19,30 @@ use std::{
   cell::Cell,
   hash::{Hash, Hasher},
   rc::Rc,
+  sync::atomic::AtomicUsize,
 };
+
+static FUNCTION_ID: AtomicUsize = AtomicUsize::new(0);
+pub fn alloc_function_id() -> usize {
+  FUNCTION_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum FunctionEntitySource<'a> {
-  Function(&'a Function<'a>),
-  ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
-  ClassStatics(&'a Class<'a>),
-  ClassConstructor(&'a Class<'a>),
+  Function(&'a Function<'a>, usize),
+  ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>, usize),
+  ClassStatics(&'a Class<'a>, usize),
+  ClassConstructor(&'a Class<'a>, usize),
   Module,
 }
 
 impl GetSpan for FunctionEntitySource<'_> {
   fn span(&self) -> Span {
     match self {
-      FunctionEntitySource::Function(node) => node.span(),
-      FunctionEntitySource::ArrowFunctionExpression(node) => node.span(),
-      FunctionEntitySource::ClassStatics(node) => node.span(),
-      FunctionEntitySource::ClassConstructor(node) => node.span(),
+      FunctionEntitySource::Function(node, _) => node.span(),
+      FunctionEntitySource::ArrowFunctionExpression(node, _) => node.span(),
+      FunctionEntitySource::ClassStatics(node, _) => node.span(),
+      FunctionEntitySource::ClassConstructor(node, _) => node.span(),
       FunctionEntitySource::Module => Span::default(),
     }
   }
@@ -45,12 +51,12 @@ impl GetSpan for FunctionEntitySource<'_> {
 impl<'a> FunctionEntitySource<'a> {
   pub fn into_dep_id(self) -> DepId {
     match self {
-      FunctionEntitySource::Function(node) => AstKind2::Function(node),
-      FunctionEntitySource::ArrowFunctionExpression(node) => {
+      FunctionEntitySource::Function(node, _) => AstKind2::Function(node),
+      FunctionEntitySource::ArrowFunctionExpression(node, _) => {
         AstKind2::ArrowFunctionExpression(node)
       }
-      FunctionEntitySource::ClassStatics(node) => AstKind2::Class(node),
-      FunctionEntitySource::ClassConstructor(node) => AstKind2::Class(node),
+      FunctionEntitySource::ClassStatics(node, _) => AstKind2::Class(node),
+      FunctionEntitySource::ClassConstructor(node, _) => AstKind2::Class(node),
       FunctionEntitySource::Module => AstKind2::Environment,
     }
     .into()
@@ -58,12 +64,12 @@ impl<'a> FunctionEntitySource<'a> {
 
   pub fn name(&self) -> String {
     match self {
-      FunctionEntitySource::Function(node) => {
+      FunctionEntitySource::Function(node, _) => {
         node.id.as_ref().map_or("<unknown>", |id| &id.name).to_string()
       }
-      FunctionEntitySource::ArrowFunctionExpression(_) => "<anonymous>".to_string(),
-      FunctionEntitySource::ClassStatics(_) => "<ClassStatics>".to_string(),
-      FunctionEntitySource::ClassConstructor(_) => "<ClassConstructor>".to_string(),
+      FunctionEntitySource::ArrowFunctionExpression(_, _) => "<anonymous>".to_string(),
+      FunctionEntitySource::ClassStatics(_, _) => "<ClassStatics>".to_string(),
+      FunctionEntitySource::ClassConstructor(_, _) => "<ClassConstructor>".to_string(),
       FunctionEntitySource::Module => "<Module>".to_string(),
     }
   }
@@ -73,15 +79,13 @@ impl PartialEq for FunctionEntitySource<'_> {
   fn eq(&self, other: &Self) -> bool {
     match (self, other) {
       (FunctionEntitySource::Module, FunctionEntitySource::Module) => true,
-      (FunctionEntitySource::Function(a), FunctionEntitySource::Function(b)) => {
-        a.span() == b.span()
-      }
+      (FunctionEntitySource::Function(_, a), FunctionEntitySource::Function(_, b)) => a == b,
       (
-        FunctionEntitySource::ArrowFunctionExpression(a),
-        FunctionEntitySource::ArrowFunctionExpression(b),
-      ) => a.span() == b.span(),
-      (FunctionEntitySource::ClassStatics(a), FunctionEntitySource::ClassStatics(b)) => {
-        a.span() == b.span()
+        FunctionEntitySource::ArrowFunctionExpression(_, a),
+        FunctionEntitySource::ArrowFunctionExpression(_, b),
+      ) => a == b,
+      (FunctionEntitySource::ClassStatics(_, a), FunctionEntitySource::ClassStatics(_, b)) => {
+        a == b
       }
       _ => false,
     }
@@ -276,7 +280,7 @@ impl<'a> FunctionEntity<'a> {
     let call_dep = box_consumable((self.source.into_dep_id(), dep));
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.source {
-      FunctionEntitySource::Function(node) => analyzer.call_function(
+      FunctionEntitySource::Function(node, _) => analyzer.call_function(
         rc,
         self.source,
         call_dep.cloned(),
@@ -286,7 +290,7 @@ impl<'a> FunctionEntity<'a> {
         args.clone(),
         consume,
       ),
-      FunctionEntitySource::ArrowFunctionExpression(node) => analyzer
+      FunctionEntitySource::ArrowFunctionExpression(node, _) => analyzer
         .call_arrow_function_expression(
           self.source,
           call_dep.cloned(),

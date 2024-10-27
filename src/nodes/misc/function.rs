@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   consumable::{box_consumable, Consumable},
-  entity::{Entity, FunctionEntitySource},
+  entity::{alloc_function_id, Entity, FunctionEntitySource},
   transformer::Transformer,
 };
 use oxc::{
@@ -15,9 +15,10 @@ use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
-    self
-      .factory
-      .function(FunctionEntitySource::Function(node), self.scope_context.variable.stack.clone())
+    self.factory.function(
+      FunctionEntitySource::Function(node, alloc_function_id()),
+      self.scope_context.variable.stack.clone(),
+    )
   }
 
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {

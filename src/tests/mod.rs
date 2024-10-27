@@ -24,6 +24,7 @@ fn tree_shake(input: String) -> String {
 #[test]
 fn test() {
   glob!("fixtures/**/*.js", |path| {
+    println!("{path:?}");
     let input = fs::read_to_string(path).unwrap();
     let mut settings = insta::Settings::clone_current();
     settings.set_prepend_module_to_snapshot(false);
