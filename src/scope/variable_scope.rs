@@ -2,38 +2,25 @@ use super::exhaustive::TrackerRunner;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  consumable::{box_consumable, Consumable, ConsumableVec},
+  consumable::{box_consumable, Consumable, LazyConsumable},
   entity::{Entity, UNDEFINED_ENTITY},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::{cell::RefCell, fmt, mem, rc::Rc};
+use std::{cell::RefCell, fmt, mem};
 
 #[derive(Debug)]
 pub struct Variable<'a> {
   pub kind: DeclarationKind,
   pub cf_scope: ScopeId,
-  pub exhausted: Option<Rc<RefCell<ConsumableVec<'a>>>>,
+  pub exhausted: Option<LazyConsumable<'a>>,
   pub value: Option<Entity<'a>>,
   pub decl_dep: Consumable<'a>,
 }
 
-/// It's not good to clone, but it's fine for now
-impl Clone for Variable<'_> {
-  fn clone(&self) -> Self {
-    Self {
-      kind: self.kind,
-      cf_scope: self.cf_scope,
-      exhausted: self.exhausted.clone(),
-      value: self.value.clone(),
-      decl_dep: self.decl_dep.cloned(),
-    }
-  }
-}
-
 #[derive(Default)]
 pub struct VariableScope<'a> {
-  pub variables: FxHashMap<SymbolId, Variable<'a>>,
+  pub variables: FxHashMap<SymbolId, &'a RefCell<Variable<'a>>>,
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
   pub super_class: Option<Entity<'a>>,
@@ -44,6 +31,7 @@ impl fmt::Debug for VariableScope<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let mut map = f.debug_map();
     for (k, v) in self.variables.iter() {
+      let v = v.borrow();
       map.entry(&k, &format!("{:?} {}", v.kind, v.value.is_some()));
     }
     map.finish()
@@ -65,22 +53,25 @@ impl<'a> Analyzer<'a> {
     decl_dep: Consumable<'a>,
     fn_value: Option<Entity<'a>>,
   ) {
-    if let Some(old) = self.scope_context.variable.get(id).variables.get(&symbol) {
+    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol) {
       // Here we can't use kind.is_untracked() because this time we are declaring a variable
-      if old.kind.is_untracked() {
+      let old_kind = variable.borrow().kind;
+
+      if old_kind.is_untracked() {
         self.consume(decl_dep);
         fn_value.map(|val| val.consume(self));
         return;
       }
 
-      if old.kind.is_shadowable() && kind.is_redeclarable() {
+      if old_kind.is_shadowable() && kind.is_redeclarable() {
         // Redeclaration is sometimes allowed
         // var x = 1; var x = 2;
         // function f(x) { var x }
-        let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
+        let mut variable = variable.borrow_mut();
         variable.kind = kind;
         // TODO: Sometimes this is not necessary
         variable.decl_dep = box_consumable((variable.decl_dep.cloned(), decl_dep));
+        drop(variable);
         if let Some(new_val) = fn_value {
           self.write_on_scope(id, symbol, new_val);
         }
@@ -89,7 +80,7 @@ impl<'a> Analyzer<'a> {
       }
     } else {
       let has_fn_value = fn_value.is_some();
-      let variable = Variable {
+      let variable = self.allocator.alloc(RefCell::new(Variable {
         kind,
         cf_scope: if kind.is_var() {
           self.cf_scope_id_of_call_scope()
@@ -99,7 +90,7 @@ impl<'a> Analyzer<'a> {
         exhausted: None,
         value: fn_value,
         decl_dep,
-      };
+      }));
       self.scope_context.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
         self.exec_exhaustive_deps(false, (id, symbol));
@@ -116,16 +107,19 @@ impl<'a> Analyzer<'a> {
   ) {
     let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
 
-    if variable.kind.is_redeclarable() {
+    let variable_ref = variable.borrow();
+    if variable_ref.kind.is_redeclarable() {
       if let Some(value) = value {
+        drop(variable_ref);
         self.write_on_scope(id, symbol, self.factory.computed(value, init_dep));
       } else {
         // Do nothing
       }
-    } else if let Some(deps) = variable.exhausted.clone() {
-      deps.borrow_mut().push(box_consumable((init_dep, value)));
+    } else if let Some(deps) = variable_ref.exhausted.clone() {
+      deps.push(self, box_consumable((init_dep, value)));
     } else {
-      variable.value =
+      drop(variable_ref);
+      variable.borrow_mut().value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_dep));
       self.exec_exhaustive_deps(false, (id, symbol));
     }
@@ -135,15 +129,17 @@ impl<'a> Analyzer<'a> {
   /// Some(None): in this scope, but TDZ
   /// Some(Some(val)): in this scope, and val is the value
   fn read_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> Option<Option<Entity<'a>>> {
-    self.scope_context.variable.get(id).variables.get(&symbol).cloned().map(|variable| {
-      let value = variable.value.clone().or_else(|| {
-        variable
+    self.scope_context.variable.get(id).variables.get(&symbol).copied().map(|variable| {
+      let variable_ref = variable.borrow();
+      let value = variable_ref.value.clone().or_else(|| {
+        variable_ref
           .kind
           .is_var()
-          .then(|| self.factory.computed(self.factory.undefined, variable.decl_dep.cloned()))
+          .then(|| self.factory.computed(self.factory.undefined, variable_ref.decl_dep.cloned()))
       });
 
-      let value = if let Some(dep) = variable.exhausted.clone() {
+      let value = if let Some(dep) = variable_ref.exhausted.clone() {
+        drop(variable_ref);
         if let Some(value) = value {
           Some(self.factory.computed(value, dep))
         } else {
@@ -151,15 +147,17 @@ impl<'a> Analyzer<'a> {
           None
         }
       } else {
-        let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
+        let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
+        drop(variable_ref);
         self.mark_exhaustive_read((id, symbol), target_cf_scope);
         value
       };
 
       if value.is_none() {
         // TDZ
-        self.consume(variable.decl_dep.cloned());
-        let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
+        let variable_ref = variable.borrow();
+        self.consume(variable_ref.decl_dep.cloned());
+        let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
         self.handle_tdz(target_cf_scope);
       }
 
@@ -168,25 +166,27 @@ impl<'a> Analyzer<'a> {
   }
 
   fn write_on_scope(&mut self, id: ScopeId, symbol: SymbolId, new_val: Entity<'a>) -> bool {
-    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).cloned() {
-      if variable.kind.is_untracked() {
+    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).copied() {
+      let kind = variable.borrow().kind;
+      if kind.is_untracked() {
         self.consume(new_val);
-      } else if variable.kind.is_const() {
+      } else if kind.is_const() {
         self.thrown_builtin_error("Cannot assign to const variable");
-        self.consume(variable.decl_dep);
+        self.consume(variable.borrow().decl_dep.cloned());
         new_val.consume(self);
       } else {
-        let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
-        let dep = (self.get_exec_dep(target_cf_scope), variable.decl_dep.cloned());
+        let variable_ref = variable.borrow();
+        let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
+        let dep = (self.get_exec_dep(target_cf_scope), variable_ref.decl_dep.cloned());
 
-        if let Some(deps) = variable.exhausted {
-          deps.borrow_mut().push(box_consumable((dep, new_val)));
+        if let Some(deps) = variable_ref.exhausted.clone() {
+          deps.push(self, box_consumable((dep, new_val)));
         } else {
-          let old_val = variable.value;
+          let old_val = variable_ref.value;
           let (should_consume, indeterminate) = if old_val.is_some() {
             // Normal write
             self.mark_exhaustive_write((id, symbol), target_cf_scope)
-          } else if !variable.kind.is_redeclarable() {
+          } else if !variable_ref.kind.is_redeclarable() {
             // TDZ write
             self.handle_tdz(target_cf_scope);
             (true, false)
@@ -194,17 +194,15 @@ impl<'a> Analyzer<'a> {
             // Write uninitialized `var`
             self.mark_exhaustive_write((id, symbol), target_cf_scope)
           };
+          drop(variable_ref);
 
+          let mut variable_ref = variable.borrow_mut();
           if should_consume {
-            let variable =
-              self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
-            variable.exhausted =
-              Some(Rc::new(RefCell::new(vec![box_consumable((dep, new_val, old_val))])));
-            variable.value = Some(self.factory.unknown());
+            variable_ref.exhausted =
+              Some(LazyConsumable::new(box_consumable((dep, new_val, old_val))));
+            variable_ref.value = Some(self.factory.unknown());
           } else {
-            let variable =
-              self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
-            variable.value = Some(self.factory.computed(
+            variable_ref.value = Some(self.factory.computed(
               if indeterminate {
                 self.factory.union(vec![
                   old_val.unwrap_or(unsafe { mem::transmute(UNDEFINED_ENTITY) }),
@@ -216,6 +214,7 @@ impl<'a> Analyzer<'a> {
               box_consumable(dep),
             ));
           };
+          drop(variable_ref);
 
           self.exec_exhaustive_deps(should_consume, (id, symbol));
         }
@@ -227,17 +226,21 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn consume_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> bool {
-    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).cloned() {
-      if let Some(dep) = variable.exhausted {
+    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).copied() {
+      let variable_ref = variable.borrow();
+      if let Some(dep) = variable_ref.exhausted.clone() {
+        drop(variable_ref);
         self.consume(dep);
       } else {
-        variable.decl_dep.consume(self);
-        if let Some(value) = &variable.value {
+        variable_ref.decl_dep.consume(self);
+        if let Some(value) = &variable_ref.value {
           value.consume(self);
         }
-        let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
-        variable.exhausted = Some(Default::default());
-        variable.value = Some(self.factory.unknown());
+        drop(variable_ref);
+
+        let mut variable_ref = variable.borrow_mut();
+        variable_ref.exhausted = Some(LazyConsumable::new_consumed());
+        variable_ref.value = Some(self.factory.unknown());
       }
       true
     } else {
@@ -247,13 +250,13 @@ impl<'a> Analyzer<'a> {
 
   fn mark_untracked_on_scope(&mut self, symbol: SymbolId) {
     let cf_scope_depth = self.call_scope().cf_scope_depth;
-    let variable = Variable {
-      exhausted: Some(Default::default()),
+    let variable = self.allocator.alloc(RefCell::new(Variable {
+      exhausted: Some(LazyConsumable::new_consumed()),
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scope_context.cf.stack[cf_scope_depth],
       value: Some(self.factory.unknown()),
       decl_dep: box_consumable(()),
-    };
+    }));
     let old = self.variable_scope_mut().variables.insert(symbol, variable);
     debug_assert!(old.is_none());
   }

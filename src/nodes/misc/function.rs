@@ -103,6 +103,11 @@ impl<'a> Transformer<'a> {
       let body =
         body.as_ref().map(|body| self.transform_function_body(node.scope_id.get().unwrap(), body));
 
+      if let Some(id) = id {
+        let symbol = id.symbol_id.get().unwrap();
+        self.update_var_decl_state(symbol, true);
+      }
+
       Some(self.ast_builder.function(
         *r#type,
         *span,

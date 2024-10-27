@@ -1,8 +1,10 @@
 mod collector;
 mod impls;
+mod lazy;
 mod node;
 
 pub use collector::*;
+pub use lazy::*;
 pub use node::*;
 
 use crate::analyzer::Analyzer;
