@@ -2,7 +2,8 @@ use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   consumable::Consumable,
-  entity::{Entity, FunctionEntitySource},
+  entity::Entity,
+  scope::call_scope::CalleeNode,
   transformer::Transformer,
 };
 use oxc::{
@@ -19,15 +20,12 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
   ) -> Entity<'a> {
-    self.factory.function(
-      FunctionEntitySource::ArrowFunctionExpression(node),
-      self.scope_context.variable.stack.clone(),
-    )
+    self.new_function(CalleeNode::ArrowFunctionExpression(node))
   }
 
   pub fn call_arrow_function_expression(
     &mut self,
-    source: FunctionEntitySource<'a>,
+    callee: (CalleeNode<'a>, usize),
     call_dep: Consumable<'a>,
     node: &'a ArrowFunctionExpression<'a>,
     variable_scopes: Rc<Vec<ScopeId>>,
@@ -35,7 +33,7 @@ impl<'a> Analyzer<'a> {
     consume: bool,
   ) -> Entity<'a> {
     self.push_call_scope(
-      source,
+      callee,
       call_dep,
       variable_scopes.as_ref().clone(),
       node.r#async,

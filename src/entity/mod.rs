@@ -27,7 +27,6 @@ pub use class::ClassEntity;
 pub use collector::LiteralCollector;
 pub use entity::{Entity, EntityTrait};
 pub use factory::EntityFactory;
-pub use function::FunctionEntitySource;
 pub use label::LabelEntity;
 pub use literal::LiteralEntity;
 pub use object::{ObjectEntity, ObjectProperty, ObjectPropertyValue};

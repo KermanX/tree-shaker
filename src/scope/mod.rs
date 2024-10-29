@@ -11,10 +11,10 @@ use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
-  entity::{Entity, EntityFactory, FunctionEntitySource, LabelEntity},
+  entity::{Entity, EntityFactory, LabelEntity},
   logger::DebuggerEvent,
 };
-use call_scope::CallScope;
+use call_scope::{CallScope, CalleeNode};
 use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
 use oxc::{
@@ -51,7 +51,7 @@ impl<'a> ScopeContext<'a> {
     ScopeContext {
       call: vec![CallScope::new(
         DepId::from_counter(),
-        FunctionEntitySource::Module,
+        (CalleeNode::Module, factory.alloc_instance_id()),
         vec![],
         0,
         body_variable_scope,
@@ -133,7 +133,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_call_scope(
     &mut self,
-    source: FunctionEntitySource<'a>,
+    callee: (CalleeNode<'a>, usize),
     call_dep: Consumable<'a>,
     variable_scope_stack: Vec<ScopeId>,
     is_async: bool,
@@ -156,7 +156,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::PushCallScope(
-        source.span(),
+        callee.0.span(),
         old_variable_scope_stack.clone(),
         cf_scope_depth,
         body_variable_scope,
@@ -165,7 +165,7 @@ impl<'a> Analyzer<'a> {
 
     self.scope_context.call.push(CallScope::new(
       dep_id,
-      source.into(),
+      callee,
       old_variable_scope_stack,
       cf_scope_depth,
       body_variable_scope,

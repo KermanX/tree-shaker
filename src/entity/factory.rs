@@ -1,8 +1,10 @@
 use super::{Entity, LiteralEntity, PrimitiveEntity, PureBuiltinFnEntity, UnknownEntity};
 use oxc::allocator::Allocator;
+use std::cell::Cell;
 
 pub struct EntityFactory<'a> {
   pub allocator: &'a Allocator,
+  instance_id_counter: Cell<usize>,
 
   pub r#true: Entity<'a>,
   pub r#false: Entity<'a>,
@@ -64,6 +66,7 @@ impl<'a> EntityFactory<'a> {
 
     EntityFactory {
       allocator,
+      instance_id_counter: Cell::new(0),
 
       r#true,
       r#false,
@@ -93,5 +96,11 @@ impl<'a> EntityFactory<'a> {
 
   pub fn alloc<T>(&self, val: T) -> &'a mut T {
     self.allocator.alloc(val)
+  }
+
+  pub fn alloc_instance_id(&self) -> usize {
+    let id = self.instance_id_counter.get();
+    self.instance_id_counter.set(id + 1);
+    id
   }
 }
