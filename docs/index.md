@@ -13,10 +13,10 @@ Transformer 的逻辑非常简单，速度也非常快。Analyzer 是相对复�
 
 在 Analyzer 过程中，有两个重要的类型：
 
-- Entity: 比如 `LiteralEntity::Number(1)`, `PrimitiveEntity::String`, `ObjectEntity` 等，用于追踪一个值的情况。不同于运行时的是，在 tree shaker 中我们往往不能获得确定的值，因此需要 `PrimitiveEntity::String` 表示位置的字符串，`UnionEntity` 表示可能为多个值中的一个，`UnknownEntity` 表示完全未知的值等。还有一类是 `ComputedEntity`，它用于给其他 Entity 附加一个 Consumable。
+- Entity: 比如 `LiteralEntity::Number(1)`, `PrimitiveEntity::String`, `ObjectEntity` 等，用于追踪一个值的情况。不同于运行时的是，在 tree shaker 中我们往往不能获得确定的值，因此需要 `PrimitiveEntity::String` 表示未知的字符串，`UnionEntity` 表示可能为多个值中的一个，`UnknownEntity` 表示完全未知的值等。还有一类是 `ComputedEntity`，它用于给其他 Entity 附加一个 Consumable。
 - Consumable：它可能是 `DepId`（可以标记为需要保留的最小单元），也可能是 entity，也可能是它们的组合。consumable 以一种统一的方式，打包了可以消耗/放弃追踪的元素。
 
-在 Analyzer 过程中，有四种Scope：
+在 Analyzer 过程中，有四种 Scope：
 
 - CallScope: 调用栈
 - CfScope: 控制流
@@ -50,3 +50,8 @@ Transform 阶段：
     - 第二个表达式是 IdentifierReference，需要值，因此保留（其实此处其对应的节点也被标记为需要保留了）
     - 综合来看，只有第二个表达式转换后非空，因此只需返回第二个表达式即可
   - 根据转换后的 LHS 和 RHS，构造 BinaryExpression
+
+## 逻辑模块
+
+- [LiteralCollector](./literal-collector.md)
+- _Work in progress..._
