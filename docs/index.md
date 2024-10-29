@@ -53,6 +53,7 @@ Transform 阶段：
 
 ## 逻辑模块
 
-- [LiteralCollector](./literal-collector.md)
+- [字面量内联](./literal-collector.md)
+- [执行时依赖](./execution-dep.md)
 - [条件分支语句的分析](./conditional.md)
 - _Work in progress..._
