@@ -15,6 +15,7 @@ use std::{cell::Cell, rc::Rc};
 pub struct ClassEntity<'a> {
   consumed: Rc<Cell<bool>>,
   pub node: &'a Class<'a>,
+  pub function_id: usize,
   pub keys: Vec<Option<Entity<'a>>>,
   statics: Entity<'a>,
   pub super_class: Option<Entity<'a>>,
@@ -177,6 +178,7 @@ impl<'a> EntityFactory<'a> {
   pub fn class(
     &self,
     node: &'a Class<'a>,
+    function_id: usize,
     keys: Vec<Option<Entity<'a>>>,
     variable_scope_stack: Vec<ScopeId>,
     super_class: Option<Entity<'a>>,
@@ -185,6 +187,7 @@ impl<'a> EntityFactory<'a> {
     self.entity(ClassEntity {
       consumed: Rc::new(Cell::new(false)),
       node,
+      function_id,
       keys,
       statics: self.entity(statics),
       variable_scope_stack: Rc::new(variable_scope_stack),

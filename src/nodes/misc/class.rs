@@ -47,8 +47,10 @@ impl<'a> Analyzer<'a> {
 
     self.pop_variable_scope();
 
+    let function_id = alloc_function_id();
     let class = self.factory.class(
       node,
+      function_id,
       keys.clone(),
       self.scope_context.variable.stack.clone(),
       super_class,
@@ -57,7 +59,7 @@ impl<'a> Analyzer<'a> {
 
     let variable_scope_stack = self.scope_context.variable.stack.clone();
     self.push_call_scope(
-      FunctionEntitySource::ClassStatics(node, alloc_function_id()),
+      FunctionEntitySource::ClassStatics(node, function_id),
       box_consumable(()),
       variable_scope_stack,
       false,
@@ -145,9 +147,10 @@ impl<'a> Analyzer<'a> {
 
     // Non-static properties
     let variable_scope_stack = class.variable_scope_stack.clone();
+    let function_id = class.function_id;
     self.exec_consumed_fn(move |analyzer| {
       analyzer.push_call_scope(
-        FunctionEntitySource::ClassConstructor(node, alloc_function_id()),
+        FunctionEntitySource::ClassConstructor(node, function_id),
         box_consumable(()),
         variable_scope_stack.as_ref().clone(),
         false,

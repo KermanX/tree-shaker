@@ -22,7 +22,7 @@ use std::{
   sync::atomic::AtomicUsize,
 };
 
-static FUNCTION_ID: AtomicUsize = AtomicUsize::new(0);
+static FUNCTION_ID: AtomicUsize = AtomicUsize::new(1);
 pub fn alloc_function_id() -> usize {
   FUNCTION_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
 }
@@ -64,31 +64,37 @@ impl<'a> FunctionEntitySource<'a> {
 
   pub fn name(&self) -> String {
     match self {
-      FunctionEntitySource::Function(node, _) => {
-        node.id.as_ref().map_or("<unknown>", |id| &id.name).to_string()
+      FunctionEntitySource::Function(node, i) => {
+        let name = node.id.as_ref().map_or("unknown", |id| &id.name);
+        format!("{} {}", name, i)
       }
-      FunctionEntitySource::ArrowFunctionExpression(_, _) => "<anonymous>".to_string(),
-      FunctionEntitySource::ClassStatics(_, _) => "<ClassStatics>".to_string(),
-      FunctionEntitySource::ClassConstructor(_, _) => "<ClassConstructor>".to_string(),
+      FunctionEntitySource::ArrowFunctionExpression(_, i) => {
+        format!("<anonymous {}>", i)
+      }
+      FunctionEntitySource::ClassStatics(_, i) => {
+        format!("<ClassStatics {}>", i)
+      }
+      FunctionEntitySource::ClassConstructor(_, i) => {
+        format!("<ClassConstructor {}>", i)
+      }
       FunctionEntitySource::Module => "<Module>".to_string(),
+    }
+  }
+
+  pub fn id(&self) -> usize {
+    match self {
+      FunctionEntitySource::Function(_, i) => *i,
+      FunctionEntitySource::ArrowFunctionExpression(_, i) => *i,
+      FunctionEntitySource::ClassStatics(_, i) => *i,
+      FunctionEntitySource::ClassConstructor(_, i) => *i,
+      FunctionEntitySource::Module => 0,
     }
   }
 }
 
 impl PartialEq for FunctionEntitySource<'_> {
   fn eq(&self, other: &Self) -> bool {
-    match (self, other) {
-      (FunctionEntitySource::Module, FunctionEntitySource::Module) => true,
-      (FunctionEntitySource::Function(_, a), FunctionEntitySource::Function(_, b)) => a == b,
-      (
-        FunctionEntitySource::ArrowFunctionExpression(_, a),
-        FunctionEntitySource::ArrowFunctionExpression(_, b),
-      ) => a == b,
-      (FunctionEntitySource::ClassStatics(_, a), FunctionEntitySource::ClassStatics(_, b)) => {
-        a == b
-      }
-      _ => false,
-    }
+    self.id() == other.id()
   }
 }
 
@@ -273,6 +279,12 @@ impl<'a> FunctionEntity<'a> {
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
+    print!("{consume}");
+    for scope in analyzer.scope_context.call.iter() {
+      print!("{} ", scope.source.name());
+    }
+    println!("->{}", self.source.name());
+
     if let Some(logger) = analyzer.logger {
       logger.push_fn_call(self.source.span(), self.source.name());
     }
