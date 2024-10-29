@@ -24,20 +24,20 @@ LiteralCollector 会被保留到 Transformer 阶段。此时如果会去 Transfo
 
 ```js
 function f(a) {
-  globalThis.a = a
+  globalThis.a = a;
 }
-f(1)
-f(x)
+f(1);
+f(x);
 ```
 
 会被转换为：
 
 ```js
 function f(a) {
-  globalThis.a = a + 1
+  globalThis.a = a + 1;
 }
-f()
-f(x)
+f();
+f(x);
 ```
 
 这是因为，第一次调用 `f` 的时候，`a + 1` 被认为可以用 `2` 表示，因此就不再追踪这次调用的参数 `1`。虽然这在第二次调用 `f` 时否定了这一点，但是在第一次调用 `f` 时无法预知后面的情况。
