@@ -2,7 +2,7 @@ use super::try_scope::TryScope;
 use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
-  consumable::{box_consumable, ConsumableTrait},
+  consumable::{box_consumable, ConsumableNode, ConsumableTrait},
   dep::DepId,
   entity::Entity,
 };
@@ -82,7 +82,11 @@ impl<'a> CallScope<'a> {
     };
     (
       self.old_variable_scope_stack,
-      if self.is_async { analyzer.factory.computed_unknown((value, promise_error)) } else { value },
+      if self.is_async {
+        analyzer.factory.computed_unknown(ConsumableNode::new((value, promise_error)))
+      } else {
+        value
+      },
     )
   }
 }
