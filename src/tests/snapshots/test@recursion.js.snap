@@ -10,7 +10,7 @@ export function simple() {
 			sideeffect(2);
 		}
 		t++;
-		return x > 100 ? x : main();
+		return x > 100 ? x : main(2 * x + 1);
 	}
 	return main(1);
 }
@@ -36,4 +36,7 @@ export function complex2() {
 		return hooks;
 	}
 	return main;
+}
+export function closure_not_recused() {
+	return "a3b";
 }
