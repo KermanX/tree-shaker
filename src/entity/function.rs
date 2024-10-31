@@ -24,7 +24,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    self.call_in_recursion(analyzer);
+    self.consume_body(analyzer);
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
@@ -33,7 +33,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     }
 
     analyzer.push_dependent_cf_scope(dep);
-    self.call_in_recursion(analyzer);
+    self.consume_body(analyzer);
     analyzer.pop_cf_scope();
   }
 
@@ -93,7 +93,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
     let recursed = analyzer.scope_context.call.iter().any(|scope| scope.callee.1 == self.callee.1);
     if recursed {
-      self.call_in_recursion(analyzer);
+      self.consume_body(analyzer);
       return analyzer.factory.unknown();
     }
 
@@ -215,7 +215,7 @@ impl<'a> FunctionEntity<'a> {
     analyzer.factory.computed(ret_val, call_dep)
   }
 
-  pub fn call_in_recursion(&self, analyzer: &mut Analyzer<'a>) {
+  pub fn consume_body(&self, analyzer: &mut Analyzer<'a>) {
     if self.body_consumed.get() {
       return;
     }
@@ -240,12 +240,12 @@ impl<'a> FunctionEntity<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn new_function(&mut self, node: CalleeNode<'a>) -> Entity<'a> {
-    let entity = self.factory.entity(FunctionEntity {
+    let function = FunctionEntity {
       consumed: Rc::new(Cell::new(false)),
       body_consumed: Rc::new(Cell::new(false)),
       callee: (node, self.factory.alloc_instance_id()),
       variable_scope_stack: Rc::new(self.scope_context.variable.stack.clone()),
-    });
+    };
 
     let mut recursed = false;
     for scope in self.scope_context.call.iter().rev() {
@@ -254,11 +254,12 @@ impl<'a> Analyzer<'a> {
         break;
       }
     }
+
     if recursed {
-      self.consume(entity);
-      return self.factory.unknown();
+      function.consume_body(self);
+      self.factory.unknown()
     } else {
-      entity
+      self.factory.entity(function)
     }
   }
 }
