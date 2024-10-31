@@ -94,7 +94,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     let recursed = analyzer.scope_context.call.iter().any(|scope| scope.callee.1 == self.callee.1);
     if recursed {
       self.consume_body(analyzer);
-      return consumed_object::call(rc, analyzer, dep, this, args)
+      return consumed_object::call(rc, analyzer, dep, this, args);
     }
 
     self.call_impl(rc, analyzer, dep, this, args, false)
