@@ -4,14 +4,14 @@ use oxc::{
   ast::{ast::Expression, AstBuilder},
   span::Span,
 };
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, mem, rc::Rc};
 
 #[derive(Debug, Default)]
 pub struct LiteralCollector<'a> {
   /// None if no literal is collected
   literal: Option<LiteralEntity<'a>>,
   /// Collected literal entities
-  collected: Rc<RefCell<Vec<Entity<'a>>>>,
+  collected: Vec<Entity<'a>>,
   invalid: bool,
 }
 
@@ -33,12 +33,12 @@ impl<'a> LiteralCollector<'a> {
           self.invalid = true;
           self.get_entity_on_invalid(entity, analyzer)
         } else {
-          self.collected.borrow_mut().push(entity);
+          self.collected.push(entity);
           analyzer.factory.entity(literal)
         }
       } else {
         self.literal = Some(literal);
-        self.collected.borrow_mut().push(entity);
+        self.collected.push(entity);
         analyzer.factory.entity(literal)
       }
     } else {
@@ -47,12 +47,15 @@ impl<'a> LiteralCollector<'a> {
     }
   }
 
-  #[inline]
-  pub fn get_entity_on_invalid(&self, entity: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    if self.collected.borrow().is_empty() {
+  pub fn get_entity_on_invalid(
+    &mut self,
+    entity: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+  ) -> Entity<'a> {
+    if self.collected.is_empty() {
       entity
     } else {
-      analyzer.factory.collected(entity, self.collected.clone())
+      analyzer.factory.collected(entity, Rc::new(RefCell::new(mem::take(&mut self.collected))))
     }
   }
 
