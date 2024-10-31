@@ -1,4 +1,5 @@
 use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
+use oxc::span::GetSpan;
 use std::{
   fmt::Debug,
   hash::Hash,
@@ -11,7 +12,7 @@ pub struct DepId((usize, usize));
 impl Debug for DepId {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let ast_kind: AstKind2<'static> = unsafe { std::mem::transmute(*self) };
-    ast_kind.fmt(f)
+    ast_kind.span().fmt(f)
   }
 }
 

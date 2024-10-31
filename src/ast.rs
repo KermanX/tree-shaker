@@ -231,7 +231,6 @@ impl<'a> GetSpan for AstKind2<'a> {
       AstKind2::MemberExpressionRead(node) => node.span(),
       AstKind2::AssignmentTargetProperty(node) => node.span(),
       AstKind2::AssignmentTargetPropertyIdentifier(node) => node.span(),
-      AstKind2::AssignmentTargetPropertyIdentifier(node) => node.span(),
       AstKind2::AssignmentTargetRest(node) => node.span(),
       AstKind2::BindingProperty(node) => node.span(),
       AstKind2::Callee(node) => node.span(),

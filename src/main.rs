@@ -29,7 +29,7 @@ fn main() {
     tree_shake: true,
     minify: None,
     code_gen: Default::default(),
-    logging: false,
+    logging: true,
   });
 
   let elapsed = start_time.elapsed();

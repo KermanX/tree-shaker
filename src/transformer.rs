@@ -56,11 +56,14 @@ impl<'a> Transformer<'a> {
       ..
     } = analyzer;
 
-    // for (key, v) in referred_nodes.iter() {
-    //   if *v > 100 {
+    // let mut counts: Vec<_> = referred_nodes.clone().into_iter().collect();
+    // counts.sort_by(|a, b| b.1.cmp(&a.1));
+    // for (key, v) in counts {
+    //   if v > 10 {
     //     println!("{key:?}: {v}");
     //   }
     // }
+    // println!("---");
 
     Transformer {
       config,

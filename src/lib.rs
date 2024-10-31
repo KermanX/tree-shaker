@@ -89,7 +89,7 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
   let codegen = CodeGenerator::new().with_options(code_gen);
   let codegen_return = codegen.build(ast);
 
-  // logger.map(|l| l.print_fn_calls());
+  logger.map(|l| l.print_fn_calls());
 
   TreeShakeReturn {
     minifier_return,
