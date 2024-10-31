@@ -1,106 +1,22 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityFactory, EntityTrait, TypeofResult,
+  Entity, EntityTrait, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
-  ast::AstKind2,
   consumable::{box_consumable, Consumable},
-  dep::DepId,
+  scope::call_scope::CalleeNode,
   use_consumed_flag,
 };
-use oxc::{
-  ast::ast::{ArrowFunctionExpression, Class, Function},
-  semantic::ScopeId,
-  span::{GetSpan, Span},
-};
-use std::{
-  cell::Cell,
-  hash::{Hash, Hasher},
-  rc::Rc,
-};
-
-#[derive(Debug, Clone, Copy)]
-pub enum FunctionEntitySource<'a> {
-  Function(&'a Function<'a>),
-  ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
-  ClassStatics(&'a Class<'a>),
-  ClassConstructor(&'a Class<'a>),
-  Module,
-}
-
-impl GetSpan for FunctionEntitySource<'_> {
-  fn span(&self) -> Span {
-    match self {
-      FunctionEntitySource::Function(node) => node.span(),
-      FunctionEntitySource::ArrowFunctionExpression(node) => node.span(),
-      FunctionEntitySource::ClassStatics(node) => node.span(),
-      FunctionEntitySource::ClassConstructor(node) => node.span(),
-      FunctionEntitySource::Module => Span::default(),
-    }
-  }
-}
-
-impl<'a> FunctionEntitySource<'a> {
-  pub fn into_dep_id(self) -> DepId {
-    match self {
-      FunctionEntitySource::Function(node) => AstKind2::Function(node),
-      FunctionEntitySource::ArrowFunctionExpression(node) => {
-        AstKind2::ArrowFunctionExpression(node)
-      }
-      FunctionEntitySource::ClassStatics(node) => AstKind2::Class(node),
-      FunctionEntitySource::ClassConstructor(node) => AstKind2::Class(node),
-      FunctionEntitySource::Module => AstKind2::Environment,
-    }
-    .into()
-  }
-
-  pub fn name(&self) -> String {
-    match self {
-      FunctionEntitySource::Function(node) => {
-        node.id.as_ref().map_or("<unknown>", |id| &id.name).to_string()
-      }
-      FunctionEntitySource::ArrowFunctionExpression(_) => "<anonymous>".to_string(),
-      FunctionEntitySource::ClassStatics(_) => "<ClassStatics>".to_string(),
-      FunctionEntitySource::ClassConstructor(_) => "<ClassConstructor>".to_string(),
-      FunctionEntitySource::Module => "<Module>".to_string(),
-    }
-  }
-}
-
-impl PartialEq for FunctionEntitySource<'_> {
-  fn eq(&self, other: &Self) -> bool {
-    match (self, other) {
-      (FunctionEntitySource::Module, FunctionEntitySource::Module) => true,
-      (FunctionEntitySource::Function(a), FunctionEntitySource::Function(b)) => {
-        a.span() == b.span()
-      }
-      (
-        FunctionEntitySource::ArrowFunctionExpression(a),
-        FunctionEntitySource::ArrowFunctionExpression(b),
-      ) => a.span() == b.span(),
-      (FunctionEntitySource::ClassStatics(a), FunctionEntitySource::ClassStatics(b)) => {
-        a.span() == b.span()
-      }
-      _ => false,
-    }
-  }
-}
-
-impl Eq for FunctionEntitySource<'_> {}
-
-impl Hash for FunctionEntitySource<'_> {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    self.span().hash(state)
-  }
-}
+use oxc::{semantic::ScopeId, span::GetSpan};
+use std::{cell::Cell, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct FunctionEntity<'a> {
   consumed: Rc<Cell<bool>>,
   body_consumed: Rc<Cell<bool>>,
-  pub source: FunctionEntitySource<'a>,
+  pub callee: (CalleeNode<'a>, usize),
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
 }
 
@@ -108,7 +24,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    self.call_in_recursion(analyzer);
+    self.consume_body(analyzer);
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
@@ -117,7 +33,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     }
 
     analyzer.push_dependent_cf_scope(dep);
-    self.call_in_recursion(analyzer);
+    self.consume_body(analyzer);
     analyzer.pop_cf_scope();
   }
 
@@ -175,9 +91,9 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       return consumed_object::call(rc, analyzer, dep, this, args);
     }
 
-    let recursed = analyzer.scope_context.call.iter().any(|scope| scope.source == self.source);
+    let recursed = analyzer.scope_context.call.iter().any(|scope| scope.callee.1 == self.callee.1);
     if recursed {
-      self.call_in_recursion(analyzer);
+      self.consume_body(analyzer);
       return consumed_object::call(rc, analyzer, dep, this, args);
     }
 
@@ -270,15 +186,15 @@ impl<'a> FunctionEntity<'a> {
     consume: bool,
   ) -> Entity<'a> {
     if let Some(logger) = analyzer.logger {
-      logger.push_fn_call(self.source.span(), self.source.name());
+      logger.push_fn_call(self.callee.0.span(), self.callee.0.name());
     }
 
-    let call_dep = box_consumable((self.source.into_dep_id(), dep));
+    let call_dep = box_consumable((self.callee.0.into_dep_id(), dep));
     let variable_scopes = self.variable_scope_stack.clone();
-    let ret_val = match self.source {
-      FunctionEntitySource::Function(node) => analyzer.call_function(
+    let ret_val = match self.callee.0 {
+      CalleeNode::Function(node) => analyzer.call_function(
         rc,
-        self.source,
+        self.callee,
         call_dep.cloned(),
         node,
         variable_scopes,
@@ -286,40 +202,27 @@ impl<'a> FunctionEntity<'a> {
         args.clone(),
         consume,
       ),
-      FunctionEntitySource::ArrowFunctionExpression(node) => analyzer
-        .call_arrow_function_expression(
-          self.source,
-          call_dep.cloned(),
-          node,
-          variable_scopes,
-          args.clone(),
-          consume,
-        ),
+      CalleeNode::ArrowFunctionExpression(node) => analyzer.call_arrow_function_expression(
+        self.callee,
+        call_dep.cloned(),
+        node,
+        variable_scopes,
+        args.clone(),
+        consume,
+      ),
       _ => unreachable!(),
     };
     analyzer.factory.computed(ret_val, call_dep)
   }
 
-  pub fn call_in_recursion(&self, analyzer: &mut Analyzer<'a>) {
+  pub fn consume_body(&self, analyzer: &mut Analyzer<'a>) {
     if self.body_consumed.get() {
       return;
     }
     self.body_consumed.set(true);
 
-    // FIXME: This is not guaranteed to be correct
-    // Handle case that a closure is created recursively
-    let mut recursion = 0;
-    for scope in analyzer.scope_context.call.iter().rev() {
-      if scope.source == self.source {
-        recursion += 1;
-        if recursion > 1 {
-          return;
-        }
-      }
-    }
-
-    analyzer.consume(self.source.into_dep_id());
-    analyzer.consume_arguments(Some(self.source));
+    analyzer.consume(self.callee.0.into_dep_id());
+    analyzer.consume_arguments(Some(self.callee));
 
     let self_cloned = self.clone();
     analyzer.exec_consumed_fn(move |analyzer| {
@@ -335,17 +238,28 @@ impl<'a> FunctionEntity<'a> {
   }
 }
 
-impl<'a> EntityFactory<'a> {
-  pub fn function(
-    &self,
-    source: FunctionEntitySource<'a>,
-    variable_scope_stack: Vec<ScopeId>,
-  ) -> Entity<'a> {
-    self.entity(FunctionEntity {
+impl<'a> Analyzer<'a> {
+  pub fn new_function(&mut self, node: CalleeNode<'a>) -> Entity<'a> {
+    let function = FunctionEntity {
       consumed: Rc::new(Cell::new(false)),
       body_consumed: Rc::new(Cell::new(false)),
-      source,
-      variable_scope_stack: Rc::new(variable_scope_stack),
-    })
+      callee: (node, self.factory.alloc_instance_id()),
+      variable_scope_stack: Rc::new(self.scope_context.variable.stack.clone()),
+    };
+
+    let mut recursed = false;
+    for scope in self.scope_context.call.iter().rev() {
+      if scope.callee.0 == node {
+        recursed = true;
+        break;
+      }
+    }
+
+    if recursed {
+      function.consume_body(self);
+      self.factory.unknown()
+    } else {
+      self.factory.entity(function)
+    }
   }
 }
