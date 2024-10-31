@@ -158,6 +158,7 @@ impl<'a> UnknownEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
+  #[inline(always)]
   pub fn unknown(&self) -> Entity<'a> {
     // self.entity(UnknownEntity { deps: Some(RefCell::new(vec![])) })
     self.immutable_unknown
