@@ -31,18 +31,17 @@ globalVariable = 1 + (2, a);
 
 Analyze 阶段，我们模拟运行时的执行流程，进行分析：
 
-- 首先执行 AssignmentTarget (`globalVariable`)，此处是 SimpleAssignmentTarget，跳过
-- 执行 BinaryExpression (`1 + (2, a)`)
+- 首先执行 AssignmentTarget (`globalVariable`) 的 RHS，即 BinaryExpression (`1 + (2, a)`)
   - 执行 LHS (`1`)，是 NumericLiteral，得到 `LiteralEntity::Number(1)`
   - 执行 RHS (`(2, a)`)，是 SequenceExpression，依次执行每个子表达式
     - 执行 `2`，得到 `LHS = LiteralEntity::Number(2)`
-    - 执行 IdentifierReference (`a`)，此处 `a` 是未知变量，值是 `UnknownEntity`，并且基于 `DepId::Ast(IdentifierReference(a))`，因此得到 `RHS = ComputedEntity(UnknownEntity, DepId::Ast(IdentifierReference(a)))`
+    - 执行 IdentifierReference (`a`)，此处 `a` 是未知变量，值是 `UnknownEntity`，并且基于 `DepId::IdentifierReference(a)`，因此得到 `RHS = ComputedEntity(UnknownEntity, DepId::IdentifierReference(a))`
   - 执行加法，由于 RHS 不是字面量，无法计算具体的值，故得到 `ComputedEntity(UnknownEntity, vec![LHS, RHS])`
-- 执行赋值，由于赋值目标是未知的全局变量，因此无法追踪，所以直接消耗掉上一步计算出的值，并将 `DepId::Ast(AssignmentExpression)` 标记为需要保留。
+- 执行赋值，由于赋值目标是未知的全局变量，因此无法追踪，所以直接消耗掉上一步计算出的值，并将 `DepId::SimplAssignmentTarget(globalVariable)` 标记为需要保留。
 
 Transform 阶段：
 
-- 转换 AssignmentExpression，由于 `DepId::Ast(AssignmentExpression)` 被标记为需要保留，所以其 RHS 需要保留计算值 (即 `need_val` 参数为真)
+- 转换 AssignmentExpression，由于 `DepId::SimplAssignmentTarget（globalVariable)` 被标记为需要保留，所以其 RHS 需要保留计算值 (即 `need_val` 参数为真)
 - 转换 BinaryExpression，需要值，因此需要保留加号，且 LHS 和 RHS 都需要值
   - LHS 是 NumericLiteral，由于需要值，故直接保留
   - RHS 是 SequenceExpression，因此除最后一个表达式需要值外，前面的表达式都不需要值
