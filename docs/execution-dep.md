@@ -49,8 +49,8 @@ function f() {
   g();
 }
 function g() {
-  document.write("Hello");
+  document.write(1);
 }
 ```
 
-此时 `f()` 和 `g()` 都需要被保留。
+在执行到 `document.write(1)` 时，由于对环境产生了副作用，因此当前的所有执行依赖都要被标记为需要保留，即 `f()` 和 `g()` 都要被保留。

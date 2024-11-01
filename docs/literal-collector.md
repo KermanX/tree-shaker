@@ -7,7 +7,7 @@
 LiteralCollector 有三种状态：
 
 ```mermaid
-graph LR;
+graph TB;
 A(Empty) -->|收集到x是字面量| B("Valid(x)")
 B -->|收集到同样的x| B
 B --->|收集到其他任何值| C(Invalid)
