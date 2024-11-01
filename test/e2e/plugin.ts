@@ -13,14 +13,9 @@ export default function (): Plugin | false {
     name: "tree-shaker",
     enforce: 'post',
     apply: 'build',
-    config() {
+    config(config) {
       return {
         build: {
-          lib: {
-            entry: './main.ts',
-            formats: ['es'],
-            fileName: disabled ? 'bundled' : 'shaken'
-          },
           // Currently enabling Rollup treeshake because JS built-ins is not supported yet
           // rollupOptions: {
           //   treeshake: false
@@ -28,6 +23,13 @@ export default function (): Plugin | false {
           outDir: './dist',
           minify: false,
           emptyOutDir: false,
+          ...config?.build,
+          lib: {
+            entry: './main.ts',
+            formats: ['es'],
+            fileName: disabled ? 'bundled' : 'shaken',
+            ...config?.build?.lib,
+          },
         }
       }
     },
@@ -38,7 +40,7 @@ export default function (): Plugin | false {
           return code;
         }
         const startTime = Date.now();
-        const { output, diagnostics } = treeShake(code, "recommended", false, false);
+        const { output, diagnostics } = treeShake(code, "recommended", false);
         const duration = `${Date.now() - startTime}ms`;
         logger.info(pico.yellowBright(`\ntree-shake duration: ${duration}`));
         for (const diagnostic of diagnostics) {
