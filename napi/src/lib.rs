@@ -33,7 +33,7 @@ pub fn tree_shake(
     tree_shake: tree_shake.is_some(),
     minify_options: do_minify.then(MinifierOptions::default),
     codegen_options: CodegenOptions { minify: do_minify, ..Default::default() },
-    logging: true,
+    logging: false,
   });
   TreeShakeResultBinding {
     output: result.codegen_return.code,
