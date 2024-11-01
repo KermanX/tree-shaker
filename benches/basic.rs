@@ -12,8 +12,8 @@ fn run_tree_shaker(source_text: String) -> String {
     source_type: Default::default(),
     source_text,
     tree_shake: true,
-    minify: None,
-    code_gen: Default::default(),
+    minify_options: None,
+    codegen_options: Default::default(),
     logging: false,
   });
 

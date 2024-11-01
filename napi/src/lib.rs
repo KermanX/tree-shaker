@@ -31,8 +31,8 @@ pub fn tree_shake(
     source_type: SourceType::default(),
     source_text: input,
     tree_shake: tree_shake.is_some(),
-    minify: do_minify.then(MinifierOptions::default),
-    code_gen: CodegenOptions { minify: do_minify, ..Default::default() },
+    minify_options: do_minify.then(MinifierOptions::default),
+    codegen_options: CodegenOptions { minify: do_minify, ..Default::default() },
     logging: true,
   });
   TreeShakeResultBinding {

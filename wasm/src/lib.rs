@@ -18,8 +18,8 @@ pub fn tree_shake(input: String, do_tree_shake: bool, do_minify: bool, logging: 
     source_type: SourceType::default(),
     source_text: input,
     tree_shake: do_tree_shake,
-    minify: do_minify.then(|| MinifierOptions::default()),
-    code_gen: CodegenOptions { minify: do_minify, ..Default::default() },
+    minify_options: do_minify.then(|| MinifierOptions::default()),
+    codegen_options: CodegenOptions { minify: do_minify, ..Default::default() },
     logging,
   });
   Result {

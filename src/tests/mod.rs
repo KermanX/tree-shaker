@@ -14,8 +14,8 @@ fn tree_shake(input: String) -> String {
     source_type: SourceType::default(),
     source_text: input,
     tree_shake: true,
-    minify: do_minify.then(|| MinifierOptions::default()),
-    code_gen: CodegenOptions::default(),
+    minify_options: do_minify.then(|| MinifierOptions::default()),
+    codegen_options: CodegenOptions::default(),
     logging: true,
   });
   result.codegen_return.code

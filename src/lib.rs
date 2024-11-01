@@ -36,8 +36,8 @@ pub struct TreeShakeOptions<'a> {
   pub source_type: SourceType,
   pub source_text: String,
   pub tree_shake: bool,
-  pub minify: Option<MinifierOptions>,
-  pub code_gen: CodegenOptions,
+  pub minify_options: Option<MinifierOptions>,
+  pub codegen_options: CodegenOptions,
   pub logging: bool,
 }
 
@@ -55,8 +55,8 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
     source_type,
     source_text,
     tree_shake,
-    minify,
-    code_gen,
+    minify_options,
+    codegen_options,
     logging,
   } = options;
 
@@ -80,13 +80,13 @@ pub fn tree_shake<'a>(options: TreeShakeOptions<'a>) -> TreeShakeReturn {
   }
 
   // Step 3: Minify
-  let minifier_return = minify.map(|options| {
+  let minifier_return = minify_options.map(|options| {
     let minifier = Minifier::new(options);
     minifier.build(&allocator, ast)
   });
 
   // Step 4: Generate output
-  let codegen = CodeGenerator::new().with_options(code_gen);
+  let codegen = CodeGenerator::new().with_options(codegen_options);
   let codegen_return = codegen.build(ast);
 
   logger.map(|l| l.print_fn_calls());
