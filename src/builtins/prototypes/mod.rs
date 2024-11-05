@@ -44,13 +44,15 @@ impl<'a> Prototype<'a> {
     'known: {
       if let Some(key_literals) = key.get_to_literals(analyzer) {
         let mut values = vec![];
+        let mut undefined_added  = false;
         for key_literal in key_literals {
           match key_literal {
             LiteralEntity::String(key) => {
               if let Some(property) = self.get(key) {
                 values.push(property.clone());
-              } else {
-                break 'known;
+              } else if !undefined_added {
+                undefined_added = true;
+                values.push(analyzer.factory.undefined);
               }
             }
             LiteralEntity::Symbol(_, _) => break 'known,
