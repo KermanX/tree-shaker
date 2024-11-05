@@ -44,7 +44,7 @@ impl<'a> Prototype<'a> {
     'known: {
       if let Some(key_literals) = key.get_to_literals(analyzer) {
         let mut values = vec![];
-        let mut undefined_added  = false;
+        let mut undefined_added = false;
         for key_literal in key_literals {
           match key_literal {
             LiteralEntity::String(key) => {
