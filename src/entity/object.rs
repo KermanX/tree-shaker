@@ -148,7 +148,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               true
             };
             let add_undefined = if lookup_rest {
-              if let Some(from_prototype) = self.prototype.get(key) {
+              if let Some(from_prototype) = self.prototype.get_string_keyed(key) {
                 values.push(from_prototype.clone());
               }
               if !rest_added {

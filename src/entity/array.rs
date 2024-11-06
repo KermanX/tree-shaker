@@ -96,7 +96,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 },
                 |length| analyzer.factory.number(length as f64, None),
               ));
-            } else if let Some(property) = analyzer.builtins.prototypes.array.get(key) {
+            } else if let Some(property) = analyzer.builtins.prototypes.array.get_string_keyed(key)
+            {
               result.push(property.clone());
             } else if !undefined_added {
               undefined_added = true;

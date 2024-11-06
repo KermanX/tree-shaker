@@ -53,7 +53,25 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       consumed_object::get_property(rc, analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
-      prototype.get_property(analyzer, rc, key, dep)
+      let key = key.get_to_property_key(analyzer);
+      let dep = box_consumable((dep, rc.clone(), key.clone()));
+      if let Some(key_literals) = key.get_to_literals(analyzer) {
+        let mut values = vec![];
+        let mut undefined_added = false;
+        for key_literal in key_literals {
+          if let Some(property) = self.get_known_instance_property(analyzer, key_literal) {
+            values.push(property);
+          } else if let Some(property) = prototype.get_literal_keyed(key_literal) {
+            values.push(property);
+          } else if !undefined_added {
+            undefined_added = true;
+            values.push(analyzer.factory.undefined);
+          }
+        }
+        analyzer.factory.computed_union(values, dep)
+      } else {
+        analyzer.factory.computed_unknown(dep)
+      }
     }
   }
 
@@ -442,6 +460,20 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::Infinity(_) => &analyzer.builtins.prototypes.number,
       LiteralEntity::NaN => &analyzer.builtins.prototypes.number,
       LiteralEntity::Null | LiteralEntity::Undefined => unreachable!(),
+    }
+  }
+
+  fn get_known_instance_property(
+    &self,
+    analyzer: &Analyzer<'a>,
+    key: LiteralEntity<'a>,
+  ) -> Option<Entity<'a>> {
+    match self {
+      LiteralEntity::String(value) => match key {
+        LiteralEntity::String("length") => Some(analyzer.factory.number(value.len() as f64, None)),
+        _ => None,
+      },
+      _ => None,
     }
   }
 }
