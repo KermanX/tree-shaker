@@ -1,10 +1,7 @@
 use super::Entity;
 use crate::{analyzer::Analyzer, consumable::ConsumableTrait};
 use core::slice;
-use std::{
-  array,
-  iter::{Cloned, Copied},
-};
+use std::{array, iter::Copied};
 
 pub fn boolean_from_test_result<'a>(
   analyzer: &Analyzer<'a>,
