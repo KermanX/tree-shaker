@@ -156,7 +156,7 @@ impl<'a> EntityFactory<'a> {
     operator: LogicalOperator,
   ) -> Entity<'a> {
     self.entity(LogicalResultEntity {
-      value: self.union(vec![left, right]),
+      value: self.union((left, right)),
       is_coalesce: operator == LogicalOperator::Coalesce,
       result: match operator {
         LogicalOperator::Or => match right.test_truthy() {

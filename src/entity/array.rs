@@ -152,7 +152,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 *element = if definite {
                   value.clone()
                 } else {
-                  analyzer.factory.union(vec![element.clone(), value.clone()])
+                  analyzer.factory.union((element.clone(), value.clone()))
                 };
               } else if !rest_added {
                 rest_added = true;
@@ -227,7 +227,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       entries.push((
         true,
         analyzer.factory.unknown_string,
-        analyzer.factory.union(rest.iter().cloned().collect()),
+        analyzer.factory.union(rest.iter().cloned().collect::<Vec<_>>()),
       ));
     }
 

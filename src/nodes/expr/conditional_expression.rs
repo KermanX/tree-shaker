@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
       (true, true) => {
         let v1 = exec_consequent(self);
         let v2 = exec_alternate(self);
-        self.factory.union(vec![v1, v2])
+        self.factory.union((v1, v2))
       }
       _ => unreachable!(),
     }

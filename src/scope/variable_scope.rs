@@ -204,10 +204,9 @@ impl<'a> Analyzer<'a> {
           } else {
             variable_ref.value = Some(self.factory.computed(
               if indeterminate {
-                self.factory.union(vec![
-                  old_val.unwrap_or(unsafe { mem::transmute(UNDEFINED_ENTITY) }),
-                  new_val,
-                ])
+                self
+                  .factory
+                  .union((old_val.unwrap_or(unsafe { mem::transmute(UNDEFINED_ENTITY) }), new_val))
               } else {
                 new_val
               },

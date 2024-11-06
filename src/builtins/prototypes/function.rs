@@ -7,7 +7,7 @@ use oxc::{index::Idx, semantic::SymbolId};
 
 pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
   init_prototype!(create_object_prototype(factory), {
-    "apply" =>  factory.implemented_builtin_fn(|analyzer, dep, this, args| {
+    "apply" => factory.implemented_builtin_fn(|analyzer, dep, this, args| {
       let mut args = args.destruct_as_array(analyzer, dep.cloned(), 2).0;
       let args_arg = {
         let arg = args.pop().unwrap();
@@ -17,10 +17,10 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
         match arg.test_is_undefined() {
           Some(true) => analyzer.factory.entity(ArrayEntity::new(cf_scope, arguments_object_id)),
           Some(false) => arg,
-          None => analyzer.factory.union(vec![
+          None => analyzer.factory.union((
             arg,
             analyzer.factory.entity(ArrayEntity::new(cf_scope, arguments_object_id)),
-          ]),
+          )),
         }
       };
       let this_arg = args.pop().unwrap();

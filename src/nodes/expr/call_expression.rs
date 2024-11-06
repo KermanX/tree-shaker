@@ -56,7 +56,7 @@ impl<'a> Analyzer<'a> {
 
       if indeterminate {
         self.pop_cf_scope();
-        (None, self.factory.union(vec![ret_val, self.factory.undefined]))
+        (None, self.factory.union((ret_val, self.factory.undefined)))
       } else {
         (Some(false), ret_val)
       }
