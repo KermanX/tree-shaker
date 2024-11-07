@@ -7,27 +7,26 @@ use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableTrait},
 };
-use std::marker::PhantomData;
+use std::cell::RefCell;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct UnknownEntity<'a> {
-  // deps: Option<RefCell<Vec<Consumable<'a>>>>,
-  phantom: PhantomData<&'a ()>,
+  deps: Option<RefCell<Vec<Consumable<'a>>>>,
 }
 
 impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
-  fn consume(&self, _analyzer: &mut Analyzer<'a>) {
-    // if let Some(deps) = &self.deps {
-    //   deps.take().consume(analyzer);
-    // }
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    if let Some(deps) = &self.deps {
+      deps.take().consume(analyzer);
+    }
   }
 
-  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
-    // if let Some(deps) = &self.deps {
-    //   deps.borrow_mut().push(dep);
-    // } else {
-    //   // TODO: What to do?
-    // }
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    if let Some(deps) = &self.deps {
+      deps.borrow_mut().push(dep);
+    } else {
+      // TODO: What to do?
+    }
   }
 
   fn get_property(
@@ -152,19 +151,16 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 
 impl<'a> UnknownEntity<'a> {
   pub fn new_immutable() -> Self {
-    // Self { deps: None }
-    Self::default()
+    Self { deps: None }
   }
 }
 
 impl<'a> EntityFactory<'a> {
   pub fn unknown(&self) -> Entity<'a> {
-    // self.entity(UnknownEntity { deps: Some(RefCell::new(vec![])) })
-    self.immutable_unknown
+    self.entity(UnknownEntity { deps: Some(RefCell::new(vec![])) })
   }
 
   pub fn computed_unknown(&self, dep: impl ConsumableTrait<'a> + 'a) -> Entity<'a> {
-    // self.entity(UnknownEntity { deps: Some(RefCell::new(vec![box_consumable(dep)])) })
-    self.computed(self.immutable_unknown, dep)
+    self.entity(UnknownEntity { deps: Some(RefCell::new(vec![box_consumable(dep)])) })
   }
 }
