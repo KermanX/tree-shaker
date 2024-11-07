@@ -41,8 +41,8 @@ if (!checkResponse.ok) {
 const { sha } = await checkResponse.json();
 const tag = sha.slice(0, 7)
 
-const dirname = path.dirname(fileURLToPath(import.meta.url));
-const json = JSON.parse(fs.readFileSync(path.join(dirname, '../package.json'), 'utf8'));
+const jsonPath = path.join(fileURLToPath(import.meta.url), '../../package.json');
+const json = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 
 json.optionalDependencies = {
   "@kermanx/tree-shaker-win32-x64-msvc": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-win32-x64-msvc@${tag}`,
@@ -50,4 +50,4 @@ json.optionalDependencies = {
   "@kermanx/tree-shaker-linux-x64-gnu": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-darwin-x64@${tag}`
 };
 
-fs.writeFileSync(path.join(__dirname, '../package.json'), JSON.stringify(json, null, 2));
+fs.writeFileSync(jsonPath, JSON.stringify(json, null, 2));
