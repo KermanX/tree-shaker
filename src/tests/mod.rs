@@ -1,7 +1,7 @@
+use crate::{TreeShakeConfig, TreeShakeOptions};
 use insta::{assert_snapshot, glob};
 use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
 use std::fs;
-use crate::{TreeShakeConfig, TreeShakeOptions};
 
 fn tree_shake(input: String) -> String {
   let do_minify = input.contains("@minify");
