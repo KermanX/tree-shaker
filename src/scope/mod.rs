@@ -12,7 +12,7 @@ use crate::{
   consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
   entity::{Entity, EntityFactory, LabelEntity},
-  logger::DebuggerEvent,
+  utils::DebuggerEvent,
 };
 use call_scope::{CallScope, CalleeNode};
 use cf_scope::CfScope;

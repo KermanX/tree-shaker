@@ -1,12 +1,11 @@
 use crate::{
   ast::AstKind2,
   builtins::Builtins,
-  data::{ExtraData, ReferredNodes, StatementVecData},
   dep::DepId,
   entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
-  logger::{DebuggerEvent, Logger},
   scope::{conditional::ConditionalDataMap, ScopeContext},
   tree_shaker::TreeShaker,
+  utils::{DebuggerEvent, ExtraData, Logger, ReferredNodes, StatementVecData},
   TreeShakeConfig,
 };
 use oxc::{

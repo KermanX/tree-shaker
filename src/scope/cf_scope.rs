@@ -4,7 +4,7 @@ use crate::{
     box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait, ConsumableVec,
   },
   entity::LabelEntity,
-  logger::{DebuggerEvent, Logger},
+  utils::{DebuggerEvent, Logger},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;

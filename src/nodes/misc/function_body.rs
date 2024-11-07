@@ -1,6 +1,6 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, data::StatementVecData,
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, transformer::Transformer,
+  utils::StatementVecData,
 };
 use oxc::{
   ast::ast::{ExpressionStatement, FunctionBody, Statement},

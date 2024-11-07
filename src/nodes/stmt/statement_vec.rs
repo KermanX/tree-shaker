@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, data::StatementVecData, transformer::Transformer};
+use crate::{analyzer::Analyzer, transformer::Transformer, utils::StatementVecData};
 use oxc::{
   allocator::Vec,
   ast::{ast::Statement, match_declaration, match_module_declaration},

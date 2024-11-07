@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, entity::EntityFactory, logger::Logger, transformer::Transformer,
+  analyzer::Analyzer, entity::EntityFactory, transformer::Transformer, utils::Logger,
   TreeShakeConfig,
 };
 use oxc::{

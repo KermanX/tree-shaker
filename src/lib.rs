@@ -1,13 +1,8 @@
 mod analyzer;
-mod ast;
 mod builtins;
 mod config;
 mod consumable;
-mod data;
-mod dep;
-mod effect_builder;
 mod entity;
-mod logger;
 mod nodes;
 mod scope;
 mod transformer;
@@ -19,10 +14,12 @@ mod tests;
 
 use analyzer::Analyzer;
 pub use config::TreeShakeConfig;
-use data::Diagnostics;
 use oxc::{allocator::Allocator, codegen::CodegenReturn, minifier::MinifierReturn};
 pub use tree_shaker::TreeShakeOptions;
 use tree_shaker::TreeShaker;
+pub use utils::ast;
+pub use utils::dep_id::{self as dep};
+use utils::Diagnostics;
 
 pub struct TreeShakeReturn {
   pub minifier_return: Option<MinifierReturn>,

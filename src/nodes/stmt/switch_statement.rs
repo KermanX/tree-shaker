@@ -1,6 +1,6 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, data::StatementVecData, scope::CfScopeKind,
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer,
+  utils::StatementVecData,
 };
 use oxc::{
   ast::ast::{Expression, Statement, SwitchCase, SwitchStatement},

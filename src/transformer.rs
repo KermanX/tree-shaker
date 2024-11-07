@@ -1,10 +1,9 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
-  data::{DataPlaceholder, ExtraData, ReferredNodes, StatementVecData},
   dep::DepId,
-  logger::Logger,
   scope::conditional::ConditionalDataMap,
+  utils::{DataPlaceholder, ExtraData, Logger, ReferredNodes, StatementVecData},
   TreeShakeConfig,
 };
 use oxc::{

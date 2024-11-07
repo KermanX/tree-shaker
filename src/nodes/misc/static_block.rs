@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, data::StatementVecData, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, utils::StatementVecData};
 use oxc::ast::ast::StaticBlock;
 
 impl<'a> Analyzer<'a> {
