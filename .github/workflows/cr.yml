@@ -115,7 +115,7 @@ jobs:
         run: ls -R ./npm
         shell: bash
         working-directory: ./napi
-      - run: node ./scripts/patch.cjs
+      - run: node ./scripts/patch.mjs
         working-directory: ./napi
       - run: pnpx pkg-pr-new publish './' './npm/*' --pnpm
         working-directory: ./napi
