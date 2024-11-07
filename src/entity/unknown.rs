@@ -21,11 +21,11 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     }
   }
 
-  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if let Some(deps) = &self.deps {
       deps.borrow_mut().push(dep);
     } else {
-      // TODO: What to do?
+      // Immutable unknown entity, do nothing
     }
   }
 
