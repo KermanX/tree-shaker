@@ -38,14 +38,14 @@ if (!checkResponse.ok) {
 }
 
 const { sha } = await checkResponse.json();
-const hash = sha.slice(0, 7)
+const tag = sha.slice(0, 7)
 
 const json = JSON.parse(path.join(__dirname, '../package.json'));
 
 json.optionalDependencies = {
-  "@kermanx/tree-shaker-win32-x64-msvc": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-win32-x64-msvc@${hash}`,
-  "@kermanx/tree-shaker-darwin-x64": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-darwin-x64@${hash}`,
-  "@kermanx/tree-shaker-linux-x64-gnu": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-darwin-x64@${hash}`
+  "@kermanx/tree-shaker-win32-x64-msvc": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-win32-x64-msvc@${tag}`,
+  "@kermanx/tree-shaker-darwin-x64": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-darwin-x64@${tag}`,
+  "@kermanx/tree-shaker-linux-x64-gnu": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-darwin-x64@${tag}`
 };
 
 fs.writeFileSync(path.join(__dirname, '../package.json'), JSON.stringify(json, null, 2));
