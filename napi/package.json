@@ -7,6 +7,10 @@
     "name": "tree-shaker",
     "triples": {}
   },
+  "files": [
+    "index.d.ts",
+    "index.js"
+  ],
   "license": "MIT",
   "devDependencies": {
     "@napi-rs/cli": "^2.18.4"
@@ -19,5 +23,10 @@
     "universal": "napi universal",
     "version": "napi version"
   },
-  "packageManager": "pnpm@9.11.0"
+  "packageManager": "pnpm@9.11.0",
+  "optionalDependencies": {
+    "@kermanx/tree-shaker-win32-x64-msvc": "0.0.0",
+    "@kermanx/tree-shaker-darwin-x64": "0.0.0",
+    "@kermanx/tree-shaker-linux-x64-gnu": "0.0.0"
+  }
 }
