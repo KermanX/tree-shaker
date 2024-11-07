@@ -35,3 +35,4 @@ jobs:
         working-directory: ./napi
 
       - run: pnpx pkg-pr-new publish
+        working-directory: ./napi
