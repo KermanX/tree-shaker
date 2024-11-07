@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { hash } from 'ohash';
+import { fileURLToPath } from 'url';
 
 const apiUrl = "https://pkg.pr.new/"
 
@@ -40,7 +41,8 @@ if (!checkResponse.ok) {
 const { sha } = await checkResponse.json();
 const tag = sha.slice(0, 7)
 
-const json = JSON.parse(path.join(__dirname, '../package.json'));
+const dirname = path.dirname(fileURLToPath(import.meta.url));
+const json = JSON.parse(fs.readFileSync(path.join(dirname, '../package.json'), 'utf8'));
 
 json.optionalDependencies = {
   "@kermanx/tree-shaker-win32-x64-msvc": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-win32-x64-msvc@${tag}`,
