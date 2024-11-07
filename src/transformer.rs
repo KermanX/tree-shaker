@@ -28,7 +28,7 @@ use std::{
 };
 
 pub struct Transformer<'a> {
-  pub config: TreeShakeConfig,
+  pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub semantic: Semantic<'a>,
   pub ast_builder: AstBuilder<'a>,

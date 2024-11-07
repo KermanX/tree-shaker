@@ -31,17 +31,15 @@ fn main() {
 
   let start_time = std::time::Instant::now();
 
-  let allocator = Default::default();
-  let result = tree_shake(TreeShakeOptions {
-    config: TreeShakeConfig::recommended(),
-    allocator: &allocator,
-    source_type: Default::default(),
-    source_text: content,
-    tree_shake: true,
-    minify_options: args.minify.then(MinifierOptions::default),
-    codegen_options: Default::default(),
-    logging: args.logging,
-  });
+  let result = tree_shake(
+    content,
+    TreeShakeOptions {
+      config: TreeShakeConfig::recommended(),
+      minify_options: args.minify.then(MinifierOptions::default),
+      codegen_options: Default::default(),
+      logging: args.logging,
+    },
+  );
 
   let elapsed = start_time.elapsed();
 

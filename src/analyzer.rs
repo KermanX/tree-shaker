@@ -1,11 +1,12 @@
 use crate::{
   ast::AstKind2,
   builtins::Builtins,
-  data::{Diagnostics, ExtraData, ReferredNodes, StatementVecData},
+  data::{ExtraData, ReferredNodes, StatementVecData},
   dep::DepId,
   entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
   logger::{DebuggerEvent, Logger},
   scope::{conditional::ConditionalDataMap, ScopeContext},
+  tree_shaker::TreeShaker,
   TreeShakeConfig,
 };
 use oxc::{
@@ -17,11 +18,11 @@ use oxc::{
 use std::{mem, rc::Rc};
 
 pub struct Analyzer<'a> {
-  pub config: TreeShakeConfig,
+  pub tree_shaker: TreeShaker<'a>,
+  pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
-  pub factory: EntityFactory<'a>,
+  pub factory: &'a EntityFactory<'a>,
   pub semantic: Semantic<'a>,
-  pub diagnostics: &'a mut Diagnostics,
   pub current_span: Vec<Span>,
   pub data: ExtraData<'a>,
   pub referred_nodes: ReferredNodes<'a>,
@@ -36,20 +37,18 @@ pub struct Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new(
-    config: TreeShakeConfig,
-    allocator: &'a Allocator,
-    semantic: Semantic<'a>,
-    diagnostics: &'a mut Diagnostics,
-    logger: Option<&'a Logger>,
-  ) -> Self {
-    let factory = EntityFactory::new(allocator);
+  pub fn new(tree_shaker: TreeShaker<'a>, semantic: Semantic<'a>) -> Self {
+    let config = tree_shaker.0.config;
+    let allocator = tree_shaker.0.allocator;
+    let factory = tree_shaker.0.factory;
+    let logger = tree_shaker.0.logger;
 
     Analyzer {
+      tree_shaker,
       config,
       allocator,
+      factory,
       semantic,
-      diagnostics,
       current_span: vec![],
       data: Default::default(),
       referred_nodes: Default::default(),
@@ -61,7 +60,6 @@ impl<'a> Analyzer<'a> {
       builtins: Builtins::new(&factory),
       entity_op: EntityOpHost::new(allocator),
       logger,
-      factory,
     }
   }
 
@@ -113,7 +111,12 @@ impl<'a> Analyzer<'a> {
 
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {
     let span = self.current_span.last().unwrap();
-    self.diagnostics.insert(message.into() + format!(" at {}-{}", span.start, span.end).as_str());
+    self
+      .tree_shaker
+      .0
+      .diagnostics
+      .borrow_mut()
+      .insert(message.into() + format!(" at {}-{}", span.start, span.end).as_str());
   }
 
   pub fn push_stmt_span(&mut self, node: &'a impl GetSpan, decl: bool) {

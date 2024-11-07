@@ -1,5 +1,7 @@
 #[derive(Debug, Clone)]
 pub struct TreeShakeConfig {
+  pub enabled: bool,
+
   pub unknown_global_side_effects: bool,
   pub preserve_function_name: bool,
   pub preserve_function_length: bool,
@@ -20,6 +22,8 @@ impl Default for TreeShakeConfig {
 impl TreeShakeConfig {
   pub fn safest() -> Self {
     Self {
+      enabled: true,
+
       unknown_global_side_effects: true,
       preserve_function_name: true,
       preserve_function_length: true,
@@ -46,5 +50,9 @@ impl TreeShakeConfig {
 
       ..Default::default()
     }
+  }
+
+  pub fn disabled() -> Self {
+    Self { enabled: false, ..Default::default() }
   }
 }
