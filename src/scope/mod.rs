@@ -119,8 +119,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn is_inside_pure(&self) -> bool {
-    // self.scope_context.pure > 0
-    false
+    self.scope_context.pure > 0
   }
 
   fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId> {
