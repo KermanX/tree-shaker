@@ -45,7 +45,7 @@ module.exports = function(test) {
       || /\bevalScript\(/.test(main)
       || main.includes('$DONOTEVALUATE')
       || /\bwith\s*\(/.test(main)
-      || /\busing\s*\(/.test(main)
+      || /\busing\b/.test(main)
       || main.includes('noStrict')
     ) {
       skipped++;
