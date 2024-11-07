@@ -47,6 +47,7 @@ const json = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
 json.optionalDependencies = {
   "@kermanx/tree-shaker-win32-x64-msvc": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-win32-x64-msvc@${tag}`,
   "@kermanx/tree-shaker-darwin-x64": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-darwin-x64@${tag}`,
+  "@kermanx/tree-shaker-darwin-arm64": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-darwin-arm64@${tag}`,
   "@kermanx/tree-shaker-linux-x64-gnu": `https://pkg.pr.new/KermanX/tree-shaker/@kermanx/tree-shaker-darwin-x64@${tag}`
 };
 

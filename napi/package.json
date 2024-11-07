@@ -5,7 +5,12 @@
   "types": "index.d.ts",
   "napi": {
     "name": "tree-shaker",
-    "triples": {}
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "aarch64-apple-darwin"
+      ]
+    }
   },
   "files": [
     "index.d.ts",
