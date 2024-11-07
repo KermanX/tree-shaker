@@ -25,6 +25,7 @@ jobs:
             target: x86_64-pc-windows-msvc
           - host: macos-latest
             target: x86_64-apple-darwin
+            setup: rustup target add x86_64-apple-darwin
             build: pnpm build --target x86_64-apple-darwin
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
@@ -59,10 +60,6 @@ jobs:
             .cargo-cache
             target/
           key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
-      - uses: goto-bus-stop/setup-zig@v2
-        if: ${{ matrix.settings.target == 'armv7-unknown-linux-gnueabihf' }}
-        with:
-          version: 0.13.0
       - name: Setup toolchain
         run: ${{ matrix.settings.setup }}
         if: ${{ matrix.settings.setup }}
