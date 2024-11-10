@@ -2,7 +2,10 @@ import { createLogger, Plugin } from "vite";
 import { treeShake } from "@kermanx/tree-shaker"
 import pico from "picocolors";
 
-export default function (): Plugin | false {
+export default function (options: {
+  pre?: (code: string) => string,
+  post?: (code: string) => string,
+} = {}): Plugin | false {
   const logger = createLogger("info", {
     prefix: "tree-shaker"
   })
@@ -39,6 +42,7 @@ export default function (): Plugin | false {
         if (disabled) {
           return code;
         }
+        code = options.pre?.(code) ?? code;
         const startTime = Date.now();
         const { output, diagnostics } = treeShake(code, "recommended", false);
         const duration = `${Date.now() - startTime}ms`;
@@ -46,7 +50,7 @@ export default function (): Plugin | false {
         for (const diagnostic of diagnostics) {
           logger.error(diagnostic);
         }
-        return output;
+        return options.post?.(output) ?? output;
       }
     }
   }
