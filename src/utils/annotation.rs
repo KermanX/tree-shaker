@@ -2,9 +2,9 @@ use crate::analyzer::Analyzer;
 use oxc::{ast::CommentKind, span::Span};
 
 impl<'a> Analyzer<'a> {
-  pub fn has_pure_notation(&self, span: Span) -> usize {
+  fn has_annotation(&self, span: Span, test: fn(&str) -> bool) -> bool {
     let Some(comment) = self.semantic.comments_range(..span.start).next_back() else {
-      return 0;
+      return false;
     };
     let raw = comment.span.source_text(self.semantic.source_text());
 
@@ -21,13 +21,23 @@ impl<'a> Analyzer<'a> {
       }
     };
     if !only_whitespace {
-      return 0;
+      return false;
     }
 
-    if raw.contains("@__PURE__") || raw.contains("#__PURE__") {
+    test(raw)
+  }
+
+  pub fn has_pure_notation(&self, span: Span) -> usize {
+    if self.has_annotation(span, |raw| raw.contains("@__PURE__") || raw.contains("#__PURE__")) {
       1
     } else {
       0
     }
+  }
+
+  pub fn has_finite_recursion_notation(&self, span: Span) -> bool {
+    self.has_annotation(span, |raw| {
+      raw.contains("@__FINITE_RECURSION__") || raw.contains("#__FINITE_RECURSION__")
+    })
   }
 }

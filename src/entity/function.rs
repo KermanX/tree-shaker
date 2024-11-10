@@ -18,6 +18,7 @@ pub struct FunctionEntity<'a> {
   body_consumed: Rc<Cell<bool>>,
   pub callee: (CalleeNode<'a>, usize),
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
+  pub finite_recursion: bool,
 }
 
 impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
@@ -91,8 +92,9 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       return consumed_object::call(rc, analyzer, dep, this, args);
     }
 
-    let recursed = analyzer.scope_context.call.iter().any(|scope| scope.callee.1 == self.callee.1);
-    if recursed {
+    let maybe_infinite_recursion = !self.finite_recursion
+      && analyzer.scope_context.call.iter().any(|scope| scope.callee.1 == self.callee.1);
+    if maybe_infinite_recursion {
       self.consume_body(analyzer);
       return consumed_object::call(rc, analyzer, dep, this, args);
     }
@@ -245,17 +247,18 @@ impl<'a> Analyzer<'a> {
       body_consumed: Rc::new(Cell::new(false)),
       callee: (node, self.factory.alloc_instance_id()),
       variable_scope_stack: Rc::new(self.scope_context.variable.stack.clone()),
+      finite_recursion: self.has_finite_recursion_notation(node.span()),
     };
 
-    let mut recursed = false;
+    let mut created_in_self = false;
     for scope in self.scope_context.call.iter().rev() {
       if scope.callee.0 == node {
-        recursed = true;
+        created_in_self = true;
         break;
       }
     }
 
-    if recursed {
+    if created_in_self {
       function.consume_body(self);
       self.factory.unknown()
     } else {
