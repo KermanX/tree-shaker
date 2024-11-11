@@ -42,17 +42,11 @@ import { doMinify, doTreeShake, diagnostics, output, showLogs } from './states';
         </div>
         <Input class="flex-grow h-0 max-h-full" />
       </div>
-      <div v-show="showLogs" flex-grow-2 h-0 md:h-full md:w-0 flex flex-col>
-        <h2 md:text-xl pb-2 pl-4 select-none flex items-end>
-          Logs
-          <div flex-grow />
-          <button i-carbon-close w-6 h-6 b-none @click="showLogs = false" />
-        </h2>
-        <Logs class="flex-grow relative h-full" />
-      </div>
       <div flex-grow h-0 md:h-full md:w-0 flex flex-col>
-        <h2 md:text-xl pb-2 pl-4 select-none flex items-end>
+        <h2 md:text-xl pb-2 pl-4 select-none flex items-center>
           Output
+          <div flex-grow />
+          <button v-if="!showLogs" @click="showLogs = true" mr-4 op-80 w-5 h-5 b-none i-carbon-asset-view />
         </h2>
         <div flex-grow relative max-h-full>
           <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
@@ -69,6 +63,14 @@ import { doMinify, doTreeShake, diagnostics, output, showLogs } from './states';
             </div>
           </div>
         </div>
+      </div>
+      <div v-show="showLogs" flex-grow-2 h-0 md:h-full md:w-0 flex flex-col>
+        <h2 md:text-xl pb-2 pl-4 select-none flex items-end>
+          Logs
+          <div flex-grow />
+          <button i-carbon-close mr-4 op-80 w-6 h-6 b-none @click="showLogs = false" />
+        </h2>
+        <Logs class="flex-grow relative h-full" />
       </div>
     </div>
   </div>
