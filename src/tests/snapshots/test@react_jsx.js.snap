@@ -11,8 +11,8 @@ function Comp(__unused_4675) {
     </div>;
 }
 export function main() {
-	return <Comp x={1}>
-      <div id="1" />
+	return <Comp>
+      <div />
       Hello
     </Comp>;
 }

@@ -15,15 +15,16 @@ impl<'a> Analyzer<'a> {
     let object = self.new_empty_object(&self.builtins.prototypes.object);
 
     for attr in node.iter() {
+      let dep_id = AstKind2::JSXAttributeItem(attr);
       match attr {
         JSXAttributeItem::Attribute(node) => {
           let key = self.exec_jsx_attribute_name(&node.name);
-          let value = self.exec_jsx_attribute_value(&node.value);
+          let value = self.factory.computed(self.exec_jsx_attribute_value(&node.value), dep_id);
           object.init_property(self, PropertyKind::Init, key, value, true);
         }
         JSXAttributeItem::SpreadAttribute(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(self, box_consumable(AstKind2::JSXSpreadAttribute(node)), argument);
+          object.init_spread(self, box_consumable(dep_id), argument);
         }
       }
     }
@@ -46,8 +47,7 @@ impl<'a> Transformer<'a> {
         JSXAttributeItem::SpreadAttribute(node) => {
           let JSXSpreadAttribute { span, argument } = node.as_ref();
 
-          let has_effect = self.is_referred(AstKind2::JSXSpreadAttribute(node));
-          if has_effect {
+          if self.is_referred(AstKind2::JSXAttributeItem(attr)) {
             let argument = self.transform_expression(argument, true).unwrap();
             Some(
               self.ast_builder.expression_object(
@@ -73,25 +73,30 @@ impl<'a> Transformer<'a> {
     let mut transformed = self.ast_builder.vec_with_capacity(node.len());
 
     for attr in node.iter() {
-      transformed.push(match attr {
+      let is_referred = self.is_referred(AstKind2::JSXAttributeItem(attr));
+      match attr {
         JSXAttributeItem::Attribute(node) => {
           let JSXAttribute { span, name, value } = node.as_ref();
 
-          self.ast_builder.jsx_attribute_item_jsx_attribute(
-            *span,
-            self.clone_node(name),
-            self.transform_jsx_attribute_value_need_val(value),
-          )
+          if let Some(value) = self.transform_jsx_attribute_value_as_item(value, is_referred) {
+            transformed.push(self.ast_builder.jsx_attribute_item_jsx_attribute(
+              *span,
+              self.clone_node(name),
+              Some(value),
+            ));
+          }
         }
         JSXAttributeItem::SpreadAttribute(node) => {
           let JSXSpreadAttribute { span, argument } = node.as_ref();
 
-          self.ast_builder.jsx_attribute_item_jsx_spread_attribute(
-            *span,
-            self.transform_expression(argument, true).unwrap(),
-          )
+          if is_referred {
+            transformed.push(self.ast_builder.jsx_attribute_item_jsx_spread_attribute(
+              *span,
+              self.transform_expression(argument, true).unwrap(),
+            ))
+          }
         }
-      });
+      }
     }
 
     transformed
