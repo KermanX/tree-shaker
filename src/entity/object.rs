@@ -472,6 +472,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     self.get_to_string(rc, analyzer)
   }
 
+  fn get_to_jsx_child(&self, rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+    rc
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     TypeofResult::Object
   }

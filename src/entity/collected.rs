@@ -145,6 +145,10 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.forward(self.val.get_to_property_key(analyzer), analyzer)
   }
 
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.forward(self.val.get_to_jsx_child(analyzer), analyzer)
+  }
+
   fn get_to_literals(
     &self,
     _rc: Entity<'a>,

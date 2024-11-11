@@ -164,6 +164,15 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
     self.get_to_string(rc, analyzer)
   }
 
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    if self.consumed.get() {
+      analyzer.factory.immutable_unknown
+    } else {
+      // TODO: analyzer.thrown_builtin_error("Functions are not valid JSX children");
+      analyzer.factory.string("")
+    }
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     TypeofResult::Function
   }

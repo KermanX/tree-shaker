@@ -70,6 +70,7 @@ pub trait EntityTrait<'a>: Debug {
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_literals(
     &self,
     _rc: Entity<'a>,
@@ -219,6 +220,10 @@ impl<'a> Entity<'a> {
 
   pub fn get_to_property_key(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.0.get_to_property_key(*self, analyzer)
+  }
+
+  pub fn get_to_jsx_child(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.0.get_to_jsx_child(*self, analyzer)
   }
 
   pub fn get_to_literals(&self, analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralEntity<'a>>> {

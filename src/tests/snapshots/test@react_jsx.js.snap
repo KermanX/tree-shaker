@@ -3,14 +3,15 @@ source: src/tests/mod.rs
 expression: tree_shake(input)
 input_file: src/tests/fixtures/react_jsx.js
 ---
-function Comp(__unused_F60F) {
-	const __unused_7539 = effect();
+function Comp(__unused_4675) {
+	const __unused_7AB9 = effect();
 	return <div>
-      {1} {true} {void 0}
+      {"1"}
+      {}
     </div>;
 }
 export function main() {
-	return <Comp x={1} y>
+	return <Comp x={1}>
       <div id="1" />
       Hello
     </Comp>;

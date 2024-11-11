@@ -192,6 +192,11 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     analyzer.factory.union(values)
   }
 
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    let values = self.values.map(|v| v.get_to_jsx_child(analyzer));
+    analyzer.factory.union(values)
+  }
+
   fn get_to_literals(
     &self,
     _rc: Entity<'a>,

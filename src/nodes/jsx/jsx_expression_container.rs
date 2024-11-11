@@ -1,8 +1,22 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
-use oxc::ast::ast::{Expression, JSXExpression, JSXExpressionContainer};
+use crate::{
+  analyzer::Analyzer,
+  ast::AstKind2,
+  build_effect,
+  entity::{Entity, LiteralCollector, LiteralEntity},
+  transformer::Transformer,
+};
+use oxc::{
+  ast::ast::{Expression, JSXExpression, JSXExpressionContainer},
+  span::GetSpan,
+};
+
+#[derive(Default)]
+struct AsJsxChildData<'a> {
+  collector: LiteralCollector<'a>,
+}
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_jsx_expression_container(
+  pub fn exec_jsx_expression_container_as_attribute_value(
     &mut self,
     node: &'a JSXExpressionContainer<'a>,
   ) -> Entity<'a> {
@@ -10,6 +24,20 @@ impl<'a> Analyzer<'a> {
       JSXExpression::EmptyExpression(_node) => self.factory.r#true,
       node => self.exec_expression(node.to_expression()),
     }
+  }
+
+  pub fn exec_jsx_expression_container_as_jsx_child(
+    &mut self,
+    node: &'a JSXExpressionContainer<'a>,
+  ) -> Entity<'a> {
+    let data = self.load_data::<AsJsxChildData>(AstKind2::JsxExpressionContainer(node));
+
+    let value = match &node.expression {
+      JSXExpression::EmptyExpression(_node) => self.factory.string(""),
+      node => self.exec_expression(node.to_expression()).get_to_jsx_child(self),
+    };
+
+    data.collector.collect(self, value)
   }
 }
 
@@ -28,17 +56,30 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a JSXExpressionContainer<'a>,
   ) -> JSXExpressionContainer<'a> {
+    let data = self.get_data::<AsJsxChildData>(AstKind2::JsxExpressionContainer(node));
+
     let JSXExpressionContainer { span, expression } = node;
 
     self.ast_builder.jsx_expression_container(
       *span,
-      match expression {
-        JSXExpression::EmptyExpression(node) => {
-          self.ast_builder.jsx_expression_jsx_empty_expression(node.span)
+      if let Some(literal) = data.collector.build_expr(&self.ast_builder, *span) {
+        let effect = self.transform_jsx_expression_container_effect_only(node);
+        if effect.is_none() && data.collector.collected().unwrap() == LiteralEntity::String("") {
+          self.ast_builder.jsx_expression_jsx_empty_expression(expression.span())
+        } else {
+          self.ast_builder.jsx_expression_expression(
+            build_effect!(self.ast_builder, expression.span(), effect; literal),
+          )
         }
-        node => self.ast_builder.jsx_expression_expression(
-          self.transform_expression(node.to_expression(), true).unwrap(),
-        ),
+      } else {
+        match expression {
+          JSXExpression::EmptyExpression(node) => {
+            self.ast_builder.jsx_expression_jsx_empty_expression(node.span)
+          }
+          node => self.ast_builder.jsx_expression_expression(
+            self.transform_expression(node.to_expression(), true).unwrap(),
+          ),
+        }
       },
     )
   }

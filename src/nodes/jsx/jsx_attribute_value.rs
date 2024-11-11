@@ -9,7 +9,9 @@ impl<'a> Analyzer<'a> {
     if let Some(node) = node {
       match node {
         JSXAttributeValue::StringLiteral(node) => self.exec_string_literal(&node),
-        JSXAttributeValue::ExpressionContainer(node) => self.exec_jsx_expression_container(&node),
+        JSXAttributeValue::ExpressionContainer(node) => {
+          self.exec_jsx_expression_container_as_attribute_value(&node)
+        }
         JSXAttributeValue::Element(node) => self.exec_jsx_element(&node),
         JSXAttributeValue::Fragment(node) => self.exec_jsx_fragment(&node),
       }

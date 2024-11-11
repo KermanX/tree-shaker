@@ -113,6 +113,7 @@ pub enum AstKind2<'a> {
   ExportSpecifier(&'a ExportSpecifier<'a>),
   JSXSpreadAttribute(&'a JSXSpreadAttribute<'a>),
   JSXMemberExpression(&'a JSXMemberExpression<'a>),
+  JsxExpressionContainer(&'a JSXExpressionContainer<'a>),
 
   // extras
   Expression(&'a Expression<'a>),
@@ -231,6 +232,7 @@ impl<'a> GetSpan for AstKind2<'a> {
       AstKind2::ExportSpecifier(node) => node.span(),
       AstKind2::JSXSpreadAttribute(node) => node.span(),
       AstKind2::JSXMemberExpression(node) => node.span(),
+      AstKind2::JsxExpressionContainer(node) => node.span(),
       AstKind2::Expression(node) => node.span(),
       AstKind2::MemberExpressionRead(node) => node.span(),
       AstKind2::AssignmentTargetProperty(node) => node.span(),

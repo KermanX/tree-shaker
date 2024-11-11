@@ -147,6 +147,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+    unreachable!()
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     unreachable!()
   }

@@ -22,7 +22,8 @@ pub fn tree_shake(
         tree_shake::TreeShakeConfig::recommended()
       } else {
         tree_shake::TreeShakeConfig::disabled()
-      }.with_react_jsx(true),
+      }
+      .with_react_jsx(true),
       minify_options: do_minify.then(|| MinifierOptions::default()),
       codegen_options: CodegenOptions { minify: do_minify, ..Default::default() },
       logging,

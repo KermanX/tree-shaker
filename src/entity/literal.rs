@@ -246,17 +246,25 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
+  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    if (TypeofResult::String | TypeofResult::Number).contains(self.test_typeof()) {
+      self.get_to_string(rc, analyzer)
+    } else {
+      analyzer.factory.string("")
+    }
+  }
+
   fn get_to_literals(
     &self,
     _rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
+    _analyzer: &Analyzer<'a>,
   ) -> Option<FxHashSet<LiteralEntity<'a>>> {
     let mut result = FxHashSet::default();
     result.insert(*self);
     Some(result)
   }
 
-  fn get_literal(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
+  fn get_literal(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
     Some(*self)
   }
 

@@ -140,6 +140,10 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     rc
   }
 
+  fn get_to_jsx_child(&self, rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+    rc
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     TypeofResult::_Unknown
   }

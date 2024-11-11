@@ -154,6 +154,14 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     analyzer.factory.unknown()
   }
 
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    if matches!(self, PrimitiveEntity::Mixed | PrimitiveEntity::String | PrimitiveEntity::Number) {
+      analyzer.factory.unknown_string
+    } else {
+      analyzer.factory.string("")
+    }
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     match self {
       PrimitiveEntity::String => TypeofResult::String,

@@ -135,6 +135,10 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.get_to_property_key(analyzer)
   }
 
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.value.get_to_jsx_child(analyzer)
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     self.value.test_typeof()
   }
