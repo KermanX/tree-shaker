@@ -2,7 +2,7 @@
 import Input from './Input.vue';
 import Logs from './Logs.vue';
 import Editor from './Editor.vue';
-import { doMinify, doTreeShake, diagnostics, output, showLogs } from './states';
+import { doMinify, doTreeShake, diagnostics, load, output, showLogs } from './states';
 </script>
 
 <template>
@@ -10,7 +10,9 @@ import { doMinify, doTreeShake, diagnostics, output, showLogs } from './states';
     <div px-4 flex flex-wrap gap-x-2 pb-2>
       <h1 text-xl md:text-3xl font-bold md:pb-2 select-none flex flex-wrap items-center gap-x-2>
         <img src="/favicon.ico" h-1em bg-gray-200 rounded-lg>
-        Tree Shaker
+        <div @click="load(true)">
+          Tree Shaker
+        </div>
         <div text-sm self-end flex items-center gap-1 op-80>
           Experimental Tree Shaker for JS Based on Oxc
           <a i-carbon-logo-github flex-grow inline-block w-1.2em h-1.2em hover:op-80

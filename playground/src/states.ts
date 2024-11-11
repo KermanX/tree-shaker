@@ -3,6 +3,7 @@ import { tree_shake } from '@kermanx/tree-shaker'
 import { computed, ref, watch, watchEffect } from 'vue'
 import { DEMO } from './examples';
 
+export const onInputUpdate: (()=>void)[] = []
 export const input = ref('')
 export const doTreeShake = ref(true)
 export const doMinify = ref(false)
@@ -18,9 +19,9 @@ watch(input, (input) => {
   }, 300)
 })
 
-function load() {
+export function load(reset = false) {
   let parsed
-  if (window.location.hash) {
+  if (!reset && window.location.hash) {
     try {
       parsed = JSON.parse(decompressFromBase64(window.location.hash.slice(1)) || '{}')
     }
@@ -28,8 +29,10 @@ function load() {
   }
   parsed ||= {}
   debouncedInput.value = input.value = parsed.input ?? DEMO
+  onInputUpdate.forEach(fn => fn())
   doTreeShake.value = parsed.doTreeShake ?? true
   doMinify.value = parsed.doMinify ?? false
+  save()
 }
 
 function save() {
