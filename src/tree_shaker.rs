@@ -51,7 +51,11 @@ impl<'a> TreeShaker<'a> {
     let TreeShakerInner { allocator, config, minify_options, codegen_options, logger, .. } =
       self.0.as_ref();
 
-    let parser = Parser::new(allocator, allocator.alloc(source_text), SourceType::mjs());
+    let parser = Parser::new(
+      allocator,
+      allocator.alloc(source_text),
+      SourceType::mjs().with_jsx(config.jsx.is_enabled()),
+    );
     let mut ast = allocator.alloc(parser.parse().program);
 
     if config.enabled {

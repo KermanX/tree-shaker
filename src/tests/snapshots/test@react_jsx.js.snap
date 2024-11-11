@@ -1,0 +1,17 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(input)
+input_file: src/tests/fixtures/react_jsx.js
+---
+function Comp(__unused_F60F) {
+	const __unused_7539 = effect();
+	return <div>
+      {1} {true} {void 0}
+    </div>;
+}
+export function main() {
+	return <Comp x={1} y>
+      <div id="1" />
+      Hello
+    </Comp>;
+}

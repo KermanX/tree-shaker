@@ -2,7 +2,7 @@ mod annotation;
 pub mod ast;
 mod data;
 pub mod dep_id;
-mod effect_builder;
+pub mod effect_builder;
 mod f64_with_eq;
 mod logger;
 mod private_identifier_name;

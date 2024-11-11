@@ -5,10 +5,11 @@ use std::fs;
 
 fn tree_shake(input: String) -> String {
   let do_minify = input.contains("@minify");
+  let react_jsx = input.contains("@react-jsx");
   let result = crate::tree_shake(
     input,
     TreeShakeOptions {
-      config: TreeShakeConfig::default(),
+      config: TreeShakeConfig::default().with_react_jsx(react_jsx),
       minify_options: do_minify.then(|| MinifierOptions::default()),
       codegen_options: CodegenOptions::default(),
       logging: false,

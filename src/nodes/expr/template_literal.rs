@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, build_effect_from_arr, entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{Expression, TemplateElementValue, TemplateLiteral},
   span::{GetSpan, SPAN},
@@ -43,7 +43,7 @@ impl<'a> Transformer<'a> {
             pending_effects.push(Some(effect));
           }
           if !pending_effects.is_empty() && is_last {
-            transformed_exprs.push(build_effect_from_arr!(
+            transformed_exprs.push(build_effect!(
               &self.ast_builder,
               expr_span,
               mem::take(&mut pending_effects);
@@ -57,7 +57,7 @@ impl<'a> Transformer<'a> {
           }
         } else {
           let expr = self.transform_expression(expr, true).unwrap();
-          transformed_exprs.push(build_effect_from_arr!(
+          transformed_exprs.push(build_effect!(
             &self.ast_builder,
             expr_span,
             mem::take(&mut pending_effects);
@@ -67,7 +67,7 @@ impl<'a> Transformer<'a> {
         }
       }
       if transformed_exprs.is_empty() {
-        Some(build_effect_from_arr!(
+        Some(build_effect!(
           &self.ast_builder,
           *span,
           pending_effects;
@@ -92,10 +92,10 @@ impl<'a> Transformer<'a> {
         Some(self.ast_builder.expression_template_literal(*span, quasis, transformed_exprs))
       }
     } else {
-      build_effect_from_arr!(
+      build_effect!(
         &self.ast_builder,
         *span,
-        expressions.into_iter().map(|x| self.transform_expression(x, false))
+        expressions.into_iter().map(|x| self.transform_expression(x, false)).collect::<Vec<_>>()
       )
     }
   }

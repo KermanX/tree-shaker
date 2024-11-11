@@ -260,6 +260,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     consumed_object::construct(rc, analyzer, dep, args)
   }
 
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
+    consumed_object::jsx(rc, analyzer, attributes)
+  }
+
   fn r#await(
     &self,
     rc: Entity<'a>,
@@ -344,7 +348,11 @@ impl<'a> ArrayEntity<'a> {
   }
 
   pub fn push_element(&self, element: Entity<'a>) {
-    self.elements.borrow_mut().push(element);
+    if self.rest.borrow().is_empty() {
+      self.elements.borrow_mut().push(element);
+    } else {
+      self.init_rest(element);
+    }
   }
 
   pub fn init_rest(&self, rest: Entity<'a>) {

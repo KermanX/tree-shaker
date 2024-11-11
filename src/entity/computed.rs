@@ -85,6 +85,10 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     self.val.construct(analyzer, self.forward_dep(dep), args)
   }
 
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
+    self.forward_value(self.val.jsx(analyzer, attributes), analyzer)
+  }
+
   fn r#await(
     &self,
     _rc: Entity<'a>,

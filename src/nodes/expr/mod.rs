@@ -32,7 +32,6 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::{
-  allocator::CloneIn,
   ast::{ast::Expression, match_member_expression},
   span::GetSpan,
 };
@@ -82,9 +81,10 @@ impl<'a> Analyzer<'a> {
       Expression::Super(node) => self.exec_super(node),
       Expression::PrivateInExpression(node) => self.exec_private_in_expression(node),
 
-      Expression::JSXElement(_)
-      | Expression::JSXFragment(_)
-      | Expression::TSAsExpression(_)
+      Expression::JSXElement(node) => self.exec_jsx_element(node),
+      Expression::JSXFragment(node) => self.exec_jsx_fragment(node),
+
+      Expression::TSAsExpression(_)
       | Expression::TSInstantiationExpression(_)
       | Expression::TSTypeAssertion(_)
       | Expression::TSNonNullExpression(_)
@@ -117,13 +117,7 @@ impl<'a> Transformer<'a> {
       | Expression::BigIntLiteral(_)
       | Expression::BooleanLiteral(_)
       | Expression::NullLiteral(_)
-      | Expression::RegExpLiteral(_) => {
-        if need_val {
-          Some(node.clone_in(&self.allocator))
-        } else {
-          None
-        }
-      }
+      | Expression::RegExpLiteral(_) => need_val.then(|| self.clone_node(node)),
       Expression::TemplateLiteral(node) => self.transform_template_literal(node, need_val),
       Expression::Identifier(node) => self
         .transform_identifier_reference_read(node, need_val)
@@ -167,9 +161,10 @@ impl<'a> Transformer<'a> {
       Expression::Super(node) => self.transform_super(node, need_val),
       Expression::PrivateInExpression(node) => self.transform_private_in_expression(node, need_val),
 
-      Expression::JSXElement(_)
-      | Expression::JSXFragment(_)
-      | Expression::TSAsExpression(_)
+      Expression::JSXElement(node) => self.transform_jsx_element(node, need_val),
+      Expression::JSXFragment(node) => self.transform_jsx_fragment(node, need_val),
+
+      Expression::TSAsExpression(_)
       | Expression::TSInstantiationExpression(_)
       | Expression::TSTypeAssertion(_)
       | Expression::TSNonNullExpression(_)

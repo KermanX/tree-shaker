@@ -77,6 +77,15 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
+  fn jsx(
+    &self,
+    _rc: Entity<'a>,
+    _analyzer: &mut Analyzer<'a>,
+    _attributes: Entity<'a>,
+  ) -> Entity<'a> {
+    unreachable!()
+  }
+
   fn r#await(
     &self,
     _rc: Entity<'a>,

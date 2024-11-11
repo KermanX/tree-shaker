@@ -35,5 +35,6 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
     "arguments" => factory.immutable_unknown,
     "caller" => factory.immutable_unknown,
     "name" => factory.unknown_string,
+    "prototype" => factory.immutable_unknown,
   })
 }

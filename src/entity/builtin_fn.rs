@@ -85,6 +85,10 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     consumed_object::construct(rc, analyzer, dep, args)
   }
 
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
+    consumed_object::jsx(rc, analyzer, attributes)
+  }
+
   fn r#await(
     &self,
     rc: Entity<'a>,

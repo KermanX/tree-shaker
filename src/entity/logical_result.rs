@@ -77,6 +77,15 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.construct(analyzer, dep, args)
   }
 
+  fn jsx(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    attributes: Entity<'a>,
+  ) -> Entity<'a> {
+    self.value.jsx(analyzer, attributes)
+  }
+
   fn r#await(
     &self,
     _rc: Entity<'a>,

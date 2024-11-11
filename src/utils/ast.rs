@@ -111,6 +111,8 @@ pub enum AstKind2<'a> {
   ExportDefaultDeclaration(&'a ExportDefaultDeclaration<'a>),
   ExportAllDeclaration(&'a ExportAllDeclaration<'a>),
   ExportSpecifier(&'a ExportSpecifier<'a>),
+  JSXSpreadAttribute(&'a JSXSpreadAttribute<'a>),
+  JSXMemberExpression(&'a JSXMemberExpression<'a>),
 
   // extras
   Expression(&'a Expression<'a>),
@@ -227,6 +229,8 @@ impl<'a> GetSpan for AstKind2<'a> {
       AstKind2::ExportDefaultDeclaration(node) => node.span(),
       AstKind2::ExportAllDeclaration(node) => node.span(),
       AstKind2::ExportSpecifier(node) => node.span(),
+      AstKind2::JSXSpreadAttribute(node) => node.span(),
+      AstKind2::JSXMemberExpression(node) => node.span(),
       AstKind2::Expression(node) => node.span(),
       AstKind2::MemberExpressionRead(node) => node.span(),
       AstKind2::AssignmentTargetProperty(node) => node.span(),

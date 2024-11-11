@@ -112,6 +112,15 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     consumed_object::construct(rc, analyzer, dep, args)
   }
 
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
+    rc.call(
+      analyzer,
+      box_consumable(()),
+      analyzer.factory.immutable_unknown,
+      analyzer.factory.arguments(vec![(false, attributes)]),
+    )
+  }
+
   fn r#await(
     &self,
     rc: Entity<'a>,

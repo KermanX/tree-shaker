@@ -100,6 +100,11 @@ pub fn construct<'a>(
   }
 }
 
+pub fn jsx<'a>(rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
+  // No consume!
+  analyzer.factory.computed_unknown((rc, attributes))
+}
+
 pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
   analyzer.may_throw();
   analyzer.consume(dep);

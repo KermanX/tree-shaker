@@ -109,6 +109,18 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     analyzer.factory.union(values)
   }
 
+  fn jsx(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    attributes: Entity<'a>,
+  ) -> Entity<'a> {
+    let values = self
+      .values
+      .map(|v| analyzer.exec_indeterminately(|analyzer| v.jsx(analyzer, attributes.clone())));
+    analyzer.factory.union(values)
+  }
+
   fn r#await(
     &self,
     _rc: Entity<'a>,

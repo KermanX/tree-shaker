@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect_from_arr, consumable::box_consumable, dep::DepId,
+  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, dep::DepId,
   entity::Entity, transformer::Transformer,
 };
 use oxc::{
@@ -67,11 +67,11 @@ impl<'a> Transformer<'a> {
         NONE,
       ))
     } else {
-      build_effect_from_arr!(
+      build_effect!(
         &self.ast_builder,
         *span,
-        vec![self.transform_callee(tag, false)],
-        quasi.expressions.iter().map(|x| self.transform_expression(x, false))
+        self.transform_callee(tag, false),
+        quasi.expressions.iter().map(|x| self.transform_expression(x, false)).collect::<Vec<_>>()
       )
     }
   }
