@@ -1,4 +1,4 @@
-use crate::{ast::DeclarationKind, transformer::Transformer, Analyzer};
+use crate::{ast::DeclarationKind, consumable::box_consumable, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{
   ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
   ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,
@@ -10,10 +10,27 @@ impl<'a> Analyzer<'a> {
     match node {
       ModuleDeclaration::ImportDeclaration(node) => {
         if let Some(specifiers) = &node.specifiers {
+          let name = node.source.value.as_str();
+          let known = self.builtins.known_modules.get(name).copied();
+
           for specifier in specifiers {
+            let value = if let Some(known) = known {
+              match specifier {
+                ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => known.default,
+                ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => known.namespace,
+                ImportDeclarationSpecifier::ImportSpecifier(node) => {
+                  let key = self.factory.string(node.imported.name().as_str());
+                  known.namespace.get_property(self, box_consumable(()), key)
+                }
+              }
+            } else {
+              self.builtins.factory.unknown()
+            };
+
             let local = specifier.local();
             self.declare_binding_identifier(local, false, DeclarationKind::Import);
-            self.init_binding_identifier(local, Some(self.factory.unknown()));
+
+            self.init_binding_identifier(local, Some(value));
           }
         }
       }

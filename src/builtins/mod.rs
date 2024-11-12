@@ -1,6 +1,7 @@
 mod constants;
 mod globals;
 mod import_meta;
+mod known_modules;
 mod prototypes;
 mod react;
 
@@ -8,6 +9,7 @@ use crate::{
   entity::{Entity, EntityFactory},
   TreeShakeConfig,
 };
+use known_modules::KnownModule;
 use prototypes::BuiltinPrototypes;
 pub use prototypes::Prototype;
 use rustc_hash::FxHashMap;
@@ -19,6 +21,7 @@ pub struct Builtins<'a> {
   pub prototypes: &'a BuiltinPrototypes<'a>,
   pub globals: FxHashMap<&'static str, Entity<'a>>,
   pub import_meta: Entity<'a>,
+  pub known_modules: FxHashMap<&'static str, KnownModule<'a>>,
 }
 
 impl<'a> Builtins<'a> {
@@ -30,9 +33,11 @@ impl<'a> Builtins<'a> {
 
       prototypes,
       import_meta: Self::create_import_meta(factory, prototypes),
-      globals: Default::default(), // Initialize later
+      globals: Default::default(),       // Initialize later
+      known_modules: Default::default(), // Initialize later
     };
     builtins.init_globals();
+    builtins.init_known_modules();
     builtins
   }
 }
