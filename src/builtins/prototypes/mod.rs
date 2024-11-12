@@ -19,6 +19,8 @@ use crate::{
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashMap;
 
+use super::Builtins;
+
 #[derive(Default)]
 pub struct Prototype<'a> {
   string_keyed: FxHashMap<&'static str, Entity<'a>>,
@@ -91,18 +93,20 @@ pub struct BuiltinPrototypes<'a> {
   pub symbol: Prototype<'a>,
 }
 
-pub fn create_builtin_prototypes<'a>(factory: &EntityFactory<'a>) -> BuiltinPrototypes<'a> {
-  BuiltinPrototypes {
-    array: array::create_array_prototype(factory),
-    bigint: bigint::create_bigint_prototype(factory),
-    boolean: boolean::create_boolean_prototype(factory),
-    function: function::create_function_prototype(factory),
-    null: null::create_null_prototype(factory),
-    number: number::create_number_prototype(factory),
-    object: object::create_object_prototype(factory),
-    promise: promise::create_promise_prototype(factory),
-    regexp: regexp::create_regexp_prototype(factory),
-    string: string::create_string_prototype(factory),
-    symbol: symbol::create_symbol_prototype(factory),
+impl<'a> Builtins<'a> {
+  pub fn create_builtin_prototypes(factory: &EntityFactory<'a>) -> &'a BuiltinPrototypes<'a> {
+    factory.alloc(BuiltinPrototypes {
+      array: array::create_array_prototype(factory),
+      bigint: bigint::create_bigint_prototype(factory),
+      boolean: boolean::create_boolean_prototype(factory),
+      function: function::create_function_prototype(factory),
+      null: null::create_null_prototype(factory),
+      number: number::create_number_prototype(factory),
+      object: object::create_object_prototype(factory),
+      promise: promise::create_promise_prototype(factory),
+      regexp: regexp::create_regexp_prototype(factory),
+      string: string::create_string_prototype(factory),
+      symbol: symbol::create_symbol_prototype(factory),
+    })
   }
 }
