@@ -1,7 +1,7 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityTrait, LiteralEntity, TypeofResult,
+  Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -578,6 +578,13 @@ impl<'a> ObjectEntity<'a> {
     for (definite, key, value) in properties {
       self.init_property(analyzer, PropertyKind::Init, key, value, definite);
     }
+  }
+
+  pub fn init_unknown_rest(&self, factory: &'a EntityFactory<'a>) {
+    self.rest.borrow_mut().values.push(ObjectPropertyValue::Property(
+      Some(factory.unknown_primitive),
+      Some(factory.unknown()),
+    ));
   }
 
   fn apply_unknown_to_possible_setters(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {

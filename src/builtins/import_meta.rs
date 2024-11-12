@@ -2,10 +2,11 @@ use super::{constants::IMPORT_META_OBJECT_ID, prototypes::BuiltinPrototypes};
 use crate::entity::{Entity, EntityFactory, ObjectEntity, ObjectProperty, ObjectPropertyValue};
 
 pub fn create_import_meta<'a>(
-  factory: &EntityFactory<'a>,
+  factory: &'a EntityFactory<'a>,
   prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
   let object = ObjectEntity::new_builtin(IMPORT_META_OBJECT_ID, &prototypes.null);
+  object.init_unknown_rest(factory);
 
   // import.meta.url
   object.string_keyed.borrow_mut().insert(
@@ -18,12 +19,6 @@ pub fn create_import_meta<'a>(
       )],
     },
   );
-
-  object
-    .rest
-    .borrow_mut()
-    .values
-    .push(ObjectPropertyValue::Property(Some(factory.unknown_primitive), Some(factory.unknown())));
 
   factory.entity(object)
 }

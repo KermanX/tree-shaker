@@ -11,6 +11,7 @@ pub fn create_react_namespace<'a>(
   prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
   let object = ObjectEntity::new_builtin(REACT_NAMESPACE_OBJECT_ID, &prototypes.null);
+  object.init_unknown_rest(factory);
 
   object.string_keyed.borrow_mut().insert(
     "forwardRef",
