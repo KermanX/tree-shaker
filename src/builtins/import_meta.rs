@@ -7,7 +7,10 @@ impl<'a> Builtins<'a> {
     prototypes: &'a BuiltinPrototypes<'a>,
   ) -> Entity<'a> {
     let object = ObjectEntity::new_builtin(IMPORT_META_OBJECT_ID, &prototypes.null);
-    object.init_unknown_rest(factory);
+    object.rest.borrow_mut().values.push(ObjectPropertyValue::Property(
+      Some(factory.immutable_unknown),
+      Some(factory.immutable_unknown),
+    ));
 
     // import.meta.url
     object.string_keyed.borrow_mut().insert(

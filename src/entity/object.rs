@@ -1,7 +1,7 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
+  Entity, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -45,7 +45,8 @@ impl<'a> fmt::Debug for ObjectEntity<'a> {
 
 #[derive(Debug, Clone)]
 pub enum ObjectPropertyValue<'a> {
-  Field(Entity<'a>),
+  /// (value, readonly)
+  Field(Entity<'a>, Option<bool>),
   /// (Getter, Setter)
   Property(Option<Entity<'a>>, Option<Entity<'a>>),
 }
@@ -58,7 +59,7 @@ impl<'a> ObjectPropertyValue<'a> {
     this: Entity<'a>,
   ) -> Entity<'a> {
     match self {
-      ObjectPropertyValue::Field(value) => value.clone(),
+      ObjectPropertyValue::Field(value, _) => value.clone(),
       ObjectPropertyValue::Property(Some(getter), _) => {
         getter.call(analyzer, dep, this, analyzer.factory.arguments(vec![]))
       }
@@ -95,7 +96,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     fn consume_property<'a>(property: &ObjectProperty<'a>, analyzer: &mut Analyzer<'a>) {
       for value in &property.values {
         match value {
-          ObjectPropertyValue::Field(value) => value.consume(analyzer),
+          ObjectPropertyValue::Field(value, _) => value.consume(analyzer),
           ObjectPropertyValue::Property(getter, setter) => {
             getter.as_ref().map(|f| f.consume(analyzer));
             setter.as_ref().map(|f| f.consume(analyzer));
@@ -227,14 +228,24 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           LiteralEntity::String(key) => {
             let mut string_keyed = self.string_keyed.borrow_mut();
             if let Some(property) = string_keyed.get_mut(key) {
-              if definite {
+              let has_writable_field = if definite {
+                let prev_len = property.values.len();
                 property.values = property
                   .values
                   .iter()
-                  .filter(|v| matches!(v, ObjectPropertyValue::Property(_, _)))
+                  .filter(|v| {
+                    matches!(
+                      v,
+                      ObjectPropertyValue::Property(_, _)
+                        | ObjectPropertyValue::Field(_, Some(true))
+                    )
+                  })
                   .cloned()
                   .collect::<Vec<_>>();
-              }
+                prev_len != property.values.len()
+              } else {
+                true
+              };
               for property_val in
                 property.values.iter().chain(self.unknown_keyed.borrow().values.iter())
               {
@@ -242,9 +253,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                   setters_to_call.push(*setter);
                 }
               }
-              if indeterminate || !property.definite || property.values.is_empty() {
+              if indeterminate || has_writable_field || self.unknown_keyed.borrow().values.len() > 0
+              {
                 may_write = true;
-                property.values.push(ObjectPropertyValue::Field(value.clone()));
+                property.values.push(ObjectPropertyValue::Field(value.clone(), Some(false)));
               }
             } else {
               may_write = true;
@@ -268,7 +280,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
               let property = ObjectProperty {
                 definite,
-                values: vec![ObjectPropertyValue::Field(value.clone())],
+                values: vec![ObjectPropertyValue::Field(value.clone(), Some(false))],
               };
               string_keyed.insert(key, property);
             }
@@ -292,7 +304,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         .unknown_keyed
         .borrow_mut()
         .values
-        .push(ObjectPropertyValue::Field(analyzer.factory.computed(value, key)));
+        .push(ObjectPropertyValue::Field(analyzer.factory.computed(value, key), None));
       self.apply_unknown_to_possible_setters(analyzer, dep);
     };
 
@@ -535,7 +547,7 @@ impl<'a> ObjectEntity<'a> {
               })
               .flatten();
             let property_val = match kind {
-              PropertyKind::Init => ObjectPropertyValue::Field(value.clone()),
+              PropertyKind::Init => ObjectPropertyValue::Field(value.clone(), Some(false)),
               PropertyKind::Get => ObjectPropertyValue::Property(
                 Some(value.clone()),
                 reused_property.and_then(|(_, setter)| setter),
@@ -559,7 +571,7 @@ impl<'a> ObjectEntity<'a> {
       }
     } else {
       let property_val = match kind {
-        PropertyKind::Init => ObjectPropertyValue::Field(value.clone()),
+        PropertyKind::Init => ObjectPropertyValue::Field(value.clone(), Some(false)),
         PropertyKind::Get => ObjectPropertyValue::Property(Some(value.clone()), None),
         PropertyKind::Set => ObjectPropertyValue::Property(None, Some(value.clone())),
       };
@@ -578,13 +590,6 @@ impl<'a> ObjectEntity<'a> {
     for (definite, key, value) in properties {
       self.init_property(analyzer, PropertyKind::Init, key, value, definite);
     }
-  }
-
-  pub fn init_unknown_rest(&self, factory: &'a EntityFactory<'a>) {
-    self.rest.borrow_mut().values.push(ObjectPropertyValue::Property(
-      Some(factory.unknown_primitive),
-      Some(factory.unknown()),
-    ));
   }
 
   fn apply_unknown_to_possible_setters(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {

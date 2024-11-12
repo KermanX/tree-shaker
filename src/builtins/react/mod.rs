@@ -11,13 +11,17 @@ pub fn create_react_namespace<'a>(
   prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
   let object = ObjectEntity::new_builtin(REACT_NAMESPACE_OBJECT_ID, &prototypes.null);
-  object.init_unknown_rest(factory);
+  object
+    .rest
+    .borrow_mut()
+    .values
+    .push(ObjectPropertyValue::Field(factory.immutable_unknown, Some(true)));
 
   object.string_keyed.borrow_mut().insert(
     "forwardRef",
     ObjectProperty {
       definite: true,
-      values: vec![ObjectPropertyValue::Field(create_react_forward_ref_impl(factory))],
+      values: vec![ObjectPropertyValue::Field(create_react_forward_ref_impl(factory), Some(true))],
     },
   );
 
@@ -25,7 +29,7 @@ pub fn create_react_namespace<'a>(
     "memo",
     ObjectProperty {
       definite: true,
-      values: vec![ObjectPropertyValue::Field(create_react_memo_impl(factory))],
+      values: vec![ObjectPropertyValue::Field(create_react_memo_impl(factory), Some(true))],
     },
   );
 
