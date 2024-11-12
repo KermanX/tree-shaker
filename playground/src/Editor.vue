@@ -30,6 +30,9 @@ onMounted(async () => {
       top: 16,
     },
     tabSize: 2,
+    minimap: {
+      enabled: false,
+    },
     ...props.options,
   })
 
@@ -51,7 +54,7 @@ onMounted(async () => {
     editor.setValue(value.value)
   })
   onUnmounted(() => {
-    onInputUpdate[index] = () => {}
+    onInputUpdate[index] = () => { }
   })
 })
 </script>
