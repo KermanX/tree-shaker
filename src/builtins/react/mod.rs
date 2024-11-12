@@ -3,7 +3,8 @@ mod memo;
 
 use super::{constants::REACT_NAMESPACE_OBJECT_ID, prototypes::BuiltinPrototypes};
 use crate::entity::{Entity, EntityFactory, ObjectEntity, ObjectProperty, ObjectPropertyValue};
-use forward_ref::create_forward_ref_impl;
+use forward_ref::create_react_forward_ref_impl;
+use memo::create_react_memo_impl;
 
 pub fn create_react_namespace<'a>(
   factory: &'a EntityFactory<'a>,
@@ -15,7 +16,15 @@ pub fn create_react_namespace<'a>(
     "forwardRef",
     ObjectProperty {
       definite: true,
-      values: vec![ObjectPropertyValue::Field(create_forward_ref_impl(factory))],
+      values: vec![ObjectPropertyValue::Field(create_react_forward_ref_impl(factory))],
+    },
+  );
+
+  object.string_keyed.borrow_mut().insert(
+    "memo",
+    ObjectProperty {
+      definite: true,
+      values: vec![ObjectPropertyValue::Field(create_react_memo_impl(factory))],
     },
   );
 
