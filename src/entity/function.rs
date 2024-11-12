@@ -113,7 +113,8 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   }
 
   fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
-    rc.call(
+    self.call(
+      rc,
       analyzer,
       box_consumable(()),
       analyzer.factory.immutable_unknown,

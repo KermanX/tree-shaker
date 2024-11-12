@@ -2,8 +2,12 @@ mod constants;
 mod globals;
 mod import_meta;
 mod prototypes;
+mod react;
 
-use crate::entity::{Entity, EntityFactory};
+use crate::{
+  entity::{Entity, EntityFactory},
+  TreeShakeConfig,
+};
 use globals::create_globals;
 use import_meta::create_import_meta;
 pub use prototypes::Prototype;
@@ -17,11 +21,11 @@ pub struct Builtins<'a> {
 }
 
 impl<'a> Builtins<'a> {
-  pub fn new(factory: &EntityFactory<'a>) -> Self {
+  pub fn new(config: &'a TreeShakeConfig, factory: &'a EntityFactory<'a>) -> Self {
     let prototypes = factory.alloc(create_builtin_prototypes(factory));
     Self {
-      globals: create_globals(factory),
       prototypes,
+      globals: create_globals(config, factory, prototypes),
       import_meta: create_import_meta(factory, prototypes),
     }
   }

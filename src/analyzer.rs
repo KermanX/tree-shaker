@@ -56,7 +56,7 @@ impl<'a> Analyzer<'a> {
       default_export: None,
       scope_context: ScopeContext::new(&factory),
       pending_labels: Vec::new(),
-      builtins: Builtins::new(&factory),
+      builtins: Builtins::new(config, factory),
       entity_op: EntityOpHost::new(allocator),
       logger,
     }

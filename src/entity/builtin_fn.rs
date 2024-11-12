@@ -7,7 +7,7 @@ use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
 };
-use std::fmt::Debug;
+use std::{fmt::Debug, marker::PhantomData};
 
 pub trait BuiltinFnEntity<'a>: Debug {
   fn call_impl(
@@ -85,8 +85,18 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     consumed_object::construct(rc, analyzer, dep, args)
   }
 
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
-    consumed_object::jsx(rc, analyzer, attributes)
+  fn jsx(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    attributes: Entity<'a>,
+  ) -> Entity<'a> {
+    self.call_impl(
+      analyzer,
+      box_consumable(()),
+      analyzer.factory.immutable_unknown,
+      analyzer.factory.arguments(vec![(false, attributes)]),
+    )
   }
 
   fn r#await(
@@ -150,15 +160,30 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 }
 
-pub type BuiltinFnImplementation<'a> =
-  fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>;
-
-#[derive(Debug, Clone, Copy)]
-pub struct ImplementedBuiltinFnEntity<'a> {
-  implementation: BuiltinFnImplementation<'a>,
+pub trait BuiltinFnImplementation<'a>:
+  Fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>
+{
+}
+impl<'a, T: Fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>>
+  BuiltinFnImplementation<'a> for T
+{
 }
 
-impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
+#[derive(Clone, Copy)]
+pub struct ImplementedBuiltinFnEntity<'a, F: BuiltinFnImplementation<'a> + 'a> {
+  implementation: F,
+  phantom_data: PhantomData<&'a ()>,
+}
+
+impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnEntity<'a, F> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("ImplementedBuiltinFnEntity").finish()
+  }
+}
+
+impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
+  for ImplementedBuiltinFnEntity<'a, F>
+{
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
@@ -171,8 +196,11 @@ impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn implemented_builtin_fn(&self, implementation: BuiltinFnImplementation<'a>) -> Entity<'a> {
-    self.entity(ImplementedBuiltinFnEntity { implementation })
+  pub fn implemented_builtin_fn<F: BuiltinFnImplementation<'a> + 'a>(
+    &self,
+    implementation: F,
+  ) -> Entity<'a> {
+    self.entity(ImplementedBuiltinFnEntity { implementation, phantom_data: PhantomData })
   }
 }
 
