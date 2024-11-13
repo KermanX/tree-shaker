@@ -178,13 +178,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       )
     } else {
       if analyzer.is_inside_pure() {
-        return analyzer.factory.computed_unknown((rc, dep, key));
+        analyzer.factory.computed_unknown((rc, dep, key))
+      } else {
+        // TODO: like set_property, call getters and collect all possible values
+        // FIXME: if analyzer.config.unknown_property_read_side_effects {
+        self.consume(analyzer);
+        // }
+        consumed_object::get_property(rc, analyzer, dep.cloned(), key)
       }
-      // TODO: like set_property, call getters and collect all possible values
-      // FIXME: if analyzer.config.unknown_property_read_side_effects {
-      self.consume(analyzer);
-      // }
-      consumed_object::get_property(rc, analyzer, dep.cloned(), key)
     };
 
     analyzer.pop_cf_scope();
