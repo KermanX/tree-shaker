@@ -2,7 +2,7 @@
 import Input from './Input.vue';
 import Logs from './Logs.vue';
 import Editor from './Editor.vue';
-import { doMinify, doTreeShake, diagnostics, load, output, showLogs } from './states';
+import { debouncedInput, doMinify, doTreeShake, diagnostics, load, output, showLogs, onlyMinifiedSize, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
 </script>
 
 <template>
@@ -29,7 +29,7 @@ import { doMinify, doTreeShake, diagnostics, load, output, showLogs } from './st
         </label>
         <label flex align-center gap-1 select-none>
           <span op-80>
-            Minify:
+            Minify by Oxc:
           </span>
           <input v-model="doMinify" type="checkbox">
         </label>
@@ -40,6 +40,9 @@ import { doMinify, doTreeShake, diagnostics, load, output, showLogs } from './st
         <div flex items-center>
           <h2 md:text-xl pb-2 pl-4 select-none>
             Input
+            <span text-sm op80 font-mono>
+              (Raw: {{ debouncedInput.length }}B, Minified: {{ onlyMinifiedSize }}B)
+            </span>
           </h2>
         </div>
         <Input class="flex-grow h-0 max-h-full" />
@@ -47,6 +50,16 @@ import { doMinify, doTreeShake, diagnostics, load, output, showLogs } from './st
       <div flex-grow h-0 md:h-full md:w-0 flex flex-col>
         <h2 md:text-xl pb-2 pl-4 select-none flex items-center>
           Output
+          <span text-sm font-mono self-end ml-2 mb--1>
+            <span op80>(Raw: {{ treeShakedUnminifiedSize }}B,
+            Minified: {{ treeShakedMinifiedSize }}B, </span>
+            <math display="inline">
+              <mfrac>
+                <mi>Output Minified</mi>
+                <mi>Input Minified</mi>
+              </mfrac>
+            </math>={{ treeShakeRate.toFixed(2) }}%<span op80>)</span>
+          </span>
           <div flex-grow />
           <button v-if="!showLogs" @click="showLogs = true" mr-4 op-80 w-5 h-5 b-none i-carbon-asset-view />
         </h2>
