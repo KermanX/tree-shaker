@@ -85,17 +85,12 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     consumed_object::construct(rc, analyzer, dep, args)
   }
 
-  fn jsx(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    attributes: Entity<'a>,
-  ) -> Entity<'a> {
+  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     self.call_impl(
       analyzer,
       box_consumable(()),
       analyzer.factory.immutable_unknown,
-      analyzer.factory.arguments(vec![(false, attributes)]),
+      analyzer.factory.arguments(vec![(false, props)]),
     )
   }
 

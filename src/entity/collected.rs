@@ -92,13 +92,8 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.forward(value, analyzer)
   }
 
-  fn jsx(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    attributes: Entity<'a>,
-  ) -> Entity<'a> {
-    analyzer.factory.computed(self.val.jsx(analyzer, attributes), self.deps.clone())
+  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    analyzer.factory.computed(self.val.jsx(analyzer, props), self.deps.clone())
   }
 
   fn r#await(

@@ -54,7 +54,7 @@ pub trait EntityTrait<'a>: Debug {
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a>;
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a>;
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a>;
   fn r#await(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>)
     -> Entity<'a>;
   fn iterate(
@@ -173,8 +173,8 @@ impl<'a> Entity<'a> {
     self.0.call(*self, analyzer, dep.into(), this, args)
   }
 
-  pub fn jsx(&self, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
-    self.0.jsx(*self, analyzer, attributes)
+  pub fn jsx(&self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    self.0.jsx(*self, analyzer, props)
   }
 
   pub fn construct(

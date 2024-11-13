@@ -153,8 +153,8 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     consumed_object::construct(rc, analyzer, dep, args)
   }
 
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown((rc, attributes))
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    analyzer.factory.computed_unknown((rc, props))
   }
 
   fn r#await(
