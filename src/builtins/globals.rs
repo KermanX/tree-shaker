@@ -1,5 +1,4 @@
-use super::{react::create_react_namespace, Builtins};
-use crate::config::TreeShakeJsxPreset;
+use super::Builtins;
 
 impl<'a> Builtins<'a> {
   pub fn init_globals(&mut self) {
@@ -11,9 +10,5 @@ impl<'a> Builtins<'a> {
     globals.insert("NaN", factory.nan);
     globals.insert("undefined", factory.undefined);
     globals.insert("eval", factory.immutable_unknown);
-
-    if self.config.jsx == TreeShakeJsxPreset::React {
-      globals.insert("React", create_react_namespace(factory, self.prototypes));
-    }
   }
 }

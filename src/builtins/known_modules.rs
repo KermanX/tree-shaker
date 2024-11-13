@@ -1,5 +1,8 @@
-use super::Builtins;
-use crate::{config::TreeShakeJsxPreset, entity::Entity};
+use super::{
+  react::{create_react_jsx_runtime_namespace, create_react_namespace},
+  Builtins,
+};
+use crate::entity::Entity;
 
 #[derive(Debug, Clone, Copy)]
 pub struct KnownModule<'a> {
@@ -11,11 +14,13 @@ impl<'a> Builtins<'a> {
   pub fn init_known_modules(&mut self) {
     let known_modules = &mut self.known_modules;
 
-    if self.config.jsx == TreeShakeJsxPreset::React {
-      known_modules.insert("react", {
-        let value = *self.globals.get("React").unwrap();
-        KnownModule { namespace: value, default: value }
-      });
-    }
+    known_modules.insert("react", {
+      let value = create_react_namespace(self.factory, self.prototypes);
+      KnownModule { namespace: value, default: value }
+    });
+    known_modules.insert("react/jsx-runtime", {
+      let value = create_react_jsx_runtime_namespace(self.factory, self.prototypes);
+      KnownModule { namespace: value, default: value }
+    });
   }
 }
