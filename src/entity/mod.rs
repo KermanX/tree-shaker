@@ -19,6 +19,7 @@ mod symbol;
 mod typeof_result;
 mod union;
 mod unknown;
+mod react_element;
 mod utils;
 
 pub use array::ArrayEntity;

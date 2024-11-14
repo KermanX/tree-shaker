@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
       children,
       true,
     );
-    tag.jsx(self, self.factory.entity(attributes))
+    self.factory.react_element(tag, self.factory.entity(attributes))
   }
 }
 

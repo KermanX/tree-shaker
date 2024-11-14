@@ -8,6 +8,6 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
     let (args, children, _) = args.destruct_as_array(analyzer, dep, 2);
     let [tag, props] = args[..] else { unreachable!() };
     props.set_property(analyzer, box_consumable(()), analyzer.factory.string("children"), children);
-    tag.jsx(analyzer, props)
+    analyzer.factory.react_element(tag, props)
   })
 }

@@ -13,6 +13,7 @@ use crate::{
 use known_modules::KnownModule;
 use prototypes::BuiltinPrototypes;
 pub use prototypes::Prototype;
+use react::AnalyzerDataForReact;
 use rustc_hash::FxHashMap;
 
 pub struct Builtins<'a> {
@@ -23,6 +24,8 @@ pub struct Builtins<'a> {
   pub globals: FxHashMap<&'static str, Entity<'a>>,
   pub import_meta: Entity<'a>,
   pub known_modules: FxHashMap<&'static str, KnownModule<'a>>,
+
+  pub react_data: AnalyzerDataForReact<'a>,
 }
 
 impl<'a> Builtins<'a> {
@@ -36,6 +39,8 @@ impl<'a> Builtins<'a> {
       import_meta: Self::create_import_meta(factory, prototypes),
       globals: Default::default(),       // Initialize later
       known_modules: Default::default(), // Initialize later
+
+      react_data: Default::default(),
     };
     builtins.init_globals();
     builtins.init_known_modules();

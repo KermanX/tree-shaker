@@ -1,3 +1,4 @@
+// mod context;
 mod create_element;
 mod forward_ref;
 mod jsx;
@@ -9,7 +10,7 @@ use super::{
   prototypes::BuiltinPrototypes,
 };
 use crate::{
-  entity::{Entity, EntityFactory, ObjectEntity, ObjectProperty, ObjectPropertyValue},
+  entity::{Entity, EntityFactory, ObjectEntity, ObjectPropertyValue},
   init_namespace,
 };
 use create_element::create_react_create_element_impl;
@@ -17,6 +18,12 @@ use forward_ref::create_react_forward_ref_impl;
 use jsx::create_react_jsx_impl;
 use jsxs::create_react_jsxs_impl;
 use memo::create_react_memo_impl;
+use oxc::{index::IndexVec, semantic::SymbolId};
+
+#[derive(Debug, Default)]
+pub struct AnalyzerDataForReact<'a> {
+  pub contexts: IndexVec<SymbolId, Vec<Entity<'a>>>,
+}
 
 pub fn create_react_namespace<'a>(
   factory: &'a EntityFactory<'a>,

@@ -17,6 +17,28 @@ pub trait BuiltinFnEntity<'a>: Debug {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a>;
+  fn get_property_impl(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    key: Entity<'a>,
+  ) -> Entity<'a> {
+    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
+  }
+  fn set_property_impl(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    key: Entity<'a>,
+    value: Entity<'a>,
+  ) {
+    analyzer.add_diagnostic(
+      "Should not set property of builtin function, it may cause unexpected tree-shaking behavior",
+    );
+    consumed_object::set_property(analyzer, dep, key, value)
+  }
 }
 
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
@@ -33,21 +55,18 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
+    self.get_property_impl(rc, analyzer, dep, key)
   }
 
   fn set_property(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    analyzer.add_diagnostic(
-      "Should not set property of builtin function, it may cause unexpected tree-shaking behavior",
-    );
-    consumed_object::set_property(analyzer, dep, key, value)
+    self.set_property_impl(rc, analyzer, dep, key, value)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
