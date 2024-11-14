@@ -61,7 +61,8 @@ pub fn create_react_jsx_runtime_namespace<'a>(
   factory: &'a EntityFactory<'a>,
   prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
-  let mut object = ObjectEntity::new_builtin(REACT_JSX_RUNTIME_NAMESPACE_OBJECT_ID, &prototypes.null);
+  let mut object =
+    ObjectEntity::new_builtin(REACT_JSX_RUNTIME_NAMESPACE_OBJECT_ID, &prototypes.null);
   object
     .rest
     .borrow_mut()
