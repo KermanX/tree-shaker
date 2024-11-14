@@ -39,3 +39,13 @@ export function main() {
   }
   effect(obj5.a);
 }
+
+export function modify_self_in_getter() {
+  const { effect, changed } = {
+    get effect() {
+      this.changed = {};
+    },
+    changed: false,
+  };
+  return changed;
+}
