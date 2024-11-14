@@ -1,4 +1,4 @@
-// mod context;
+mod context;
 mod create_element;
 mod forward_ref;
 mod jsx;
@@ -13,16 +13,16 @@ use crate::{
   entity::{Entity, EntityFactory, ObjectEntity, ObjectPropertyValue},
   init_namespace,
 };
+use context::{create_react_create_context_impl, create_react_use_context_impl, ReactContexts};
 use create_element::create_react_create_element_impl;
 use forward_ref::create_react_forward_ref_impl;
 use jsx::create_react_jsx_impl;
 use jsxs::create_react_jsxs_impl;
 use memo::create_react_memo_impl;
-use oxc::{index::IndexVec, semantic::SymbolId};
 
 #[derive(Debug, Default)]
 pub struct AnalyzerDataForReact<'a> {
-  pub contexts: IndexVec<SymbolId, Vec<Entity<'a>>>,
+  pub contexts: ReactContexts<'a>,
 }
 
 pub fn create_react_namespace<'a>(
@@ -41,6 +41,8 @@ pub fn create_react_namespace<'a>(
     "forwardRef" => create_react_forward_ref_impl(factory),
     "memo" => create_react_memo_impl(factory),
     "createElement" => create_react_create_element_impl(factory),
+    "createContext" => create_react_create_context_impl(factory),
+    "useContext" => create_react_use_context_impl(factory),
   });
 
   factory.entity(namespace)
