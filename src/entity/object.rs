@@ -16,7 +16,7 @@ use oxc::{
 use rustc_hash::FxHashMap;
 use std::{
   cell::{Cell, RefCell},
-  fmt,
+  fmt, mem,
 };
 
 pub struct ObjectEntity<'a> {
@@ -55,15 +55,15 @@ impl<'a> ObjectPropertyValue<'a> {
   pub fn get_value(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-    this: Entity<'a>,
-  ) -> Entity<'a> {
+    suspended_getters: &mut Vec<Entity<'a>>,
+  ) -> Option<Entity<'a>> {
     match self {
-      ObjectPropertyValue::Field(value, _) => value.clone(),
+      ObjectPropertyValue::Field(value, _) => Some(value.clone()),
       ObjectPropertyValue::Property(Some(getter), _) => {
-        getter.call(analyzer, dep, this, analyzer.factory.arguments(vec![]))
+        suspended_getters.push(getter.clone());
+        None
       }
-      _ => analyzer.factory.undefined,
+      ObjectPropertyValue::Property(None, _) => Some(analyzer.factory.undefined),
     }
   }
 }
@@ -78,10 +78,13 @@ impl<'a> ObjectProperty<'a> {
   pub fn get_value(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-    this: Entity<'a>,
+    suspended_getters: &mut Vec<Entity<'a>>,
   ) -> Vec<Entity<'a>> {
-    self.values.iter().map(|property| property.get_value(analyzer, dep.cloned(), this)).collect()
+    self
+      .values
+      .iter()
+      .filter_map(|property| property.get_value(analyzer, suspended_getters))
+      .collect()
   }
 }
 
@@ -132,18 +135,17 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
     analyzer.push_indeterminate_cf_scope();
 
-    let this = rc;
     let key = key.get_to_property_key(analyzer);
     let value = if let Some(key_literals) = key.get_to_literals(analyzer) {
-      let mut values = self.unknown_keyed.borrow().get_value(analyzer, dep.cloned(), this);
+      let mut suspended_getters = vec![];
+      let mut values = self.unknown_keyed.borrow().get_value(analyzer, &mut suspended_getters);
       let mut rest_added = false;
       let mut undefined_added = false;
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
-            let string_keyed = self.string_keyed.borrow();
-            let lookup_rest = if let Some(property) = string_keyed.get(key) {
-              values.extend(property.get_value(analyzer, dep.cloned(), this));
+            let lookup_rest = if let Some(property) = self.string_keyed.borrow().get(key) {
+              values.extend(property.get_value(analyzer, &mut suspended_getters));
               !property.definite
             } else {
               true
@@ -155,7 +157,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               if !rest_added {
                 rest_added = true;
                 let rest = self.rest.borrow();
-                values.extend(rest.get_value(analyzer, dep.cloned(), this));
+                values.extend(rest.get_value(analyzer, &mut suspended_getters));
                 true
               } else {
                 false
@@ -172,6 +174,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           _ => unreachable!(),
         }
       }
+      let getter_args = analyzer.factory.arguments(vec![]);
+      values.extend(
+        suspended_getters.into_iter().map(|f| f.call(analyzer, dep.cloned(), rc, getter_args)),
+      );
       analyzer.factory.computed(
         analyzer.factory.union(values),
         (dep, key.clone(), self.deps.borrow_mut().collect()),
@@ -223,7 +229,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         || self.rest.borrow().values.len() > 0;
       let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_and_unknown_setter_called = false;
-      let mut setters_to_call = vec![];
+      let mut suspended_setters = vec![];
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key) => {
@@ -251,7 +257,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                 property.values.iter().chain(self.unknown_keyed.borrow().values.iter())
               {
                 if let ObjectPropertyValue::Property(_, Some(setter)) = property_val {
-                  setters_to_call.push(*setter);
+                  suspended_setters.push(*setter);
                 }
               }
               if indeterminate || has_writable_field || self.unknown_keyed.borrow().values.len() > 0
@@ -291,7 +297,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         }
       }
 
-      for setter in setters_to_call {
+      for setter in suspended_setters {
         setter.call(
           analyzer,
           dep.cloned(),
@@ -334,10 +340,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     // FIXME: this is inaccurate - the read properties may be all getter/setters
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
-    let this = rc;
     // unknown_keyed = unknown_keyed + rest
-    let mut unknown_keyed = self.unknown_keyed.borrow().get_value(analyzer, dep.cloned(), this);
-    unknown_keyed.extend(self.rest.borrow().get_value(analyzer, dep.cloned(), this));
+    let mut suspended_getters = vec![];
+    let mut unknown_keyed = self.unknown_keyed.borrow().get_value(analyzer, &mut suspended_getters);
+    unknown_keyed.extend(self.rest.borrow().get_value(analyzer, &mut suspended_getters));
+    let getter_args = analyzer.factory.arguments(vec![]);
+    unknown_keyed.extend(
+      suspended_getters.into_iter().map(|f| f.call(analyzer, dep.cloned(), rc, getter_args)),
+    );
     let mut result = Vec::new();
     if unknown_keyed.len() > 0 {
       result.push((
@@ -346,13 +356,21 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         analyzer.factory.union(unknown_keyed),
       ));
     }
-    for (key, properties) in self.string_keyed.borrow().iter() {
-      let values = properties.get_value(analyzer, dep.cloned(), this);
-      result.push((
-        properties.definite,
-        analyzer.factory.string(key),
-        analyzer.factory.union(values),
-      ));
+
+    let string_keyed = self.string_keyed.borrow();
+    let keys = string_keyed.keys().cloned().collect::<Vec<_>>();
+    mem::drop(string_keyed);
+    for key in keys {
+      let string_keyed = self.string_keyed.borrow();
+      let properties = string_keyed.get(&key).unwrap();
+      let definite = properties.definite;
+      let mut suspended_getters = vec![];
+      let mut values = properties.get_value(analyzer, &mut suspended_getters);
+      mem::drop(string_keyed);
+      values.extend(
+        suspended_getters.into_iter().map(|f| f.call(analyzer, dep.cloned(), rc, getter_args)),
+      );
+      result.push((definite, analyzer.factory.string(key), analyzer.factory.union(values)));
     }
 
     (result, box_consumable((self.deps.borrow_mut().collect(), dep.cloned())))
