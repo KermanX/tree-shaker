@@ -15,11 +15,11 @@ mod logical_result;
 mod object;
 mod operations;
 mod primitive;
+mod react_element;
 mod symbol;
 mod typeof_result;
 mod union;
 mod unknown;
-mod react_element;
 mod utils;
 
 pub use array::ArrayEntity;
