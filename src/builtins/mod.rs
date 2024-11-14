@@ -4,6 +4,7 @@ mod import_meta;
 mod known_modules;
 mod prototypes;
 mod react;
+mod utils;
 
 use crate::{
   entity::{Entity, EntityFactory},
