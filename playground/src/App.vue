@@ -2,7 +2,7 @@
 import Input from './Input.vue';
 import Logs from './Logs.vue';
 import Editor from './Editor.vue';
-import { debouncedInput, doMinify, doTreeShake, diagnostics, load, output, showLogs, onlyMinifiedSize, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
+import { hideDiagnostics, debouncedInput, doMinify, doTreeShake, diagnostics, load, output, showLogs, onlyMinifiedSize, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
 </script>
 
 <template>
@@ -52,7 +52,7 @@ import { debouncedInput, doMinify, doTreeShake, diagnostics, load, output, showL
           Output
           <span text-sm font-mono self-end ml-2 mb--1>
             <span op80>(Raw: {{ treeShakedUnminifiedSize }}B,
-            Minified: {{ treeShakedMinifiedSize }}B, </span>
+              Minified: {{ treeShakedMinifiedSize }}B, </span>
             <math display="inline">
               <mfrac>
                 <mi>Output Minified</mi>
@@ -67,14 +67,16 @@ import { debouncedInput, doMinify, doTreeShake, diagnostics, load, output, showL
           <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
           <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex
             flex-col gap-2>
-            <div v-if="diagnostics" relative text-red-200 bg-red-900 bg-op-80 b-red-500>
+            <div v-if="diagnostics && !hideDiagnostics" relative text-yellow-200 bg-yellow-900 bg-op-80 b-yellow-500>
               <h3 text-lg pb-1>
-                Error
+                Warning
               </h3>
-              <div font-mono>
-                {{ diagnostics }}
+              <div font-mono max-h-8em overflow-y-auto>
+                <p v-for="d, i in diagnostics" :key="i" style="text-indent: -1em" ml-1em>
+                  {{ d }}
+                </p>
               </div>
-              <button absolute right-3 top-3 w-6 h-6 b-none i-carbon-close @click="diagnostics = ''" />
+              <button absolute right-3 top-3 w-6 h-6 b-none i-carbon-close @click="hideDiagnostics = true" />
             </div>
           </div>
         </div>

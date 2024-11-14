@@ -52,7 +52,11 @@ export const onlyMinifiedSize = computed(() => tree_shake(debouncedInput.value, 
 export const treeShakedUnminifiedSize = computed(() => doTreeShake.value && !doMinify.value ? result.value.output.length : tree_shake(debouncedInput.value, true, false, false).output.length)
 export const treeShakedMinifiedSize = computed(() => doTreeShake.value && doMinify.value ? result.value.output.length : tree_shake(debouncedInput.value, true, true, false).output.length)
 export const treeShakeRate = computed(() => 100 * treeShakedMinifiedSize.value / onlyMinifiedSize.value);
-export const diagnostics = computed(() => result.value.diagnostics.join('\n'))
+export const diagnostics = computed(() => {
+  hideDiagnostics.value = false
+  return result.value.diagnostics
+})
+export const hideDiagnostics = ref(false)
 export const logsRaw = computed(() => result.value.logs
   // .filter(s =>
   //   !s.startsWith('PushExprSpan') &&
