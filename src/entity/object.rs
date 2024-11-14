@@ -20,6 +20,7 @@ use std::{
 };
 
 pub struct ObjectEntity<'a> {
+  pub consumable: bool,
   consumed: Cell<bool>,
   deps: RefCell<ConsumableCollector<'a>>,
   cf_scope: ScopeId,
@@ -90,6 +91,10 @@ impl<'a> ObjectProperty<'a> {
 
 impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    if !self.consumable {
+      return;
+    }
+
     use_consumed_flag!(self);
 
     analyzer.mark_object_consumed(self.cf_scope, self.object_id);
@@ -523,6 +528,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 impl<'a> ObjectEntity<'a> {
   pub fn new_builtin(object_id: SymbolId, prototype: &'a Prototype<'a>) -> Self {
     ObjectEntity {
+      consumable: true,
       consumed: Cell::new(false),
       deps: Default::default(),
       cf_scope: ScopeId::new(0),
@@ -649,6 +655,7 @@ impl<'a> ObjectEntity<'a> {
 impl<'a> Analyzer<'a> {
   pub fn new_empty_object(&mut self, prototype: &'a Prototype<'a>) -> ObjectEntity<'a> {
     ObjectEntity {
+      consumable: true,
       consumed: Cell::new(false),
       deps: Default::default(),
       cf_scope: self.scope_context.cf.current_id(),
