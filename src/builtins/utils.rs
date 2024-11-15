@@ -31,3 +31,12 @@ macro_rules! init_object {
     }
   };
 }
+
+#[macro_export]
+macro_rules! init_map {
+  ($map:expr, { $($k:expr => $v:expr,)* }) => {
+    {
+      $($map.insert($k, $v);)*
+    }
+  };
+}
