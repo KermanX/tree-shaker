@@ -1,7 +1,7 @@
 ---
 source: src/tests/mod.rs
 expression: tree_shake(input)
-input_file: src/tests/fixtures/react_jsx.js
+input_file: src/tests/fixtures/react/jsx.js
 ---
 function Comp(__unused_4675) {
 	const __unused_7AB9 = effect();

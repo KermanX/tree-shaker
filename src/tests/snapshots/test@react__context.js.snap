@@ -1,0 +1,29 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(input)
+input_file: src/tests/fixtures/react/context.js
+---
+export function case_provided() {
+	const MyContext = React.createContext();
+	function Inner() {
+		return <div>{"world"}</div>;
+	}
+	return function main() {
+		return <MyContext.Provider>
+        <MyContext.Provider>
+          <Inner />
+        </MyContext.Provider>
+      </MyContext.Provider>;
+	};
+}
+export function case_not_provided() {
+	const MyContext1 = React.createContext();
+	function Inner() {
+		return <div>{"default-2"}</div>;
+	}
+	return function main() {
+		return <MyContext1.Provider>
+        <Inner />
+      </MyContext1.Provider>;
+	};
+}
