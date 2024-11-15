@@ -123,8 +123,7 @@ pub fn create_react_use_context_impl<'a>(factory: &'a EntityFactory<'a>) -> Enti
       let data = &analyzer.builtins.react_data.contexts[id];
       factory.computed(data.get_current(factory), (context_id, dep))
     } else {
-      analyzer.thrown_builtin_error("Invalid React context object");
-      factory.unknown()
+      factory.computed_unknown((context_object, dep))
     }
   })
 }
