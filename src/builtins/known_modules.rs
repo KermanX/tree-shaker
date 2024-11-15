@@ -23,4 +23,9 @@ impl<'a> Builtins<'a> {
       KnownModule { namespace: value, default: value }
     });
   }
+
+  pub fn get_known_module(&self, name: &str) -> Option<KnownModule<'a>> {
+    let name = name.strip_prefix("https://esm.sh/").unwrap_or(name);
+    self.known_modules.get(name).copied()
+  }
 }

@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
       ModuleDeclaration::ImportDeclaration(node) => {
         if let Some(specifiers) = &node.specifiers {
           let name = node.source.value.as_str();
-          let known = self.builtins.known_modules.get(name).copied();
+          let known = self.builtins.get_known_module(name);
 
           for specifier in specifiers {
             let value = if let Some(known) = known {
