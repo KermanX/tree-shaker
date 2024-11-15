@@ -153,8 +153,8 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     consumed_object::construct(rc, analyzer, dep, args)
   }
 
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown((rc, props))
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
+    analyzer.factory.computed_unknown((rc, attributes))
   }
 
   fn r#await(
@@ -481,10 +481,20 @@ impl<'a> LiteralEntity<'a> {
     key: LiteralEntity<'a>,
   ) -> Option<Entity<'a>> {
     match self {
-      LiteralEntity::String(value) => match key {
-        LiteralEntity::String("length") => Some(analyzer.factory.number(value.len() as f64, None)),
-        _ => None,
-      },
+      LiteralEntity::String(value) => {
+        let LiteralEntity::String(key) = key else { return None };
+        if key == "length" {
+          Some(analyzer.factory.number(value.len() as f64, None))
+        } else if let Some(index) = key.parse::<usize>().ok() {
+          Some(
+            value
+              .get(index..index + 1)
+              .map_or(analyzer.factory.undefined, |v| analyzer.factory.string(v)),
+          )
+        } else {
+          None
+        }
+      }
       _ => None,
     }
   }
