@@ -51,8 +51,19 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
   }
 
-  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    self.deps.borrow_mut().push(dep);
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    if self.consumed.get() {
+      return consumed_object::unknown_mutate(analyzer, dep);
+    }
+
+    let (has_exhaustive, _, exec_deps) = analyzer.pre_must_mutate(self.cf_scope, self.object_id);
+
+    if has_exhaustive {
+      self.consume(analyzer);
+      return consumed_object::unknown_mutate(analyzer, dep);
+    }
+
+    self.deps.borrow_mut().push(box_consumable((exec_deps, dep)));
   }
 
   fn get_property(
@@ -137,7 +148,13 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 
-    let (indeterminate, exec_deps) = analyzer.pre_mutate_array(self.cf_scope, self.object_id);
+    let (has_exhaustive, indeterminate, exec_deps) =
+      analyzer.pre_must_mutate(self.cf_scope, self.object_id);
+
+    if has_exhaustive {
+      self.consume(analyzer);
+      return consumed_object::set_property(analyzer, dep, key, value);
+    }
 
     let mut has_effect = false;
     if let Some(key_literals) = key.get_to_property_key(analyzer).get_to_literals(analyzer) {

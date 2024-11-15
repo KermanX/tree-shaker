@@ -120,8 +120,19 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     consume_property(&self.unknown_keyed.borrow(), analyzer);
   }
 
-  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    self.deps.borrow_mut().push(dep);
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    if self.consumed.get() {
+      return consumed_object::unknown_mutate(analyzer, dep);
+    }
+
+    let (has_exhaustive, _, exec_deps) = analyzer.pre_must_mutate(self.cf_scope, self.object_id);
+
+    if has_exhaustive {
+      self.consume(analyzer);
+      return consumed_object::unknown_mutate(analyzer, dep);
+    }
+
+    self.deps.borrow_mut().push(box_consumable((exec_deps, dep)));
   }
 
   fn get_property(
@@ -217,7 +228,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    let (has_exhaustive, indeterminate, exec_deps) = analyzer.pre_mutate_object(target_depth);
+    let (has_exhaustive, indeterminate, exec_deps) = analyzer.pre_possible_mutate(target_depth);
     let dep_cloned = dep.cloned();
 
     analyzer.push_indeterminate_cf_scope();
@@ -387,7 +398,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    let (has_exhaustive, indeterminate, exec_deps) = analyzer.pre_mutate_object(target_depth);
+    let (has_exhaustive, indeterminate, exec_deps) = analyzer.pre_possible_mutate(target_depth);
 
     let key = key.get_to_property_key(analyzer);
     let may_delete = if let Some(key_literals) = key.get_to_literals(analyzer) {

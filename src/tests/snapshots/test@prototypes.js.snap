@@ -7,5 +7,5 @@ export function string_prototype() {
 	t1 = 3;
 	t2 = ("" + unknown).length;
 	t3 = (unknown, void 0);
-	t3 = ("123".valueOf(), "string");
+	t3 = "string";
 }

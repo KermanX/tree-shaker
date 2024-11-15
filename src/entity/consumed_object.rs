@@ -7,6 +7,11 @@ use crate::{
   consumable::{box_consumable, Consumable, ConsumableTrait},
 };
 
+pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  analyzer.refer_to_global();
+  analyzer.consume(dep);
+}
+
 pub fn get_property<'a>(
   rc: Entity<'a>,
   analyzer: &mut Analyzer<'a>,
