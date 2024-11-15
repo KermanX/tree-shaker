@@ -67,7 +67,7 @@ import { hideDiagnostics, debouncedInput, doMinify, doTreeShake, diagnostics, lo
           <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
           <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex
             flex-col gap-2>
-            <div v-if="diagnostics && !hideDiagnostics" relative text-yellow-200 bg-yellow-900 bg-op-80 b-yellow-500>
+            <div v-if="diagnostics.length" v-show="!hideDiagnostics" relative text-yellow-200 bg-yellow-900 bg-op-80 b-yellow-500>
               <h3 text-lg pb-1>
                 Warning
               </h3>
