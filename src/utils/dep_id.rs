@@ -1,5 +1,5 @@
 use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
-use oxc::span::GetSpan;
+use oxc::span::{GetSpan, Span};
 use std::{
   fmt::Debug,
   hash::Hash,
@@ -11,14 +11,20 @@ pub struct DepId((usize, usize));
 
 impl Debug for DepId {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let ast_kind: AstKind2<'static> = unsafe { std::mem::transmute(*self) };
-    ast_kind.span().fmt(f)
+    self.span().fmt(f)
   }
 }
 
 impl<'a> From<AstKind2<'a>> for DepId {
   fn from(node: AstKind2<'a>) -> Self {
     DepId(unsafe { std::mem::transmute(node) })
+  }
+}
+
+impl<'a> GetSpan for DepId {
+  fn span(&self) -> Span {
+    let ast_kind: AstKind2<'static> = unsafe { std::mem::transmute(*self) };
+    ast_kind.span()
   }
 }
 
