@@ -90,11 +90,11 @@ impl<'a> Analyzer<'a> {
     maybe_left: bool,
     maybe_right: bool,
   ) -> Entity<'a> {
-    let dep = self.register_conditional_data(dep_id, left, maybe_left, maybe_right, true, false);
+    let dep = self.register_conditional_data(dep_id, left, maybe_left, maybe_right, true, true);
     self.factory.computed(left, dep)
   }
 
-  pub fn push_logical_right_cf_cope(
+  pub fn push_logical_right_cf_scope(
     &mut self,
     dep_id: impl Into<DepId>,
     left: Entity<'a>,
