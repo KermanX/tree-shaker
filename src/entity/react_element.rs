@@ -26,7 +26,11 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
 
     let tag = self.tag;
     let props = self.props;
-    analyzer.exec_consumed_fn(move |analyzer| tag.jsx(analyzer, props));
+    analyzer.exec_consumed_fn(move |analyzer| {
+      let copied_props = analyzer.new_empty_object(&analyzer.builtins.prototypes.object);
+      copied_props.init_spread(analyzer, box_consumable(()), props);
+      tag.jsx(analyzer, analyzer.factory.entity(copied_props))
+    });
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
