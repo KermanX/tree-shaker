@@ -84,15 +84,17 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
 
   fn call(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
+    analyzer.push_dependent_cf_scope(rc);
     let values = self.values.map(|v| {
       analyzer.exec_indeterminately(|analyzer| v.call(analyzer, dep.cloned(), this, args))
     });
+    analyzer.pop_cf_scope();
     analyzer.factory.union(values)
   }
 
