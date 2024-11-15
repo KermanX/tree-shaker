@@ -26,8 +26,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    // NOTE: self.forward_dep(dep) is unnecessary
-    self.val.unknown_mutate(analyzer, dep);
+    self.val.unknown_mutate(analyzer, self.forward_dep(dep));
   }
 
   fn get_property(

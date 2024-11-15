@@ -29,13 +29,8 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    if self.consumed.get() {
-      return;
-    }
-
-    analyzer.push_dependent_cf_scope(dep);
-    self.consume_body(analyzer);
-    analyzer.pop_cf_scope();
+    self.consume(analyzer);
+    consumed_object::unknown_mutate(analyzer, dep);
   }
 
   fn get_property(

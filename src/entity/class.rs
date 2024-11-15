@@ -30,15 +30,8 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    if self.consumed.get() {
-      return;
-    }
-
-    self.statics.unknown_mutate(analyzer, dep.cloned());
-
-    analyzer.push_dependent_cf_scope(dep);
-    analyzer.construct_class(self);
-    analyzer.pop_cf_scope();
+    self.consume(analyzer);
+    consumed_object::unknown_mutate(analyzer, dep);
   }
 
   fn get_property(

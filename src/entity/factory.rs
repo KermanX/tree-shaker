@@ -39,7 +39,7 @@ impl<'a> EntityFactory<'a> {
     let null = Entity::new_in(LiteralEntity::Null, allocator);
     let undefined = Entity::new_in(LiteralEntity::Undefined, allocator);
 
-    let immutable_unknown = Entity::new_in(UnknownEntity::new_immutable(), allocator);
+    let immutable_unknown = Entity::new_in(UnknownEntity::new(), allocator);
     let unknown_primitive = Entity::new_in(PrimitiveEntity::Mixed, allocator);
     let unknown_string = Entity::new_in(PrimitiveEntity::String, allocator);
     let unknown_number = Entity::new_in(PrimitiveEntity::Number, allocator);

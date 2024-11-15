@@ -29,7 +29,11 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
     analyzer.exec_consumed_fn(move |analyzer| tag.jsx(analyzer, props));
   }
 
-  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    if self.consumed.get() {
+      return consumed_object::unknown_mutate(analyzer, dep);
+    }
+
     self.deps.borrow_mut().push(dep);
   }
 
