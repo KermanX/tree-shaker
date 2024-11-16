@@ -1,16 +1,11 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, entity::TypeofResult, scope::CfScopeKind,
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::TypeofResult,
+  scope::CfScopeKind, transformer::Transformer,
 };
 use oxc::{
   ast::ast::{ForInStatement, Statement},
   span::GetSpan,
 };
-
-#[derive(Debug, Default, Clone)]
-pub struct Data {
-  need_loop: bool,
-}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_for_in_statement(&mut self, node: &'a ForInStatement<'a>) {
@@ -33,12 +28,16 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    let data = self.load_data::<Data>(AstKind2::ForInStatement(node));
-    data.need_loop = true;
-
     self.declare_for_statement_left(&node.left);
 
-    self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
+    let dep = box_consumable((AstKind2::ForInStatement(node), right));
+
+    self.push_cf_scope_with_deps(
+      CfScopeKind::BreakableWithoutLabel,
+      labels.clone(),
+      vec![dep],
+      Some(false),
+    );
     self.exec_loop(move |analyzer| {
       analyzer.declare_for_statement_left(&node.left);
       analyzer.init_for_statement_left(&node.left, analyzer.factory.unknown_string);
@@ -53,9 +52,9 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_for_in_statement(&self, node: &'a ForInStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AstKind2::ForInStatement(node));
-
     let ForInStatement { span, left, right, body, .. } = node;
+
+    let need_loop = self.is_referred(AstKind2::ForInStatement(node));
 
     let left_span = left.span();
     let body_span = body.span();
@@ -63,7 +62,7 @@ impl<'a> Transformer<'a> {
     let left = self.transform_for_statement_left(left);
     let body = self.transform_statement(body);
 
-    if !data.need_loop || (left.is_none() && body.is_none()) {
+    if !need_loop || (left.is_none() && body.is_none()) {
       return self
         .transform_expression(right, false)
         .map(|expr| self.ast_builder.statement_expression(*span, expr));
