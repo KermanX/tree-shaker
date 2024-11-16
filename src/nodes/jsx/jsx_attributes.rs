@@ -49,15 +49,7 @@ impl<'a> Transformer<'a> {
 
           if self.is_referred(AstKind2::JSXAttributeItem(attr)) {
             let argument = self.transform_expression(argument, true).unwrap();
-            Some(
-              self.ast_builder.expression_object(
-                *span,
-                self
-                  .ast_builder
-                  .vec1(self.ast_builder.object_property_kind_spread_element(*span, argument)),
-                None,
-              ),
-            )
+            Some(self.build_object_spread_effect(*span, argument))
           } else {
             self.transform_expression(argument, false)
           }

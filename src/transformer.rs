@@ -261,6 +261,14 @@ impl<'a> Transformer<'a> {
   pub fn build_negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {
     self.ast_builder.expression_unary(expression.span(), UnaryOperator::LogicalNot, expression)
   }
+
+  pub fn build_object_spread_effect(&self, span: Span, argument: Expression<'a>) -> Expression<'a> {
+    self.ast_builder.expression_object(
+      span,
+      self.ast_builder.vec1(self.ast_builder.object_property_kind_spread_element(span, argument)),
+      None,
+    )
+  }
 }
 
 impl<'a> Transformer<'a> {
