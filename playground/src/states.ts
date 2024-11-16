@@ -46,11 +46,21 @@ function save() {
 load()
 watchEffect(save)
 
-const result = computed(() => tree_shake(debouncedInput.value, doTreeShake.value, doMinify.value, true))
+const minifiedOnly = computed(() => tree_shake(debouncedInput.value, false, true, false))
+const treeShakedOnly = computed(() => tree_shake(debouncedInput.value, true, false, true))
+const treeShakedMinified = computed(() => tree_shake(treeShakedOnly.value.output, false, true, false))
+
+const result = computed(() => {
+  return {
+    diagnostics: treeShakedOnly.value.diagnostics,
+    logs: treeShakedOnly.value.logs,
+    output: doTreeShake.value ? doMinify.value ? treeShakedMinified.value.output : treeShakedOnly.value.output : doMinify.value ? minifiedOnly.value.output : debouncedInput.value,
+  }
+})
 export const output = computed(() => result.value.output.trim() || `// Empty output or error`)
-export const onlyMinifiedSize = computed(() => tree_shake(debouncedInput.value, false, true, false).output.length)
-export const treeShakedUnminifiedSize = computed(() => doTreeShake.value && !doMinify.value ? result.value.output.length : tree_shake(debouncedInput.value, true, false, false).output.length)
-export const treeShakedMinifiedSize = computed(() => doTreeShake.value && doMinify.value ? result.value.output.length : tree_shake(debouncedInput.value, true, true, false).output.length)
+export const onlyMinifiedSize = computed(() => minifiedOnly.value.output.length)
+export const treeShakedUnminifiedSize = computed(() => treeShakedOnly.value.output.length)
+export const treeShakedMinifiedSize = computed(() => treeShakedMinified.value.output.length)
 export const treeShakeRate = computed(() => 100 * treeShakedMinifiedSize.value / onlyMinifiedSize.value);
 export const diagnostics = computed(() => {
   hideDiagnostics.value = false
