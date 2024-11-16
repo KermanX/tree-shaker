@@ -6,7 +6,7 @@ impl<'a> Builtins<'a> {
     factory: &'a EntityFactory<'a>,
     prototypes: &'a BuiltinPrototypes<'a>,
   ) -> Entity<'a> {
-    let object = ObjectEntity::new_builtin(IMPORT_META_OBJECT_ID, &prototypes.null);
+    let object = ObjectEntity::new_builtin(IMPORT_META_OBJECT_ID, &prototypes.null, true);
     object.rest.borrow_mut().values.push(ObjectPropertyValue::Property(
       Some(factory.immutable_unknown),
       Some(factory.immutable_unknown),

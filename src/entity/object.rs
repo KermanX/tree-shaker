@@ -537,9 +537,9 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 }
 
 impl<'a> ObjectEntity<'a> {
-  pub fn new_builtin(object_id: SymbolId, prototype: &'a Prototype<'a>) -> Self {
+  pub fn new_builtin(object_id: SymbolId, prototype: &'a Prototype<'a>, consumable: bool) -> Self {
     ObjectEntity {
-      consumable: true,
+      consumable,
       consumed: Cell::new(false),
       deps: Default::default(),
       cf_scope: ScopeId::new(0),
