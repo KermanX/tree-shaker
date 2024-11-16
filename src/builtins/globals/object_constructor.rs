@@ -1,10 +1,9 @@
-use std::borrow::BorrowMut;
-
 use crate::{
   builtins::{constants::OBJECT_CONSTRUCTOR_OBJECT_ID, Builtins},
-  entity::{Entity, ObjectEntity, ObjectPropertyValue},
+  entity::{Entity, ObjectEntity, ObjectPropertyValue, TypeofResult},
   init_namespace,
 };
+use std::borrow::BorrowMut;
 
 impl<'a> Builtins<'a> {
   pub fn init_object_constructor(&mut self) {
@@ -21,6 +20,7 @@ impl<'a> Builtins<'a> {
     init_namespace!(object, {
       "prototype" => factory.immutable_unknown,
       "assign" => self.create_object_assign_impl(),
+      "keys" => self.create_object_keys_impl(),
     });
 
     self.globals.borrow_mut().insert("Object", factory.entity(object));
@@ -57,6 +57,23 @@ impl<'a> Builtins<'a> {
       }
 
       analyzer.factory.computed(target, deps)
+    })
+  }
+
+  fn create_object_keys_impl(&self) -> Entity<'a> {
+    self.factory.implemented_builtin_fn(|analyzer, dep, _, args| {
+      let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
+      let (properties, deps) = object.enumerate_properties(analyzer, dep);
+
+      let array = analyzer.new_empty_array();
+
+      for (_, key, _) in properties {
+        if key.test_typeof().contains(TypeofResult::String) {
+          array.init_rest(key.get_to_string(analyzer));
+        }
+      }
+
+      analyzer.factory.computed(analyzer.factory.entity(array), deps)
     })
   }
 }
