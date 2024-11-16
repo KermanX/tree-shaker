@@ -57,7 +57,7 @@ impl ReferredDeps {
       AstKind2::Index(index) => {
         let counter = COUNTER.load(Ordering::Relaxed);
         if counter >= self.by_index.len() {
-          self.by_index.resize(counter, 0);
+          self.by_index.resize(2 * counter, 0);
         };
         self.by_index[index] += 1;
       }
