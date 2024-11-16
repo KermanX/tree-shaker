@@ -157,7 +157,15 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
 
     let mut has_effect = false;
-    if let Some(key_literals) = key.get_to_property_key(analyzer).get_to_literals(analyzer) {
+    'known: {
+      if !self.deps.borrow().is_empty() {
+        break 'known;
+      }
+
+      let Some(key_literals) = key.get_to_property_key(analyzer).get_to_literals(analyzer) else {
+        break 'known;
+      };
+
       let definite = !indeterminate && key_literals.len() == 1;
       let mut rest_added = false;
       for key_literal in key_literals {
@@ -202,8 +210,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                 has_effect = true;
               }
             } else {
-              self.consume(analyzer);
-              return consumed_object::set_property(analyzer, dep, key, value);
+              break 'known;
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
@@ -213,10 +220,13 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       if has_effect {
         self.add_assignment_dep(exec_deps, dep);
       }
-    } else {
-      self.consume(analyzer);
-      consumed_object::set_property(analyzer, dep, key, value)
+      return;
     }
+
+    // Unknown
+    let mut deps = self.deps.borrow_mut();
+    deps.push(dep);
+    deps.push(box_consumable((exec_deps, key.get_to_property_key(analyzer), value)));
   }
 
   fn enumerate_properties(
@@ -230,6 +240,13 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
 
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
+
+    if !self.deps.borrow().is_empty() {
+      return (
+        vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
+        box_consumable((rc.clone(), dep)),
+      );
+    }
 
     let mut entries = Vec::new();
     for (i, element) in self.elements.borrow().iter().enumerate() {
@@ -252,8 +269,20 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-    self.consume(analyzer);
-    consumed_object::delete_property(analyzer, dep, key);
+    if self.consumed.get() {
+      return consumed_object::delete_property(analyzer, dep, key);
+    }
+
+    let (has_exhaustive, _, exec_deps) = analyzer.pre_must_mutate(self.cf_scope, self.object_id);
+
+    if has_exhaustive {
+      self.consume(analyzer);
+      return consumed_object::delete_property(analyzer, dep, key);
+    }
+
+    let mut deps = self.deps.borrow_mut();
+    deps.push(dep);
+    deps.push(box_consumable((exec_deps, key.get_to_property_key(analyzer))));
   }
 
   fn call(
@@ -295,13 +324,18 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
   fn iterate(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> IteratedElements<'a> {
     if self.consumed.get() {
       return consumed_object::iterate(analyzer, dep);
     }
+
+    if !self.deps.borrow().is_empty() {
+      return (vec![], Some(analyzer.factory.unknown()), box_consumable((rc, dep)));
+    }
+
     (
       self.elements.borrow().clone(),
       analyzer.factory.try_union(self.rest.borrow().clone()),

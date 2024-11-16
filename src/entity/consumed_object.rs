@@ -52,10 +52,13 @@ pub fn enumerate_properties<'a>(
     analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_to_global();
-    (vec![(false, analyzer.factory.unknown(), analyzer.factory.unknown())], box_consumable(()))
+    (
+      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
+      box_consumable(()),
+    )
   } else {
     (
-      vec![(false, analyzer.factory.unknown(), analyzer.factory.unknown())],
+      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
       box_consumable((rc.clone(), dep)),
     )
   }
