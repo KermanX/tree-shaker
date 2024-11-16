@@ -53,7 +53,7 @@ impl<'a> Analyzer<'a> {
 
       if let Some(test) = &node.test {
         let test = analyzer.exec_expression(test);
-        analyzer.cf_scope_mut().deps.push(box_consumable(test));
+        analyzer.cf_scope_mut().push_dep(box_consumable(test));
       }
     });
     self.pop_cf_scope();

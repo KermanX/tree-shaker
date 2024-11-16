@@ -74,6 +74,13 @@ impl<'a> CfScope<'a> {
     }
   }
 
+  pub fn push_dep(&mut self, dep: Consumable<'a>) {
+    self.deps.push(dep);
+    if self.referred_state == ReferredState::ReferredClean {
+      self.referred_state = ReferredState::ReferredDirty;
+    }
+  }
+
   pub fn update_exited(
     &mut self,
     id: ScopeId,
@@ -84,10 +91,7 @@ impl<'a> CfScope<'a> {
     if self.exited != Some(true) {
       self.exited = exited;
       if let Some(dep) = get_dep() {
-        self.deps.push(dep);
-        if self.referred_state == ReferredState::ReferredClean {
-          self.referred_state = ReferredState::ReferredDirty;
-        }
+        self.push_dep(dep);
       }
 
       if let Some(logger) = logger {
