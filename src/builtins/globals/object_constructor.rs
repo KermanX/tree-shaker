@@ -21,6 +21,7 @@ impl<'a> Builtins<'a> {
       "prototype" => factory.immutable_unknown,
       "assign" => self.create_object_assign_impl(),
       "keys" => self.create_object_keys_impl(),
+      "values" => self.create_object_values_impl(),
     });
 
     self.globals.borrow_mut().insert("Object", factory.entity(object));
@@ -71,6 +72,21 @@ impl<'a> Builtins<'a> {
         if key.test_typeof().contains(TypeofResult::String) {
           array.init_rest(key.get_to_string(analyzer));
         }
+      }
+
+      analyzer.factory.computed(analyzer.factory.entity(array), deps)
+    })
+  }
+
+  fn create_object_values_impl(&self) -> Entity<'a> {
+    self.factory.implemented_builtin_fn(|analyzer, dep, _, args| {
+      let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
+      let (properties, deps) = object.enumerate_properties(analyzer, dep);
+
+      let array = analyzer.new_empty_array();
+
+      for (_, _, value) in properties {
+        array.init_rest(value);
       }
 
       analyzer.factory.computed(analyzer.factory.entity(array), deps)
