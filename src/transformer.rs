@@ -1,9 +1,9 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
-  dep::DepId,
+  dep::{DepId, ReferredDeps},
   scope::conditional::ConditionalDataMap,
-  utils::{DataPlaceholder, ExtraData, Logger, ReferredNodes, StatementVecData},
+  utils::{DataPlaceholder, ExtraData, Logger, StatementVecData},
   TreeShakeConfig,
 };
 use oxc::{
@@ -32,7 +32,7 @@ pub struct Transformer<'a> {
   pub semantic: Semantic<'a>,
   pub ast_builder: AstBuilder<'a>,
   pub data: ExtraData<'a>,
-  pub referred_nodes: ReferredNodes<'a>,
+  pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   pub var_decls: RefCell<FxHashMap<SymbolId, bool>>,
   pub logger: Option<&'a Logger>,
@@ -49,7 +49,7 @@ impl<'a> Transformer<'a> {
       allocator,
       semantic,
       data,
-      referred_nodes,
+      referred_deps: referred_nodes,
       conditional_data,
       logger,
       ..
@@ -70,7 +70,7 @@ impl<'a> Transformer<'a> {
       semantic,
       ast_builder: AstBuilder::new(allocator),
       data,
-      referred_nodes,
+      referred_deps: referred_nodes,
       conditional_data,
       var_decls: Default::default(),
       logger,

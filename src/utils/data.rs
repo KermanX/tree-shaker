@@ -8,8 +8,6 @@ pub struct DataPlaceholder<'a> {
 
 pub type ExtraData<'a> = FxHashMap<DepId, Box<DataPlaceholder<'a>>>;
 
-pub type ReferredNodes<'a> = FxHashMap<DepId, usize>;
-
 pub type Diagnostics = BTreeSet<String>;
 
 #[derive(Debug, Default)]

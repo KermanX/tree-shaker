@@ -1,11 +1,11 @@
 use crate::{
   ast::AstKind2,
   builtins::Builtins,
-  dep::DepId,
+  dep::{DepId, ReferredDeps},
   entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
   scope::{conditional::ConditionalDataMap, ScopeContext},
   tree_shaker::TreeShaker,
-  utils::{DebuggerEvent, ExtraData, Logger, ReferredNodes, StatementVecData},
+  utils::{DebuggerEvent, ExtraData, Logger, StatementVecData},
   TreeShakeConfig,
 };
 use oxc::{
@@ -24,7 +24,7 @@ pub struct Analyzer<'a> {
   pub semantic: Semantic<'a>,
   pub current_span: Vec<Span>,
   pub data: ExtraData<'a>,
-  pub referred_nodes: ReferredNodes<'a>,
+  pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
       semantic,
       current_span: vec![],
       data: Default::default(),
-      referred_nodes: Default::default(),
+      referred_deps: Default::default(),
       conditional_data: Default::default(),
       named_exports: Vec::new(),
       default_export: None,

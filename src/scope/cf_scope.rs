@@ -259,7 +259,7 @@ impl<'a> Analyzer<'a> {
       if let Some(label) = label {
         if let Some(label_entity) = cf_scope.matches_label(label) {
           if !is_closest_breakable || !breakable_without_label {
-            self.referred_nodes.insert(label_entity.dep_id(), 1);
+            self.referred_deps.refer_dep(label_entity.dep_id());
             label_used = true;
           }
           target_depth = Some(idx);
@@ -291,7 +291,7 @@ impl<'a> Analyzer<'a> {
         if is_continuable {
           if let Some(label_entity) = cf_scope.matches_label(label) {
             if !is_closest_continuable {
-              self.referred_nodes.insert(label_entity.dep_id(), 1);
+              self.referred_deps.refer_dep(label_entity.dep_id());
               label_used = true;
             }
             target_depth = Some(idx);
