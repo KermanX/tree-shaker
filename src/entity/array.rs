@@ -79,6 +79,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
+    if !self.deps.borrow().is_empty() {
+      return analyzer.factory.computed_unknown((rc, dep, key));
+    }
+
     let dep = ConsumableNode::new((self.deps.borrow_mut().collect(), dep, key.clone()));
     let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
