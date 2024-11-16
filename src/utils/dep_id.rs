@@ -61,10 +61,6 @@ impl ReferredDeps {
         };
         self.by_index[index] += 1;
       }
-      AstKind2::Argument(node) => {
-        println!("@{:?} {:#}", node.span(), std::backtrace::Backtrace::capture());
-        *self.by_ptr.entry(dep).or_insert(0) += 1;
-      }
       _ => {
         *self.by_ptr.entry(dep).or_insert(0) += 1;
       }
