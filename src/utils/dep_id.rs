@@ -55,10 +55,15 @@ impl ReferredDeps {
     match dep.into() {
       AstKind2::Environment => {}
       AstKind2::Index(index) => {
-        if index >= self.by_index.len() {
-          self.by_index.resize(index + 1, 0);
+        let counter = COUNTER.load(Ordering::Relaxed);
+        if counter >= self.by_index.len() {
+          self.by_index.resize(counter, 0);
         };
         self.by_index[index] += 1;
+      }
+      AstKind2::Argument(node) => {
+        println!("@{:?} {:#}", node.span(), std::backtrace::Backtrace::capture());
+        *self.by_ptr.entry(dep).or_insert(0) += 1;
       }
       _ => {
         *self.by_ptr.entry(dep).or_insert(0) += 1;
