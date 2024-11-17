@@ -34,4 +34,11 @@ export function impure(a) {
   }
   g(0);
   g(1);
+
+  function h(a) {
+    effect()
+    return a && effect(a)
+  }
+  h(false)
+  h({})  
 }

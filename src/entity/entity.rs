@@ -54,6 +54,7 @@ pub trait EntityTrait<'a>: Debug {
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a>;
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a>;
   fn r#await(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>)
     -> Entity<'a>;
   fn iterate(
@@ -69,6 +70,7 @@ pub trait EntityTrait<'a>: Debug {
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_literals(
     &self,
     _rc: Entity<'a>,
@@ -171,6 +173,10 @@ impl<'a> Entity<'a> {
     self.0.call(*self, analyzer, dep.into(), this, args)
   }
 
+  pub fn jsx(&self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    self.0.jsx(*self, analyzer, props)
+  }
+
   pub fn construct(
     &self,
     analyzer: &mut Analyzer<'a>,
@@ -214,6 +220,10 @@ impl<'a> Entity<'a> {
 
   pub fn get_to_property_key(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.0.get_to_property_key(*self, analyzer)
+  }
+
+  pub fn get_to_jsx_child(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.0.get_to_jsx_child(*self, analyzer)
   }
 
   pub fn get_to_literals(&self, analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralEntity<'a>>> {

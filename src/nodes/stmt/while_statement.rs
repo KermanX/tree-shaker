@@ -1,13 +1,11 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, scope::CfScopeKind,
+  transformer::Transformer,
+};
 use oxc::{
   ast::ast::{Statement, WhileStatement},
   span::GetSpan,
 };
-
-#[derive(Debug, Default, Clone)]
-pub struct Data {
-  need_loop: bool,
-}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_while_statement(&mut self, node: &'a WhileStatement<'a>) {
@@ -21,12 +19,15 @@ impl<'a> Analyzer<'a> {
     if test.test_truthy() == Some(false) {
       return;
     }
-    test.consume(self);
 
-    let data = self.load_data::<Data>(AstKind2::WhileStatement(node));
-    data.need_loop = true;
+    let dep = box_consumable((AstKind2::WhileStatement(node), test));
 
-    self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
+    self.push_cf_scope_with_deps(
+      CfScopeKind::BreakableWithoutLabel,
+      labels.clone(),
+      vec![dep],
+      Some(false),
+    );
     self.exec_loop(move |analyzer| {
       analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
 
@@ -34,6 +35,9 @@ impl<'a> Analyzer<'a> {
       analyzer.exec_expression(&node.test).consume(analyzer);
 
       analyzer.pop_cf_scope();
+
+      let test = analyzer.exec_expression(&node.test);
+      analyzer.cf_scope_mut().push_dep(box_consumable(test));
     });
     self.pop_cf_scope();
   }
@@ -41,13 +45,12 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_while_statement(&self, node: &'a WhileStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AstKind2::WhileStatement(node));
-
     let WhileStatement { span, test, body, .. } = node;
     let body_span = body.span();
 
-    let test = self.transform_expression(test, data.need_loop);
-    let body = data.need_loop.then(|| self.transform_statement(body)).flatten();
+    let need_loop = self.is_referred(AstKind2::WhileStatement(node));
+    let test = self.transform_expression(test, need_loop);
+    let body = need_loop.then(|| self.transform_statement(body)).flatten();
 
     match (test, body) {
       (Some(test), body) => Some(self.ast_builder.statement_while(

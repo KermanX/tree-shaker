@@ -7,6 +7,11 @@ use crate::{
   consumable::{box_consumable, Consumable, ConsumableTrait},
 };
 
+pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  analyzer.refer_to_global();
+  analyzer.consume(dep);
+}
+
 pub fn get_property<'a>(
   rc: Entity<'a>,
   analyzer: &mut Analyzer<'a>,
@@ -47,10 +52,13 @@ pub fn enumerate_properties<'a>(
     analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_to_global();
-    (vec![(false, analyzer.factory.unknown(), analyzer.factory.unknown())], box_consumable(()))
+    (
+      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
+      box_consumable(()),
+    )
   } else {
     (
-      vec![(false, analyzer.factory.unknown(), analyzer.factory.unknown())],
+      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
       box_consumable((rc.clone(), dep)),
     )
   }
@@ -98,6 +106,11 @@ pub fn construct<'a>(
     analyzer.refer_to_global();
     analyzer.factory.unknown()
   }
+}
+
+pub fn jsx<'a>(rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+  // No consume!
+  analyzer.factory.computed_unknown((rc, props))
 }
 
 pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {

@@ -3,13 +3,14 @@ import { tree_shake } from '@kermanx/tree-shaker'
 import { computed, ref, watch, watchEffect } from 'vue'
 import { DEMO } from './examples';
 
+export const onInputUpdate: (()=>void)[] = []
 export const input = ref('')
 export const doTreeShake = ref(true)
 export const doMinify = ref(false)
 
-export const showLogs = ref(true)
+export const showLogs = ref(false)
 
-const debouncedInput = ref('')
+export const debouncedInput = ref('')
 let debounceTimeout = Number.NaN
 watch(input, (input) => {
   clearInterval(debounceTimeout)
@@ -18,9 +19,9 @@ watch(input, (input) => {
   }, 300)
 })
 
-function load() {
+export function load(reset = false) {
   let parsed
-  if (window.location.hash) {
+  if (!reset && window.location.hash) {
     try {
       parsed = JSON.parse(decompressFromBase64(window.location.hash.slice(1)) || '{}')
     }
@@ -28,8 +29,10 @@ function load() {
   }
   parsed ||= {}
   debouncedInput.value = input.value = parsed.input ?? DEMO
+  onInputUpdate.forEach(fn => fn())
   doTreeShake.value = parsed.doTreeShake ?? true
   doMinify.value = parsed.doMinify ?? false
+  save()
 }
 
 function save() {
@@ -43,9 +46,27 @@ function save() {
 load()
 watchEffect(save)
 
-const result = computed(() => tree_shake(debouncedInput.value, doTreeShake.value, doMinify.value, true))
+const minifiedOnly = computed(() => tree_shake(debouncedInput.value, false, true, false))
+const treeShakedOnly = computed(() => tree_shake(debouncedInput.value, true, false, true))
+const treeShakedMinified = computed(() => tree_shake(treeShakedOnly.value.output, false, true, false))
+
+const result = computed(() => {
+  return {
+    diagnostics: treeShakedOnly.value.diagnostics,
+    logs: treeShakedOnly.value.logs,
+    output: doTreeShake.value ? doMinify.value ? treeShakedMinified.value.output : treeShakedOnly.value.output : doMinify.value ? minifiedOnly.value.output : debouncedInput.value,
+  }
+})
 export const output = computed(() => result.value.output.trim() || `// Empty output or error`)
-export const diagnostics = computed(() => result.value.diagnostics.join('\n'))
+export const onlyMinifiedSize = computed(() => minifiedOnly.value.output.length)
+export const treeShakedUnminifiedSize = computed(() => treeShakedOnly.value.output.length)
+export const treeShakedMinifiedSize = computed(() => treeShakedMinified.value.output.length)
+export const treeShakeRate = computed(() => 100 * treeShakedMinifiedSize.value / onlyMinifiedSize.value);
+export const diagnostics = computed(() => {
+  hideDiagnostics.value = false
+  return result.value.diagnostics
+})
+export const hideDiagnostics = ref(false)
 export const logsRaw = computed(() => result.value.logs
   // .filter(s =>
   //   !s.startsWith('PushExprSpan') &&

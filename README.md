@@ -13,6 +13,7 @@
 - Single AST pass - Analyzer as much information as possible.
 - As accurate as possible. [test262](https://github.com/tc39/test262) is used for testing.
 - May not be the fastest. (But I will try my best)
+- Will have the ability to **tree-shake React components props** soon
 
 ## Demo
 
@@ -49,7 +50,6 @@ Although the code above is very simple to analyze, but achieving this effect cor
 
 - Performance!
 - JS Builtins metadata
-- Pure notation support
 - Test against fixtures from other tree shakers like Rollup
 - Rollup-like try-scope optimization/de-optimization
 - Reuse code with oxc_minifier for JS computation logics

@@ -1,40 +1,49 @@
 mod constants;
 mod globals;
 mod import_meta;
+mod known_modules;
 mod prototypes;
+mod react;
+mod utils;
 
-use crate::entity::{Entity, EntityFactory};
-use globals::create_globals;
-use import_meta::create_import_meta;
+use crate::{
+  entity::{Entity, EntityFactory},
+  TreeShakeConfig,
+};
+use known_modules::KnownModule;
+use prototypes::BuiltinPrototypes;
 pub use prototypes::Prototype;
-use prototypes::{create_builtin_prototypes, BuiltinPrototypes};
+use react::AnalyzerDataForReact;
 use rustc_hash::FxHashMap;
 
 pub struct Builtins<'a> {
-  pub globals: FxHashMap<&'static str, Entity<'a>>,
+  pub config: &'a TreeShakeConfig,
+  pub factory: &'a EntityFactory<'a>,
+
   pub prototypes: &'a BuiltinPrototypes<'a>,
+  pub globals: FxHashMap<&'static str, Entity<'a>>,
   pub import_meta: Entity<'a>,
+  pub known_modules: FxHashMap<&'static str, KnownModule<'a>>,
+
+  pub react_data: AnalyzerDataForReact<'a>,
 }
 
 impl<'a> Builtins<'a> {
-  pub fn new(factory: &EntityFactory<'a>) -> Self {
-    let prototypes = factory.alloc(create_builtin_prototypes(factory));
-    Self {
-      globals: create_globals(factory),
+  pub fn new(config: &'a TreeShakeConfig, factory: &'a EntityFactory<'a>) -> Self {
+    let prototypes = Self::create_builtin_prototypes(factory);
+    let mut builtins = Self {
+      config,
+      factory,
+
       prototypes,
-      import_meta: create_import_meta(factory, prototypes),
-    }
-  }
+      import_meta: Self::create_import_meta(factory, prototypes),
+      globals: Default::default(),       // Initialize later
+      known_modules: Default::default(), // Initialize later
 
-  pub fn get_global(&self, name: &str) -> Option<Entity<'a>> {
-    self.globals.get(name).copied()
-  }
-
-  pub fn is_global(&self, name: &str) -> bool {
-    self.globals.contains_key(name)
-  }
-
-  pub fn get_import_meta(&self) -> Entity<'a> {
-    self.import_meta.clone()
+      react_data: Default::default(),
+    };
+    builtins.init_globals();
+    builtins.init_known_modules();
+    builtins
   }
 }

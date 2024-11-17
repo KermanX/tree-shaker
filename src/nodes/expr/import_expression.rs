@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, build_effect_from_arr, consumable::ConsumableNode, entity::Entity,
+  analyzer::Analyzer, build_effect, consumable::ConsumableNode, entity::Entity,
   transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, ImportExpression};
@@ -44,7 +44,7 @@ impl<'a> Transformer<'a> {
       for argument in arguments {
         effects.push(self.transform_expression(argument, false));
       }
-      build_effect_from_arr!(&self.ast_builder, *span, effects)
+      build_effect!(&self.ast_builder, *span, effects)
     }
   }
 }

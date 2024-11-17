@@ -1,6 +1,6 @@
 use super::Prototype;
 use crate::entity::EntityFactory;
 
-pub fn create_null_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
-  Prototype::new()
+pub fn create_null_prototype<'a>(_factory: &EntityFactory<'a>) -> Prototype<'a> {
+  Prototype::default()
 }

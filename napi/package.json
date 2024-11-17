@@ -5,11 +5,21 @@
   "types": "index.d.ts",
   "napi": {
     "name": "tree-shaker",
-    "triples": {}
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "aarch64-apple-darwin"
+      ]
+    }
   },
+  "files": [
+    "index.d.ts",
+    "index.js"
+  ],
   "license": "MIT",
   "devDependencies": {
-    "@napi-rs/cli": "^2.18.4"
+    "@napi-rs/cli": "^2.18.4",
+    "ohash": "^1.1.4"
   },
   "scripts": {
     "artifacts": "napi artifacts",

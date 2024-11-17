@@ -1,10 +1,9 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
-  data::{DataPlaceholder, ExtraData, ReferredNodes, StatementVecData},
-  dep::DepId,
-  logger::Logger,
+  dep::{DepId, ReferredDeps},
   scope::conditional::ConditionalDataMap,
+  utils::{DataPlaceholder, ExtraData, Logger, StatementVecData},
   TreeShakeConfig,
 };
 use oxc::{
@@ -28,12 +27,12 @@ use std::{
 };
 
 pub struct Transformer<'a> {
-  pub config: TreeShakeConfig,
+  pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub semantic: Semantic<'a>,
   pub ast_builder: AstBuilder<'a>,
   pub data: ExtraData<'a>,
-  pub referred_nodes: ReferredNodes<'a>,
+  pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   pub var_decls: RefCell<FxHashMap<SymbolId, bool>>,
   pub logger: Option<&'a Logger>,
@@ -50,17 +49,20 @@ impl<'a> Transformer<'a> {
       allocator,
       semantic,
       data,
-      referred_nodes,
+      referred_deps: referred_nodes,
       conditional_data,
       logger,
       ..
     } = analyzer;
 
-    // for (key, v) in referred_nodes.iter() {
-    //   if *v > 100 {
+    // let mut counts: Vec<_> = referred_nodes.clone().into_iter().collect();
+    // counts.sort_by(|a, b| b.1.cmp(&a.1));
+    // for (key, v) in counts {
+    //   if v > 10 {
     //     println!("{key:?}: {v}");
     //   }
     // }
+    // println!("---");
 
     Transformer {
       config,
@@ -68,7 +70,7 @@ impl<'a> Transformer<'a> {
       semantic,
       ast_builder: AstBuilder::new(allocator),
       data,
-      referred_nodes,
+      referred_deps: referred_nodes,
       conditional_data,
       var_decls: Default::default(),
       logger,
@@ -258,6 +260,14 @@ impl<'a> Transformer<'a> {
 
   pub fn build_negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {
     self.ast_builder.expression_unary(expression.span(), UnaryOperator::LogicalNot, expression)
+  }
+
+  pub fn build_object_spread_effect(&self, span: Span, argument: Expression<'a>) -> Expression<'a> {
+    self.ast_builder.expression_object(
+      span,
+      self.ast_builder.vec1(self.ast_builder.object_property_kind_spread_element(span, argument)),
+      None,
+    )
   }
 }
 

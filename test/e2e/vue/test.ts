@@ -7,7 +7,7 @@ test('harness', async () => {
 
   await import('./dist/shaken.js')
 
-  await expect.element(page.getByText('Hello World')).toBeInTheDocument()
+  await expect.element(page.getByText('Hello _Kerman')).toBeInTheDocument()
 
   const counter = page.getByRole('button')
   await counter.click()
@@ -16,4 +16,8 @@ test('harness', async () => {
   await expect.element(counter).toHaveTextContent('2')
   await counter.click()
   await expect.element(counter).toHaveTextContent('3')
+
+  const input = page.getByRole('textbox')
+  await input.fill('Oxc')
+  await expect.element(page.getByText('Hello Oxc')).toBeInTheDocument()
 })

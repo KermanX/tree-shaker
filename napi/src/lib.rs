@@ -13,28 +13,25 @@ pub struct TreeShakeResultBinding {
   pub diagnostics: Vec<String>,
 }
 
-#[napi]
-pub fn tree_shake(
-  input: String,
-  tree_shake: Option<String>,
-  do_minify: bool,
-) -> TreeShakeResultBinding {
-  let result = tree_shake::tree_shake(tree_shake::TreeShakeOptions {
-    config: match tree_shake.as_deref() {
-      Some("safest") => tree_shake::TreeShakeConfig::safest(),
-      Some("recommended") => tree_shake::TreeShakeConfig::recommended(),
-      Some("smallest") => tree_shake::TreeShakeConfig::smallest(),
-      None => tree_shake::TreeShakeConfig::default(),
-      _ => panic!("Invalid tree shake option"),
+#[napi(
+  ts_args_type = "input: string, preset: 'safest' | 'recommended' | 'smallest' | 'disabled', minify: boolean"
+)]
+pub fn tree_shake(source_text: String, preset: String, minify: bool) -> TreeShakeResultBinding {
+  let result = tree_shake::tree_shake(
+    source_text,
+    tree_shake::TreeShakeOptions {
+      config: match preset.as_str() {
+        "safest" => tree_shake::TreeShakeConfig::safest(),
+        "recommended" => tree_shake::TreeShakeConfig::recommended(),
+        "smallest" => tree_shake::TreeShakeConfig::smallest(),
+        "disabled" => tree_shake::TreeShakeConfig::disabled(),
+        _ => panic!("Invalid tree shake option {}", preset),
+      },
+      minify_options: minify.then(MinifierOptions::default),
+      codegen_options: CodegenOptions { minify, ..Default::default() },
+      logging: false,
     },
-    allocator: &Allocator::default(),
-    source_type: SourceType::default(),
-    source_text: input,
-    tree_shake: tree_shake.is_some(),
-    minify: do_minify.then(MinifierOptions::default),
-    code_gen: CodegenOptions { minify: do_minify, ..Default::default() },
-    logging: true,
-  });
+  );
   TreeShakeResultBinding {
     output: result.codegen_return.code,
     diagnostics: result.diagnostics.into_iter().collect(),

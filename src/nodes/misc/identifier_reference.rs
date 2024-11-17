@@ -31,9 +31,9 @@ impl<'a> Analyzer<'a> {
       let arguments_consumed = self.consume_arguments(None);
       self.call_scope_mut().need_consume_arguments = !arguments_consumed;
       self.factory.unknown()
-    } else if let Some(global) = self.builtins.get_global(node.name.as_str()) {
+    } else if let Some(global) = self.builtins.globals.get(node.name.as_str()) {
       // Known global
-      global
+      *global
     } else {
       // Unknown global
       if self.is_inside_pure() {

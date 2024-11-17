@@ -7,7 +7,7 @@ use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
 };
-use std::fmt::Debug;
+use std::{fmt::Debug, marker::PhantomData};
 
 pub trait BuiltinFnEntity<'a>: Debug {
   fn call_impl(
@@ -17,6 +17,28 @@ pub trait BuiltinFnEntity<'a>: Debug {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a>;
+  fn get_property_impl(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    key: Entity<'a>,
+  ) -> Entity<'a> {
+    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
+  }
+  fn set_property_impl(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    key: Entity<'a>,
+    value: Entity<'a>,
+  ) {
+    analyzer.add_diagnostic(
+      "Should not set property of builtin function, it may cause unexpected tree-shaking behavior",
+    );
+    consumed_object::set_property(analyzer, dep, key, value)
+  }
 }
 
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
@@ -33,21 +55,18 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
+    self.get_property_impl(rc, analyzer, dep, key)
   }
 
   fn set_property(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    analyzer.add_diagnostic(
-      "Should not set property of builtin function, it may cause unexpected tree-shaking behavior",
-    );
-    consumed_object::set_property(analyzer, dep, key, value)
+    self.set_property_impl(rc, analyzer, dep, key, value)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
@@ -83,6 +102,15 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     args: Entity<'a>,
   ) -> Entity<'a> {
     consumed_object::construct(rc, analyzer, dep, args)
+  }
+
+  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    self.call_impl(
+      analyzer,
+      box_consumable(()),
+      analyzer.factory.immutable_unknown,
+      analyzer.factory.arguments(vec![(false, props)]),
+    )
   }
 
   fn r#await(
@@ -128,6 +156,11 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     self.get_to_string(rc, analyzer)
   }
 
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    // TODO: analyzer.thrown_builtin_error("Functions are not valid JSX children");
+    analyzer.factory.string("")
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     TypeofResult::Function
   }
@@ -141,15 +174,30 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 }
 
-pub type BuiltinFnImplementation<'a> =
-  fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>;
-
-#[derive(Debug, Clone, Copy)]
-pub struct ImplementedBuiltinFnEntity<'a> {
-  implementation: BuiltinFnImplementation<'a>,
+pub trait BuiltinFnImplementation<'a>:
+  Fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>
+{
+}
+impl<'a, T: Fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>>
+  BuiltinFnImplementation<'a> for T
+{
 }
 
-impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
+#[derive(Clone, Copy)]
+pub struct ImplementedBuiltinFnEntity<'a, F: BuiltinFnImplementation<'a> + 'a> {
+  implementation: F,
+  phantom_data: PhantomData<&'a ()>,
+}
+
+impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnEntity<'a, F> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("ImplementedBuiltinFnEntity").finish()
+  }
+}
+
+impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
+  for ImplementedBuiltinFnEntity<'a, F>
+{
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
@@ -162,8 +210,11 @@ impl<'a> BuiltinFnEntity<'a> for ImplementedBuiltinFnEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn implemented_builtin_fn(&self, implementation: BuiltinFnImplementation<'a>) -> Entity<'a> {
-    self.entity(ImplementedBuiltinFnEntity { implementation })
+  pub fn implemented_builtin_fn<F: BuiltinFnImplementation<'a> + 'a>(
+    &self,
+    implementation: F,
+  ) -> Entity<'a> {
+    self.entity(ImplementedBuiltinFnEntity { implementation, phantom_data: PhantomData })
   }
 }
 
@@ -182,14 +233,9 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
   ) -> Entity<'a> {
     let ret_val = (self.return_value)(&analyzer.factory);
     let dep = box_consumable((dep, this, args));
-    if analyzer.is_inside_pure() {
-      this.unknown_mutate(analyzer, dep.cloned());
-      args.unknown_mutate(analyzer, dep.cloned());
-      analyzer.factory.computed(ret_val, dep)
-    } else {
-      analyzer.consume(dep);
-      ret_val
-    }
+    this.unknown_mutate(analyzer, dep.cloned());
+    args.unknown_mutate(analyzer, dep.cloned());
+    analyzer.factory.computed(ret_val, dep)
   }
 }
 

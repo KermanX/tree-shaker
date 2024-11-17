@@ -134,7 +134,9 @@ impl Logger {
   }
 
   pub fn print_fn_calls(&self) {
-    for (span, (name, count)) in self.fn_calls.borrow().iter() {
+    let mut fn_calls: Vec<_> = self.fn_calls.take().into_iter().collect();
+    fn_calls.sort_by(|a, b| b.1 .1.cmp(&a.1 .1));
+    for (span, (name, count)) in fn_calls.iter() {
       println!("{}-{} {} x{}", span.start, span.end, name, count);
     }
   }

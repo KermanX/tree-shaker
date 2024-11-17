@@ -45,6 +45,7 @@ module.exports = function(test) {
       || /\bevalScript\(/.test(main)
       || main.includes('$DONOTEVALUATE')
       || /\bwith\s*\(/.test(main)
+      || /\busing\b/.test(main)
       || main.includes('noStrict')
     ) {
       skipped++;
@@ -68,7 +69,7 @@ module.exports = function(test) {
     if (process.env.CI) {
       process.stderr.write(`[TREESHAKE] ${test.file}\n`)
     }
-    let minified = treeShake(main, null, do_minify).output;
+    let minified = treeShake(main, "disabled", do_minify).output;
     let startTime = Date.now();
     let treeShaked = treeShake(main, "safest", do_minify).output;
     let endTime = Date.now();

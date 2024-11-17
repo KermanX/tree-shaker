@@ -1,6 +1,6 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect_from_arr, consumable::box_consumable,
-  entity::Entity, transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
+  transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, NewExpression, TSTypeParameterInstantiation};
 
@@ -43,7 +43,7 @@ impl<'a> Transformer<'a> {
     } else {
       let callee = self.transform_expression(callee, false);
       let arguments = self.transform_arguments_no_call(arguments);
-      build_effect_from_arr!(self.ast_builder, *span, vec![callee], arguments)
+      build_effect!(self.ast_builder, *span, callee, arguments)
     }
   }
 }

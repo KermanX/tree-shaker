@@ -1,5 +1,20 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TreeShakeJsxPreset {
+  None,
+  React,
+}
+
+impl TreeShakeJsxPreset {
+  pub fn is_enabled(&self) -> bool {
+    *self != Self::None
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct TreeShakeConfig {
+  pub enabled: bool,
+  pub jsx: TreeShakeJsxPreset,
+
   pub unknown_global_side_effects: bool,
   pub preserve_function_name: bool,
   pub preserve_function_length: bool,
@@ -20,6 +35,9 @@ impl Default for TreeShakeConfig {
 impl TreeShakeConfig {
   pub fn safest() -> Self {
     Self {
+      enabled: true,
+      jsx: TreeShakeJsxPreset::None,
+
       unknown_global_side_effects: true,
       preserve_function_name: true,
       preserve_function_length: true,
@@ -46,5 +64,14 @@ impl TreeShakeConfig {
 
       ..Default::default()
     }
+  }
+
+  pub fn disabled() -> Self {
+    Self { enabled: false, ..Default::default() }
+  }
+
+  pub fn with_react_jsx(mut self, yes: bool) -> Self {
+    self.jsx = if yes { TreeShakeJsxPreset::React } else { TreeShakeJsxPreset::None };
+    self
   }
 }

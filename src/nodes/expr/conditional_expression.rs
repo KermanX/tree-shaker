@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
       (true, true) => {
         let v1 = exec_consequent(self);
         let v2 = exec_alternate(self);
-        self.factory.union(vec![v1, v2])
+        self.factory.union((v1, v2))
       }
       _ => unreachable!(),
     }
@@ -85,7 +85,7 @@ impl<'a> Transformer<'a> {
         (None, Some(alternate)) => {
           Some(self.ast_builder.expression_logical(*span, test, LogicalOperator::Or, alternate))
         }
-        (None, None) => unreachable!(),
+        (None, None) => unreachable!("node {}, {} @{:?}", maybe_true, maybe_false, span),
       }
     } else {
       build_effect!(self.ast_builder, *span, test, consequent, alternate)

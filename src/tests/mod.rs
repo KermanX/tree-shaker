@@ -1,23 +1,20 @@
-use insta::{assert_snapshot, glob};
-use oxc::{
-  allocator::Allocator, codegen::CodegenOptions, minifier::MinifierOptions, span::SourceType,
-};
-use std::fs;
-
 use crate::{TreeShakeConfig, TreeShakeOptions};
+use insta::{assert_snapshot, glob};
+use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
+use std::fs;
 
 fn tree_shake(input: String) -> String {
   let do_minify = input.contains("@minify");
-  let result = crate::tree_shake(TreeShakeOptions {
-    config: TreeShakeConfig::default(),
-    allocator: &Allocator::default(),
-    source_type: SourceType::default(),
-    source_text: input,
-    tree_shake: true,
-    minify: do_minify.then(|| MinifierOptions::default()),
-    code_gen: CodegenOptions::default(),
-    logging: true,
-  });
+  let react_jsx = input.contains("@react-jsx");
+  let result = crate::tree_shake(
+    input,
+    TreeShakeOptions {
+      config: TreeShakeConfig::default().with_react_jsx(react_jsx),
+      minify_options: do_minify.then(|| MinifierOptions::default()),
+      codegen_options: CodegenOptions::default(),
+      logging: false,
+    },
+  );
   result.codegen_return.code
 }
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref, watchEffect } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watchEffect } from 'vue'
 import * as monaco from 'monaco-editor'
+import { onInputUpdate } from './states';
 
 const props = defineProps<{
   lang: 'javascript' | 'rust' | 'markdown'
@@ -29,6 +30,9 @@ onMounted(async () => {
       top: 16,
     },
     tabSize: 2,
+    minimap: {
+      enabled: false,
+    },
     ...props.options,
   })
 
@@ -44,6 +48,14 @@ onMounted(async () => {
       value.value = editor.getValue()
     })
   }
+  const index = onInputUpdate.length;
+  onInputUpdate.push(async () => {
+    await nextTick()
+    editor.setValue(value.value)
+  })
+  onUnmounted(() => {
+    onInputUpdate[index] = () => { }
+  })
 })
 </script>
 

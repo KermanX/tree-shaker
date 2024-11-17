@@ -26,8 +26,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    // NOTE: self.forward_dep(dep) is unnecessary
-    self.val.unknown_mutate(analyzer, dep);
+    self.val.unknown_mutate(analyzer, self.forward_dep(dep));
   }
 
   fn get_property(
@@ -85,6 +84,10 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     self.val.construct(analyzer, self.forward_dep(dep), args)
   }
 
+  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    self.forward_value(self.val.jsx(analyzer, props), analyzer)
+  }
+
   fn r#await(
     &self,
     _rc: Entity<'a>,
@@ -125,6 +128,10 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
 
   fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.val.get_to_property_key(analyzer), analyzer)
+  }
+
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.forward_value(self.val.get_to_jsx_child(analyzer), analyzer)
   }
 
   fn get_to_literals(

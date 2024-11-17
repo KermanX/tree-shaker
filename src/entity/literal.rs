@@ -53,7 +53,25 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       consumed_object::get_property(rc, analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
-      prototype.get_property(analyzer, rc, key, dep)
+      let key = key.get_to_property_key(analyzer);
+      let dep = box_consumable((dep, rc.clone(), key.clone()));
+      if let Some(key_literals) = key.get_to_literals(analyzer) {
+        let mut values = vec![];
+        let mut undefined_added = false;
+        for key_literal in key_literals {
+          if let Some(property) = self.get_known_instance_property(analyzer, key_literal) {
+            values.push(property);
+          } else if let Some(property) = prototype.get_literal_keyed(key_literal) {
+            values.push(property);
+          } else if !undefined_added {
+            undefined_added = true;
+            values.push(analyzer.factory.undefined);
+          }
+        }
+        analyzer.factory.computed_union(values, dep)
+      } else {
+        analyzer.factory.computed_unknown(dep)
+      }
     }
   }
 
@@ -133,6 +151,10 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error(format!("Cannot construct a non-constructor object {:?}", self));
     consumed_object::construct(rc, analyzer, dep, args)
+  }
+
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
+    analyzer.factory.computed_unknown((rc, attributes))
   }
 
   fn r#await(
@@ -224,17 +246,25 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
+  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    if (TypeofResult::String | TypeofResult::Number).contains(self.test_typeof()) {
+      self.get_to_string(rc, analyzer)
+    } else {
+      analyzer.factory.string("")
+    }
+  }
+
   fn get_to_literals(
     &self,
     _rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
+    _analyzer: &Analyzer<'a>,
   ) -> Option<FxHashSet<LiteralEntity<'a>>> {
     let mut result = FxHashSet::default();
     result.insert(*self);
     Some(result)
   }
 
-  fn get_literal(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
+  fn get_literal(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
     Some(*self)
   }
 
@@ -442,6 +472,30 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::Infinity(_) => &analyzer.builtins.prototypes.number,
       LiteralEntity::NaN => &analyzer.builtins.prototypes.number,
       LiteralEntity::Null | LiteralEntity::Undefined => unreachable!(),
+    }
+  }
+
+  fn get_known_instance_property(
+    &self,
+    analyzer: &Analyzer<'a>,
+    key: LiteralEntity<'a>,
+  ) -> Option<Entity<'a>> {
+    match self {
+      LiteralEntity::String(value) => {
+        let LiteralEntity::String(key) = key else { return None };
+        if key == "length" {
+          Some(analyzer.factory.number(value.len() as f64, None))
+        } else if let Some(index) = key.parse::<usize>().ok() {
+          Some(
+            value
+              .get(index..index + 1)
+              .map_or(analyzer.factory.undefined, |v| analyzer.factory.string(v)),
+          )
+        } else {
+          None
+        }
+      }
+      _ => None,
     }
   }
 }

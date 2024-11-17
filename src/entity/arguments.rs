@@ -1,22 +1,31 @@
 use super::{
+  consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
   Entity, EntityFactory, EntityTrait, TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
+use std::cell::Cell;
 
 #[derive(Debug)]
 pub struct ArgumentsEntity<'a> {
+  consumed: Cell<bool>,
   pub arguments: Vec<(bool, Entity<'a>)>,
 }
 
 impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    use_consumed_flag!(self);
+
     for (_, entity) in &self.arguments {
       entity.consume(analyzer);
     }
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    if self.consumed.get() {
+      return consumed_object::unknown_mutate(analyzer, dep);
+    }
+
     for (_, entity) in &self.arguments {
       entity.unknown_mutate(analyzer, dep.cloned());
     }
@@ -74,6 +83,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     _dep: Consumable<'a>,
     _args: Entity<'a>,
   ) -> Entity<'a> {
+    unreachable!()
+  }
+
+  fn jsx(&self, _rc: Entity<'a>, _analyzer: &mut Analyzer<'a>, _props: Entity<'a>) -> Entity<'a> {
     unreachable!()
   }
 
@@ -138,6 +151,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+    unreachable!()
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     unreachable!()
   }
@@ -153,6 +170,6 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
 impl<'a> EntityFactory<'a> {
   pub fn arguments(&self, arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
-    self.entity(ArgumentsEntity { arguments })
+    self.entity(ArgumentsEntity { consumed: Cell::new(false), arguments })
   }
 }

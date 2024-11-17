@@ -4,7 +4,7 @@ use crate::{
     box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait, ConsumableVec,
   },
   entity::LabelEntity,
-  logger::{DebuggerEvent, Logger},
+  utils::{DebuggerEvent, Logger},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
@@ -74,6 +74,13 @@ impl<'a> CfScope<'a> {
     }
   }
 
+  pub fn push_dep(&mut self, dep: Consumable<'a>) {
+    self.deps.push(dep);
+    if self.referred_state == ReferredState::ReferredClean {
+      self.referred_state = ReferredState::ReferredDirty;
+    }
+  }
+
   pub fn update_exited(
     &mut self,
     id: ScopeId,
@@ -84,10 +91,7 @@ impl<'a> CfScope<'a> {
     if self.exited != Some(true) {
       self.exited = exited;
       if let Some(dep) = get_dep() {
-        self.deps.push(dep);
-        if self.referred_state == ReferredState::ReferredClean {
-          self.referred_state = ReferredState::ReferredDirty;
-        }
+        self.push_dep(dep);
       }
 
       if let Some(logger) = logger {
@@ -255,7 +259,7 @@ impl<'a> Analyzer<'a> {
       if let Some(label) = label {
         if let Some(label_entity) = cf_scope.matches_label(label) {
           if !is_closest_breakable || !breakable_without_label {
-            self.referred_nodes.insert(label_entity.dep_id(), 1);
+            self.referred_deps.refer_dep(label_entity.dep_id());
             label_used = true;
           }
           target_depth = Some(idx);
@@ -287,7 +291,7 @@ impl<'a> Analyzer<'a> {
         if is_continuable {
           if let Some(label_entity) = cf_scope.matches_label(label) {
             if !is_closest_continuable {
-              self.referred_nodes.insert(label_entity.dep_id(), 1);
+              self.referred_deps.refer_dep(label_entity.dep_id());
               label_used = true;
             }
             target_depth = Some(idx);

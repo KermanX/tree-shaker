@@ -42,7 +42,7 @@ impl<'a> Analyzer<'a> {
         )
       };
 
-      let conditional_dep = self.push_logical_right_cf_cope(
+      let conditional_dep = self.push_logical_right_cf_scope(
         AstKind2::LogicalAssignmentExpressionLeft(node),
         left.clone(),
         maybe_left,
