@@ -6,7 +6,7 @@ use crate::{
 use oxc::{index::Idx, semantic::SymbolId};
 
 pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
-  init_prototype!(create_object_prototype(factory), {
+  init_prototype!("Function", create_object_prototype(factory), {
     "apply" => factory.implemented_builtin_fn(|analyzer, dep, this, args| {
       let mut args = args.destruct_as_array(analyzer, dep.cloned(), 2).0;
       let args_arg = {

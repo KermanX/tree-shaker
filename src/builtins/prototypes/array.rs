@@ -2,7 +2,7 @@ use super::{object::create_object_prototype, Prototype};
 use crate::{entity::EntityFactory, init_prototype};
 
 pub fn create_array_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
-  init_prototype!(create_object_prototype(factory), {
+  init_prototype!("Array", create_object_prototype(factory), {
     "concat" => factory.immutable_unknown /*pure_fn_returns_array*/,
     "copyWithin" => factory.pure_fn_returns_unknown /* mutates_self */,
     "entries" => factory.immutable_unknown /*pure_fn_returns_array*/,
