@@ -34,7 +34,8 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if *self == PrimitiveEntity::Mixed {
+    // TODO: PrimitiveEntity::String
+    if *self == PrimitiveEntity::Mixed || *self == PrimitiveEntity::String {
       analyzer.factory.computed_unknown((rc, dep, key))
     } else {
       let prototype = self.get_prototype(analyzer);
