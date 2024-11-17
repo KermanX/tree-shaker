@@ -50,7 +50,7 @@ impl<'a> ConsumableCollector<'a> {
     }
   }
 
-  pub fn force_clean(&mut self) {
+  pub fn force_clear(&mut self) {
     self.current.clear();
     self.node = None;
   }

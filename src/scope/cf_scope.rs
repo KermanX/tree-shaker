@@ -330,7 +330,7 @@ impl<'a> Analyzer<'a> {
               ReferredState::Never => unreachable!(),
               ReferredState::ReferredClean => break,
               ReferredState::ReferredDirty => {
-                scope.deps.force_clean();
+                scope.deps.force_clear();
                 scope.referred_state = ReferredState::ReferredClean;
               }
             }

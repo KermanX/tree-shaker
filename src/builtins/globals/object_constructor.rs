@@ -11,11 +11,7 @@ impl<'a> Builtins<'a> {
 
     let object =
       ObjectEntity::new_builtin(OBJECT_CONSTRUCTOR_OBJECT_ID, &self.prototypes.function, false);
-    object
-      .rest
-      .borrow_mut()
-      .values
-      .push(ObjectPropertyValue::Field(factory.immutable_unknown, Some(true)));
+    object.init_rest(ObjectPropertyValue::Field(factory.immutable_unknown, true));
 
     init_namespace!(object, {
       "prototype" => factory.immutable_unknown,

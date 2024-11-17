@@ -1,4 +1,7 @@
-use super::{Entity, LiteralEntity, PrimitiveEntity, PureBuiltinFnEntity, UnknownEntity};
+use super::{
+  arguments::ArgumentsEntity, Entity, LiteralEntity, PrimitiveEntity, PureBuiltinFnEntity,
+  UnknownEntity,
+};
 use oxc::allocator::Allocator;
 use std::cell::Cell;
 
@@ -29,6 +32,8 @@ pub struct EntityFactory<'a> {
   pub pure_fn_returns_symbol: Entity<'a>,
   pub pure_fn_returns_null: Entity<'a>,
   pub pure_fn_returns_undefined: Entity<'a>,
+
+  pub empty_arguments: Entity<'a>,
 }
 
 impl<'a> EntityFactory<'a> {
@@ -64,6 +69,8 @@ impl<'a> EntityFactory<'a> {
     let pure_fn_returns_undefined =
       Entity::new_in(PureBuiltinFnEntity::new(|f| f.undefined), allocator);
 
+    let empty_arguments = Entity::new_in(ArgumentsEntity::default(), allocator);
+
     EntityFactory {
       allocator,
       instance_id_counter: Cell::new(0),
@@ -91,6 +98,8 @@ impl<'a> EntityFactory<'a> {
       pure_fn_returns_symbol,
       pure_fn_returns_null,
       pure_fn_returns_undefined,
+
+      empty_arguments,
     }
   }
 
