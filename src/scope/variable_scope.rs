@@ -3,11 +3,11 @@ use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
   consumable::{box_consumable, Consumable, LazyConsumable},
-  entity::{Entity, UNDEFINED_ENTITY},
+  entity::Entity,
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::{cell::RefCell, fmt, mem};
+use std::{cell::RefCell, fmt};
 
 #[derive(Debug)]
 pub struct Variable<'a> {
@@ -204,9 +204,7 @@ impl<'a> Analyzer<'a> {
           } else {
             variable_ref.value = Some(self.factory.computed(
               if indeterminate {
-                self
-                  .factory
-                  .union((old_val.unwrap_or(unsafe { mem::transmute(UNDEFINED_ENTITY) }), new_val))
+                self.factory.union((old_val.unwrap_or(self.factory.undefined), new_val))
               } else {
                 new_val
               },

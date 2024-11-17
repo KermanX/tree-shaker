@@ -99,7 +99,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
     analyzer.mark_object_consumed(self.cf_scope, self.object_id);
 
-    self.deps.borrow_mut().consume_all(analyzer);
+    self.deps.take().consume_all(analyzer);
 
     fn consume_property<'a>(property: &ObjectProperty<'a>, analyzer: &mut Analyzer<'a>) {
       for value in &property.values {

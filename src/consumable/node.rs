@@ -3,7 +3,7 @@ use crate::analyzer::Analyzer;
 use std::{cell::UnsafeCell, marker::PhantomData, mem, rc::Rc};
 
 #[derive(Debug)]
-pub struct ConsumableNode<'a, T: ConsumableTrait<'a> + 'a>(
+pub struct ConsumableNode<'a, T: ConsumableTrait<'a> + 'a = Consumable<'a>>(
   Rc<UnsafeCell<Option<T>>>,
   PhantomData<&'a T>,
 );
@@ -13,7 +13,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableNode<'a, T> {
     Self(Rc::new(UnsafeCell::new(Some(value))), PhantomData)
   }
 
-  pub fn new_box(value: T) -> ConsumableNode<'a, Consumable<'a>> {
+  pub fn new_box(value: T) -> ConsumableNode<'a> {
     ConsumableNode::new(box_consumable(value))
   }
 
