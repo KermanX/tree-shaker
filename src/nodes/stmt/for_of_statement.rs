@@ -7,46 +7,42 @@ use oxc::{
   span::GetSpan,
 };
 
-#[derive(Debug, Default, Clone)]
-pub struct Data {
-  need_loop: bool,
-}
-
 impl<'a> Analyzer<'a> {
   pub fn exec_for_of_statement(&mut self, node: &'a ForOfStatement<'a>) {
     let labels = self.take_labels();
 
-    let dep = AstKind2::ForOfStatement(node);
-
     let right = self.exec_expression(&node.right);
     let right = if node.r#await {
       right.consume(self);
-      self.refer_dep(dep);
-      self.factory.unknown
+      self.refer_dep(AstKind2::ForOfStatement(node));
+      self.factory.immutable_unknown
     } else {
       right
     };
 
     self.declare_for_statement_left(&node.left);
 
-    let iterated_0 = right.iterate_result_union(self, box_consumable(dep));
-    if iterated_0.is_none() {
+    let Some(iterated) =
+      right.iterate_result_union(self, box_consumable(AstKind2::ForOfStatement(node)))
+    else {
       return;
-    }
+    };
 
-    let data = self.load_data::<Data>(AstKind2::ForOfStatement(node));
-    data.need_loop = true;
+    let dep = box_consumable((AstKind2::ForOfStatement(node), right));
 
-    self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
+    self.push_cf_scope_with_deps(
+      CfScopeKind::BreakableWithoutLabel,
+      labels.clone(),
+      vec![dep],
+      Some(false),
+    );
     self.exec_loop(move |analyzer| {
-      if let Some(iterated) = right.iterate_result_union(analyzer, box_consumable(dep)) {
-        analyzer.declare_for_statement_left(&node.left);
-        analyzer.init_for_statement_left(&node.left, iterated);
+      analyzer.declare_for_statement_left(&node.left);
+      analyzer.init_for_statement_left(&node.left, iterated);
 
-        analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
-        analyzer.exec_statement(&node.body);
-        analyzer.pop_cf_scope();
-      }
+      analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
+      analyzer.exec_statement(&node.body);
+      analyzer.pop_cf_scope();
     });
     self.pop_cf_scope();
   }
@@ -54,9 +50,9 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_for_of_statement(&self, node: &'a ForOfStatement<'a>) -> Option<Statement<'a>> {
-    let data = self.get_data::<Data>(AstKind2::ForOfStatement(node));
-
     let ForOfStatement { span, r#await, left, right, body, .. } = node;
+
+    let need_loop = self.is_referred(AstKind2::ForOfStatement(node));
 
     let left_span = left.span();
     let body_span = body.span();
@@ -64,7 +60,7 @@ impl<'a> Transformer<'a> {
     let left = self.transform_for_statement_left(left);
     let body = self.transform_statement(body);
 
-    if (!data.need_loop || (left.is_none() && body.is_none())) && !r#await {
+    if (!need_loop || (left.is_none() && body.is_none())) && !r#await {
       return if self.is_referred(AstKind2::ForOfStatement(node)) {
         let right_span = right.span();
         let right = self.transform_expression(right, true).unwrap();

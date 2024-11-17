@@ -2,7 +2,8 @@ use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   consumable::{box_consumable, Consumable},
-  entity::{Entity, FunctionEntitySource},
+  entity::Entity,
+  scope::call_scope::CalleeNode,
   transformer::Transformer,
 };
 use oxc::{
@@ -15,9 +16,7 @@ use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
-    self
-      .factory
-      .function(FunctionEntitySource::Function(node), self.scope_context.variable.stack.clone())
+    self.new_function(CalleeNode::Function(node))
   }
 
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
@@ -31,7 +30,7 @@ impl<'a> Analyzer<'a> {
   pub fn call_function(
     &mut self,
     fn_entity: Entity<'a>,
-    source: FunctionEntitySource<'a>,
+    callee: (CalleeNode<'a>, usize),
     call_dep: Consumable<'a>,
     node: &'a Function<'a>,
     variable_scopes: Rc<Vec<ScopeId>>,
@@ -42,7 +41,7 @@ impl<'a> Analyzer<'a> {
     let runner: Box<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a> =
       Box::new(move |analyzer: &mut Analyzer<'a>| {
         analyzer.push_call_scope(
-          source,
+          callee,
           call_dep.cloned(),
           variable_scopes.as_ref().clone(),
           node.r#async,
@@ -60,7 +59,7 @@ impl<'a> Analyzer<'a> {
           let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
           analyzer.declare_symbol(
             symbol,
-            box_consumable(source.into_dep_id()),
+            box_consumable(callee.0.into_dep_id()),
             false,
             DeclarationKind::NamedFunctionInBody,
             Some(fn_entity.clone()),
@@ -86,7 +85,7 @@ impl<'a> Analyzer<'a> {
       self.exec_async_or_generator_fn(move |analyzer| {
         runner(analyzer).consume(analyzer);
       });
-      self.factory.unknown
+      self.factory.unknown()
     } else {
       runner(self)
     }
@@ -98,12 +97,15 @@ impl<'a> Transformer<'a> {
     if need_val || self.is_referred(AstKind2::Function(&node)) {
       let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
 
-      self.call_stack.borrow_mut().push(FunctionEntitySource::Function(node));
-
       let params = self.transform_formal_parameters(params);
-      let body = self.transform_function_body(body.as_ref().unwrap());
 
-      self.call_stack.borrow_mut().pop();
+      let body =
+        body.as_ref().map(|body| self.transform_function_body(node.scope_id.get().unwrap(), body));
+
+      if let Some(id) = id {
+        let symbol = id.symbol_id.get().unwrap();
+        self.update_var_decl_state(symbol, true);
+      }
 
       Some(self.ast_builder.function(
         *r#type,
@@ -116,7 +118,7 @@ impl<'a> Transformer<'a> {
         None::<TSThisParameter>,
         params,
         None::<TSTypeAnnotation>,
-        Some(body),
+        body,
       ))
     } else {
       None

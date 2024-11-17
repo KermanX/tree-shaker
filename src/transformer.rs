@@ -1,11 +1,9 @@
 use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
-  data::{DataPlaceholder, ExtraData, ReferredNodes, StatementVecData, VarDeclarations},
-  dep::DepId,
-  entity::FunctionEntitySource,
-  logger::Logger,
+  dep::{DepId, ReferredDeps},
   scope::conditional::ConditionalDataMap,
+  utils::{DataPlaceholder, ExtraData, Logger, StatementVecData},
   TreeShakeConfig,
 };
 use oxc::{
@@ -18,9 +16,10 @@ use oxc::{
     },
     AstBuilder, NONE,
   },
-  semantic::Semantic,
+  semantic::{ScopeId, Semantic, SymbolId},
   span::{GetSpan, Span, SPAN},
 };
+use rustc_hash::FxHashMap;
 use std::{
   cell::{Cell, RefCell},
   hash::{DefaultHasher, Hasher},
@@ -28,17 +27,16 @@ use std::{
 };
 
 pub struct Transformer<'a> {
-  pub config: TreeShakeConfig,
+  pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub semantic: Semantic<'a>,
   pub ast_builder: AstBuilder<'a>,
   pub data: ExtraData<'a>,
-  pub referred_nodes: ReferredNodes<'a>,
+  pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
-  pub var_decls: RefCell<VarDeclarations<'a>>,
+  pub var_decls: RefCell<FxHashMap<SymbolId, bool>>,
   pub logger: Option<&'a Logger>,
 
-  pub call_stack: RefCell<Vec<FunctionEntitySource<'a>>>,
   /// The block statement has already exited, so we can and only can transform declarations themselves
   pub declaration_only: Cell<bool>,
   pub need_unused_assignment_target: Cell<bool>,
@@ -51,18 +49,20 @@ impl<'a> Transformer<'a> {
       allocator,
       semantic,
       data,
-      referred_nodes,
+      referred_deps: referred_nodes,
       conditional_data,
-      var_decls,
       logger,
       ..
     } = analyzer;
 
-    // for (key, v) in referred_nodes.iter() {
-    //   if *v > 100 {
+    // let mut counts: Vec<_> = referred_nodes.clone().into_iter().collect();
+    // counts.sort_by(|a, b| b.1.cmp(&a.1));
+    // for (key, v) in counts {
+    //   if v > 10 {
     //     println!("{key:?}: {v}");
     //   }
     // }
+    // println!("---");
 
     Transformer {
       config,
@@ -70,12 +70,11 @@ impl<'a> Transformer<'a> {
       semantic,
       ast_builder: AstBuilder::new(allocator),
       data,
-      referred_nodes,
+      referred_deps: referred_nodes,
       conditional_data,
-      var_decls: RefCell::new(var_decls),
+      var_decls: Default::default(),
       logger,
 
-      call_stack: RefCell::new(vec![FunctionEntitySource::Module]),
       declaration_only: Cell::new(false),
       need_unused_assignment_target: Cell::new(false),
     }
@@ -87,7 +86,7 @@ impl<'a> Transformer<'a> {
     let data = self.get_data::<StatementVecData>(AstKind2::Program(node));
     let mut body = self.transform_statement_vec(data, body);
 
-    self.patch_var_declarations(&mut body);
+    self.patch_var_declarations(node.scope_id.get().unwrap(), &mut body);
 
     if self.need_unused_assignment_target.get() {
       body.push(self.ast_builder.statement_declaration(self.ast_builder.declaration_variable(
@@ -119,39 +118,58 @@ impl<'a> Transformer<'a> {
     )
   }
 
+  pub fn update_var_decl_state(&self, symbol: SymbolId, is_declaration: bool) {
+    if !self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration() {
+      return;
+    }
+    let mut var_decls = self.var_decls.borrow_mut();
+    if is_declaration {
+      var_decls.insert(symbol, false);
+    } else {
+      var_decls.entry(symbol).or_insert(true);
+    }
+  }
+
   /// Append missing var declarations at the end of the function body or program
-  pub fn patch_var_declarations(&self, statements: &mut oxc::allocator::Vec<'a, Statement<'a>>) {
-    let call_stack = self.call_stack.borrow();
-    let key = call_stack.last().unwrap();
-    if let Some(var_decls) = self.var_decls.borrow().get(key) {
-      if !var_decls.is_empty() {
-        statements.push(self.ast_builder.statement_declaration(
-          self.ast_builder.declaration_variable(
-            SPAN,
-            VariableDeclarationKind::Var,
-            {
-              let mut decls = self.ast_builder.vec();
-              for symbol_id in var_decls.iter() {
-                let name = self.semantic.symbols().get_name(*symbol_id);
-                let span = self.semantic.symbols().get_span(*symbol_id);
-                decls.push(self.ast_builder.variable_declarator(
-                  span,
-                  VariableDeclarationKind::Var,
-                  self.ast_builder.binding_pattern(
-                    self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
-                    NONE,
-                    false,
-                  ),
-                  None,
-                  false,
-                ));
-              }
-              decls
-            },
+  pub fn patch_var_declarations(
+    &self,
+    scope_id: ScopeId,
+    statements: &mut oxc::allocator::Vec<'a, Statement<'a>>,
+  ) {
+    let bindings = self.semantic.scopes().get_bindings(scope_id);
+    if bindings.is_empty() {
+      return;
+    }
+
+    let var_decls = self.var_decls.borrow();
+    let mut declarations = self.ast_builder.vec();
+    for symbol_id in bindings.values() {
+      if var_decls.get(symbol_id) == Some(&true) {
+        let name = self.semantic.symbols().get_name(*symbol_id);
+        let span = self.semantic.symbols().get_span(*symbol_id);
+        declarations.push(self.ast_builder.variable_declarator(
+          span,
+          VariableDeclarationKind::Var,
+          self.ast_builder.binding_pattern(
+            self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
+            NONE,
             false,
           ),
+          None,
+          false,
         ));
       }
+    }
+
+    if !declarations.is_empty() {
+      statements.push(self.ast_builder.statement_declaration(
+        self.ast_builder.declaration_variable(
+          SPAN,
+          VariableDeclarationKind::Var,
+          declarations,
+          false,
+        ),
+      ));
     }
   }
 }
@@ -242,6 +260,14 @@ impl<'a> Transformer<'a> {
 
   pub fn build_negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {
     self.ast_builder.expression_unary(expression.span(), UnaryOperator::LogicalNot, expression)
+  }
+
+  pub fn build_object_spread_effect(&self, span: Span, argument: Expression<'a>) -> Expression<'a> {
+    self.ast_builder.expression_object(
+      span,
+      self.ast_builder.vec1(self.ast_builder.object_property_kind_spread_element(span, argument)),
+      None,
+    )
   }
 }
 

@@ -1,6 +1,6 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect_from_arr, consumable::box_consumable,
-  entity::Entity, transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
+  transformer::Transformer,
 };
 use oxc::ast::{
   ast::{CallExpression, Expression},
@@ -22,7 +22,13 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a CallExpression,
   ) -> (Option<bool>, Entity<'a>) {
-    if let Some((callee_indeterminate, callee, this)) = self.exec_callee(&node.callee) {
+    let pure = self.has_pure_notation(node.span);
+
+    self.scope_context.pure += pure;
+    let callee = self.exec_callee(&node.callee);
+    self.scope_context.pure -= pure;
+
+    if let Some((callee_indeterminate, callee, this)) = callee {
       let self_indeterminate = if node.optional {
         match callee.test_nullish() {
           Some(true) => return (Some(true), self.factory.undefined),
@@ -43,11 +49,14 @@ impl<'a> Analyzer<'a> {
       }
 
       let args = self.exec_arguments(&node.arguments);
+
+      self.scope_context.pure += pure;
       let ret_val = callee.call(self, box_consumable(AstKind2::CallExpression(node)), this, args);
+      self.scope_context.pure -= pure;
 
       if indeterminate {
         self.pop_cf_scope();
-        (None, self.factory.union(vec![ret_val, self.factory.undefined]))
+        (None, self.factory.union((ret_val, self.factory.undefined)))
       } else {
         (Some(false), ret_val)
       }
@@ -80,7 +89,7 @@ impl<'a> Transformer<'a> {
       // Only need effects in callee and args
       let callee = self.transform_callee(callee, false);
       let arguments = self.transform_arguments_no_call(arguments);
-      build_effect_from_arr!(self.ast_builder, *span, vec![callee], arguments)
+      build_effect!(self.ast_builder, *span, callee, arguments)
     }
   }
 }

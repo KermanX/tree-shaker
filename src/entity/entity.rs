@@ -1,4 +1,4 @@
-use super::{consumed_object, EntityFactory, LiteralEntity, TypeofResult};
+use super::{EntityFactory, LiteralEntity, TypeofResult};
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait},
@@ -15,6 +15,7 @@ pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable
 
 pub trait EntityTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>);
 
   fn get_property(
     &self,
@@ -50,11 +51,10 @@ pub trait EntityTrait<'a>: Debug {
     &self,
     _rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
     args: Entity<'a>,
-  ) -> Entity<'a> {
-    self.consume(analyzer);
-    consumed_object::construct(analyzer, args)
-  }
+  ) -> Entity<'a>;
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a>;
   fn r#await(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>)
     -> Entity<'a>;
   fn iterate(
@@ -70,6 +70,7 @@ pub trait EntityTrait<'a>: Debug {
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_literals(
     &self,
     _rc: Entity<'a>,
@@ -98,9 +99,6 @@ pub trait EntityTrait<'a>: Debug {
       (false, false) => Some(false),
     }
   }
-  fn test_is_completely_unknown(&self) -> bool {
-    false
-  }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -123,6 +121,10 @@ impl<'a> Entity<'a> {
 
   pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.0.consume(analyzer)
+  }
+
+  pub fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    self.0.unknown_mutate(analyzer, dep)
   }
 
   pub fn get_property(
@@ -171,8 +173,17 @@ impl<'a> Entity<'a> {
     self.0.call(*self, analyzer, dep.into(), this, args)
   }
 
-  pub fn construct(&self, analyzer: &mut Analyzer<'a>, args: Entity<'a>) -> Entity<'a> {
-    self.0.construct(*self, analyzer, args)
+  pub fn jsx(&self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    self.0.jsx(*self, analyzer, props)
+  }
+
+  pub fn construct(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl Into<Consumable<'a>>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    self.0.construct(*self, analyzer, dep.into(), args)
   }
 
   pub fn r#await(&self, analyzer: &mut Analyzer<'a>, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
@@ -211,6 +222,10 @@ impl<'a> Entity<'a> {
     self.0.get_to_property_key(*self, analyzer)
   }
 
+  pub fn get_to_jsx_child(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.0.get_to_jsx_child(*self, analyzer)
+  }
+
   pub fn get_to_literals(&self, analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralEntity<'a>>> {
     self.0.get_to_literals(*self, analyzer)
   }
@@ -233,10 +248,6 @@ impl<'a> Entity<'a> {
 
   pub fn test_is_undefined(&self) -> Option<bool> {
     self.0.test_is_undefined()
-  }
-
-  pub fn test_is_completely_unknown(&self) -> bool {
-    self.0.test_is_completely_unknown()
   }
 
   pub fn destruct_as_array(

@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.thrown_builtin_error("Missing initializer in destructuring declaration");
-          self.factory.unknown
+          self.factory.unknown()
         });
 
         let is_nullish = init.test_nullish();
@@ -106,7 +106,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ArrayPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.thrown_builtin_error("Missing initializer in destructuring declaration");
-          self.factory.unknown
+          self.factory.unknown()
         });
 
         let (element_values, rest_value, dep) = init.destruct_as_array(
@@ -185,9 +185,9 @@ impl<'a> Transformer<'a> {
           let BindingProperty { span, key, value, shorthand, computed, .. } = property;
 
           if *shorthand && matches!(value.kind, BindingPatternKind::BindingIdentifier(_)) {
-            if need_property
+            if self.transform_binding_pattern(value, false).is_some()
+              || need_property
               || self.transform_property_key(key, false).is_some()
-              || self.transform_binding_pattern(value, false).is_some()
             {
               transformed_properties.push(self.clone_node(property));
             }

@@ -46,3 +46,10 @@ export function complex2() {
   }
   return main;
 }
+
+export function closure_not_recused() {
+  const __esm = (f, x) => (a) => f(x, a)
+  const f1 = __esm((x, a) => x + a, 1)
+  const f2 = __esm((x, a) => x + f1(2) + a, "a")
+  return f2("b")
+}

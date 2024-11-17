@@ -18,6 +18,10 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.consume(analyzer);
   }
 
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    self.value.unknown_mutate(analyzer, dep);
+  }
+
   fn get_property(
     &self,
     _rc: Entity<'a>,
@@ -61,6 +65,20 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     args: Entity<'a>,
   ) -> Entity<'a> {
     self.value.call(analyzer, dep, this, args)
+  }
+
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    self.value.construct(analyzer, dep, args)
+  }
+
+  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    self.value.jsx(analyzer, props)
   }
 
   fn r#await(
@@ -112,6 +130,10 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.get_to_property_key(analyzer)
   }
 
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.value.get_to_jsx_child(analyzer)
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     self.value.test_typeof()
   }
@@ -142,7 +164,7 @@ impl<'a> EntityFactory<'a> {
     operator: LogicalOperator,
   ) -> Entity<'a> {
     self.entity(LogicalResultEntity {
-      value: self.union(vec![left, right]),
+      value: self.union((left, right)),
       is_coalesce: operator == LogicalOperator::Coalesce,
       result: match operator {
         LogicalOperator::Or => match right.test_truthy() {

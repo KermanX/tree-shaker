@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect_from_arr, consumable::box_consumable, dep::DepId,
+  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, dep::DepId,
   entity::Entity, transformer::Transformer,
 };
 use oxc::{
@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
         self.push_indeterminate_cf_scope();
       }
 
-      let mut arguments = vec![(false, self.factory.unknown)];
+      let mut arguments = vec![(false, self.factory.unknown())];
 
       for expr in &node.quasi.expressions {
         let value = self.exec_expression(expr);
@@ -37,7 +37,7 @@ impl<'a> Analyzer<'a> {
 
       if indeterminate {
         self.pop_cf_scope();
-        self.factory.union(vec![value, self.factory.undefined])
+        self.factory.union((value, self.factory.undefined))
       } else {
         value
       }
@@ -67,11 +67,11 @@ impl<'a> Transformer<'a> {
         NONE,
       ))
     } else {
-      build_effect_from_arr!(
+      build_effect!(
         &self.ast_builder,
         *span,
-        vec![self.transform_callee(tag, false)],
-        quasi.expressions.iter().map(|x| self.transform_expression(x, false))
+        self.transform_callee(tag, false),
+        quasi.expressions.iter().map(|x| self.transform_expression(x, false)).collect::<Vec<_>>()
       )
     }
   }

@@ -5,18 +5,15 @@ use std::{fs::read_to_string, path::Path};
 use tree_shake::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
 fn run_tree_shaker(source_text: String) -> String {
-  let allocator = Default::default();
-  let result = tree_shake(TreeShakeOptions {
-    config: TreeShakeConfig::recommended(),
-    allocator: &allocator,
-    source_type: Default::default(),
+  let result = tree_shake(
     source_text,
-    tree_shake: true,
-    minify: None,
-    code_gen: Default::default(),
-    eval_mode: false,
-    logging: false,
-  });
+    TreeShakeOptions {
+      config: TreeShakeConfig::recommended(),
+      minify_options: None,
+      codegen_options: Default::default(),
+      logging: false,
+    },
+  );
 
   result.codegen_return.code
 }

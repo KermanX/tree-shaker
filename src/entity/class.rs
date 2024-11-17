@@ -29,6 +29,11 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
     analyzer.construct_class(self);
   }
 
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    self.consume(analyzer);
+    consumed_object::unknown_mutate(analyzer, dep);
+  }
+
   fn get_property(
     &self,
     rc: Entity<'a>,
@@ -77,27 +82,28 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
 
   fn call(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error("Class constructor A cannot be invoked without 'new'");
-    self.consume(analyzer);
-    consumed_object::call(analyzer, dep, this, args)
+    consumed_object::call(rc, analyzer, dep, this, args)
   }
 
   fn construct(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    if self.consumed.get() {
-      return consumed_object::construct(analyzer, args);
-    }
-    analyzer.construct_class(self)
+    consumed_object::construct(rc, analyzer, dep, args)
+  }
+
+  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    consumed_object::jsx(rc, analyzer, props)
   }
 
   fn r#await(
@@ -149,6 +155,15 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
 
   fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.get_to_string(rc, analyzer)
+  }
+
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    if self.consumed.get() {
+      analyzer.factory.immutable_unknown
+    } else {
+      // TODO: analyzer.thrown_builtin_error("Functions are not valid JSX children");
+      analyzer.factory.string("")
+    }
   }
 
   fn test_typeof(&self) -> TypeofResult {

@@ -44,10 +44,11 @@ impl<'a> Analyzer<'a> {
       analyzer.push_indeterminate_cf_scope();
       analyzer.push_try_scope();
       let ret_val = runner(analyzer);
-      ret_val.consume(analyzer);
-      analyzer.pop_try_scope().thrown_val(analyzer).map(|thrown_val| {
-        thrown_val.consume(analyzer);
-      });
+      let thrown_val = analyzer.pop_try_scope().thrown_val(analyzer);
+      if !analyzer.is_inside_pure() {
+        analyzer.consume(ret_val);
+        analyzer.consume(thrown_val);
+      }
       analyzer.pop_cf_scope();
     });
     let deps = self.exec_exhaustively(runner.clone(), false);

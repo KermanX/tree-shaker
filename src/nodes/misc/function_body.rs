@@ -1,8 +1,11 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, data::StatementVecData,
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, transformer::Transformer,
+  utils::StatementVecData,
 };
-use oxc::ast::ast::{ExpressionStatement, FunctionBody, Statement};
+use oxc::{
+  ast::ast::{ExpressionStatement, FunctionBody, Statement},
+  semantic::ScopeId,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function_body(&mut self, node: &'a FunctionBody<'a>) {
@@ -26,14 +29,18 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_function_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {
+  pub fn transform_function_body(
+    &self,
+    scope_id: ScopeId,
+    node: &'a FunctionBody<'a>,
+  ) -> FunctionBody<'a> {
     let data = self.get_data::<StatementVecData>(AstKind2::FunctionBody(node));
 
     let FunctionBody { span, directives, statements, .. } = node;
 
     let mut statements = self.transform_statement_vec(data, statements);
 
-    self.patch_var_declarations(&mut statements);
+    self.patch_var_declarations(scope_id, &mut statements);
 
     self.ast_builder.function_body(*span, self.clone_node(directives), statements)
   }

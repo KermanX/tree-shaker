@@ -22,25 +22,30 @@ impl<'a> Analyzer<'a> {
       if let Some(value) = self.read_symbol(symbol) {
         value
       } else {
+        // TDZ
         self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
-        self.factory.unknown
+        self.factory.unknown()
       }
     } else if node.name == "arguments" {
       // The `arguments` object
       let arguments_consumed = self.consume_arguments(None);
       self.call_scope_mut().need_consume_arguments = !arguments_consumed;
-      self.factory.unknown
-    } else if let Some(global) = self.builtins.get_global(node.name.as_str()) {
+      self.factory.unknown()
+    } else if let Some(global) = self.builtins.globals.get(node.name.as_str()) {
       // Known global
-      global
+      *global
     } else {
       // Unknown global
-      if self.config.unknown_global_side_effects {
-        self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
-        self.refer_to_global();
-        self.may_throw();
+      if self.is_inside_pure() {
+        self.factory.computed_unknown(AstKind2::IdentifierReference(node))
+      } else {
+        if self.config.unknown_global_side_effects {
+          self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
+          self.refer_to_global();
+          self.may_throw();
+        }
+        self.factory.unknown()
       }
-      self.factory.unknown
     }
   }
 
@@ -79,7 +84,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<IdentifierReference<'a>> {
     let data = self.get_data::<Data>(AstKind2::IdentifierReference(node));
 
-    (data.has_effect || need_val).then(|| self.clone_node(node))
+    self.transform_identifier_reference(node, data.has_effect || need_val)
   }
 
   pub fn transform_identifier_reference_write(
@@ -90,6 +95,25 @@ impl<'a> Transformer<'a> {
 
     let referred = self.is_referred(AstKind2::IdentifierReference(node));
 
-    (data.has_effect || referred).then(|| self.clone_node(node))
+    self.transform_identifier_reference(node, data.has_effect || referred)
+  }
+
+  fn transform_identifier_reference(
+    &self,
+    node: &'a IdentifierReference<'a>,
+    included: bool,
+  ) -> Option<IdentifierReference<'a>> {
+    if included {
+      let IdentifierReference { span, name, .. } = node;
+
+      let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
+      if let Some(symbol) = reference.symbol_id() {
+        self.update_var_decl_state(symbol, false);
+      }
+
+      Some(self.ast_builder.identifier_reference(*span, name))
+    } else {
+      None
+    }
   }
 }

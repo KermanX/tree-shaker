@@ -4,8 +4,13 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable},
+  consumable::{box_consumable, Consumable, ConsumableTrait},
 };
+
+pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  analyzer.refer_to_global();
+  analyzer.consume(dep);
+}
 
 pub fn get_property<'a>(
   rc: Entity<'a>,
@@ -13,14 +18,15 @@ pub fn get_property<'a>(
   dep: Consumable<'a>,
   key: Entity<'a>,
 ) -> Entity<'a> {
-  if analyzer.config.unknown_property_read_side_effects {
+  let dep = (rc, dep, key);
+  if analyzer.is_inside_pure() || !analyzer.config.unknown_property_read_side_effects {
+    rc.unknown_mutate(analyzer, dep.cloned());
+    analyzer.factory.computed_unknown(dep)
+  } else {
     analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_to_global();
-    key.consume(analyzer);
-    analyzer.factory.unknown
-  } else {
-    analyzer.factory.computed_unknown((rc.clone(), dep, key.clone()))
+    analyzer.factory.unknown()
   }
 }
 
@@ -46,10 +52,13 @@ pub fn enumerate_properties<'a>(
     analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_to_global();
-    (vec![(false, analyzer.factory.unknown, analyzer.factory.unknown)], box_consumable(()))
+    (
+      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
+      box_consumable(()),
+    )
   } else {
     (
-      vec![(false, analyzer.factory.unknown, analyzer.factory.unknown)],
+      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
       box_consumable((rc.clone(), dep)),
     )
   }
@@ -62,31 +71,53 @@ pub fn delete_property<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key
 }
 
 pub fn call<'a>(
+  rc: Entity<'a>,
   analyzer: &mut Analyzer<'a>,
   dep: Consumable<'a>,
   this: Entity<'a>,
   args: Entity<'a>,
 ) -> Entity<'a> {
-  analyzer.may_throw();
-  analyzer.consume(dep);
-  analyzer.refer_to_global();
-  this.consume(analyzer);
-  args.consume(analyzer);
-  analyzer.factory.unknown
+  let dep = (rc, dep, this, args);
+  if analyzer.is_inside_pure() {
+    this.unknown_mutate(analyzer, dep.cloned());
+    args.unknown_mutate(analyzer, dep.cloned());
+    analyzer.factory.computed_unknown(dep)
+  } else {
+    analyzer.consume(dep);
+    analyzer.may_throw();
+    analyzer.refer_to_global();
+    analyzer.factory.unknown()
+  }
 }
 
-pub fn construct<'a>(analyzer: &mut Analyzer<'a>, args: Entity<'a>) -> Entity<'a> {
-  analyzer.may_throw();
-  analyzer.refer_to_global();
-  args.consume(analyzer);
-  analyzer.factory.unknown
+pub fn construct<'a>(
+  rc: Entity<'a>,
+  analyzer: &mut Analyzer<'a>,
+  dep: Consumable<'a>,
+  args: Entity<'a>,
+) -> Entity<'a> {
+  let dep = (rc, dep, args);
+  if analyzer.is_inside_pure() {
+    args.unknown_mutate(analyzer, dep.cloned());
+    analyzer.factory.computed_unknown(dep)
+  } else {
+    analyzer.consume(dep);
+    analyzer.may_throw();
+    analyzer.refer_to_global();
+    analyzer.factory.unknown()
+  }
+}
+
+pub fn jsx<'a>(rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+  // No consume!
+  analyzer.factory.computed_unknown((rc, props))
 }
 
 pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
   analyzer.may_throw();
   analyzer.consume(dep);
   analyzer.refer_to_global();
-  analyzer.factory.unknown
+  analyzer.factory.unknown()
 }
 
 pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
@@ -95,7 +126,7 @@ pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Iterated
     analyzer.consume(dep);
     analyzer.refer_to_global();
   }
-  (vec![], Some(analyzer.factory.unknown), box_consumable(()))
+  (vec![], Some(analyzer.factory.unknown()), box_consumable(()))
 }
 
 pub fn get_to_string<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -104,5 +135,5 @@ pub fn get_to_string<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
 
 pub fn get_to_numeric<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
   // Possibly number or bigint
-  analyzer.factory.unknown
+  analyzer.factory.unknown()
 }

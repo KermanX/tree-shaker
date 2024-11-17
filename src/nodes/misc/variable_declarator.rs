@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
     self.declare_binding_pattern(&node.id, exporting, kind);
   }
 
-  pub fn exec_variable_declarator(
+  pub fn init_variable_declarator(
     &mut self,
     node: &'a VariableDeclarator,
     init: Option<Entity<'a>>,

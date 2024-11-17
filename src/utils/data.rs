@@ -1,6 +1,5 @@
-use crate::{dep::DepId, entity::FunctionEntitySource};
-use oxc::semantic::SymbolId;
-use rustc_hash::{FxHashMap, FxHashSet};
+use crate::dep::DepId;
+use rustc_hash::FxHashMap;
 use std::collections::BTreeSet;
 
 pub struct DataPlaceholder<'a> {
@@ -8,10 +7,6 @@ pub struct DataPlaceholder<'a> {
 }
 
 pub type ExtraData<'a> = FxHashMap<DepId, Box<DataPlaceholder<'a>>>;
-
-pub type ReferredNodes<'a> = FxHashMap<DepId, usize>;
-
-pub type VarDeclarations<'a> = FxHashMap<FunctionEntitySource<'a>, FxHashSet<SymbolId>>;
 
 pub type Diagnostics = BTreeSet<String>;
 

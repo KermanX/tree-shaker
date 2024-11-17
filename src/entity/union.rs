@@ -1,29 +1,37 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
+  utils::UnionLike,
   Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait},
+  consumable::{box_consumable, Consumable, ConsumableTrait},
   use_consumed_flag,
 };
 use rustc_hash::FxHashSet;
-use std::cell::Cell;
+use std::{cell::Cell, fmt::Debug};
 
 #[derive(Debug)]
-pub struct UnionEntity<'a> {
+pub struct UnionEntity<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> {
   /// Possible values
-  pub values: Vec<Entity<'a>>,
+  pub values: V,
   consumed: Cell<bool>,
+  phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a> EntityTrait<'a> for UnionEntity<'a> {
+impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEntity<'a, V> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    for value in &self.values {
+    for value in self.values.iter() {
       value.consume(analyzer);
+    }
+  }
+
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    for value in self.values.iter() {
+      value.unknown_mutate(analyzer, dep.cloned());
     }
   }
 
@@ -34,12 +42,9 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    let mut values = Vec::new();
-    for entity in &self.values {
-      values.push(
-        analyzer.exec_indeterminately(|analyzer| entity.get_property(analyzer, dep.cloned(), key)),
-      );
-    }
+    let values = self.values.map(|v| {
+      analyzer.exec_indeterminately(|analyzer| v.get_property(analyzer, dep.cloned(), key))
+    });
     analyzer.factory.union(values)
   }
 
@@ -51,7 +56,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    for entity in &self.values {
+    for entity in self.values.iter() {
       analyzer.exec_indeterminately(|analyzer| {
         entity.set_property(analyzer, dep.cloned(), key, value.clone())
       });
@@ -72,26 +77,44 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-    for entity in &self.values {
+    for entity in self.values.iter() {
       analyzer.exec_indeterminately(|analyzer| entity.delete_property(analyzer, dep.cloned(), key));
     }
   }
 
   fn call(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    let mut results = Vec::new();
-    for entity in &self.values {
-      results.push(
-        analyzer.exec_indeterminately(|analyzer| entity.call(analyzer, dep.cloned(), this, args)),
-      );
-    }
-    analyzer.factory.union(results)
+    analyzer.push_dependent_cf_scope(rc);
+    let values = self.values.map(|v| {
+      analyzer.exec_indeterminately(|analyzer| v.call(analyzer, dep.cloned(), this, args))
+    });
+    analyzer.pop_cf_scope();
+    analyzer.factory.union(values)
+  }
+
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    let values = self.values.map(|v| {
+      analyzer.exec_indeterminately(|analyzer| v.construct(analyzer, dep.cloned(), args.clone()))
+    });
+    analyzer.factory.union(values)
+  }
+
+  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    let values =
+      self.values.map(|v| analyzer.exec_indeterminately(|analyzer| v.jsx(analyzer, props.clone())));
+    analyzer.factory.union(values)
   }
 
   fn r#await(
@@ -100,10 +123,9 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
-    let mut values = Vec::new();
-    for entity in &self.values {
-      values.push(analyzer.exec_indeterminately(|analyzer| entity.r#await(analyzer, dep.cloned())));
-    }
+    let values = self
+      .values
+      .map(|v| analyzer.exec_indeterminately(|analyzer| v.r#await(analyzer, dep.cloned())));
     analyzer.factory.union(values)
   }
 
@@ -115,7 +137,7 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   ) -> IteratedElements<'a> {
     let mut results = Vec::new();
     let mut has_undefined = false;
-    for entity in &self.values {
+    for entity in self.values.iter() {
       if let Some(result) = analyzer
         .exec_indeterminately(|analyzer| entity.iterate_result_union(analyzer, dep.cloned()))
       {
@@ -132,54 +154,43 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 
   fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
     let mut values = Vec::new();
-    for entity in &self.values {
+    for entity in self.values.iter() {
       values.push(entity.get_destructable(dep.cloned()));
     }
     box_consumable(values)
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let mut result = Vec::new();
     // TODO: collect literals
-    for entity in &self.values {
-      result.push(entity.get_typeof(analyzer));
-    }
-    analyzer.factory.union(result)
+    let values = self.values.map(|v| v.get_typeof(analyzer));
+    analyzer.factory.union(values)
   }
 
   fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let mut result = Vec::new();
     // TODO: dedupe
-    for entity in &self.values {
-      result.push(entity.get_to_string(analyzer));
-    }
-    analyzer.factory.union(result)
+    let values = self.values.map(|v| v.get_to_string(analyzer));
+    analyzer.factory.union(values)
   }
 
   fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let mut result = Vec::new();
     // TODO: dedupe
-    for entity in &self.values {
-      result.push(entity.get_to_numeric(analyzer));
-    }
-    analyzer.factory.union(result)
+    let values = self.values.map(|v| v.get_to_numeric(analyzer));
+    analyzer.factory.union(values)
   }
 
   fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let mut result = Vec::new();
-    for entity in &self.values {
-      result.push(entity.get_to_boolean(analyzer));
-    }
-    analyzer.factory.union(result)
+    let values = self.values.map(|v| v.get_to_boolean(analyzer));
+    analyzer.factory.union(values)
   }
 
   fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let mut result = Vec::new();
-    // TODO: dedupe
-    for entity in &self.values {
-      result.push(entity.get_to_property_key(analyzer));
-    }
-    analyzer.factory.union(result)
+    let values = self.values.map(|v| v.get_to_property_key(analyzer));
+    analyzer.factory.union(values)
+  }
+
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    let values = self.values.map(|v| v.get_to_jsx_child(analyzer));
+    analyzer.factory.union(values)
   }
 
   fn get_to_literals(
@@ -187,8 +198,9 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
     _rc: Entity<'a>,
     analyzer: &Analyzer<'a>,
   ) -> Option<FxHashSet<LiteralEntity<'a>>> {
-    let mut result = self.values.first().unwrap().get_to_literals(analyzer)?;
-    for entity in &self.values[1..] {
+    let mut iter = self.values.iter();
+    let mut result = iter.next().unwrap().get_to_literals(analyzer)?;
+    for entity in iter {
       result.extend(entity.get_to_literals(analyzer)?);
     }
     Some(result)
@@ -196,15 +208,16 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 
   fn test_typeof(&self) -> TypeofResult {
     let mut result = TypeofResult::_None;
-    for entity in &self.values {
+    for entity in self.values.iter() {
       result |= entity.test_typeof();
     }
     result
   }
 
   fn test_truthy(&self) -> Option<bool> {
-    let result = self.values.first().unwrap().test_truthy()?;
-    for entity in &self.values[1..] {
+    let mut iter = self.values.iter();
+    let result = iter.next().unwrap().test_truthy()?;
+    for entity in iter {
       if entity.test_truthy()? != result {
         return None;
       }
@@ -213,8 +226,9 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
   }
 
   fn test_nullish(&self) -> Option<bool> {
-    let result = self.values.first().unwrap().test_nullish()?;
-    for entity in &self.values[1..] {
+    let mut iter = self.values.iter();
+    let result = iter.next().unwrap().test_nullish()?;
+    for entity in iter {
       if entity.test_nullish()? != result {
         return None;
       }
@@ -224,24 +238,26 @@ impl<'a> EntityTrait<'a> for UnionEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn try_union(&self, values: Vec<Entity<'a>>) -> Option<Entity<'a>> {
-    if values.is_empty() {
+  pub fn try_union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(
+    &self,
+    values: V,
+  ) -> Option<Entity<'a>> {
+    if values.len() == 0 {
       None
     } else {
       Some(if values.len() == 1 {
-        values.first().unwrap().clone()
+        values.iter().next().unwrap()
       } else {
-        let has_unknown = values.iter().any(|entity| entity.test_is_completely_unknown());
-        if has_unknown {
-          self.computed_unknown(ConsumableNode::new(values))
-        } else {
-          self.entity(UnionEntity { values, consumed: Cell::new(false) })
-        }
+        self.entity(UnionEntity {
+          values,
+          consumed: Cell::new(false),
+          phantom: std::marker::PhantomData,
+        })
       })
     }
   }
 
-  pub fn union(&self, values: Vec<Entity<'a>>) -> Entity<'a> {
+  pub fn union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(&self, values: V) -> Entity<'a> {
     self.try_union(values).unwrap()
   }
 

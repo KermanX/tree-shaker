@@ -7,9 +7,9 @@ impl<'a> Analyzer<'a> {
     let property = node.property.name.as_str();
 
     if meta == "import" && property == "meta" {
-      self.builtins.get_import_meta()
+      self.builtins.import_meta
     } else {
-      self.factory.unknown
+      self.factory.unknown()
     }
   }
 }

@@ -11,6 +11,9 @@ importers:
       '@napi-rs/cli':
         specifier: ^2.18.4
         version: 2.18.4
+      ohash:
+        specifier: ^1.1.4
+        version: 1.1.4
 
 packages:
 
@@ -19,6 +22,11 @@ packages:
     engines: {node: '>= 10'}
     hasBin: true
 
+  ohash@1.1.4:
+    resolution: {integrity: sha512-FlDryZAahJmEF3VR3w1KogSEdWX3WhA5GPakFx4J81kEAiHyLMpdLLElS8n8dfNadMgAne/MywcvmogzscVt4g==}
+
 snapshots:
 
   '@napi-rs/cli@2.18.4': {}
+
+  ohash@1.1.4: {}

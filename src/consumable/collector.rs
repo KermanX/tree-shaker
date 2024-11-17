@@ -13,6 +13,10 @@ impl<'a> ConsumableCollector<'a> {
     Self { current, node: None }
   }
 
+  pub fn is_empty(&self) -> bool {
+    self.current.is_empty() && self.node.is_none()
+  }
+
   pub fn push(&mut self, value: Consumable<'a>) {
     self.current.push(value);
   }
@@ -44,6 +48,11 @@ impl<'a> ConsumableCollector<'a> {
     if let Some(node) = mem::take(&mut self.node) {
       node.consume(analyzer);
     }
+  }
+
+  pub fn force_clean(&mut self) {
+    self.current.clear();
+    self.node = None;
   }
 
   pub fn may_not_referred(&self) -> bool {

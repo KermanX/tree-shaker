@@ -1,18 +1,29 @@
-use std::{env, fs::File, io::Write, path::Path};
+use clap::Parser;
+use oxc::minifier::MinifierOptions;
+use std::{fs::File, io::Write, path::PathBuf};
 use tree_shake::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+  path: String,
+
+  #[arg(short, long)]
+  output: Option<String>,
+
+  #[arg(short, long, default_value_t = false)]
+  minify: bool,
+
+  #[arg(short, long, default_value_t = false)]
+  logging: bool,
+}
+
 fn main() {
-  let args: Vec<String> = env::args().collect();
+  let args = Args::parse();
 
-  if args.len() < 2 {
-    eprintln!("Usage: {} <filename>", args[0]);
-    std::process::exit(1);
-  }
-
-  let path = Path::new(&args[1]);
-  let content = match std::fs::read_to_string(&path) {
+  let content = match std::fs::read_to_string(&args.path) {
     Err(why) => {
-      eprintln!("Couldn't read {}: {}", path.display(), why);
+      eprintln!("Couldn't read {}: {}", args.path, why);
       std::process::exit(1);
     }
     Ok(content) => content,
@@ -20,18 +31,15 @@ fn main() {
 
   let start_time = std::time::Instant::now();
 
-  let allocator = Default::default();
-  let result = tree_shake(TreeShakeOptions {
-    config: TreeShakeConfig::recommended(),
-    allocator: &allocator,
-    source_type: Default::default(),
-    source_text: content,
-    tree_shake: true,
-    minify: None,
-    code_gen: Default::default(),
-    eval_mode: false,
-    logging: false,
-  });
+  let result = tree_shake(
+    content,
+    TreeShakeOptions {
+      config: TreeShakeConfig::recommended(),
+      minify_options: args.minify.then(MinifierOptions::default),
+      codegen_options: Default::default(),
+      logging: args.logging,
+    },
+  );
 
   let elapsed = start_time.elapsed();
 
@@ -42,8 +50,14 @@ fn main() {
   eprintln!("[tree-shaker] Finished in {:?}", elapsed);
 
   // If the input file is dir/a.js, the output file will be dir/a.out.js
-  let mut output_path = path.to_path_buf();
-  output_path.set_extension("out.js");
+  let output_path = args.output.map_or_else(
+    || {
+      let mut output_path = PathBuf::from(&args.path);
+      output_path.set_extension("out.js");
+      output_path
+    },
+    PathBuf::from,
+  );
 
   let mut output_file = match File::create(&output_path) {
     Err(why) => {

@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
       let argument = self.exec_expression(argument);
       argument.consume(self);
     }
-    self.factory.unknown
+    self.factory.unknown()
   }
 }
 

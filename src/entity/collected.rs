@@ -27,6 +27,10 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.val.consume(analyzer)
   }
 
+  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+    self.val.unknown_mutate(analyzer, dep)
+  }
+
   fn get_property(
     &self,
     _rc: Entity<'a>,
@@ -73,8 +77,23 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    let ret_cal = self.val.call(analyzer, dep, this, args);
-    self.forward(ret_cal, analyzer)
+    let value = self.val.call(analyzer, dep, this, args);
+    self.forward(value, analyzer)
+  }
+
+  fn construct(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+  ) -> Entity<'a> {
+    let value = self.val.construct(analyzer, dep, args);
+    self.forward(value, analyzer)
+  }
+
+  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    analyzer.factory.computed(self.val.jsx(analyzer, props), self.deps.clone())
   }
 
   fn r#await(
@@ -119,6 +138,10 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
   fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward(self.val.get_to_property_key(analyzer), analyzer)
+  }
+
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.forward(self.val.get_to_jsx_child(analyzer), analyzer)
   }
 
   fn get_to_literals(

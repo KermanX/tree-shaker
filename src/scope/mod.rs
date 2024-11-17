@@ -2,6 +2,7 @@ pub mod call_scope;
 pub mod cf_scope;
 pub mod conditional;
 pub mod exhaustive;
+pub mod r#loop;
 mod scope_tree;
 pub mod try_scope;
 mod utils;
@@ -11,10 +12,10 @@ use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
-  entity::{Entity, EntityFactory, FunctionEntitySource, LabelEntity},
-  logger::DebuggerEvent,
+  entity::{Entity, EntityFactory, LabelEntity},
+  utils::DebuggerEvent,
 };
-use call_scope::CallScope;
+use call_scope::{CallScope, CalleeNode};
 use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
 use oxc::{
@@ -31,6 +32,7 @@ pub struct ScopeContext<'a> {
   pub call: Vec<CallScope<'a>>,
   pub variable: ScopeTree<VariableScope<'a>>,
   pub cf: ScopeTree<CfScope<'a>>,
+  pub pure: usize,
 
   pub object_scope_id: ScopeId,
   pub object_symbol_counter: usize,
@@ -43,14 +45,14 @@ impl<'a> ScopeContext<'a> {
     let mut variable = ScopeTree::new();
     let body_variable_scope = variable.push({
       let mut scope = VariableScope::new();
-      scope.this = Some(factory.unknown);
+      scope.this = Some(factory.unknown());
       scope
     });
     let object_scope_id = variable.add_special(VariableScope::new());
     ScopeContext {
       call: vec![CallScope::new(
         DepId::from_counter(),
-        FunctionEntitySource::Module,
+        (CalleeNode::Module, factory.alloc_instance_id()),
         vec![],
         0,
         body_variable_scope,
@@ -59,6 +61,7 @@ impl<'a> ScopeContext<'a> {
       )],
       variable,
       cf,
+      pure: 0,
 
       object_scope_id,
       object_symbol_counter: 128,
@@ -69,6 +72,7 @@ impl<'a> ScopeContext<'a> {
     debug_assert_eq!(self.call.len(), 1);
     debug_assert_eq!(self.variable.current_depth(), 0);
     debug_assert_eq!(self.cf.current_depth(), 0);
+    debug_assert_eq!(self.pure, 0);
   }
 
   pub fn alloc_object_id(&mut self) -> SymbolId {
@@ -115,6 +119,11 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable.get_current_mut()
   }
 
+  pub fn is_inside_pure(&self) -> bool {
+    // TODO: self.scope_context.pure > 0
+    false
+  }
+
   fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId> {
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::ReplaceVarScopeStack(new_stack.clone()));
@@ -125,7 +134,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_call_scope(
     &mut self,
-    source: FunctionEntitySource<'a>,
+    callee: (CalleeNode<'a>, usize),
     call_dep: Consumable<'a>,
     variable_scope_stack: Vec<ScopeId>,
     is_async: bool,
@@ -148,7 +157,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::PushCallScope(
-        source.span(),
+        callee.0.span(),
         old_variable_scope_stack.clone(),
         cf_scope_depth,
         body_variable_scope,
@@ -157,7 +166,7 @@ impl<'a> Analyzer<'a> {
 
     self.scope_context.call.push(CallScope::new(
       dep_id,
-      source.into(),
+      callee,
       old_variable_scope_stack,
       cf_scope_depth,
       body_variable_scope,

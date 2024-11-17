@@ -90,11 +90,11 @@ impl<'a> Analyzer<'a> {
     maybe_left: bool,
     maybe_right: bool,
   ) -> Entity<'a> {
-    let dep = self.register_conditional_data(dep_id, left, maybe_left, maybe_right, true, false);
+    let dep = self.register_conditional_data(dep_id, left, maybe_left, maybe_right, true, true);
     self.factory.computed(left, dep)
   }
 
-  pub fn push_logical_right_cf_cope(
+  pub fn push_logical_right_cf_scope(
     &mut self,
     dep_id: impl Into<DepId>,
     left: Entity<'a>,
@@ -176,7 +176,7 @@ impl<'a> Analyzer<'a> {
     if branch.is_true_branch { data.impure_false } else { data.impure_true }.then_some(data)
   }
 
-  pub fn post_analyze_handle_conditional(&mut self) {
+  pub fn post_analyze_handle_conditional(&mut self) -> bool {
     for (call_id, branches) in mem::take(&mut self.conditional_data.call_to_deps) {
       if self.is_referred(call_id) {
         let mut remaining_branches = vec![];
@@ -209,10 +209,7 @@ impl<'a> Analyzer<'a> {
         dirty = true;
       }
     }
-
-    if dirty {
-      self.post_analyze_handle_conditional();
-    }
+    dirty
   }
 
   fn get_conditional_data_mut(&mut self, dep_id: DepId) -> &mut ConditionalData<'a> {

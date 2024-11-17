@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/recursion.js
 ---
@@ -16,13 +15,13 @@ export function simple() {
 	return main(1);
 }
 export function complex1() {
-	function main(__unused_30CF) {
-		return () => g();
+	function main(a) {
+		return () => g(a);
 	}
-	function g(__unused_ACC8) {
-		return () => main();
+	function g(a) {
+		return () => main(a + 1);
 	}
-	t = main();
+	t = main(1);
 }
 export function complex2() {
 	function main() {
@@ -31,12 +30,13 @@ export function complex2() {
 	function resolveTransitionHooks(postClone) {
 		const hooks = { clone() {
 			const hooks2 = resolveTransitionHooks(postClone);
-			{
-				postClone(hooks2);
-			}
+			if (postClone) postClone(hooks2);
 			return hooks2;
 		} };
 		return hooks;
 	}
 	return main;
+}
+export function closure_not_recused() {
+	return "a3b";
 }
