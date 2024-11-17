@@ -3,7 +3,7 @@ use crate::{
   builtins::Builtins,
   dep::{DepId, ReferredDeps},
   entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
-  scope::{conditional::ConditionalDataMap, ScopeContext},
+  scope::{conditional::ConditionalDataMap, r#loop::LoopDataMap, ScopeContext},
   tree_shaker::TreeShaker,
   utils::{DebuggerEvent, ExtraData, Logger, StatementVecData},
   TreeShakeConfig,
@@ -26,6 +26,7 @@ pub struct Analyzer<'a> {
   pub data: ExtraData<'a>,
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
+  pub loop_data: LoopDataMap<'a>,
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
   pub scope_context: ScopeContext<'a>,
@@ -52,6 +53,7 @@ impl<'a> Analyzer<'a> {
       data: Default::default(),
       referred_deps: Default::default(),
       conditional_data: Default::default(),
+      loop_data: Default::default(),
       named_exports: Vec::new(),
       default_export: None,
       scope_context: ScopeContext::new(&factory),
@@ -81,7 +83,20 @@ impl<'a> Analyzer<'a> {
       entity.consume(self);
     });
 
-    self.post_analyze_handle_conditional();
+    let mut round = 0usize;
+    loop {
+      round += 1;
+      if round > 1000 {
+        panic!("Possible infinite loop in post analysis");
+      }
+
+      let mut dirty = false;
+      dirty |= self.post_analyze_handle_conditional();
+      dirty |= self.post_analyze_handle_loops();
+      if !dirty {
+        break;
+      }
+    }
 
     self.scope_context.assert_final_state();
   }

@@ -2,6 +2,7 @@ pub mod call_scope;
 pub mod cf_scope;
 pub mod conditional;
 pub mod exhaustive;
+pub mod r#loop;
 mod scope_tree;
 pub mod try_scope;
 mod utils;
