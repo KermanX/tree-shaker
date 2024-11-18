@@ -1,3 +1,4 @@
+mod class_names;
 mod context;
 mod create_element;
 mod dependencies;
@@ -15,6 +16,7 @@ use crate::{
   entity::{Entity, EntityFactory, ObjectEntity, ObjectPropertyValue},
   init_namespace,
 };
+pub use class_names::create_class_names_namespace;
 use context::{create_react_create_context_impl, create_react_use_context_impl, ReactContexts};
 use create_element::create_react_create_element_impl;
 use dependencies::ReactDependencies;
