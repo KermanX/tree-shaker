@@ -11,26 +11,7 @@ impl<'a> Analyzer<'a> {
   }
 
   /// Returns (has_exhaustive, indeterminate, exec_deps)
-  pub fn pre_possible_mutate(
-    &mut self,
-    target_depth: usize,
-  ) -> (bool, bool, ConsumableNode<'a, impl ConsumableTrait<'a> + 'a>) {
-    let mut has_exhaustive = false;
-    let mut indeterminate = false;
-    let mut exec_deps = vec![];
-    for depth in target_depth..self.scope_context.cf.stack.len() {
-      let scope = self.scope_context.cf.get_mut_from_depth(depth);
-      has_exhaustive |= scope.is_exhaustive();
-      indeterminate |= scope.is_indeterminate();
-      if let Some(dep) = scope.deps.try_collect() {
-        exec_deps.push(dep);
-      }
-    }
-    (has_exhaustive, indeterminate, ConsumableNode::new(exec_deps))
-  }
-
-  /// Returns (has_exhaustive, indeterminate, exec_deps)
-  pub fn pre_must_mutate(
+  pub fn pre_mutate_object(
     &mut self,
     cf_scope: ScopeId,
     object_id: SymbolId,
@@ -49,7 +30,9 @@ impl<'a> Analyzer<'a> {
         exec_deps.push(dep);
       }
     }
+
     self.exec_exhaustive_deps(true, (self.scope_context.object_scope_id, object_id));
+
     (has_exhaustive, indeterminate, ConsumableNode::new(exec_deps))
   }
 

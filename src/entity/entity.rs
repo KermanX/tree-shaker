@@ -305,6 +305,25 @@ impl<'a> Entity<'a> {
     }
   }
 
+  pub fn call_as_getter(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    this: Entity<'a>,
+  ) -> Entity<'a> {
+    self.call(analyzer, dep, this, analyzer.factory.empty_arguments)
+  }
+
+  pub fn call_as_setter(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    this: Entity<'a>,
+    value: Entity<'a>,
+  ) -> Entity<'a> {
+    self.call(analyzer, dep, this, analyzer.factory.arguments(vec![(false, value)]))
+  }
+
   pub fn to_consumable(&self) -> Consumable<'a> {
     box_consumable(self.clone())
   }
