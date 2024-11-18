@@ -1,5 +1,5 @@
 use clap::Parser;
-use oxc::minifier::MinifierOptions;
+use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
 use std::{fs::File, io::Write, path::PathBuf};
 use tree_shake::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
@@ -10,6 +10,9 @@ struct Args {
 
   #[arg(short, long)]
   output: Option<String>,
+
+  #[arg(short, long, default_value_t = false)]
+  no_shake: bool,
 
   #[arg(short, long, default_value_t = false)]
   minify: bool,
@@ -34,9 +37,17 @@ fn main() {
   let result = tree_shake(
     content,
     TreeShakeOptions {
-      config: TreeShakeConfig::recommended(),
+      config: if args.no_shake {
+        TreeShakeConfig::disabled()
+      } else {
+        TreeShakeConfig::recommended()
+      },
       minify_options: args.minify.then(MinifierOptions::default),
-      codegen_options: Default::default(),
+      codegen_options: CodegenOptions {
+        minify: args.minify,
+        comments: !args.minify,
+        ..Default::default()
+      },
       logging: args.logging,
     },
   );
@@ -53,7 +64,15 @@ fn main() {
   let output_path = args.output.map_or_else(
     || {
       let mut output_path = PathBuf::from(&args.path);
-      output_path.set_extension("out.js");
+      if !args.no_shake {
+        output_path.set_extension("out.js");
+      }
+      if args.minify {
+        output_path.set_extension("min.js");
+      }
+      if args.no_shake && !args.minify {
+        output_path.set_extension("out.js");
+      }
       output_path
     },
     PathBuf::from,
