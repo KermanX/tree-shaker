@@ -22,7 +22,7 @@ pub struct Analyzer<'a> {
   pub allocator: &'a Allocator,
   pub factory: &'a EntityFactory<'a>,
   pub semantic: Semantic<'a>,
-  pub current_span: Vec<Span>,
+  pub span_stack: Vec<Span>,
   pub data: ExtraData<'a>,
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
@@ -49,7 +49,7 @@ impl<'a> Analyzer<'a> {
       allocator,
       factory,
       semantic,
-      current_span: vec![],
+      span_stack: vec![],
       data: Default::default(),
       referred_deps: Default::default(),
       conditional_data: Default::default(),
@@ -123,8 +123,12 @@ impl<'a> Analyzer<'a> {
     }
   }
 
+  pub fn current_span(&self) -> Span {
+    *self.span_stack.last().unwrap()
+  }
+
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {
-    let span = self.current_span.last().unwrap();
+    let span = self.current_span();
     self
       .tree_shaker
       .0
@@ -135,7 +139,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_stmt_span(&mut self, node: &'a impl GetSpan, decl: bool) {
     let span = node.span();
-    self.current_span.push(span);
+    self.span_stack.push(span);
     if !decl {
       if let Some(debugger) = &mut self.logger {
         debugger.push_event(DebuggerEvent::PushStmtSpan(span));
@@ -145,14 +149,14 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_expr_span(&mut self, node: &'a impl GetSpan) {
     let span = node.span();
-    self.current_span.push(span);
+    self.span_stack.push(span);
     if let Some(debugger) = &mut self.logger {
       debugger.push_event(DebuggerEvent::PushExprSpan(span));
     }
   }
 
   pub fn pop_stmt_span(&mut self, decl: bool) {
-    self.current_span.pop();
+    self.span_stack.pop();
     if !decl {
       if let Some(debugger) = &mut self.logger {
         debugger.push_event(DebuggerEvent::PopStmtSpan);
@@ -161,7 +165,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn pop_expr_span(&mut self) {
-    self.current_span.pop();
+    self.span_stack.pop();
     if let Some(debugger) = &mut self.logger {
       debugger.push_event(DebuggerEvent::PopExprSpan);
     }

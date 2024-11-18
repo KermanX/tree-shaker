@@ -1,9 +1,11 @@
 mod context;
 mod create_element;
+mod dependencies;
 mod forward_ref;
 mod jsx;
 mod jsxs;
 mod memo;
+mod use_memo;
 
 use super::{
   constants::{REACT_JSX_RUNTIME_NAMESPACE_OBJECT_ID, REACT_NAMESPACE_OBJECT_ID},
@@ -15,14 +17,18 @@ use crate::{
 };
 use context::{create_react_create_context_impl, create_react_use_context_impl, ReactContexts};
 use create_element::create_react_create_element_impl;
+use dependencies::ReactDependencies;
 use forward_ref::create_react_forward_ref_impl;
 use jsx::create_react_jsx_impl;
 use jsxs::create_react_jsxs_impl;
 use memo::create_react_memo_impl;
+use use_memo::{create_react_use_memo_impl, ReactUseMemos};
 
 #[derive(Debug, Default)]
 pub struct AnalyzerDataForReact<'a> {
   pub contexts: ReactContexts<'a>,
+  pub memos: ReactUseMemos<'a>,
+  pub dependencies: ReactDependencies<'a>,
 }
 
 pub fn create_react_namespace<'a>(
@@ -38,6 +44,7 @@ pub fn create_react_namespace<'a>(
     "createElement" => create_react_create_element_impl(factory),
     "createContext" => create_react_create_context_impl(factory),
     "useContext" => create_react_use_context_impl(factory),
+    "useMemo" => create_react_use_memo_impl(factory),
   });
 
   factory.entity(namespace)

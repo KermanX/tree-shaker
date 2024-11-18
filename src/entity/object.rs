@@ -53,7 +53,7 @@ pub struct ObjectProperty<'a> {
 
 impl<'a> Default for ObjectProperty<'a> {
   fn default() -> Self {
-    Self { definite: true, possible_values: vec![], non_existent: Default::default() }
+    Self { definite: true, possible_values: vec![], non_existent: ConsumableCollector::default() }
   }
 }
 
@@ -313,7 +313,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                 ObjectProperty {
                   definite: !indeterminate,
                   possible_values: vec![ObjectPropertyValue::Field(value, false)],
-                  non_existent: Default::default(),
+                  non_existent: ConsumableCollector::default(),
                 },
               );
             }
@@ -619,7 +619,7 @@ impl<'a> ObjectEntity<'a> {
               let property = ObjectProperty {
                 definite,
                 possible_values: vec![property_val],
-                non_existent: Default::default(),
+                non_existent: ConsumableCollector::default(),
               };
               string_keyed.insert(key, property);
             } else {
@@ -661,7 +661,7 @@ impl<'a> ObjectEntity<'a> {
       *rest = Some(ObjectProperty {
         definite: false,
         possible_values: vec![property],
-        non_existent: Default::default(),
+        non_existent: ConsumableCollector::default(),
       });
     }
   }

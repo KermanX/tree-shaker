@@ -1,15 +1,21 @@
-use super::{Consumable, ConsumableNode, ConsumableTrait, ConsumableVec};
+use super::{Consumable, ConsumableNode, ConsumableTrait};
 use crate::analyzer::Analyzer;
 use std::mem;
 
-#[derive(Debug, Default)]
-pub struct ConsumableCollector<'a> {
-  pub current: ConsumableVec<'a>,
+#[derive(Debug)]
+pub struct ConsumableCollector<'a, T: ConsumableTrait<'a> + 'a = Consumable<'a>> {
+  pub current: Vec<T>,
   pub node: Option<ConsumableNode<'a>>,
 }
 
-impl<'a> ConsumableCollector<'a> {
-  pub fn new(current: ConsumableVec<'a>) -> Self {
+impl<'a, T: ConsumableTrait<'a> + 'a> Default for ConsumableCollector<'a, T> {
+  fn default() -> Self {
+    Self { current: Vec::new(), node: None }
+  }
+}
+
+impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableCollector<'a, T> {
+  pub fn new(current: Vec<T>) -> Self {
     Self { current, node: None }
   }
 
@@ -17,7 +23,7 @@ impl<'a> ConsumableCollector<'a> {
     self.current.is_empty() && self.node.is_none()
   }
 
-  pub fn push(&mut self, value: Consumable<'a>) {
+  pub fn push(&mut self, value: T) {
     self.current.push(value);
   }
 
