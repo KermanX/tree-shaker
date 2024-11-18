@@ -416,7 +416,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
     analyzer.pop_cf_scope();
 
-    (result, box_consumable((dep, non_existent)))
+    (result, box_consumable(ConsumableNode::new((dep, non_existent))))
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
