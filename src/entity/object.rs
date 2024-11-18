@@ -44,11 +44,17 @@ pub enum ObjectPropertyValue<'a> {
   Property(Option<Entity<'a>>, Option<Entity<'a>>),
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ObjectProperty<'a> {
   pub definite: bool,
   pub possible_values: Vec<ObjectPropertyValue<'a>>,
   pub non_existent: ConsumableCollector<'a>,
+}
+
+impl<'a> Default for ObjectProperty<'a> {
+  fn default() -> Self {
+    Self { definite: true, possible_values: vec![], non_existent: Default::default() }
+  }
 }
 
 impl<'a> ObjectProperty<'a> {
@@ -97,7 +103,7 @@ impl<'a> ObjectProperty<'a> {
       self.possible_values = self
         .possible_values
         .iter()
-        .filter(|possible_value| !matches!(possible_value, ObjectPropertyValue::Field(_, true)))
+        .filter(|possible_value| !matches!(possible_value, ObjectPropertyValue::Field(_, false)))
         .cloned()
         .collect();
       // This property must exist now
@@ -183,11 +189,6 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     let mut getters = vec![];
     let mut non_existent = vec![];
 
-    {
-      let mut unknown_keyed = self.unknown_keyed.borrow_mut();
-      unknown_keyed.get(analyzer, &mut values, &mut getters, &mut non_existent);
-    }
-
     let mut check_rest = false;
     let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
@@ -208,6 +209,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
           _ => unreachable!(),
         }
       }
+
+      check_rest |= non_existent.len() > 0;
     } else {
       for property in self.string_keyed.borrow_mut().values_mut() {
         property.get(analyzer, &mut values, &mut getters, &mut non_existent);
@@ -230,15 +233,21 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       }
     }
 
+    let indeterminate_getter = values.len() > 0 || getters.len() > 1 || non_existent.len() > 0;
+
+    {
+      let mut unknown_keyed = self.unknown_keyed.borrow_mut();
+      unknown_keyed.get(analyzer, &mut values, &mut getters, &mut non_existent);
+    }
+
     if getters.len() > 0 {
-      let indeterminate = values.len() > 0 || getters.len() > 1 || non_existent.len() > 0;
-      if indeterminate {
+      if indeterminate_getter {
         analyzer.push_indeterminate_cf_scope();
       }
       for getter in getters {
         values.push(getter.call_as_getter(analyzer, box_consumable((dep.cloned(), key)), rc));
       }
-      if indeterminate {
+      if indeterminate_getter {
         analyzer.pop_cf_scope();
       }
     }
@@ -277,8 +286,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     {
       let unknown_keyed = self.unknown_keyed.borrow();
       for possible_value in &unknown_keyed.possible_values {
-        if let ObjectPropertyValue::Property(_, Some(setter)) = possible_value {
-          setters.push((true, None, setter.clone()));
+        if let ObjectPropertyValue::Property(_, setter) = possible_value {
+          if let Some(setter) = setter {
+            setters.push((true, None, setter.clone()));
+          }
           indeterminate = true;
         }
       }
@@ -422,6 +433,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
 
     let key = key.get_to_property_key(analyzer);
+    let dep = (dep, exec_deps);
 
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let indeterminate = indeterminate || key_literals.len() > 1;

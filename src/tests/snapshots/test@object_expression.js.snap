@@ -18,11 +18,8 @@ export function main() {
 	effect(1);
 }
 export function modify_self_in_getter() {
-	const { effect, changed } = {
-		get effect() {
-			this.changed = {};
-		},
-		changed: false
-	};
+	const { effect, changed } = { get effect() {
+		this.changed = {};
+	} };
 	return changed;
 }
