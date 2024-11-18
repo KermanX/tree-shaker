@@ -1,5 +1,4 @@
 import { createLogger, Plugin } from "vite";
-import { treeShake } from "@kermanx/tree-shaker"
 import pico from "picocolors";
 
 export default function (options: {
@@ -11,6 +10,7 @@ export default function (options: {
   })
 
   const disabled = +(process.env.DISABLE_TREE_SHAKE ?? 0);
+  const treeShake = disabled ? null : import("@kermanx/tree-shaker");
 
   return {
     name: "tree-shaker",
@@ -38,13 +38,13 @@ export default function (options: {
     },
     renderChunk: {
       order: 'post',
-      handler(code) {
+      async handler(code) {
         if (disabled) {
           return code;
         }
         code = options.pre?.(code) ?? code;
         const startTime = Date.now();
-        const { output, diagnostics } = treeShake(code, "recommended", false);
+        const { output, diagnostics } = (await treeShake).treeShake(code, "recommended", false);
         const duration = `${Date.now() - startTime}ms`;
         logger.info(pico.yellowBright(`\ntree-shake duration: ${duration}`));
         for (const diagnostic of diagnostics) {
