@@ -23,7 +23,11 @@ pub trait BuiltinFnEntity<'a>: Debug {
 }
 
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
-  fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    if let Some(object) = self.object() {
+      object.consume(analyzer);
+    }
+  }
 
   fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
     // No effect

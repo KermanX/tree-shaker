@@ -27,6 +27,8 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     use_consumed_flag!(self);
 
     self.consume_body(analyzer);
+
+    self.object.consume(analyzer);
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
