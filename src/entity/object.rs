@@ -206,7 +206,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
             }
           }
           LiteralEntity::Symbol(_, _) => todo!(),
-          _ => unreachable!(),
+          _ => unreachable!("Invalid property key"),
         }
       }
 
@@ -319,7 +319,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
             }
           }
           LiteralEntity::Symbol(_, _) => todo!(),
-          _ => unreachable!(),
+          _ => unreachable!("Invalid property key"),
         }
       }
     } else {
@@ -447,7 +447,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
             }
           }
           LiteralEntity::Symbol(_, _) => todo!(),
-          _ => unreachable!(),
+          _ => unreachable!("Invalid property key"),
         }
       }
     } else {
@@ -627,7 +627,7 @@ impl<'a> ObjectEntity<'a> {
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
-          _ => unreachable!(),
+          _ => unreachable!("Invalid property key"),
         }
       }
     } else {

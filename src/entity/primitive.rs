@@ -194,7 +194,7 @@ impl<'a> PrimitiveEntity {
       PrimitiveEntity::BigInt => &analyzer.builtins.prototypes.bigint,
       PrimitiveEntity::Boolean => &analyzer.builtins.prototypes.boolean,
       PrimitiveEntity::Symbol => &analyzer.builtins.prototypes.symbol,
-      PrimitiveEntity::Mixed => unreachable!(),
+      PrimitiveEntity::Mixed => unreachable!("Cannot get prototype of mixed primitive"),
     }
   }
 }

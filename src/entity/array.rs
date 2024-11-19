@@ -120,7 +120,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
-          _ => unreachable!(),
+          _ => unreachable!("Invalid property key"),
         }
       }
       analyzer.factory.computed_union(result, dep)
@@ -218,7 +218,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
-          _ => unreachable!(),
+          _ => unreachable!("Invalid property key"),
         }
       }
       if has_effect {

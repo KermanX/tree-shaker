@@ -1,4 +1,6 @@
-use oxc::{codegen::CodegenOptions, minifier::MinifierOptions, span::SourceType};
+extern crate console_error_panic_hook;
+
+use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(getter_with_clone)]
@@ -15,6 +17,8 @@ pub fn tree_shake(
   do_minify: bool,
   logging: bool,
 ) -> Result {
+  console_error_panic_hook::set_once();
+
   let result = tree_shake::tree_shake(
     source_text,
     tree_shake::TreeShakeOptions {

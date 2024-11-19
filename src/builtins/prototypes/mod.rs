@@ -62,7 +62,7 @@ impl<'a> Prototype<'a> {
     match key {
       LiteralEntity::String(key) => self.get_string_keyed(key),
       LiteralEntity::Symbol(key, _) => self.get_symbol_keyed(key),
-      _ => unreachable!(),
+      _ => unreachable!("Invalid property key"),
     }
   }
 

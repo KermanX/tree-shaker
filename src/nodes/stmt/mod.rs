@@ -88,7 +88,7 @@ impl<'a> Analyzer<'a> {
       Statement::ThrowStatement(node) => self.exec_throw_statement(node),
       Statement::EmptyStatement(_) => {}
       Statement::DebuggerStatement(_node) => {}
-      Statement::WithStatement(_node) => unreachable!(),
+      Statement::WithStatement(_node) => unimplemented!("with statement"),
     }
     self.pop_stmt_span(false);
   }

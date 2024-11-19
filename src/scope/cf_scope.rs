@@ -327,7 +327,7 @@ impl<'a> Analyzer<'a> {
           for depth in (0..depth).rev() {
             let scope = self.scope_context.cf.get_mut_from_depth(depth);
             match scope.referred_state {
-              ReferredState::Never => unreachable!(),
+              ReferredState::Never => unreachable!("Logic error in refer_to_global"),
               ReferredState::ReferredClean => break,
               ReferredState::ReferredDirty => {
                 scope.deps.force_clear();
