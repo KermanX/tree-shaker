@@ -57,6 +57,7 @@ pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> E
     });
 
     init_object!(context, {
+      "__#internal__consumed_hook" => analyzer.factory.computed_unknown(context_id),
       "__#internal__context_id" => analyzer.serialize_internal_id(context_id.0),
       "Provider" => create_react_context_provider_impl(analyzer, context_id),
       "Consumer" => create_react_context_consumer_impl(analyzer, context_id),
@@ -84,55 +85,55 @@ fn create_react_context_provider_impl<'a>(
   analyzer: &mut Analyzer<'a>,
   context_id: ContextId,
 ) -> Entity<'a> {
-  analyzer.factory.computed(
-    analyzer.dynamic_implemented_builtin(move |analyzer, dep, _this, args| {
-      let props = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
-      let value = props.get_property(analyzer, dep.cloned(), analyzer.factory.string("value"));
+  analyzer.dynamic_implemented_builtin(move |analyzer, dep, _this, args| {
+    let props = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
+    let value = props.get_property(analyzer, dep.cloned(), analyzer.factory.string("value"));
 
-      let data = &mut analyzer.builtins.react_data.contexts[context_id];
+    let data = &mut analyzer.builtins.react_data.contexts[context_id];
+    let mut need_pop = false;
+    if data.consumed {
+      analyzer.consume(value);
+    } else {
       data.stack.push(analyzer.factory.computed_unknown(value));
-      if data.consumed {
-        true
-      } else {
-        let object_id = data.object_id;
-        let should_consume =
-          analyzer.exec_exhaustive_deps(true, (analyzer.scope_context.object_scope_id, object_id));
 
+      let object_id = data.object_id;
+      let should_consume =
+        analyzer.exec_exhaustive_deps(true, (analyzer.scope_context.object_scope_id, object_id));
+
+      if should_consume {
+        analyzer.consume(context_id);
+      } else {
         let data = &mut analyzer.builtins.react_data.contexts[context_id];
         data.stack.pop();
-        data.consumed |= should_consume;
-        should_consume
-      };
 
-      let data = &mut analyzer.builtins.react_data.contexts[context_id];
-      data.stack.push(value);
+        data.stack.push(value);
+        need_pop = true;
+      }
+    }
 
-      let children = props.get_property(analyzer, dep, analyzer.factory.string("children"));
-      children.consume(analyzer);
+    let children = props.get_property(analyzer, dep, analyzer.factory.string("children"));
+    children.consume(analyzer);
 
+    if need_pop {
       analyzer.builtins.react_data.contexts[context_id].stack.pop();
+    }
 
-      analyzer.factory.immutable_unknown
-    }),
-    context_id,
-  )
+    analyzer.factory.immutable_unknown
+  })
 }
 
 fn create_react_context_consumer_impl<'a>(
   analyzer: &mut Analyzer<'a>,
   context_id: ContextId,
 ) -> Entity<'a> {
-  analyzer.factory.computed(
-    analyzer.dynamic_implemented_builtin(move |analyzer, dep, _this, _args| {
-      let data = &analyzer.builtins.react_data.contexts[context_id];
-      let value = data.get_current(analyzer.factory);
-      analyzer.consume(value);
-      analyzer.consume(dep);
+  analyzer.dynamic_implemented_builtin(move |analyzer, dep, _this, _args| {
+    analyzer.consume(dep);
+    let data = &analyzer.builtins.react_data.contexts[context_id];
+    let value = data.get_current(analyzer.factory);
+    analyzer.consume(value);
 
-      analyzer.factory.immutable_unknown
-    }),
-    context_id,
-  )
+    analyzer.factory.immutable_unknown
+  })
 }
 
 pub fn create_react_use_context_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
