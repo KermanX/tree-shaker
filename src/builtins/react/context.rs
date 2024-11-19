@@ -11,6 +11,7 @@ use oxc::{
 
 #[derive(Debug)]
 pub struct ReactContextData<'a> {
+  object_id: SymbolId,
   consumed: bool,
   default_value: Entity<'a>,
   stack: Vec<Entity<'a>>,
@@ -47,6 +48,7 @@ pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> E
     let context = analyzer.new_empty_object(&analyzer.builtins.prototypes.object);
 
     let context_id = analyzer.builtins.react_data.contexts.push(ReactContextData {
+      object_id: context.object_id,
       consumed: false,
       default_value,
       stack: Vec::new(),
@@ -81,7 +83,10 @@ fn create_react_context_provider_impl<'a>(
       let props = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
       let value = props.get_property(analyzer, dep.cloned(), analyzer.factory.string("value"));
 
-      analyzer.builtins.react_data.contexts[context_id].stack.push(value);
+      let data = &mut analyzer.builtins.react_data.contexts[context_id];
+      data.stack.push(value);
+      let object_id = data.object_id;
+      analyzer.exec_exhaustive_deps(false, (analyzer.scope_context.object_scope_id, object_id));
 
       let children = props.get_property(analyzer, dep, analyzer.factory.string("children"));
       children.consume(analyzer);

@@ -28,7 +28,7 @@ pub struct ObjectEntity<'a> {
   // deps: RefCell<ConsumableCollector<'a>>,
   /// Where the object is created
   cf_scope: ScopeId,
-  object_id: SymbolId,
+  pub object_id: SymbolId,
   pub string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
   pub unknown_keyed: RefCell<ObjectProperty<'a>>,
   // TODO: symbol_keyed
