@@ -1,3 +1,5 @@
+use std::mem;
+
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableTrait},
@@ -68,6 +70,10 @@ impl<'a> ConsumableTrait<'a> for ContextId {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let data = &mut analyzer.builtins.react_data.contexts[*self];
     data.consumed = true;
+    let default_value = data.default_value;
+    let stack = mem::take(&mut data.stack);
+    analyzer.consume(default_value);
+    analyzer.consume(stack);
   }
   fn cloned(&self) -> Consumable<'a> {
     box_consumable(*self)
