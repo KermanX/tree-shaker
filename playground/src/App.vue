@@ -61,7 +61,7 @@ import { hideDiagnostics, debouncedInput, doMinify, doTreeShake, diagnostics, lo
             </math>={{ treeShakeRate.toFixed(2) }}%<span op80>)</span>
           </span>
           <div flex-grow />
-          <button v-if="!showLogs" @click="showLogs = true" mr-4 op-80 w-5 h-5 b-none i-carbon-asset-view />
+          <!-- <button v-if="!showLogs" @click="showLogs = true" mr-4 op-80 w-5 h-5 b-none i-carbon-asset-view /> -->
         </h2>
         <div flex-grow relative max-h-full>
           <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />

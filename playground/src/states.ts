@@ -47,7 +47,7 @@ load()
 watchEffect(save)
 
 const minifiedOnly = computed(() => tree_shake(debouncedInput.value, false, true, false))
-const treeShakedOnly = computed(() => tree_shake(debouncedInput.value, true, false, true))
+const treeShakedOnly = computed(() => tree_shake(debouncedInput.value, true, false, false))
 const treeShakedMinified = computed(() => tree_shake(treeShakedOnly.value.output, false, true, false))
 
 const result = computed(() => {
