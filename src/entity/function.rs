@@ -1,7 +1,7 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityTrait, TypeofResult,
+  Entity, EntityTrait, ObjectEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -19,6 +19,7 @@ pub struct FunctionEntity<'a> {
   pub callee: (CalleeNode<'a>, usize),
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
   pub finite_recursion: bool,
+  pub object: &'a ObjectEntity<'a>,
 }
 
 impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
@@ -40,27 +41,22 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if self.consumed.get() {
-      return consumed_object::get_property(rc, analyzer, dep, key);
-    }
-    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
+    self.object.get_property(rc, analyzer, dep, key)
   }
 
   fn set_property(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.consume(analyzer);
-    consumed_object::set_property(analyzer, dep, key, value)
+    self.object.set_property(rc, analyzer, dep, key, value);
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-    self.consume(analyzer);
-    consumed_object::delete_property(analyzer, dep, key)
+    self.object.delete_property(analyzer, dep, key);
   }
 
   fn enumerate_properties(
@@ -262,6 +258,7 @@ impl<'a> Analyzer<'a> {
       callee: (node, self.factory.alloc_instance_id()),
       variable_scope_stack: Rc::new(self.scope_context.variable.stack.clone()),
       finite_recursion: self.has_finite_recursion_notation(node.span()),
+      object: self.allocator.alloc(self.new_empty_object(&self.builtins.prototypes.function)),
     };
 
     let mut created_in_self = false;

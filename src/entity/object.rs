@@ -190,6 +190,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     let mut non_existent = vec![];
 
     let mut check_rest = false;
+    let mut may_add_undefined = false;
     let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut string_keyed = self.string_keyed.borrow_mut();
@@ -202,6 +203,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               check_rest = true;
               if let Some(property) = self.prototype.get_string_keyed(key) {
                 values.push(property);
+              } else {
+                may_add_undefined = true;
               }
             }
           }
@@ -211,6 +214,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       }
 
       check_rest |= non_existent.len() > 0;
+      may_add_undefined |= non_existent.len() > 0;
     } else {
       for property in self.string_keyed.borrow_mut().values_mut() {
         property.get(analyzer, &mut values, &mut getters, &mut non_existent);
@@ -222,13 +226,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       // - Return unknown and call all getters
 
       check_rest = true;
+      may_add_undefined = true;
     }
 
     if check_rest {
       let mut rest = self.rest.borrow_mut();
       if let Some(rest) = &mut *rest {
         rest.get(analyzer, &mut values, &mut getters, &mut non_existent);
-      } else {
+      } else if may_add_undefined {
         values.push(analyzer.factory.undefined);
       }
     }
