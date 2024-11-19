@@ -84,9 +84,22 @@ fn create_react_context_provider_impl<'a>(
       let value = props.get_property(analyzer, dep.cloned(), analyzer.factory.string("value"));
 
       let data = &mut analyzer.builtins.react_data.contexts[context_id];
+      data.stack.push(analyzer.factory.computed_unknown(value));
+      if data.consumed {
+        true
+      } else {
+        let object_id = data.object_id;
+        let should_consume =
+          analyzer.exec_exhaustive_deps(true, (analyzer.scope_context.object_scope_id, object_id));
+
+        let data = &mut analyzer.builtins.react_data.contexts[context_id];
+        data.stack.pop();
+        data.consumed |= should_consume;
+        should_consume
+      };
+
+      let data = &mut analyzer.builtins.react_data.contexts[context_id];
       data.stack.push(value);
-      let object_id = data.object_id;
-      analyzer.exec_exhaustive_deps(false, (analyzer.scope_context.object_scope_id, object_id));
 
       let children = props.get_property(analyzer, dep, analyzer.factory.string("children"));
       children.consume(analyzer);

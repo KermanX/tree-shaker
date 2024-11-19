@@ -126,16 +126,23 @@ impl<'a> Analyzer<'a> {
     &mut self,
     should_consume: bool,
     (scope, symbol): (ScopeId, SymbolId),
-  ) {
+  ) -> bool {
     if let Some(runners) =
       self.scope_context.variable.get_mut(scope).exhaustive_deps.get_mut(&symbol)
     {
       let runners = if should_consume { mem::take(runners) } else { runners.clone() };
-      for runner in runners {
-        let TrackerRunner { runner, once } = runner.clone();
-        let deps = self.exec_exhaustively(runner.clone(), once);
-        self.track_dep_after_finished(once, runner, deps);
+      if runners.is_empty() {
+        false
+      } else {
+        for runner in runners {
+          let TrackerRunner { runner, once } = runner.clone();
+          let deps = self.exec_exhaustively(runner.clone(), once);
+          self.track_dep_after_finished(once, runner, deps);
+        }
+        true
       }
+    } else {
+      false
     }
   }
 
