@@ -54,8 +54,8 @@ pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> E
 
     init_object!(context, {
       "__#internal__context_id" => analyzer.serialize_internal_id(context_id.0),
-      "Provider" => create_react_context_provider_impl(factory, context_id),
-      "Consumer" => create_react_context_consumer_impl(factory, context_id),
+      "Provider" => create_react_context_provider_impl(analyzer, context_id),
+      "Consumer" => create_react_context_consumer_impl(analyzer, context_id),
     });
 
     factory.entity(context)
@@ -73,11 +73,11 @@ impl<'a> ConsumableTrait<'a> for ContextId {
 }
 
 fn create_react_context_provider_impl<'a>(
-  factory: &'a EntityFactory<'a>,
+  analyzer: &mut Analyzer<'a>,
   context_id: ContextId,
 ) -> Entity<'a> {
-  factory.computed(
-    factory.implemented_builtin_fn(move |analyzer, dep, _this, args| {
+  analyzer.factory.computed(
+    analyzer.dynamic_implemented_builtin(move |analyzer, dep, _this, args| {
       let props = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
       let value = props.get_property(analyzer, dep.cloned(), analyzer.factory.string("value"));
 
@@ -95,13 +95,13 @@ fn create_react_context_provider_impl<'a>(
 }
 
 fn create_react_context_consumer_impl<'a>(
-  factory: &'a EntityFactory<'a>,
+  analyzer: &mut Analyzer<'a>,
   context_id: ContextId,
 ) -> Entity<'a> {
-  factory.computed(
-    factory.implemented_builtin_fn(move |analyzer, dep, _this, _args| {
+  analyzer.factory.computed(
+    analyzer.dynamic_implemented_builtin(move |analyzer, dep, _this, _args| {
       let data = &analyzer.builtins.react_data.contexts[context_id];
-      let value = data.get_current(factory);
+      let value = data.get_current(analyzer.factory);
       analyzer.consume(value);
       analyzer.consume(dep);
 

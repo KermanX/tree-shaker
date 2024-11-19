@@ -1,15 +1,18 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityFactory, EntityTrait, TypeofResult,
+  Entity, EntityFactory, EntityTrait, ObjectEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
 };
-use std::{fmt::Debug, marker::PhantomData};
+use std::fmt::Debug;
 
 pub trait BuiltinFnEntity<'a>: Debug {
+  fn object(&self) -> Option<&'a ObjectEntity<'a>> {
+    None
+  }
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
@@ -17,28 +20,6 @@ pub trait BuiltinFnEntity<'a>: Debug {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a>;
-  fn get_property_impl(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-    key: Entity<'a>,
-  ) -> Entity<'a> {
-    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
-  }
-  fn set_property_impl(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-    key: Entity<'a>,
-    value: Entity<'a>,
-  ) {
-    analyzer.add_diagnostic(
-      "Should not set property of builtin function, it may cause unexpected tree-shaking behavior",
-    );
-    consumed_object::set_property(analyzer, dep, key, value)
-  }
 }
 
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
@@ -55,7 +36,11 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    self.get_property_impl(rc, analyzer, dep, key)
+    if let Some(object) = self.object() {
+      object.get_property(rc, analyzer, dep, key)
+    } else {
+      analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
+    }
   }
 
   fn set_property(
@@ -66,12 +51,23 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.set_property_impl(rc, analyzer, dep, key, value)
+    if let Some(object) = self.object() {
+      object.set_property(rc, analyzer, dep, key, value)
+    } else {
+      analyzer.add_diagnostic(
+      "Should not set property of builtin function, it may cause unexpected tree-shaking behavior",
+    );
+      consumed_object::set_property(analyzer, dep, key, value)
+    }
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-    analyzer.add_diagnostic("Should not delete property of builtin function, it may cause unexpected tree-shaking behavior");
-    consumed_object::delete_property(analyzer, dep, key)
+    if let Some(object) = self.object() {
+      object.delete_property(analyzer, dep, key)
+    } else {
+      analyzer.add_diagnostic("Should not delete property of builtin function, it may cause unexpected tree-shaking behavior");
+      consumed_object::delete_property(analyzer, dep, key)
+    }
   }
 
   fn enumerate_properties(
@@ -186,7 +182,7 @@ impl<'a, T: Fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Ent
 #[derive(Clone, Copy)]
 pub struct ImplementedBuiltinFnEntity<'a, F: BuiltinFnImplementation<'a> + 'a> {
   implementation: F,
-  phantom_data: PhantomData<&'a ()>,
+  object: Option<&'a ObjectEntity<'a>>,
 }
 
 impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnEntity<'a, F> {
@@ -198,6 +194,9 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnEnti
 impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
   for ImplementedBuiltinFnEntity<'a, F>
 {
+  fn object(&self) -> Option<&'a ObjectEntity<'a>> {
+    self.object
+  }
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
@@ -214,7 +213,19 @@ impl<'a> EntityFactory<'a> {
     &self,
     implementation: F,
   ) -> Entity<'a> {
-    self.entity(ImplementedBuiltinFnEntity { implementation, phantom_data: PhantomData })
+    self.entity(ImplementedBuiltinFnEntity { implementation, object: None })
+  }
+}
+
+impl<'a> Analyzer<'a> {
+  pub fn dynamic_implemented_builtin<F: BuiltinFnImplementation<'a> + 'a>(
+    &mut self,
+    implementation: F,
+  ) -> Entity<'a> {
+    self.factory.entity(ImplementedBuiltinFnEntity {
+      implementation,
+      object: Some(self.allocator.alloc(self.new_empty_object(&self.builtins.prototypes.function))),
+    })
   }
 }
 
