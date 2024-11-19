@@ -41,7 +41,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    self.object.get_property(rc, analyzer, dep, key)
+    self.object.get_property(rc, analyzer, self.forward_dep(dep), key)
   }
 
   fn set_property(
@@ -52,11 +52,11 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.object.set_property(rc, analyzer, dep, key, value);
+    self.object.set_property(rc, analyzer, self.forward_dep(dep), key, value);
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-    self.object.delete_property(analyzer, dep, key);
+    self.object.delete_property(analyzer, self.forward_dep(dep), key);
   }
 
   fn enumerate_properties(
@@ -247,6 +247,10 @@ impl<'a> FunctionEntity<'a> {
         true,
       )
     });
+  }
+
+  fn forward_dep(&self, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((dep, self.callee.0.into_dep_id()))
   }
 }
 
