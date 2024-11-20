@@ -19,6 +19,12 @@ struct Args {
 
   #[arg(short, long, default_value_t = false)]
   logging: bool,
+
+  #[arg(short, long, default_value_t = String::from("recommended"))]
+  preset: String,
+
+  #[arg(short, long, default_value_t = true)]
+  jsx: bool,
 }
 
 fn main() {
@@ -37,7 +43,7 @@ fn main() {
   let copied = tree_shake(
     content.clone(),
     TreeShakeOptions {
-      config: TreeShakeConfig::disabled(),
+      config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
       minify_options: None,
       codegen_options: CodegenOptions::default(),
       logging: false,
@@ -46,7 +52,7 @@ fn main() {
   let minified = tree_shake(
     content.clone(),
     TreeShakeOptions {
-      config: TreeShakeConfig::disabled(),
+      config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
       minify_options: Some(MinifierOptions::default()),
       codegen_options: CodegenOptions { minify: true, comments: false, ..Default::default() },
       logging: false,
@@ -55,7 +61,16 @@ fn main() {
   let shaken = tree_shake(
     content.clone(),
     TreeShakeOptions {
-      config: TreeShakeConfig::recommended(),
+      config: match args.preset.as_str() {
+        "safest" => TreeShakeConfig::safest(),
+        "recommended" => TreeShakeConfig::recommended(),
+        "smallest" => TreeShakeConfig::smallest(),
+        _ => {
+          eprintln!("Invalid preset: {}", args.preset);
+          std::process::exit(1);
+        }
+      }
+      .with_react_jsx(args.jsx),
       minify_options: None,
       codegen_options: CodegenOptions::default(),
       logging: args.logging,
@@ -64,7 +79,7 @@ fn main() {
   let shaken_minified = tree_shake(
     shaken.codegen_return.code.clone(),
     TreeShakeOptions {
-      config: TreeShakeConfig::disabled(),
+      config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
       minify_options: Some(MinifierOptions::default()),
       codegen_options: CodegenOptions { minify: true, comments: false, ..Default::default() },
       logging: false,
