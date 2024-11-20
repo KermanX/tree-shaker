@@ -19,14 +19,16 @@ pub fn get_property<'a>(
   key: Entity<'a>,
 ) -> Entity<'a> {
   let dep = (rc, dep, key);
-  if analyzer.is_inside_pure() || !analyzer.config.unknown_property_read_side_effects {
+  if analyzer.is_inside_pure() {
     rc.unknown_mutate(analyzer, dep.cloned());
     analyzer.factory.computed_unknown(dep)
-  } else {
+  } else if analyzer.config.unknown_property_read_side_effects {
     analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_to_global();
     analyzer.factory.unknown()
+  } else {
+    analyzer.factory.computed_unknown((rc, dep))
   }
 }
 
@@ -121,12 +123,14 @@ pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'
 }
 
 pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
-  analyzer.may_throw();
   if analyzer.config.iterate_side_effects {
+    analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_to_global();
+    (vec![], Some(analyzer.factory.unknown()), box_consumable(()))
+  } else {
+    (vec![], Some(analyzer.factory.unknown()), box_consumable(dep))
   }
-  (vec![], Some(analyzer.factory.unknown()), box_consumable(()))
 }
 
 pub fn get_to_string<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
