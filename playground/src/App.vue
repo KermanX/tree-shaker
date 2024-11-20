@@ -2,7 +2,7 @@
 import Input from './Input.vue';
 import Logs from './Logs.vue';
 import Editor from './Editor.vue';
-import { hideDiagnostics, debouncedInput, doMinify, doTreeShake, diagnostics, load, output, showLogs, onlyMinifiedSize, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
+import { hideDiagnostics, debouncedInput, doMinify, preset, diagnostics, load, output, showLogs, onlyMinifiedSize, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
 </script>
 
 <template>
@@ -23,9 +23,14 @@ import { hideDiagnostics, debouncedInput, doMinify, doTreeShake, diagnostics, lo
       <div flex w-fit md:flex-col h-min md:h-0 z-10 gap-x-4 font-mono items-end mr-2>
         <label flex align-center gap-1 select-none>
           <span op-80>
-            Tree shake:
+            Preset:
           </span>
-          <input v-model="doTreeShake" type="checkbox" placeholder="ast_builder">
+          <select v-model="preset" class="w-26 text-sm black bg-transparent mb--.2">
+            <option value="smallest">Smallest</option>
+            <option value="recommended">Recommended</option>
+            <option value="safest">Safest</option>
+            <option value="disabled">Disabled</option>
+          </select>
         </label>
         <label flex align-center gap-1 select-none>
           <span op-80>
@@ -67,7 +72,8 @@ import { hideDiagnostics, debouncedInput, doMinify, doTreeShake, diagnostics, lo
           <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
           <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex
             flex-col gap-2>
-            <div v-if="diagnostics.length" v-show="!hideDiagnostics" relative text-yellow-200 bg-yellow-900 bg-op-80 b-yellow-500>
+            <div v-if="diagnostics.length" v-show="!hideDiagnostics" relative text-yellow-200 bg-yellow-900 bg-op-80
+              b-yellow-500>
               <h3 text-lg pb-1>
                 Warning
               </h3>
