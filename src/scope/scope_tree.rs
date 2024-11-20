@@ -68,6 +68,10 @@ impl<T> ScopeTree<T> {
     self.stack[range].iter().map(move |id| self.get(*id))
   }
 
+  pub fn iter_all(&self) -> impl Iterator<Item = &T> {
+    self.nodes.iter().map(|node| &node.data)
+  }
+
   fn get_parent(&self, id: ScopeId) -> Option<ScopeId> {
     self.nodes.get(id).unwrap().parent
   }

@@ -73,6 +73,12 @@ impl<'a> ScopeContext<'a> {
     debug_assert_eq!(self.variable.current_depth(), 0);
     debug_assert_eq!(self.cf.current_depth(), 0);
     debug_assert_eq!(self.pure, 0);
+
+    for scope in self.cf.iter_all() {
+      if let Some(data) = &scope.exhaustive_data {
+        debug_assert!(!data.dirty);
+      }
+    }
   }
 
   pub fn alloc_object_id(&mut self) -> SymbolId {
