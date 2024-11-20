@@ -147,6 +147,22 @@ impl<'a> EntityOpHost<'a> {
     self.lt(analyzer, rhs, lhs, eq)
   }
 
+  pub fn instanceof(&self, lhs: Entity<'a>, _rhs: Entity<'a>) -> Option<bool> {
+    if (TypeofResult::String
+      | TypeofResult::Number
+      | TypeofResult::BigInt
+      | TypeofResult::Boolean
+      | TypeofResult::Symbol
+      | TypeofResult::Undefined)
+      .contains(lhs.test_typeof())
+      || lhs.test_nullish() == Some(true)
+    {
+      Some(false)
+    } else {
+      None
+    }
+  }
+
   pub fn add(&self, analyzer: &Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Entity<'a> {
     let lhs_t = lhs.test_typeof();
     let rhs_t = rhs.test_typeof();
@@ -288,9 +304,8 @@ impl<'a> EntityOpHost<'a> {
         // Can be number or bigint
         analyzer.factory.computed_unknown((lhs.clone(), rhs.clone()))
       }
-      BinaryOperator::In | BinaryOperator::Instanceof => {
-        analyzer.factory.computed_unknown_boolean((lhs.clone(), rhs.clone()))
-      }
+      BinaryOperator::In => analyzer.factory.computed_unknown_boolean((lhs.clone(), rhs.clone())),
+      BinaryOperator::Instanceof => to_result(self.instanceof(lhs, rhs)),
     }
   }
 }
