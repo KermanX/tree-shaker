@@ -34,6 +34,15 @@ fn main() {
 
   let start_time = std::time::Instant::now();
 
+  let copied = tree_shake(
+    content.clone(),
+    TreeShakeOptions {
+      config: TreeShakeConfig::disabled(),
+      minify_options: None,
+      codegen_options: CodegenOptions::default(),
+      logging: false,
+    },
+  );
   let minified = tree_shake(
     content.clone(),
     TreeShakeOptions {
@@ -69,7 +78,7 @@ fn main() {
   }
 
   eprintln!("Completed in {:?}", elapsed);
-  eprintln!("Original: {}B", content.len());
+  eprintln!("Original: {}B", copied.codegen_return.code.len());
   eprintln!("Minified: {}B", minified.codegen_return.code.len());
   eprintln!("  Shaken: {}B", shaken.codegen_return.code.len());
   eprintln!("    Both: {}B", shaken_minified.codegen_return.code.len());
@@ -90,7 +99,7 @@ fn main() {
         output_path.set_extension("min.js");
       }
       if args.no_shake && !args.minify {
-        output_path.set_extension("out.js");
+        output_path.set_extension("copy.js");
       }
       output_path
     },
@@ -109,7 +118,7 @@ fn main() {
     (true, true) => shaken_minified.codegen_return.code,
     (true, false) => shaken.codegen_return.code,
     (false, true) => minified.codegen_return.code,
-    (false, false) => content,
+    (false, false) => copied.codegen_return.code,
   };
   match output_file.write_all(code.as_bytes()) {
     Err(why) => {
