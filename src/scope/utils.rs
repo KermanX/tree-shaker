@@ -23,8 +23,10 @@ impl<'a> Analyzer<'a> {
     let mut exec_deps = vec![];
     for depth in target_depth..self.scope_context.cf.stack.len() {
       let scope = self.scope_context.cf.get_mut_from_depth(depth);
-      has_exhaustive |=
-        scope.mark_exhaustive_write((self.scope_context.object_scope_id, object_id));
+      if !has_exhaustive {
+        has_exhaustive |=
+          scope.mark_exhaustive_write((self.scope_context.object_scope_id, object_id));
+      }
       indeterminate |= scope.is_indeterminate();
       if let Some(dep) = scope.deps.try_collect() {
         exec_deps.push(dep);
@@ -36,18 +38,6 @@ impl<'a> Analyzer<'a> {
     (has_exhaustive, indeterminate, ConsumableNode::new(exec_deps))
   }
 
-  pub fn mark_object_property_exhaustive_write(
-    &mut self,
-    target_depth: usize,
-    object_id: SymbolId,
-  ) {
-    for depth in target_depth..self.scope_context.cf.stack.len() {
-      let scope = self.scope_context.cf.get_mut_from_depth(depth);
-      scope.mark_exhaustive_write((self.scope_context.object_scope_id, object_id));
-    }
-    self.exec_exhaustive_deps(true, (self.scope_context.object_scope_id, object_id));
-  }
-
   pub fn mark_object_property_exhaustive_read(&mut self, cf_scope: ScopeId, object_id: SymbolId) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
     self.mark_exhaustive_read((self.scope_context.object_scope_id, object_id), target_depth);
@@ -55,9 +45,12 @@ impl<'a> Analyzer<'a> {
 
   pub fn mark_object_consumed(&mut self, cf_scope: ScopeId, object_id: SymbolId) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
+    let mut marked = false;
     for depth in target_depth..self.scope_context.cf.stack.len() {
       let scope = self.scope_context.cf.get_mut_from_depth(depth);
-      scope.mark_exhaustive_write((self.scope_context.object_scope_id, object_id));
+      if !marked {
+        marked = scope.mark_exhaustive_write((self.scope_context.object_scope_id, object_id));
+      }
       mem::take(&mut scope.deps).consume_all(self);
     }
     self.exec_exhaustive_deps(true, (self.scope_context.object_scope_id, object_id));

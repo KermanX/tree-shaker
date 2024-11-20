@@ -116,7 +116,9 @@ impl<'a> Analyzer<'a> {
     let mut indeterminate = false;
     for depth in target..self.scope_context.cf.stack.len() {
       let scope = self.scope_context.cf.get_mut_from_depth(depth);
-      should_consume |= scope.mark_exhaustive_write(variable);
+      if !should_consume {
+        should_consume |= scope.mark_exhaustive_write(variable);
+      }
       indeterminate |= scope.is_indeterminate();
     }
     (should_consume, indeterminate)
