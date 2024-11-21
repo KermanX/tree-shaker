@@ -236,13 +236,16 @@ impl<'a> EntityOpHost<'a> {
     rhs: Entity<'a>,
     calc: fn(f64, f64) -> f64,
   ) -> Entity<'a> {
-    if let (Some(LiteralEntity::Number(lhs, _)), Some(LiteralEntity::Number(rhs, _))) =
-      (lhs.get_literal(analyzer), rhs.get_literal(analyzer))
-    {
-      analyzer.factory.number(calc(lhs.0, rhs.0), None)
-    } else {
-      analyzer.factory.computed_unknown_primitive((lhs, rhs))
-    }
+    analyzer.factory.computed(
+      if let (Some(LiteralEntity::Number(lhs, _)), Some(LiteralEntity::Number(rhs, _))) =
+        (lhs.get_literal(analyzer), rhs.get_literal(analyzer))
+      {
+        analyzer.factory.number(calc(lhs.0, rhs.0), None)
+      } else {
+        analyzer.factory.unknown_primitive
+      },
+      (lhs, rhs),
+    )
   }
 
   pub fn update(
