@@ -228,7 +228,7 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     self.factory.entity(ImplementedBuiltinFnEntity {
       implementation,
-      object: Some(self.allocator.alloc(self.new_empty_object(&self.builtins.prototypes.function))),
+      object: Some(self.new_function_object()),
     })
   }
 }

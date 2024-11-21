@@ -686,4 +686,20 @@ impl<'a> Analyzer<'a> {
       prototype,
     }
   }
+
+  pub fn new_function_object(&mut self) -> &'a ObjectEntity<'a> {
+    let object = self.new_empty_object(&self.builtins.prototypes.function);
+    object.string_keyed.borrow_mut().insert(
+      "prototype",
+      ObjectProperty {
+        definite: true,
+        possible_values: vec![ObjectPropertyValue::Field(
+          self.factory.entity(self.new_empty_object(&self.builtins.prototypes.object)),
+          false,
+        )],
+        non_existent: Default::default(),
+      },
+    );
+    self.allocator.alloc(object)
+  }
 }

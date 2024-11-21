@@ -264,7 +264,7 @@ impl<'a> Analyzer<'a> {
       callee: (node, self.factory.alloc_instance_id()),
       variable_scope_stack: Rc::new(self.scope_context.variable.stack.clone()),
       finite_recursion: self.has_finite_recursion_notation(node.span()),
-      object: self.allocator.alloc(self.new_empty_object(&self.builtins.prototypes.function)),
+      object: self.new_function_object(),
     };
 
     let mut created_in_self = false;
