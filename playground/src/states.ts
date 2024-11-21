@@ -7,6 +7,7 @@ export const onInputUpdate: (() => void)[] = []
 export const input = ref('')
 export const preset = ref('recommended')
 export const doMinify = ref(false)
+export const alwaysInline = ref(false)
 
 export const showLogs = ref(false)
 
@@ -32,6 +33,7 @@ export function load(reset = false) {
   onInputUpdate.forEach(fn => fn())
   preset.value = parsed.preset ?? (parsed.doTreeShake != null ? (parsed.doTreeShake ? 'recommended' : 'disabled') : 'recommended')
   doMinify.value = parsed.doMinify ?? false
+  alwaysInline.value = parsed.alwaysInline ?? false
   save()
 }
 
@@ -40,15 +42,16 @@ function save() {
     input: input.value,
     preset: preset.value,
     doMinify: doMinify.value,
+    alwaysInline: alwaysInline.value,
   }))
 }
 
 load()
 watchEffect(save)
 
-const minifiedOnly = computed(() => tree_shake(debouncedInput.value, "disabled", true, false))
-const treeShakedOnly = computed(() => tree_shake(debouncedInput.value, preset.value, false, false))
-const treeShakedMinified = computed(() => tree_shake(treeShakedOnly.value.output, preset.value, true, false))
+const minifiedOnly = computed(() => tree_shake(debouncedInput.value, "disabled", true, false, false))
+const treeShakedOnly = computed(() => tree_shake(debouncedInput.value, preset.value, false, false, alwaysInline.value))
+const treeShakedMinified = computed(() => tree_shake(treeShakedOnly.value.output, preset.value, true, false, false))
 
 const result = computed(() => {
   return {

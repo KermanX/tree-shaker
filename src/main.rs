@@ -23,6 +23,9 @@ struct Args {
   #[arg(short, long, default_value_t = String::from("recommended"))]
   preset: String,
 
+  #[arg(short, long, default_value_t = false)]
+  always_inline_literal: bool,
+
   #[arg(short, long, default_value_t = true)]
   jsx: bool,
 }
@@ -70,7 +73,8 @@ fn main() {
           std::process::exit(1);
         }
       }
-      .with_react_jsx(args.jsx),
+      .with_react_jsx(args.jsx)
+      .with_always_inline_literal(args.always_inline_literal),
       minify_options: None,
       codegen_options: CodegenOptions::default(),
       logging: args.logging,

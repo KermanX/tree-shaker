@@ -2,12 +2,12 @@
 import Input from './Input.vue';
 import Logs from './Logs.vue';
 import Editor from './Editor.vue';
-import { hideDiagnostics, debouncedInput, doMinify, preset, diagnostics, load, output, showLogs, onlyMinifiedSize, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
+import { hideDiagnostics, debouncedInput, doMinify, preset, diagnostics, load, output, showLogs, onlyMinifiedSize, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate, alwaysInline } from './states';
 </script>
 
 <template>
   <div py-2 md:py-4 fixed inset-0 flex flex-col>
-    <div px-4 flex flex-wrap gap-x-2 pb-2>
+    <div px-4 flex flex-wrap md:flex-nowrap gap-x-2 pb-2>
       <h1 text-xl md:text-3xl font-bold md:pb-2 select-none flex flex-wrap items-center gap-x-2>
         <img src="/favicon.ico" h-1em bg-gray-200 rounded-lg>
         <div @click="load(true)">
@@ -19,8 +19,8 @@ import { hideDiagnostics, debouncedInput, doMinify, preset, diagnostics, load, o
             href="https://github.com/KermanX/tree-shaker" target="_blank" />
         </div>
       </h1>
-      <div flex-grow />
-      <div flex w-fit md:flex-col h-min md:h-0 z-10 gap-x-4 font-mono items-end mr-2>
+      <div flex-grow md:w-0 />
+      <div flex w-fit md:flex-col h-min md:h-0 z-10 gap-x-4 font-mono items-end mr-2 mt-1 md:mt--2 leading-5>
         <label flex align-center gap-1 select-none>
           <span op-80>
             Preset:
@@ -31,6 +31,12 @@ import { hideDiagnostics, debouncedInput, doMinify, preset, diagnostics, load, o
             <option value="safest">Safest</option>
             <option value="disabled">Disabled</option>
           </select>
+        </label>
+        <label flex align-center gap-1 select-none>
+          <span op-80>
+            Always inline:
+          </span>
+          <input v-model="alwaysInline" type="checkbox">
         </label>
         <label flex align-center gap-1 select-none>
           <span op-80>

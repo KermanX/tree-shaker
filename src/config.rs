@@ -74,4 +74,13 @@ impl TreeShakeConfig {
     self.jsx = if yes { TreeShakeJsxPreset::React } else { TreeShakeJsxPreset::None };
     self
   }
+
+  pub fn with_always_inline_literal(mut self, yes: bool ) -> Self {
+    if yes {
+      self.min_simple_number_value = i64::MIN;
+      self.max_simple_number_value = i64::MAX;
+      self.max_simple_string_length = usize::MAX;
+    }
+    self
+  }
 }

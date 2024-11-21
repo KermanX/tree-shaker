@@ -11,7 +11,13 @@ pub struct Result {
 }
 
 #[wasm_bindgen]
-pub fn tree_shake(source_text: String, preset: String, do_minify: bool, logging: bool) -> Result {
+pub fn tree_shake(
+  source_text: String,
+  preset: String,
+  do_minify: bool,
+  logging: bool,
+  always_inline_literal: bool,
+) -> Result {
   console_error_panic_hook::set_once();
 
   let result = tree_shake::tree_shake(
@@ -24,7 +30,8 @@ pub fn tree_shake(source_text: String, preset: String, do_minify: bool, logging:
         "disabled" => tree_shake::TreeShakeConfig::disabled(),
         _ => unreachable!("Invalid preset {}", preset),
       }
-      .with_react_jsx(true),
+      .with_react_jsx(true)
+      .with_always_inline_literal(always_inline_literal),
       minify_options: do_minify.then(|| MinifierOptions::default()),
       codegen_options: CodegenOptions { minify: do_minify, ..Default::default() },
       logging,
