@@ -1,5 +1,9 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer,
+  ast::AstKind2,
+  build_effect,
+  consumable::box_consumable,
+  entity::{Entity, LiteralEntity},
   transformer::Transformer,
 };
 use oxc::{
@@ -67,7 +71,14 @@ impl<'a> Analyzer<'a> {
         },
         argument,
       ),
-      UnaryOperator::BitwiseNot => self.factory.computed_unknown(argument),
+      UnaryOperator::BitwiseNot => {
+        if let Some(LiteralEntity::Number(num, _)) = argument.get_literal(self) {
+          let num = !(num.0 as i32) as f64;
+          self.factory.number(num, None)
+        } else {
+          self.factory.computed_unknown_primitive(argument)
+        }
+      }
       UnaryOperator::Typeof => argument.get_typeof(self),
       UnaryOperator::Void => self.factory.undefined,
       UnaryOperator::Delete => unreachable!(),

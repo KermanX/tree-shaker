@@ -229,6 +229,22 @@ impl<'a> EntityOpHost<'a> {
     }
   }
 
+  fn number_only_op(
+    &self,
+    analyzer: &Analyzer<'a>,
+    lhs: Entity<'a>,
+    rhs: Entity<'a>,
+    calc: fn(f64, f64) -> f64,
+  ) -> Entity<'a> {
+    if let (Some(LiteralEntity::Number(lhs, _)), Some(LiteralEntity::Number(rhs, _))) =
+      (lhs.get_literal(analyzer), rhs.get_literal(analyzer))
+    {
+      analyzer.factory.number(calc(lhs.0, rhs.0), None)
+    } else {
+      analyzer.factory.computed_unknown_primitive((lhs, rhs))
+    }
+  }
+
   pub fn update(
     &self,
     analyzer: &Analyzer<'a>,
@@ -290,20 +306,29 @@ impl<'a> EntityOpHost<'a> {
       BinaryOperator::GreaterThan => to_result(self.gt(analyzer, lhs, rhs, false)),
       BinaryOperator::GreaterEqualThan => to_result(self.gt(analyzer, lhs, rhs, true)),
       BinaryOperator::Addition => self.add(analyzer, lhs, rhs),
-      BinaryOperator::Subtraction
-      | BinaryOperator::ShiftLeft
-      | BinaryOperator::ShiftRight
-      | BinaryOperator::ShiftRightZeroFill
-      | BinaryOperator::Multiplication
-      | BinaryOperator::Division
-      | BinaryOperator::Remainder
-      | BinaryOperator::BitwiseOR
-      | BinaryOperator::BitwiseXOR
-      | BinaryOperator::BitwiseAnd
-      | BinaryOperator::Exponential => {
-        // Can be number or bigint
-        analyzer.factory.computed_unknown((lhs.clone(), rhs.clone()))
+      BinaryOperator::Subtraction => self.number_only_op(analyzer, lhs, rhs, |l, r| l - r),
+      BinaryOperator::Multiplication => self.number_only_op(analyzer, lhs, rhs, |l, r| l * r),
+      BinaryOperator::ShiftLeft => {
+        self.number_only_op(analyzer, lhs, rhs, |l, r| l.floor() * 2f64.powf(r))
       }
+      BinaryOperator::ShiftRight => {
+        self.number_only_op(analyzer, lhs, rhs, |l, r| l.floor() / 2f64.powf(r))
+      }
+      BinaryOperator::ShiftRightZeroFill => {
+        self.number_only_op(analyzer, lhs, rhs, |l, r| l.floor() / 2f64.powf(r))
+      }
+      BinaryOperator::Division => self.number_only_op(analyzer, lhs, rhs, |l, r| l / r),
+      BinaryOperator::Remainder => self.number_only_op(analyzer, lhs, rhs, |l, r| l % r),
+      BinaryOperator::BitwiseOR => {
+        self.number_only_op(analyzer, lhs, rhs, |l, r| (l as i64 | r as i64) as f64)
+      }
+      BinaryOperator::BitwiseXOR => {
+        self.number_only_op(analyzer, lhs, rhs, |l, r| (l as i64 ^ r as i64) as f64)
+      }
+      BinaryOperator::BitwiseAnd => {
+        self.number_only_op(analyzer, lhs, rhs, |l, r| (l as i64 & r as i64) as f64)
+      }
+      BinaryOperator::Exponential => self.number_only_op(analyzer, lhs, rhs, |l, r| l.powf(r)),
       BinaryOperator::In => analyzer.factory.computed_unknown_boolean((lhs.clone(), rhs.clone())),
       BinaryOperator::Instanceof => to_result(self.instanceof(lhs, rhs)),
     }
