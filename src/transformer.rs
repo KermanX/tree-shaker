@@ -183,7 +183,7 @@ impl<'a> Transformer<'a> {
 
   pub fn build_unused_binding_identifier(&self, span: Span) -> BindingIdentifier<'a> {
     let text = self.semantic.source_text().as_bytes();
-    let start = 0.max(span.start as usize - 5);
+    let start = 5.max(span.start as usize) - 5;
     let end = text.len().min(span.end as usize + 5);
 
     let mut hasher = DefaultHasher::new();
