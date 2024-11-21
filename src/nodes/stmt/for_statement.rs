@@ -70,10 +70,10 @@ impl<'a> Transformer<'a> {
         .map(|init| match init {
           ForStatementInit::VariableDeclaration(node) => self
             .transform_variable_declaration(node)
-            .map(|inner| self.ast_builder.for_statement_init_from_variable_declaration(inner)),
+            .map(|inner| ForStatementInit::VariableDeclaration(inner)),
           node => self
             .transform_expression(node.to_expression(), false)
-            .map(|inner| self.ast_builder.for_statement_init_expression(inner)),
+            .map(|inner| ForStatementInit::from(inner)),
         })
         .flatten();
 
@@ -90,13 +90,9 @@ impl<'a> Transformer<'a> {
       let init = init
         .as_ref()
         .map(|init| match init {
-          ForStatementInit::VariableDeclaration(node) => {
-            self.transform_variable_declaration(node).map(|inner| {
-              self
-                .ast_builder
-                .statement_declaration(self.ast_builder.declaration_from_variable(inner))
-            })
-          }
+          ForStatementInit::VariableDeclaration(node) => self
+            .transform_variable_declaration(node)
+            .map(|inner| Statement::VariableDeclaration(inner)),
           node => self
             .transform_expression(node.to_expression(), false)
             .map(|inner| self.ast_builder.statement_expression(inner.span(), inner)),

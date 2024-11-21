@@ -54,14 +54,13 @@ impl<'a> Transformer<'a> {
             init,
           ))
         } else {
-          binding
-            .map(|inner| self.ast_builder.assignment_target_maybe_default_assignment_target(inner))
+          binding.map(AssignmentTargetMaybeDefault::from)
         }
       }
       _ => self
         .transform_assignment_target_write(node.to_assignment_target(), need_binding, false)
         .1
-        .map(|inner| self.ast_builder.assignment_target_maybe_default_assignment_target(inner)),
+        .map(AssignmentTargetMaybeDefault::from),
     }
   }
 }

@@ -1,8 +1,11 @@
 use crate::{ast::DeclarationKind, consumable::box_consumable, transformer::Transformer, Analyzer};
-use oxc::ast::ast::{
-  ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
-  ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,
-  ImportSpecifier, ModuleDeclaration, ModuleExportName,
+use oxc::{
+  allocator::IntoIn,
+  ast::ast::{
+    ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
+    ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier,
+    ImportNamespaceSpecifier, ImportSpecifier, ModuleDeclaration, ModuleExportName,
+  },
 };
 
 impl<'a> Analyzer<'a> {
@@ -45,7 +48,7 @@ impl<'a> Analyzer<'a> {
         for specifier in &node.specifiers {
           match &specifier.local {
             ModuleExportName::IdentifierReference(node) => {
-              let reference = self.semantic.symbols().get_reference(node.reference_id().unwrap());
+              let reference = self.semantic.symbols().get_reference(node.reference_id());
               if let Some(symbol) = reference.symbol_id() {
                 self.named_exports.push(symbol);
               }
@@ -228,7 +231,7 @@ impl<'a> Transformer<'a> {
           }
           node => {
             let expression = self.transform_expression(node.to_expression(), true).unwrap();
-            self.ast_builder.export_default_declaration_kind_expression(expression)
+            ExportDefaultDeclarationKind::from(expression)
           }
         };
         Some(self.ast_builder.module_declaration_export_default_declaration(

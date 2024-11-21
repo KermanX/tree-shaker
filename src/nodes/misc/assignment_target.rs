@@ -63,10 +63,10 @@ impl<'a> Transformer<'a> {
     let transformed = match node {
       match_simple_assignment_target!(AssignmentTarget) => self
         .transform_simple_assignment_target_write(node.to_simple_assignment_target())
-        .map(|node| self.ast_builder.assignment_target_simple(node)),
+        .map(AssignmentTarget::from),
       match_assignment_target_pattern!(AssignmentTarget) => self
         .transform_assignment_target_pattern(node.to_assignment_target_pattern())
-        .map(|node| self.ast_builder.assignment_target_assignment_target_pattern(node)),
+        .map(AssignmentTarget::from),
     };
 
     if need_binding && transformed.is_none() {

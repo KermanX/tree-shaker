@@ -33,7 +33,7 @@ impl<'a> Transformer<'a> {
       _ => self
         .transform_assignment_target_write(node.to_assignment_target(), false, false)
         .1
-        .map(|target| self.ast_builder.for_statement_left_assignment_target(target)),
+        .map(ForStatementLeft::from),
     }
   }
 }

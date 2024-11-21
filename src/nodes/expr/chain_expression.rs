@@ -48,7 +48,7 @@ impl<'a> Transformer<'a> {
         .expression_chain(*span, self.ast_builder.chain_element_from_call_expression(node)),
       match_member_expression!(Expression) => self.ast_builder.expression_chain(
         *span,
-        self.ast_builder.chain_element_member_expression(expression.try_into().unwrap()),
+        ChainElement::from(expression.try_into().unwrap()),
       ),
       _ => expression,
     })

@@ -67,16 +67,14 @@ impl<'a> Transformer<'a> {
         if effect.is_none() && data.collector.collected().unwrap() == LiteralEntity::String("") {
           self.ast_builder.jsx_expression_jsx_empty_expression(expression.span())
         } else {
-          self.ast_builder.jsx_expression_expression(
-            build_effect!(self.ast_builder, expression.span(), effect; literal),
-          )
+          JSXExpression::from(build_effect!(self.ast_builder, expression.span(), effect; literal))
         }
       } else {
         match expression {
           JSXExpression::EmptyExpression(node) => {
             self.ast_builder.jsx_expression_jsx_empty_expression(node.span)
           }
-          node => self.ast_builder.jsx_expression_expression(
+          node => JSXExpression::from(
             self.transform_expression(node.to_expression(), true).unwrap(),
           ),
         }
