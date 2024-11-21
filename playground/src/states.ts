@@ -30,7 +30,7 @@ export function load(reset = false) {
   parsed ||= {}
   debouncedInput.value = input.value = parsed.input ?? DEMO
   onInputUpdate.forEach(fn => fn())
-  preset.value = parsed.preset ?? parsed.doTreeShake != null ? (parsed.doTreeShake ? 'recommended' : 'disabled') : 'recommended'
+  preset.value = parsed.preset ?? (parsed.doTreeShake != null ? (parsed.doTreeShake ? 'recommended' : 'disabled') : 'recommended')
   doMinify.value = parsed.doMinify ?? false
   save()
 }
