@@ -34,7 +34,9 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
 
     // Special prop: key
     let key = props.get_property(analyzer, box_consumable(()), analyzer.factory.string("key"));
-    analyzer.consume(key);
+    if r#ref.test_nullish() != Some(true) {
+      analyzer.consume(key);
+    }
 
     props.set_property(analyzer, box_consumable(()), analyzer.factory.string("children"), children);
     analyzer.factory.react_element(tag, props)
