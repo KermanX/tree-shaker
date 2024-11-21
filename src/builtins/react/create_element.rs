@@ -18,6 +18,7 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
       )),
     };
 
+    // Special prop: ref
     let r#ref = props.get_property(analyzer, box_consumable(()), analyzer.factory.string("ref"));
     if r#ref.test_nullish() != Some(true) {
       // TODO: currently we haven't implemented useRef, so we just consider it as a callback
@@ -30,6 +31,10 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
         )
       });
     }
+
+    // Special prop: key
+    let key = props.get_property(analyzer, box_consumable(()), analyzer.factory.string("key"));
+    analyzer.consume(key);
 
     props.set_property(analyzer, box_consumable(()), analyzer.factory.string("children"), children);
     analyzer.factory.react_element(tag, props)
