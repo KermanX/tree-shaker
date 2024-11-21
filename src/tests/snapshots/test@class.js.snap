@@ -8,7 +8,7 @@ class A extends 2 {
 		super(a);
 		b();
 	}
-	fn(__unused_8EEF) {
+	fn(__unused_58FE) {
 		1();
 	}
 	[2] = 2;
@@ -29,7 +29,7 @@ export const b = class extends 2 {
 export default class {
 	a = 1;
 }
-class __unused_D669 {
+class __unused_848A {
 	static {
 		effect(2);
 		effect(4);

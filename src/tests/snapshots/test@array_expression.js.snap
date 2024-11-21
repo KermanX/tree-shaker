@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/array_expression.js
 ---
@@ -15,9 +14,9 @@ export function main(unknown) {
 		...[...[1, 4]]
 	];
 	effect(arr2);
-	const __unused_2782 = effect();
-	const __unused_F2EA = effect();
-	const __unused_ACA8 = [effect(), effect()];
+	const __unused_56E1 = effect();
+	const __unused_1826 = effect();
+	const __unused_D1B3 = [effect(), effect()];
 }
 export function test2() {
 	function f() {

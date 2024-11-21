@@ -9,10 +9,10 @@ export const fn1 = () => {
 export const fn2 = (a) => {
 	return a;
 };
-export const fn3 = (__unused_6FFE) => {
+export const fn3 = (__unused_77AA) => {
 	return "2a" + b;
 };
-export const fn4 = (__unused_0C10) => 4;
-const f5 = (__unused_1670) => effect;
+export const fn4 = (__unused_4903) => 4;
+const f5 = (__unused_C05A) => effect;
 f5();
 t = 1;

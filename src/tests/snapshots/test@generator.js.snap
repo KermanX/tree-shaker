@@ -1,12 +1,11 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/generator.js
 ---
 export function* f1(a) {
 	yield 2;
-	let __unused_FA65 = yield* a;
+	let __unused_7986 = yield* a;
 	let t = yield 2;
 	if (t) {
 		effect(1);

@@ -40,6 +40,7 @@ pub struct Transformer<'a> {
   /// The block statement has already exited, so we can and only can transform declarations themselves
   pub declaration_only: Cell<bool>,
   pub need_unused_assignment_target: Cell<bool>,
+  pub unused_identifier_names: RefCell<FxHashMap<u64, usize>>,
 }
 
 impl<'a> Transformer<'a> {
@@ -77,6 +78,7 @@ impl<'a> Transformer<'a> {
 
       declaration_only: Cell::new(false),
       need_unused_assignment_target: Cell::new(false),
+      unused_identifier_names: Default::default(),
     }
   }
 
@@ -180,10 +182,20 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn build_unused_binding_identifier(&self, span: Span) -> BindingIdentifier<'a> {
+    let text = self.semantic.source_text();
+    let start = 0.max(span.start as usize - 5);
+    let end = text.len().min(span.end as usize + 5);
+
     let mut hasher = DefaultHasher::new();
-    hasher.write_u32(span.start);
-    hasher.write_u32(span.end);
-    let name = format!("__unused_{:04X}", hasher.finish() % 0xFFFF);
+    hasher.write(&text.as_bytes()[start..end]);
+    let hash = hasher.finish() % 0xFFFF;
+    let index =
+      *self.unused_identifier_names.borrow_mut().entry(hash).and_modify(|e| *e += 1).or_insert(0);
+    let name = if index == 0 {
+      format!("__unused_{:04X}", hash)
+    } else {
+      format!("__unused_{:04X}_{}", hash, index - 1)
+    };
     self.ast_builder.binding_identifier(span, name)
   }
 
