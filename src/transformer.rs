@@ -10,9 +10,9 @@ use oxc::{
   allocator::{Allocator, CloneIn},
   ast::{
     ast::{
-      ArrayExpressionElement, AssignmentTarget, BindingIdentifier, BindingPattern, Expression,
-      ForStatementLeft, IdentifierReference, NumberBase, Program, SimpleAssignmentTarget,
-      Statement, UnaryOperator, VariableDeclarationKind,
+      ArrayExpressionElement, AssignmentTarget, BindingIdentifier, BindingPattern,
+      BindingPatternKind, Expression, ForStatementLeft, IdentifierReference, NumberBase, Program,
+      SimpleAssignmentTarget, Statement, UnaryOperator, VariableDeclarationKind,
     },
     AstBuilder, NONE,
   },
@@ -164,14 +164,12 @@ impl<'a> Transformer<'a> {
     }
 
     if !declarations.is_empty() {
-      statements.push(Statement::from(
-        self.ast_builder.declaration_variable(
-          SPAN,
-          VariableDeclarationKind::Var,
-          declarations,
-          false,
-        ),
-      ));
+      statements.push(Statement::from(self.ast_builder.declaration_variable(
+        SPAN,
+        VariableDeclarationKind::Var,
+        declarations,
+        false,
+      )));
     }
   }
 }
@@ -201,9 +199,9 @@ impl<'a> Transformer<'a> {
 
   pub fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
     self.ast_builder.binding_pattern(
-      self
-        .ast_builder
-        .binding_pattern_kind_from_binding_identifier(self.build_unused_binding_identifier(span)),
+      BindingPatternKind::BindingIdentifier(
+        self.ast_builder.alloc(self.build_unused_binding_identifier(span)),
+      ),
       NONE,
       false,
     )
@@ -227,8 +225,8 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn build_unused_simple_assignment_target(&self, span: Span) -> SimpleAssignmentTarget<'a> {
-    self.ast_builder.simple_assignment_target_from_identifier_reference(
-      self.build_unused_identifier_reference_write(span),
+    SimpleAssignmentTarget::AssignmentTargetIdentifier(
+      self.ast_builder.alloc(self.build_unused_identifier_reference_write(span)),
     )
   }
 

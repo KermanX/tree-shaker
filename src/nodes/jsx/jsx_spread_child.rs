@@ -1,5 +1,8 @@
 use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
-use oxc::ast::ast::{Expression, JSXSpreadChild};
+use oxc::{
+  allocator,
+  ast::ast::{Expression, JSXSpreadChild},
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_spread_child(&mut self, _node: &'a JSXSpreadChild<'a>) -> Entity<'a> {
@@ -18,9 +21,11 @@ impl<'a> Transformer<'a> {
   pub fn transform_jsx_spread_child_need_val(
     &self,
     node: &'a JSXSpreadChild<'a>,
-  ) -> JSXSpreadChild<'a> {
+  ) -> allocator::Box<'a, JSXSpreadChild<'a>> {
     let JSXSpreadChild { span, expression } = node;
 
-    self.ast_builder.jsx_spread_child(*span, self.transform_expression(expression, true).unwrap())
+    self
+      .ast_builder
+      .alloc_jsx_spread_child(*span, self.transform_expression(expression, true).unwrap())
   }
 }

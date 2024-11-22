@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::Entity,
   transformer::Transformer,
 };
-use oxc::ast::ast::IdentifierReference;
+use oxc::{allocator, ast::ast::IdentifierReference};
 
 #[derive(Debug, Default, Clone)]
 pub struct Data {
@@ -81,7 +81,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a IdentifierReference<'a>,
     need_val: bool,
-  ) -> Option<IdentifierReference<'a>> {
+  ) -> Option<allocator::Box<'a, IdentifierReference<'a>>> {
     let data = self.get_data::<Data>(AstKind2::IdentifierReference(node));
 
     self.transform_identifier_reference(node, data.has_effect || need_val)
@@ -90,7 +90,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_identifier_reference_write(
     &self,
     node: &'a IdentifierReference<'a>,
-  ) -> Option<IdentifierReference<'a>> {
+  ) -> Option<allocator::Box<'a, IdentifierReference<'a>>> {
     let data = self.get_data::<Data>(AstKind2::IdentifierReference(node));
 
     let referred = self.is_referred(AstKind2::IdentifierReference(node));
@@ -102,7 +102,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a IdentifierReference<'a>,
     included: bool,
-  ) -> Option<IdentifierReference<'a>> {
+  ) -> Option<allocator::Box<'a, IdentifierReference<'a>>> {
     if included {
       let IdentifierReference { span, name, .. } = node;
 
@@ -111,7 +111,7 @@ impl<'a> Transformer<'a> {
         self.update_var_decl_state(symbol, false);
       }
 
-      Some(self.ast_builder.identifier_reference(*span, name))
+      Some(self.ast_builder.alloc_identifier_reference(*span, name))
     } else {
       None
     }

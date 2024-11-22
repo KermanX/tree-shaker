@@ -1,11 +1,8 @@
 use crate::{ast::DeclarationKind, consumable::box_consumable, transformer::Transformer, Analyzer};
-use oxc::{
-  allocator::IntoIn,
-  ast::ast::{
-    ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
-    ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier,
-    ImportNamespaceSpecifier, ImportSpecifier, ModuleDeclaration, ModuleExportName,
-  },
+use oxc::ast::ast::{
+  ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
+  ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,
+  ImportSpecifier, ModuleDeclaration, ModuleExportName,
 };
 
 impl<'a> Analyzer<'a> {
@@ -193,11 +190,7 @@ impl<'a> Transformer<'a> {
       ModuleDeclaration::ExportNamedDeclaration(node) => {
         if node.source.is_some() {
           // Re-exports. Nothing to do.
-          return Some(
-            self
-              .ast_builder
-              .module_declaration_from_export_named_declaration(self.clone_node(node)),
-          );
+          return Some(ModuleDeclaration::ExportNamedDeclaration(self.clone_node(node)));
         }
         let ExportNamedDeclaration {
           span,
@@ -222,17 +215,16 @@ impl<'a> Transformer<'a> {
         let ExportDefaultDeclaration { span, declaration, exported, .. } = node.as_ref();
         let declaration = match declaration {
           ExportDefaultDeclarationKind::FunctionDeclaration(node) => {
-            let function = self.transform_function(node, true).unwrap();
-            self.ast_builder.export_default_declaration_kind_from_function(function)
+            ExportDefaultDeclarationKind::FunctionDeclaration(
+              self.transform_function(node, true).unwrap(),
+            )
           }
           ExportDefaultDeclarationKind::ClassDeclaration(node) => {
-            let class = self.transform_class(node, true).unwrap();
-            self.ast_builder.export_default_declaration_kind_from_class(class)
+            ExportDefaultDeclarationKind::ClassDeclaration(
+              self.transform_class(node, true).unwrap(),
+            )
           }
-          node => {
-            let expression = self.transform_expression(node.to_expression(), true).unwrap();
-            ExportDefaultDeclarationKind::from(expression)
-          }
+          node => self.transform_expression(node.to_expression(), true).unwrap().into(),
         };
         Some(self.ast_builder.module_declaration_export_default_declaration(
           *span,
@@ -241,7 +233,7 @@ impl<'a> Transformer<'a> {
         ))
       }
       ModuleDeclaration::ExportAllDeclaration(node) => {
-        Some(self.ast_builder.module_declaration_from_export_all_declaration(self.clone_node(node)))
+        Some(ModuleDeclaration::ExportAllDeclaration(self.clone_node(node)))
       }
       _ => unreachable!(),
     }

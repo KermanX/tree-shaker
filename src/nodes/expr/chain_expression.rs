@@ -1,6 +1,6 @@
 use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::ast::{
-  ast::{ChainElement, ChainExpression, Expression},
+  ast::{ChainElement, ChainExpression, Expression, MemberExpression},
   match_member_expression,
 };
 
@@ -43,12 +43,12 @@ impl<'a> Transformer<'a> {
 
     // FIXME: is this correct?
     expression.map(|expression| match expression {
-      Expression::CallExpression(node) => self
-        .ast_builder
-        .expression_chain(*span, self.ast_builder.chain_element_from_call_expression(node)),
+      Expression::CallExpression(node) => {
+        self.ast_builder.expression_chain(*span, ChainElement::CallExpression(node))
+      }
       match_member_expression!(Expression) => self.ast_builder.expression_chain(
         *span,
-        ChainElement::from(expression.try_into().unwrap()),
+        ChainElement::from(MemberExpression::try_from(expression).unwrap()),
       ),
       _ => expression,
     })

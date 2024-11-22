@@ -20,9 +20,9 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     match node {
       JSXElementName::Identifier(_node) => None,
-      JSXElementName::IdentifierReference(node) => self
-        .transform_identifier_reference_read(node, false)
-        .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
+      JSXElementName::IdentifierReference(node) => {
+        self.transform_identifier_reference_read(node, false).map(Expression::Identifier)
+      }
       JSXElementName::NamespacedName(_node) => None,
       JSXElementName::MemberExpression(node) => {
         self.transform_jsx_member_expression_effect_only(node, false)
@@ -36,24 +36,15 @@ impl<'a> Transformer<'a> {
     node: &'a JSXElementName<'a>,
   ) -> JSXElementName<'a> {
     match node {
-      JSXElementName::Identifier(node) => {
-        self.ast_builder.jsx_element_name_from_jsx_identifier(self.clone_node(node))
-      }
-      JSXElementName::IdentifierReference(node) => {
-        self.ast_builder.jsx_element_name_from_identifier_reference(
-          self.transform_identifier_reference_read(node, true).unwrap(),
-        )
-      }
-      JSXElementName::NamespacedName(node) => {
-        self.ast_builder.jsx_element_name_from_jsx_namespaced_name(self.clone_node(node))
-      }
+      JSXElementName::Identifier(node) => JSXElementName::Identifier(self.clone_node(node)),
+      JSXElementName::IdentifierReference(node) => JSXElementName::IdentifierReference(
+        self.transform_identifier_reference_read(node, true).unwrap(),
+      ),
       JSXElementName::MemberExpression(node) => {
-        self.ast_builder.jsx_element_name_from_jsx_member_expression(
-          self.transform_jsx_member_expression_need_val(node),
-        )
+        JSXElementName::MemberExpression(self.transform_jsx_member_expression_need_val(node))
       }
-      JSXElementName::ThisExpression(node) => {
-        self.ast_builder.jsx_element_name_from_this_expression(self.clone_node(node))
+      JSXElementName::NamespacedName(_) | JSXElementName::ThisExpression(_) => {
+        self.clone_node(node)
       }
     }
   }

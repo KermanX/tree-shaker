@@ -1,5 +1,8 @@
 use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
-use oxc::ast::ast::{VariableDeclaration, VariableDeclarationKind};
+use oxc::{
+  allocator,
+  ast::ast::{VariableDeclaration, VariableDeclarationKind},
+};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_variable_declaration(
@@ -38,7 +41,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_variable_declaration(
     &self,
     node: &'a VariableDeclaration<'a>,
-  ) -> Option<VariableDeclaration<'a>> {
+  ) -> Option<allocator::Box<'a, VariableDeclaration<'a>>> {
     let VariableDeclaration { span, kind, declarations, .. } = node;
     let mut transformed_decls = self.ast_builder.vec();
     for declarator in declarations {
@@ -50,7 +53,7 @@ impl<'a> Transformer<'a> {
     if transformed_decls.is_empty() {
       None
     } else {
-      Some(self.ast_builder.variable_declaration(*span, *kind, transformed_decls, false))
+      Some(self.ast_builder.alloc_variable_declaration(*span, *kind, transformed_decls, false))
     }
   }
 }

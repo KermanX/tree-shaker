@@ -6,6 +6,7 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::{
+  allocator,
   ast::ast::{Expression, JSXExpression, JSXExpressionContainer},
   span::GetSpan,
 };
@@ -55,12 +56,12 @@ impl<'a> Transformer<'a> {
   pub fn transform_jsx_expression_container_need_val(
     &self,
     node: &'a JSXExpressionContainer<'a>,
-  ) -> JSXExpressionContainer<'a> {
+  ) -> allocator::Box<'a, JSXExpressionContainer<'a>> {
     let data = self.get_data::<AsJsxChildData>(AstKind2::JsxExpressionContainer(node));
 
     let JSXExpressionContainer { span, expression } = node;
 
-    self.ast_builder.jsx_expression_container(
+    self.ast_builder.alloc_jsx_expression_container(
       *span,
       if let Some(literal) = data.collector.build_expr(&self.ast_builder, *span) {
         let effect = self.transform_jsx_expression_container_effect_only(node);
@@ -74,9 +75,9 @@ impl<'a> Transformer<'a> {
           JSXExpression::EmptyExpression(node) => {
             self.ast_builder.jsx_expression_jsx_empty_expression(node.span)
           }
-          node => JSXExpression::from(
-            self.transform_expression(node.to_expression(), true).unwrap(),
-          ),
+          node => {
+            JSXExpression::from(self.transform_expression(node.to_expression(), true).unwrap())
+          }
         }
       },
     )
