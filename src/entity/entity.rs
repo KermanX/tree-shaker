@@ -258,7 +258,7 @@ impl<'a> Entity<'a> {
   ) -> (Vec<Entity<'a>>, Entity<'a>, Consumable<'a>) {
     let (elements, rest, deps) = self.iterate(analyzer, dep);
     let deps = box_consumable(ConsumableNode::new(deps));
-    let mut result_elements = Vec::new();
+    let mut result_elements = Vec::with_capacity(length);
     for i in 0..length.min(elements.len()) {
       result_elements.push(analyzer.factory.computed(elements[i].clone(), deps.cloned()));
     }
