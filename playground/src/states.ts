@@ -51,7 +51,7 @@ watchEffect(save)
 
 const minifiedOnly = computed(() => tree_shake(debouncedInput.value, "disabled", true, false, false))
 const treeShakedOnly = computed(() => tree_shake(debouncedInput.value, preset.value, false, false, alwaysInline.value))
-const treeShakedMinified = computed(() => tree_shake(treeShakedOnly.value.output, preset.value, true, false, false))
+const treeShakedMinified = computed(() => tree_shake(treeShakedOnly.value.output, "disabled", true, false, false))
 
 const result = computed(() => {
   return {

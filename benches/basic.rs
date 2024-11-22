@@ -18,7 +18,7 @@ fn run_tree_shaker(source_text: String) -> String {
   result.codegen_return.code
 }
 
-const FIXTURES: &[&str] = &["vue", "vuetify"];
+const FIXTURES: &[&str] = &["vue", "vuetify", "react"];
 
 pub fn criterion_benchmark(c: &mut Criterion) {
   let mut group = c.benchmark_group("fixtures");

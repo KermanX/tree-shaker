@@ -33,7 +33,11 @@ pub fn tree_shake(
       .with_react_jsx(true)
       .with_always_inline_literal(always_inline_literal),
       minify_options: do_minify.then(|| MinifierOptions::default()),
-      codegen_options: CodegenOptions { minify: do_minify, ..Default::default() },
+      codegen_options: CodegenOptions {
+        minify: do_minify,
+        comments: !do_minify,
+        ..Default::default()
+      },
       logging,
     },
   );

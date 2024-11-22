@@ -33,6 +33,10 @@ export default function (options: {
             fileName: disabled ? 'bundled' : 'shaken',
             ...config?.build?.lib,
           },
+          modulePreload: {
+            polyfill: false,
+            ...(typeof config?.build?.modulePreload === 'object' ? config.build.modulePreload : {}),
+          }
         }
       }
     },
