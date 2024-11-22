@@ -7,10 +7,11 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::{
+  allocator,
   ast::{
     ast::{
       Class, ClassBody, ClassElement, ClassType, MethodDefinitionKind, PropertyDefinitionType,
-      PropertyKind,
+      PropertyKind, StaticBlock,
     },
     NONE,
   },
@@ -187,7 +188,11 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_class(&self, node: &'a Class<'a>, need_val: bool) -> Option<Class<'a>> {
+  pub fn transform_class(
+    &self,
+    node: &'a Class<'a>,
+    need_val: bool,
+  ) -> Option<allocator::Box<'a, Class<'a>>> {
     let Class { r#type, span, id, super_class, body, .. } = node;
 
     let transformed_id = id.as_ref().and_then(|node| self.transform_binding_identifier(node));
@@ -223,9 +228,9 @@ impl<'a> Transformer<'a> {
         for element in body {
           if ever_constructed || element.r#static() {
             if let Some(element) = match element {
-              ClassElement::StaticBlock(node) => self
-                .transform_static_block(node)
-                .map(|node| self.ast_builder.class_element_from_static_block(node)),
+              ClassElement::StaticBlock(node) => {
+                self.transform_static_block(node).map(ClassElement::StaticBlock)
+              }
               ClassElement::MethodDefinition(node) => self.transform_method_definition(node),
               ClassElement::PropertyDefinition(node) => self.transform_property_definition(node),
               ClassElement::AccessorProperty(_node) => unreachable!(),
@@ -258,7 +263,7 @@ impl<'a> Transformer<'a> {
         self.ast_builder.class_body(*span, transformed_body)
       };
 
-      Some(self.ast_builder.class(
+      Some(self.ast_builder.alloc_class(
         *r#type,
         *span,
         self.ast_builder.vec(),
@@ -295,7 +300,8 @@ impl<'a> Transformer<'a> {
         match element {
           ClassElement::StaticBlock(node) => {
             if let Some(node) = self.transform_static_block(node) {
-              statements.push(self.ast_builder.statement_block(node.span, node.body));
+              let StaticBlock { span, body, .. } = node.unbox();
+              statements.push(self.ast_builder.statement_block(span, body));
             }
           }
           ClassElement::PropertyDefinition(node) if node.r#static => {
@@ -314,7 +320,7 @@ impl<'a> Transformer<'a> {
         None
       } else {
         Some(
-          self.ast_builder.class(
+          self.ast_builder.alloc_class(
             *r#type,
             *span,
             self.ast_builder.vec(),

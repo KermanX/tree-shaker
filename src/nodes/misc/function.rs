@@ -7,6 +7,7 @@ use crate::{
   transformer::Transformer,
 };
 use oxc::{
+  allocator,
   ast::ast::{
     Function, FunctionType, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration,
   },
@@ -93,7 +94,11 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_function(&self, node: &'a Function<'a>, need_val: bool) -> Option<Function<'a>> {
+  pub fn transform_function(
+    &self,
+    node: &'a Function<'a>,
+    need_val: bool,
+  ) -> Option<allocator::Box<'a, Function<'a>>> {
     if need_val || self.is_referred(AstKind2::Function(&node)) {
       let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
 
@@ -107,7 +112,7 @@ impl<'a> Transformer<'a> {
         self.update_var_decl_state(symbol, true);
       }
 
-      Some(self.ast_builder.function(
+      Some(self.ast_builder.alloc_function(
         *r#type,
         *span,
         id.clone(),

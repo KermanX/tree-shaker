@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer,
   utils::StatementVecData,
 };
-use oxc::ast::ast::BlockStatement;
+use oxc::{allocator, ast::ast::BlockStatement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_block_statement(&mut self, node: &'a BlockStatement) {
@@ -19,7 +19,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_block_statement(
     &self,
     node: &'a BlockStatement<'a>,
-  ) -> Option<BlockStatement<'a>> {
+  ) -> Option<allocator::Box<'a, BlockStatement<'a>>> {
     let data = self.get_data::<StatementVecData>(AstKind2::BlockStatement(node));
 
     let BlockStatement { span, body, .. } = node;
@@ -29,7 +29,7 @@ impl<'a> Transformer<'a> {
     if statements.is_empty() {
       None
     } else {
-      Some(self.ast_builder.block_statement(*span, statements))
+      Some(self.ast_builder.alloc_block_statement(*span, statements))
     }
   }
 }

@@ -50,20 +50,12 @@ impl<'a> Transformer<'a> {
     for child in node.iter() {
       transformed.push(match child {
         JSXChild::Text(node) => self.transform_jsx_text_need_val(node),
-        JSXChild::Element(node) => {
-          self.ast_builder.jsx_child_from_jsx_element(self.transform_jsx_element_need_val(node))
-        }
-        JSXChild::Fragment(node) => {
-          self.ast_builder.jsx_child_from_jsx_fragment(self.transform_jsx_fragment_need_val(node))
-        }
+        JSXChild::Element(node) => JSXChild::Element(self.transform_jsx_element_need_val(node)),
+        JSXChild::Fragment(node) => JSXChild::Fragment(self.transform_jsx_fragment_need_val(node)),
         JSXChild::ExpressionContainer(node) => {
-          self.ast_builder.jsx_child_from_jsx_expression_container(
-            self.transform_jsx_expression_container_need_val(node),
-          )
+          JSXChild::ExpressionContainer(self.transform_jsx_expression_container_need_val(node))
         }
-        JSXChild::Spread(node) => self
-          .ast_builder
-          .jsx_child_from_jsx_spread_child(self.transform_jsx_spread_child_need_val(node)),
+        JSXChild::Spread(node) => JSXChild::Spread(self.transform_jsx_spread_child_need_val(node)),
       })
     }
 

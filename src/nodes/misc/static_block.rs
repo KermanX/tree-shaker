@@ -1,5 +1,5 @@
 use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, utils::StatementVecData};
-use oxc::ast::ast::StaticBlock;
+use oxc::{allocator, ast::ast::StaticBlock};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_static_block(&mut self, node: &'a StaticBlock<'a>) {
@@ -10,13 +10,16 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_static_block(&self, node: &'a StaticBlock<'a>) -> Option<StaticBlock<'a>> {
+  pub fn transform_static_block(
+    &self,
+    node: &'a StaticBlock<'a>,
+  ) -> Option<allocator::Box<'a, StaticBlock<'a>>> {
     let data = self.get_data::<StatementVecData>(AstKind2::StaticBlock(node));
 
     let StaticBlock { span, body, .. } = node;
 
     let body = self.transform_statement_vec(data, body);
 
-    (!body.is_empty()).then(|| self.ast_builder.static_block(*span, body))
+    (!body.is_empty()).then(|| self.ast_builder.alloc_static_block(*span, body))
   }
 }

@@ -153,7 +153,7 @@ impl<'a> Transformer<'a> {
       BindingPatternKind::BindingIdentifier(node) => {
         let result = self.transform_binding_identifier(node).map(|identifier| {
           self.ast_builder.binding_pattern(
-            self.ast_builder.binding_pattern_kind_from_binding_identifier(identifier),
+            BindingPatternKind::BindingIdentifier(self.ast_builder.alloc(identifier)),
             NONE,
             false,
           )

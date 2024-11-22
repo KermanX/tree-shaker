@@ -90,15 +90,16 @@ impl<'a> Transformer<'a> {
                 init,
               )
             } else {
-              self.ast_builder.assignment_target_maybe_default_assignment_target(
-                self.build_unused_assignment_target(SPAN),
-              )
+              self.build_unused_assignment_target(SPAN).into()
             },
           ))
         } else if binding.is_some() || init.is_some() {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_identifier(
             *span,
-            binding.unwrap_or(self.build_unused_identifier_reference_write(binding_span)),
+            binding.map_or_else(
+              || self.build_unused_identifier_reference_write(binding_span),
+              |binding| binding.unbox(),
+            ),
             init,
           ))
         } else {
@@ -121,9 +122,7 @@ impl<'a> Transformer<'a> {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
             *span,
             name,
-            self.ast_builder.assignment_target_maybe_default_assignment_target(
-              self.build_unused_assignment_target(name_span),
-            ),
+            self.build_unused_assignment_target(name_span).into(),
           ))
         } else {
           None

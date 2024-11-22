@@ -75,7 +75,7 @@ impl<'a> Transformer<'a> {
           let referred = self.is_referred(AstKind2::ArrayExpressionElement(element));
           let element = self.transform_expression(element.to_expression(), need_val && referred);
           if let Some(inner) = element {
-            transformed_elements.push(self.ast_builder.array_expression_element_expression(inner));
+            transformed_elements.push(inner.into());
           } else if need_val {
             transformed_elements.push(self.ast_builder.array_expression_element_elision(span));
           }
@@ -93,9 +93,7 @@ impl<'a> Transformer<'a> {
             if self.config.iterate_side_effects {
               self.ast_builder.expression_array(
                 *span,
-                self
-                  .ast_builder
-                  .vec1(self.ast_builder.array_expression_element_from_spread_element(inner)),
+                self.ast_builder.vec1(ArrayExpressionElement::SpreadElement(inner)),
                 None,
               )
             } else {

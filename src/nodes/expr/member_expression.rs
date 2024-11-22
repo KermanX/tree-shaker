@@ -147,7 +147,7 @@ impl<'a> Transformer<'a> {
         if need_read {
           let object = self.transform_expression(object, true).unwrap();
           let key = self.transform_expression(expression, true).unwrap();
-          Some(self.ast_builder.expression_member(self.ast_builder.member_expression_computed(
+          Some(Expression::from(self.ast_builder.member_expression_computed(
             *span,
             object,
             key,
@@ -164,7 +164,7 @@ impl<'a> Transformer<'a> {
 
         let object = self.transform_expression(object, need_read);
         if need_read {
-          Some(self.ast_builder.expression_member(self.ast_builder.member_expression_static(
+          Some(Expression::from(self.ast_builder.member_expression_static(
             *span,
             object.unwrap(),
             property.clone(),
@@ -180,14 +180,17 @@ impl<'a> Transformer<'a> {
         let object = self.transform_expression(object, need_read);
 
         if need_read {
-          Some(self.ast_builder.expression_member(
-            self.ast_builder.member_expression_private_field_expression(
-              *span,
-              object.unwrap(),
-              field.clone(),
-              data.need_optional,
-            ),
-          ))
+          Some(
+            self
+              .ast_builder
+              .member_expression_private_field_expression(
+                *span,
+                object.unwrap(),
+                field.clone(),
+                data.need_optional,
+              )
+              .into(),
+          )
         } else {
           object
         }

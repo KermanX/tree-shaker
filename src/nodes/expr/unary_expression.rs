@@ -99,7 +99,7 @@ impl<'a> Transformer<'a> {
         let argument = match &node.argument {
           Expression::StaticMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
-            self.ast_builder.expression_member(self.ast_builder.member_expression_static(
+            Expression::from(self.ast_builder.member_expression_static(
               node.span,
               object,
               node.property.clone(),
@@ -108,28 +108,24 @@ impl<'a> Transformer<'a> {
           }
           Expression::PrivateFieldExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
-            self.ast_builder.expression_member(
-              self.ast_builder.member_expression_private_field_expression(
-                node.span,
-                object,
-                node.field.clone(),
-                node.optional,
-              ),
-            )
+            Expression::from(self.ast_builder.member_expression_private_field_expression(
+              node.span,
+              object,
+              node.field.clone(),
+              node.optional,
+            ))
           }
           Expression::ComputedMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
             let property = self.transform_expression(&node.expression, true).unwrap();
-            self.ast_builder.expression_member(self.ast_builder.member_expression_computed(
+            Expression::from(self.ast_builder.member_expression_computed(
               node.span,
               object,
               property,
               node.optional,
             ))
           }
-          Expression::Identifier(node) => {
-            self.ast_builder.expression_from_identifier_reference(self.clone_node(node))
-          }
+          Expression::Identifier(node) => Expression::Identifier(self.clone_node(node)),
           _ => unreachable!(),
         };
         Some(self.ast_builder.expression_unary(*span, *operator, argument))
