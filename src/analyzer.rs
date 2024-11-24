@@ -90,6 +90,7 @@ impl<'a> Analyzer<'a> {
       }
 
       let mut dirty = false;
+      dirty |= self.consume_top_level_uncaught();
       dirty |= self.call_exhaustive_deps();
       dirty |= self.post_analyze_handle_conditional();
       dirty |= self.post_analyze_handle_loops();
@@ -97,9 +98,6 @@ impl<'a> Analyzer<'a> {
         break;
       }
     }
-
-    // We don't need to worry about uncaught thrown function being executed
-    self.consume_top_level_uncaught();
 
     self.scope_context.assert_final_state();
 
@@ -114,10 +112,15 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn consume_top_level_uncaught(&mut self) {
-    self.call_scope_mut().try_scopes.pop().unwrap().thrown_val(self).map(|entity| {
-      entity.consume(self);
-    });
+  pub fn consume_top_level_uncaught(&mut self) -> bool {
+    let thrown_values = &mut self.call_scope_mut().try_scopes.last_mut().unwrap().thrown_values;
+    if thrown_values.is_empty() {
+      false
+    } else {
+      let values = mem::take(thrown_values);
+      self.consume(values);
+      true
+    }
   }
 }
 
