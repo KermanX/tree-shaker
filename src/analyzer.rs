@@ -3,7 +3,9 @@ use crate::{
   builtins::Builtins,
   dep::{DepId, ReferredDeps},
   entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
-  scope::{conditional::ConditionalDataMap, r#loop::LoopDataMap, ScopeContext},
+  scope::{
+    conditional::ConditionalDataMap, exhaustive::TrackerRunner, r#loop::LoopDataMap, ScopeContext,
+  },
   tree_shaker::TreeShaker,
   utils::{DebuggerEvent, ExtraData, Logger, StatementVecData},
   TreeShakeConfig,
@@ -14,6 +16,7 @@ use oxc::{
   semantic::{Semantic, SymbolId},
   span::{GetSpan, Span},
 };
+use rustc_hash::FxHashSet;
 use std::{mem, rc::Rc};
 
 pub struct Analyzer<'a> {
@@ -31,9 +34,12 @@ pub struct Analyzer<'a> {
   pub default_export: Option<Entity<'a>>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
+  pub pending_deps: FxHashSet<TrackerRunner<'a>>,
   pub builtins: Builtins<'a>,
   pub entity_op: EntityOpHost<'a>,
   pub logger: Option<&'a Logger>,
+
+  pub debug: usize,
 }
 
 impl<'a> Analyzer<'a> {
@@ -58,9 +64,11 @@ impl<'a> Analyzer<'a> {
       default_export: None,
       scope_context: ScopeContext::new(&factory),
       pending_labels: Vec::new(),
+      pending_deps: Default::default(),
       builtins: Builtins::new(config, factory),
       entity_op: EntityOpHost::new(allocator),
       logger,
+      debug: 0,
     }
   }
 
@@ -72,16 +80,7 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<StatementVecData>(AstKind2::Program(node));
     self.exec_statement_vec(data, &node.body);
 
-    // Consume exports
-    self.default_export.take().map(|entity| entity.consume(self));
-    for symbol in self.named_exports.clone() {
-      let entity = self.read_symbol(symbol).unwrap();
-      entity.consume(self);
-    }
-    // Consume uncaught thrown values
-    self.call_scope_mut().try_scopes.pop().unwrap().thrown_val(self).map(|entity| {
-      entity.consume(self);
-    });
+    self.consume_exports();
 
     let mut round = 0usize;
     loop {
@@ -91,6 +90,7 @@ impl<'a> Analyzer<'a> {
       }
 
       let mut dirty = false;
+      dirty |= self.call_exhaustive_deps();
       dirty |= self.post_analyze_handle_conditional();
       dirty |= self.post_analyze_handle_loops();
       if !dirty {
@@ -98,7 +98,26 @@ impl<'a> Analyzer<'a> {
       }
     }
 
+    // We don't need to worry about uncaught thrown function being executed
+    self.consume_top_level_uncaught();
+
     self.scope_context.assert_final_state();
+
+    // println!("debug: {:?}", self.debug);
+  }
+
+  pub fn consume_exports(&mut self) {
+    self.default_export.take().map(|entity| entity.consume(self));
+    for symbol in self.named_exports.clone() {
+      let entity = self.read_symbol(symbol).unwrap();
+      entity.consume(self);
+    }
+  }
+
+  pub fn consume_top_level_uncaught(&mut self) {
+    self.call_scope_mut().try_scopes.pop().unwrap().thrown_val(self).map(|entity| {
+      entity.consume(self);
+    });
   }
 }
 

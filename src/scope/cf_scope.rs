@@ -339,5 +339,7 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
+
+    self.call_exhaustive_deps();
   }
 }

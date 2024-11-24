@@ -93,7 +93,7 @@ impl<'a> Analyzer<'a> {
       }));
       self.scope_context.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
-        self.exec_exhaustive_deps(false, (id, symbol));
+        self.trigger_exhaustive_deps(false, (id, symbol));
       }
     }
   }
@@ -121,7 +121,7 @@ impl<'a> Analyzer<'a> {
       drop(variable_ref);
       variable.borrow_mut().value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_dep));
-      self.exec_exhaustive_deps(false, (id, symbol));
+      self.trigger_exhaustive_deps(false, (id, symbol));
     }
   }
 
@@ -213,7 +213,7 @@ impl<'a> Analyzer<'a> {
           };
           drop(variable_ref);
 
-          self.exec_exhaustive_deps(should_consume, (id, symbol));
+          self.trigger_exhaustive_deps(should_consume, (id, symbol));
         }
       }
       true

@@ -124,7 +124,7 @@ impl<'a> Analyzer<'a> {
     (should_consume, indeterminate)
   }
 
-  pub fn exec_exhaustive_deps(
+  pub fn trigger_exhaustive_deps(
     &mut self,
     should_consume: bool,
     (scope, symbol): (ScopeId, SymbolId),
@@ -132,19 +132,48 @@ impl<'a> Analyzer<'a> {
     if let Some(runners) =
       self.scope_context.variable.get_mut(scope).exhaustive_deps.get_mut(&symbol)
     {
-      let runners = if should_consume { mem::take(runners) } else { runners.clone() };
       if runners.is_empty() {
         false
       } else {
-        for runner in runners {
-          let TrackerRunner { runner, once } = runner.clone();
-          let deps = self.exec_exhaustively(runner.clone(), once);
-          self.track_dep_after_finished(once, runner, deps);
+        // for runner in runners {
+        //   let old_count = self.referred_deps.debug_count();
+        //   let TrackerRunner { runner, once } = runner.clone();
+        //   let deps = self.exec_exhaustively(runner.clone(), once);
+        //   self.track_dep_after_finished(once, runner, deps);
+        //   let new_count = self.referred_deps.debug_count();
+        //   if new_count > old_count {
+        //     self.debug += 1;
+        //   }
+        // }
+        if should_consume {
+          self.pending_deps.extend(runners.drain());
+        } else {
+          self.pending_deps.extend(runners.iter().cloned());
         }
         true
       }
     } else {
       false
+    }
+  }
+
+  pub fn call_exhaustive_deps(&mut self) -> bool {
+    if self.pending_deps.is_empty() {
+      return false;
+    }
+    loop {
+      let runners = mem::take(&mut self.pending_deps);
+      for runner in runners {
+        // let old_count = self.referred_deps.debug_count();
+        let TrackerRunner { runner, once } = runner;
+        let deps = self.exec_exhaustively(runner.clone(), once);
+        self.track_dep_after_finished(once, runner, deps);
+        // let new_count = self.referred_deps.debug_count();
+        // self.debug += 1;
+      }
+      if self.pending_deps.is_empty() {
+        return true;
+      }
     }
   }
 
