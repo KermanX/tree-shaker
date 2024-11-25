@@ -204,7 +204,7 @@ impl<'a> FunctionEntity<'a> {
     consume: bool,
   ) -> Entity<'a> {
     if let Some(logger) = analyzer.logger {
-      logger.push_fn_call(self.callee.span(), self.callee.name());
+      logger.push_fn_call(self.callee.span(), self.callee.name().to_string());
     }
 
     let call_dep = box_consumable((self.callee.into_dep_id(), dep));
@@ -234,10 +234,9 @@ impl<'a> FunctionEntity<'a> {
   }
 
   pub fn consume_body(&self, analyzer: &mut Analyzer<'a>) {
-    if self.body_consumed.get() {
+    if self.body_consumed.replace(true) {
       return;
     }
-    self.body_consumed.set(true);
 
     analyzer.consume(self.callee.into_dep_id());
     analyzer.consume_arguments(Some(self.callee));

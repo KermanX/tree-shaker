@@ -13,7 +13,7 @@ use crate::{
   consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
   entity::{Entity, EntityFactory, LabelEntity},
-  utils::{CalleeInfo, DebuggerEvent},
+  utils::{CalleeInfo, CalleeNode, DebuggerEvent},
 };
 use call_scope::CallScope;
 use cf_scope::CfScope;
@@ -51,7 +51,12 @@ impl<'a> ScopeContext<'a> {
     ScopeContext {
       call: vec![CallScope::new(
         DepId::from_counter(),
-        CalleeInfo::new_module(factory),
+        CalleeInfo {
+          node: CalleeNode::Module,
+          instance_id: factory.alloc_instance_id(),
+          #[cfg(feature = "flame")]
+          debug_name: "<Module>",
+        },
         vec![],
         0,
         body_variable_scope,

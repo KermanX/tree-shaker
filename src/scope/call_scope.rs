@@ -48,7 +48,7 @@ impl<'a> CallScope<'a> {
       need_consume_arguments: false,
 
       #[cfg(feature = "flame")]
-      scope_guard: flame::start_guard(callee.name()),
+      scope_guard: flame::start_guard(callee.debug_name.to_string()),
     }
   }
 

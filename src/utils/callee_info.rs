@@ -1,5 +1,5 @@
 use super::ast::AstKind2;
-use crate::{analyzer::Analyzer, dep::DepId, entity::EntityFactory};
+use crate::{analyzer::Analyzer, dep::DepId};
 use oxc::{
   ast::ast::{ArrowFunctionExpression, Class, Function},
   span::{GetSpan, Span},
@@ -54,19 +54,10 @@ pub struct CalleeInfo<'a> {
   pub node: CalleeNode<'a>,
   pub instance_id: usize,
   #[cfg(feature = "flame")]
-  pub line_col: line_index::LineCol,
+  pub debug_name: &'a str,
 }
 
 impl<'a> CalleeInfo<'a> {
-  pub fn new_module(factory: &EntityFactory<'a>) -> Self {
-    Self {
-      node: CalleeNode::Module,
-      instance_id: factory.alloc_instance_id(),
-      #[cfg(feature = "flame")]
-      line_col: line_index::LineCol { line: 0, col: 0 },
-    }
-  }
-
   pub fn into_dep_id(self) -> DepId {
     match self.node {
       CalleeNode::Function(node) => AstKind2::Function(node),
@@ -82,21 +73,13 @@ impl<'a> CalleeInfo<'a> {
     self.node.span()
   }
 
-  pub fn name(&self) -> String {
-    let name = match self.node {
-      CalleeNode::Function(node) => node.id.as_ref().map_or("<unknown>", |id| &id.name).to_string(),
-      CalleeNode::ArrowFunctionExpression(_) => "<anonymous>".to_string(),
-      CalleeNode::ClassStatics(_) => "<ClassStatics>".to_string(),
-      CalleeNode::ClassConstructor(_) => "<ClassConstructor>".to_string(),
-      CalleeNode::Module => return "<Module>".to_string(),
-    };
-    #[cfg(feature = "flame")]
-    {
-      format!("{}:{}:{}", name, self.line_col.line, self.line_col.col)
-    }
-    #[cfg(not(feature = "flame"))]
-    {
-      name
+  pub fn name(&self) -> &'a str {
+    match self.node {
+      CalleeNode::Function(node) => node.id.as_ref().map_or("<unknown>", |id| &id.name),
+      CalleeNode::ArrowFunctionExpression(_) => "<anonymous>",
+      CalleeNode::ClassStatics(_) => "<ClassStatics>",
+      CalleeNode::ClassConstructor(_) => "<ClassConstructor>",
+      CalleeNode::Module => "<Module>",
     }
   }
 }
@@ -107,7 +90,26 @@ impl<'a> Analyzer<'a> {
       node,
       instance_id: self.factory.alloc_instance_id(),
       #[cfg(feature = "flame")]
-      line_col: self.line_index.line_col(node.span().start.into()),
+      debug_name: {
+        let line_col = self.line_index.line_col(node.span().start.into());
+        let resolved_name = match node {
+          CalleeNode::Function(node) => {
+            if let Some(id) = &node.id {
+              &id.name
+            } else {
+              self.resolve_function_name(node.scope_id()).unwrap_or("<unnamed>")
+            }
+          }
+          CalleeNode::ArrowFunctionExpression(node) => {
+            self.resolve_function_name(node.scope_id()).unwrap_or("<anonymous>")
+          }
+          CalleeNode::ClassStatics(_) => "<ClassStatics>",
+          CalleeNode::ClassConstructor(_) => "<ClassConstructor>",
+          CalleeNode::Module => "<Module>",
+        };
+        let debug_name = format!("{}:{}:{}", resolved_name, line_col.line + 1, line_col.col + 1);
+        self.allocator.alloc(debug_name)
+      },
     }
   }
 }
