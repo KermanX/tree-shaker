@@ -25,7 +25,7 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_assign_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn(|analyzer, dep, _, args| {
+    self.factory.implemented_builtin_fn("Object.assign", |analyzer, dep, _, args| {
       let (known, rest, deps) = args.iterate(analyzer, dep.cloned());
 
       if known.len() < 2 {
@@ -59,7 +59,7 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_keys_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn(|analyzer, dep, _, args| {
+    self.factory.implemented_builtin_fn("Object.keys", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
       let (properties, deps) = object.enumerate_properties(analyzer, dep);
 
@@ -76,7 +76,7 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_values_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn(|analyzer, dep, _, args| {
+    self.factory.implemented_builtin_fn("Object.values", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
       let (properties, deps) = object.enumerate_properties(analyzer, dep);
 
@@ -91,7 +91,7 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_entries_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn(|analyzer, dep, _, args| {
+    self.factory.implemented_builtin_fn("Object.entries", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
       let (properties, deps) = object.enumerate_properties(analyzer, dep);
 

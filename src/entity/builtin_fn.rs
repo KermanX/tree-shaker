@@ -10,6 +10,8 @@ use crate::{
 use std::fmt::Debug;
 
 pub trait BuiltinFnEntity<'a>: Debug {
+  #[cfg(feature = "flame")]
+  fn name(&self) -> &'static str;
   fn object(&self) -> Option<&'a ObjectEntity<'a>> {
     None
   }
@@ -91,6 +93,8 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
+    #[cfg(feature = "flame")]
+    let _scope_guard = flame::start_guard(self.name());
     self.call_impl(analyzer, dep, this, args)
   }
 
@@ -185,6 +189,8 @@ impl<'a, T: Fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Ent
 
 #[derive(Clone, Copy)]
 pub struct ImplementedBuiltinFnEntity<'a, F: BuiltinFnImplementation<'a> + 'a> {
+  #[cfg(feature = "flame")]
+  name: &'static str,
   implementation: F,
   object: Option<&'a ObjectEntity<'a>>,
 }
@@ -198,6 +204,10 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnEnti
 impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
   for ImplementedBuiltinFnEntity<'a, F>
 {
+  #[cfg(feature = "flame")]
+  fn name(&self) -> &'static str {
+    self.name
+  }
   fn object(&self) -> Option<&'a ObjectEntity<'a>> {
     self.object
   }
@@ -215,18 +225,27 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
 impl<'a> EntityFactory<'a> {
   pub fn implemented_builtin_fn<F: BuiltinFnImplementation<'a> + 'a>(
     &self,
+    name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
-    self.entity(ImplementedBuiltinFnEntity { implementation, object: None })
+    self.entity(ImplementedBuiltinFnEntity {
+      #[cfg(feature = "flame")]
+      name,
+      implementation,
+      object: None,
+    })
   }
 }
 
 impl<'a> Analyzer<'a> {
   pub fn dynamic_implemented_builtin<F: BuiltinFnImplementation<'a> + 'a>(
     &mut self,
+    name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
     self.factory.entity(ImplementedBuiltinFnEntity {
+      #[cfg(feature = "flame")]
+      name,
       implementation,
       object: Some(self.new_function_object()),
     })
@@ -239,6 +258,10 @@ pub struct PureBuiltinFnEntity<'a> {
 }
 
 impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
+  #[cfg(feature = "flame")]
+  fn name(&self) -> &'static str {
+    "<PureBuiltin>"
+  }
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,

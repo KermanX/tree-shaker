@@ -102,6 +102,9 @@ impl<'a> Analyzer<'a> {
     self.scope_context.assert_final_state();
 
     // println!("debug: {:?}", self.debug);
+
+    #[cfg(feature = "flame")]
+    flamescope::dump(&mut std::fs::File::create("flamescope.json").unwrap()).unwrap();
   }
 
   pub fn consume_exports(&mut self) {

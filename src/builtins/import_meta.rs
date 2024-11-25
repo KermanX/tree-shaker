@@ -18,7 +18,9 @@ impl<'a> Builtins<'a> {
       ObjectProperty {
         definite: true,
         possible_values: vec![ObjectPropertyValue::Property(
-          Some(factory.implemented_builtin_fn(|analyzer, _, _, _| analyzer.factory.unknown_string)),
+          Some(factory.implemented_builtin_fn("import.meta.url", |analyzer, _, _, _| {
+            analyzer.factory.unknown_string
+          })),
           None,
         )],
         non_existent: Default::default(),

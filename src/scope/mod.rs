@@ -68,7 +68,7 @@ impl<'a> ScopeContext<'a> {
     }
   }
 
-  pub fn assert_final_state(&self) {
+  pub fn assert_final_state(&mut self) {
     debug_assert_eq!(self.call.len(), 1);
     debug_assert_eq!(self.variable.current_depth(), 0);
     debug_assert_eq!(self.cf.current_depth(), 0);
@@ -79,6 +79,9 @@ impl<'a> ScopeContext<'a> {
         debug_assert!(!data.dirty);
       }
     }
+
+    #[cfg(feature = "flame")]
+    self.call.pop().unwrap().scope_guard.end();
   }
 
   pub fn alloc_object_id(&mut self) -> SymbolId {

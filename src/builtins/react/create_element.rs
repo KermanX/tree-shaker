@@ -4,7 +4,7 @@ use crate::{
 };
 
 pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
-  factory.implemented_builtin_fn(|analyzer, dep, _this, args| {
+  factory.implemented_builtin_fn("React::createElement", |analyzer, dep, _this, args| {
     let (args, children, _) = args.destruct_as_array(analyzer, dep, 2);
     let [tag, props] = args[..] else { unreachable!() };
     let props = match props.test_nullish() {

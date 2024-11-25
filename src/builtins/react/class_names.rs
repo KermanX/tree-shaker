@@ -8,7 +8,7 @@ pub fn create_class_names_namespace<'a>(
   factory: &'a EntityFactory<'a>,
   _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
-  factory.implemented_builtin_fn(|analyzer, dep, _this, args| {
+  factory.implemented_builtin_fn("classnames::default", |analyzer, dep, _this, args| {
     let (class_names, rest, iterate_dep) = args.iterate(analyzer, dep.cloned());
 
     let mut deps_1 = vec![];

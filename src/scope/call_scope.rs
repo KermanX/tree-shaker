@@ -13,7 +13,6 @@ use oxc::{
 };
 use std::{hash, mem};
 
-#[derive(Debug)]
 pub struct CallScope<'a> {
   pub call_id: DepId,
   pub callee: (CalleeNode<'a>, usize),
@@ -25,6 +24,9 @@ pub struct CallScope<'a> {
   pub is_generator: bool,
   pub try_scopes: Vec<TryScope<'a>>,
   pub need_consume_arguments: bool,
+
+  #[cfg(feature = "flame")]
+  pub scope_guard: flame::SpanGuard,
 }
 
 impl<'a> CallScope<'a> {
@@ -37,6 +39,10 @@ impl<'a> CallScope<'a> {
     is_async: bool,
     is_generator: bool,
   ) -> Self {
+    let name = callee.0.name();
+    let span = callee.0.span();
+    let flame_text = format!("{}@{}-{}", name, span.start, span.end);
+
     CallScope {
       call_id,
       callee,
@@ -48,6 +54,9 @@ impl<'a> CallScope<'a> {
       is_generator,
       try_scopes: vec![TryScope::new(cf_scope_depth)],
       need_consume_arguments: false,
+
+      #[cfg(feature = "flame")]
+      scope_guard: flame::start_guard(flame_text),
     }
   }
 
@@ -80,14 +89,17 @@ impl<'a> CallScope<'a> {
     } else {
       analyzer.factory.union(self.returned_values)
     };
-    (
-      self.old_variable_scope_stack,
-      if self.is_async {
-        analyzer.factory.computed_unknown(ConsumableNode::new((value, promise_error)))
-      } else {
-        value
-      },
-    )
+
+    let value = if self.is_async {
+      analyzer.factory.computed_unknown(ConsumableNode::new((value, promise_error)))
+    } else {
+      value
+    };
+
+    #[cfg(feature = "flame")]
+    self.scope_guard.end();
+
+    (self.old_variable_scope_stack, value)
   }
 }
 
