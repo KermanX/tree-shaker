@@ -3,8 +3,8 @@ use crate::{
   ast::{AstKind2, DeclarationKind},
   consumable::{box_consumable, Consumable},
   entity::Entity,
-  scope::call_scope::CalleeNode,
   transformer::Transformer,
+  utils::{CalleeInfo, CalleeNode},
 };
 use oxc::{
   allocator,
@@ -31,7 +31,7 @@ impl<'a> Analyzer<'a> {
   pub fn call_function(
     &mut self,
     fn_entity: Entity<'a>,
-    callee: (CalleeNode<'a>, usize),
+    callee: CalleeInfo<'a>,
     call_dep: Consumable<'a>,
     node: &'a Function<'a>,
     variable_scopes: Rc<Vec<ScopeId>>,
@@ -60,7 +60,7 @@ impl<'a> Analyzer<'a> {
           let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
           analyzer.declare_symbol(
             symbol,
-            box_consumable(callee.0.into_dep_id()),
+            box_consumable(callee.into_dep_id()),
             false,
             DeclarationKind::NamedFunctionInBody,
             Some(fn_entity.clone()),

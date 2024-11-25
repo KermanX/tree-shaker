@@ -3,8 +3,8 @@ use crate::{
   ast::{AstKind2, DeclarationKind},
   consumable::{box_consumable, ConsumableTrait},
   entity::{ClassEntity, Entity},
-  scope::call_scope::CalleeNode,
   transformer::Transformer,
+  utils::CalleeNode,
 };
 use oxc::{
   allocator,
@@ -59,7 +59,7 @@ impl<'a> Analyzer<'a> {
 
     let variable_scope_stack = self.scope_context.variable.stack.clone();
     self.push_call_scope(
-      (CalleeNode::ClassStatics(node), 0),
+      self.new_callee_info(CalleeNode::ClassStatics(node)),
       box_consumable(()),
       variable_scope_stack,
       false,
@@ -149,7 +149,7 @@ impl<'a> Analyzer<'a> {
     let variable_scope_stack = class.variable_scope_stack.clone();
     self.exec_consumed_fn(move |analyzer| {
       analyzer.push_call_scope(
-        (CalleeNode::ClassConstructor(node), 0),
+        analyzer.new_callee_info(CalleeNode::ClassConstructor(node)),
         box_consumable(()),
         variable_scope_stack.as_ref().clone(),
         false,

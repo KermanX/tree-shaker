@@ -1,21 +1,17 @@
 use super::try_scope::TryScope;
 use crate::{
   analyzer::Analyzer,
-  ast::AstKind2,
   consumable::{box_consumable, ConsumableNode, ConsumableTrait},
   dep::DepId,
   entity::Entity,
+  utils::CalleeInfo,
 };
-use oxc::{
-  ast::ast::{ArrowFunctionExpression, Class, Function},
-  semantic::ScopeId,
-  span::{GetSpan, Span, SPAN},
-};
-use std::{hash, mem};
+use oxc::semantic::ScopeId;
+use std::mem;
 
 pub struct CallScope<'a> {
   pub call_id: DepId,
-  pub callee: (CalleeNode<'a>, usize),
+  pub callee: CalleeInfo<'a>,
   pub old_variable_scope_stack: Vec<ScopeId>,
   pub cf_scope_depth: usize,
   pub body_variable_scope: ScopeId,
@@ -32,18 +28,13 @@ pub struct CallScope<'a> {
 impl<'a> CallScope<'a> {
   pub fn new(
     call_id: DepId,
-    callee: (CalleeNode<'a>, usize),
+    callee: CalleeInfo<'a>,
     old_variable_scope_stack: Vec<ScopeId>,
     cf_scope_depth: usize,
     body_variable_scope: ScopeId,
     is_async: bool,
     is_generator: bool,
   ) -> Self {
-    let name = callee.0.name();
-    let span = callee.0.span();
-    let flame_text =
-      if span == SPAN { name } else { format!("{}@{}-{}", name, span.start, span.end) };
-
     CallScope {
       call_id,
       callee,
@@ -57,7 +48,7 @@ impl<'a> CallScope<'a> {
       need_consume_arguments: false,
 
       #[cfg(feature = "flame")]
-      scope_guard: flame::start_guard(flame_text),
+      scope_guard: flame::start_guard(callee.name()),
     }
   }
 
@@ -117,10 +108,14 @@ impl<'a> Analyzer<'a> {
     self.exit_to(target_depth);
   }
 
-  pub fn consume_arguments(&mut self, search: Option<(CalleeNode<'a>, usize)>) -> bool {
+  pub fn consume_arguments(&mut self, search: Option<CalleeInfo<'a>>) -> bool {
     let call_scope = if let Some(callee) = search {
-      if let Some(call_scope) =
-        self.scope_context.call.iter().rev().find(|scope| scope.callee.1 == callee.1)
+      if let Some(call_scope) = self
+        .scope_context
+        .call
+        .iter()
+        .rev()
+        .find(|scope| scope.callee.instance_id == callee.instance_id)
       {
         call_scope
       } else {
@@ -138,71 +133,5 @@ impl<'a> Analyzer<'a> {
     for value in values {
       self.consume(value);
     }
-  }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum CalleeNode<'a> {
-  Function(&'a Function<'a>),
-  ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
-  ClassStatics(&'a Class<'a>),
-  ClassConstructor(&'a Class<'a>),
-  Module,
-}
-
-impl GetSpan for CalleeNode<'_> {
-  fn span(&self) -> Span {
-    match self {
-      CalleeNode::Function(node) => node.span(),
-      CalleeNode::ArrowFunctionExpression(node) => node.span(),
-      CalleeNode::ClassStatics(node) => node.span(),
-      CalleeNode::ClassConstructor(node) => node.span(),
-      CalleeNode::Module => Span::default(),
-    }
-  }
-}
-
-impl<'a> CalleeNode<'a> {
-  pub fn into_dep_id(self) -> DepId {
-    match self {
-      CalleeNode::Function(node) => AstKind2::Function(node),
-      CalleeNode::ArrowFunctionExpression(node) => AstKind2::ArrowFunctionExpression(node),
-      CalleeNode::ClassStatics(node) => AstKind2::Class(node),
-      CalleeNode::ClassConstructor(node) => AstKind2::Class(node),
-      CalleeNode::Module => AstKind2::Environment,
-    }
-    .into()
-  }
-
-  pub fn name(&self) -> String {
-    match self {
-      CalleeNode::Function(node) => node.id.as_ref().map_or("<unknown>", |id| &id.name).to_string(),
-      CalleeNode::ArrowFunctionExpression(_) => "<anonymous>".to_string(),
-      CalleeNode::ClassStatics(_) => "<ClassStatics>".to_string(),
-      CalleeNode::ClassConstructor(_) => "<ClassConstructor>".to_string(),
-      CalleeNode::Module => "<Module>".to_string(),
-    }
-  }
-}
-
-impl PartialEq for CalleeNode<'_> {
-  fn eq(&self, other: &Self) -> bool {
-    match (self, other) {
-      (CalleeNode::Module, CalleeNode::Module) => true,
-      (CalleeNode::Function(a), CalleeNode::Function(b)) => a.span() == b.span(),
-      (CalleeNode::ArrowFunctionExpression(a), CalleeNode::ArrowFunctionExpression(b)) => {
-        a.span() == b.span()
-      }
-      (CalleeNode::ClassStatics(a), CalleeNode::ClassStatics(b)) => a.span() == b.span(),
-      _ => false,
-    }
-  }
-}
-
-impl Eq for CalleeNode<'_> {}
-
-impl hash::Hash for CalleeNode<'_> {
-  fn hash<H: hash::Hasher>(&self, state: &mut H) {
-    self.span().hash(state)
   }
 }

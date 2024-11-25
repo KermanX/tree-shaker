@@ -10,6 +10,7 @@ use crate::{
   utils::{DebuggerEvent, ExtraData, Logger, StatementVecData},
   TreeShakeConfig,
 };
+use line_index::LineIndex;
 use oxc::{
   allocator::Allocator,
   ast::ast::Program,
@@ -24,6 +25,7 @@ pub struct Analyzer<'a> {
   pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub factory: &'a EntityFactory<'a>,
+  pub line_index: LineIndex,
   pub semantic: Semantic<'a>,
   pub span_stack: Vec<Span>,
   pub data: ExtraData<'a>,
@@ -54,6 +56,7 @@ impl<'a> Analyzer<'a> {
       config,
       allocator,
       factory,
+      line_index: LineIndex::new(semantic.source_text()),
       semantic,
       span_stack: vec![],
       data: Default::default(),
@@ -154,12 +157,11 @@ impl<'a> Analyzer<'a> {
 
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {
     let span = self.current_span();
-    self
-      .tree_shaker
-      .0
-      .diagnostics
-      .borrow_mut()
-      .insert(message.into() + format!(" at {}-{}", span.start, span.end).as_str());
+    let start = self.line_index.line_col(span.start.into());
+    let end = self.line_index.line_col(span.end.into());
+    let span_text =
+      format!(" at {}:{}-{}:{}", start.line + 1, start.col + 1, end.line + 1, end.col + 1);
+    self.tree_shaker.0.diagnostics.borrow_mut().insert(message.into() + &span_text);
   }
 
   pub fn push_stmt_span(&mut self, node: &'a impl GetSpan, decl: bool) {

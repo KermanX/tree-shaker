@@ -6,8 +6,8 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
-  scope::call_scope::CalleeNode,
   use_consumed_flag,
+  utils::{CalleeInfo, CalleeNode},
 };
 use oxc::{semantic::ScopeId, span::GetSpan};
 use std::{cell::Cell, rc::Rc};
@@ -16,7 +16,7 @@ use std::{cell::Cell, rc::Rc};
 pub struct FunctionEntity<'a> {
   consumed: Rc<Cell<bool>>,
   body_consumed: Rc<Cell<bool>>,
-  pub callee: (CalleeNode<'a>, usize),
+  pub callee: CalleeInfo<'a>,
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
   pub finite_recursion: bool,
   pub object: &'a ObjectEntity<'a>,
@@ -86,7 +86,11 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     }
 
     let maybe_infinite_recursion = !self.finite_recursion
-      && analyzer.scope_context.call.iter().any(|scope| scope.callee.1 == self.callee.1);
+      && analyzer
+        .scope_context
+        .call
+        .iter()
+        .any(|scope| scope.callee.instance_id == self.callee.instance_id);
     if maybe_infinite_recursion {
       self.consume_body(analyzer);
       return consumed_object::call(rc, analyzer, dep, this, args);
@@ -200,12 +204,12 @@ impl<'a> FunctionEntity<'a> {
     consume: bool,
   ) -> Entity<'a> {
     if let Some(logger) = analyzer.logger {
-      logger.push_fn_call(self.callee.0.span(), self.callee.0.name());
+      logger.push_fn_call(self.callee.span(), self.callee.name());
     }
 
-    let call_dep = box_consumable((self.callee.0.into_dep_id(), dep));
+    let call_dep = box_consumable((self.callee.into_dep_id(), dep));
     let variable_scopes = self.variable_scope_stack.clone();
-    let ret_val = match self.callee.0 {
+    let ret_val = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(
         rc,
         self.callee,
@@ -235,7 +239,7 @@ impl<'a> FunctionEntity<'a> {
     }
     self.body_consumed.set(true);
 
-    analyzer.consume(self.callee.0.into_dep_id());
+    analyzer.consume(self.callee.into_dep_id());
     analyzer.consume_arguments(Some(self.callee));
 
     let self_cloned = self.clone();
@@ -252,7 +256,7 @@ impl<'a> FunctionEntity<'a> {
   }
 
   fn forward_dep(&self, dep: Consumable<'a>) -> Consumable<'a> {
-    box_consumable((dep, self.callee.0.into_dep_id()))
+    box_consumable((dep, self.callee.into_dep_id()))
   }
 }
 
@@ -261,7 +265,7 @@ impl<'a> Analyzer<'a> {
     let function = FunctionEntity {
       consumed: Rc::new(Cell::new(false)),
       body_consumed: Rc::new(Cell::new(false)),
-      callee: (node, self.factory.alloc_instance_id()),
+      callee: self.new_callee_info(node),
       variable_scope_stack: Rc::new(self.scope_context.variable.stack.clone()),
       finite_recursion: self.has_finite_recursion_notation(node.span()),
       object: self.new_function_object(),
@@ -269,7 +273,7 @@ impl<'a> Analyzer<'a> {
 
     let mut created_in_self = false;
     for scope in self.scope_context.call.iter().rev() {
-      if scope.callee.0 == node {
+      if scope.callee.node == node {
         created_in_self = true;
         break;
       }
