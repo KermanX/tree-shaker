@@ -9,14 +9,14 @@ edition = "2021"
 [lib]
 
 [features]
-flame = []
+flame = ["dep:flame", "dep:flamescope"]
 
 [dependencies]
 bitflags = "2.6.0"
 clap = { version = "4.5.20", features = ["derive"] }
 dashmap = "6.0.1"
-flame = "0.2.2"
-flamescope = "0.1.3"
+flame = { version = "0.2.2", optional = true }
+flamescope = { version = "0.1.3", optional = true }
 insta = { version = "1.39.0", features = ["glob"] }
 oxc = { version = "0.36.0", features = ["codegen", "semantic", "minifier"] }
 regex = "1.10.6"
