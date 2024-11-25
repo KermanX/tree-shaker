@@ -6,6 +6,7 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
+  entity::value::EntityValueKind,
   use_consumed_flag,
 };
 use oxc::{ast::ast::Class, semantic::ScopeId};
@@ -125,6 +126,10 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
   ) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_value(&self) -> EntityValueKind<'a> {
+    EntityValueKind::AnyObject
   }
 
   fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {

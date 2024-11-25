@@ -2,6 +2,7 @@ use oxc::ast::ast::LogicalOperator;
 
 use super::{
   entity::{EnumeratedProperties, IteratedElements},
+  value::EntityValueKind,
   Entity, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable};
@@ -97,6 +98,10 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     dep: Consumable<'a>,
   ) -> IteratedElements<'a> {
     self.value.iterate(analyzer, dep)
+  }
+
+  fn get_value(&self) -> EntityValueKind<'a> {
+    self.value.get_value()
   }
 
   fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {

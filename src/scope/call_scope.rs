@@ -4,7 +4,7 @@ use crate::{
   ast::AstKind2,
   consumable::{box_consumable, ConsumableNode, ConsumableTrait},
   dep::DepId,
-  entity::Entity,
+  entity::{CalleeId, Entity},
 };
 use oxc::{
   ast::ast::{ArrowFunctionExpression, Class, Function},
@@ -16,7 +16,7 @@ use std::{hash, mem};
 #[derive(Debug)]
 pub struct CallScope<'a> {
   pub call_id: DepId,
-  pub callee: (CalleeNode<'a>, usize),
+  pub callee: CalleeId<'a>,
   pub old_variable_scope_stack: Vec<ScopeId>,
   pub cf_scope_depth: usize,
   pub body_variable_scope: ScopeId,
@@ -30,7 +30,7 @@ pub struct CallScope<'a> {
 impl<'a> CallScope<'a> {
   pub fn new(
     call_id: DepId,
-    callee: (CalleeNode<'a>, usize),
+    callee: CalleeId<'a>,
     old_variable_scope_stack: Vec<ScopeId>,
     cf_scope_depth: usize,
     body_variable_scope: ScopeId,
@@ -104,7 +104,7 @@ impl<'a> Analyzer<'a> {
     self.exit_to(target_depth);
   }
 
-  pub fn consume_arguments(&mut self, search: Option<(CalleeNode<'a>, usize)>) -> bool {
+  pub fn consume_arguments(&mut self, search: Option<CalleeId<'a>>) -> bool {
     let call_scope = if let Some(callee) = search {
       if let Some(call_scope) =
         self.scope_context.call.iter().rev().find(|scope| scope.callee.1 == callee.1)
@@ -135,6 +135,7 @@ pub enum CalleeNode<'a> {
   ClassStatics(&'a Class<'a>),
   ClassConstructor(&'a Class<'a>),
   Module,
+  Builtin,
 }
 
 impl GetSpan for CalleeNode<'_> {
@@ -144,7 +145,7 @@ impl GetSpan for CalleeNode<'_> {
       CalleeNode::ArrowFunctionExpression(node) => node.span(),
       CalleeNode::ClassStatics(node) => node.span(),
       CalleeNode::ClassConstructor(node) => node.span(),
-      CalleeNode::Module => Span::default(),
+      CalleeNode::Module | CalleeNode::Builtin => Span::default(),
     }
   }
 }
@@ -156,7 +157,7 @@ impl<'a> CalleeNode<'a> {
       CalleeNode::ArrowFunctionExpression(node) => AstKind2::ArrowFunctionExpression(node),
       CalleeNode::ClassStatics(node) => AstKind2::Class(node),
       CalleeNode::ClassConstructor(node) => AstKind2::Class(node),
-      CalleeNode::Module => AstKind2::Environment,
+      CalleeNode::Module | CalleeNode::Builtin => AstKind2::Environment,
     }
     .into()
   }
@@ -168,6 +169,7 @@ impl<'a> CalleeNode<'a> {
       CalleeNode::ClassStatics(_) => "<ClassStatics>".to_string(),
       CalleeNode::ClassConstructor(_) => "<ClassConstructor>".to_string(),
       CalleeNode::Module => "<Module>".to_string(),
+      CalleeNode::Builtin => "<Builtin>".to_string(),
     }
   }
 }

@@ -2,6 +2,7 @@ use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
   utils::UnionLike,
+  value::EntityValueKind,
   Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
@@ -147,6 +148,17 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
       results.push(analyzer.factory.undefined);
     }
     (vec![], analyzer.factory.try_union(results), box_consumable(()))
+  }
+
+  fn get_value(&self) -> EntityValueKind<'a> {
+    let mut result = vec![];
+    for entity in self.values.iter() {
+      match entity.get_value() {
+        EntityValueKind::Unknown => return EntityValueKind::Unknown,
+        value => result.push(value),
+      }
+    }
+    EntityValueKind::Union(result)
   }
 
   fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {

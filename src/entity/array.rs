@@ -6,6 +6,7 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
+  entity::value::EntityValueKind,
   use_consumed_flag,
 };
 use oxc::semantic::{ScopeId, SymbolId};
@@ -345,6 +346,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       analyzer.factory.try_union(self.rest.borrow().clone()),
       box_consumable((dep, self.deps.borrow_mut().collect())),
     )
+  }
+
+  fn get_value(&self) -> EntityValueKind<'a> {
+    EntityValueKind::AnyObject
   }
 
   fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {

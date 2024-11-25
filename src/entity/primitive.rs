@@ -7,6 +7,7 @@ use crate::{
   analyzer::Analyzer,
   builtins::Prototype,
   consumable::{box_consumable, Consumable, ConsumableTrait},
+  entity::value::EntityValueKind,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -122,6 +123,10 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     analyzer.thrown_builtin_error("Cannot iterate non-object");
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_value(&self) -> EntityValueKind<'a> {
+    EntityValueKind::Primitive(*self)
   }
 
   fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {

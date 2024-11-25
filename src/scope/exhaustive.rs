@@ -164,12 +164,14 @@ impl<'a> Analyzer<'a> {
     loop {
       let runners = mem::take(&mut self.pending_deps);
       for runner in runners {
-        // let old_count = self.referred_deps.debug_count();
+        let old_count = self.referred_deps.debug_count();
         let TrackerRunner { runner, once } = runner;
         let deps = self.exec_exhaustively(runner.clone(), once);
         self.track_dep_after_finished(once, runner, deps);
-        // let new_count = self.referred_deps.debug_count();
-        // self.debug += 1;
+        let new_count = self.referred_deps.debug_count();
+        if new_count > old_count {
+          self.debug += 1;
+        }
       }
       if self.pending_deps.is_empty() {
         return true;

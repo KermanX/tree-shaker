@@ -1,4 +1,4 @@
-use super::{EntityFactory, LiteralEntity, TypeofResult};
+use super::{value::EntityValueKind, EntityFactory, LiteralEntity, TypeofResult};
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait},
@@ -64,6 +64,7 @@ pub trait EntityTrait<'a>: Debug {
     dep: Consumable<'a>,
   ) -> IteratedElements<'a>;
 
+  fn get_value(&self) -> EntityValueKind<'a>;
   fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a>;
   fn get_typeof(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
@@ -196,6 +197,10 @@ impl<'a> Entity<'a> {
     dep: impl Into<Consumable<'a>>,
   ) -> IteratedElements<'a> {
     self.0.iterate(*self, analyzer, dep.into())
+  }
+
+  pub fn get_value(&self) -> EntityValueKind<'a> {
+    self.0.get_value()
   }
 
   pub fn get_destructable(&self, dep: impl Into<Consumable<'a>>) -> Consumable<'a> {

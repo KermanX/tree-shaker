@@ -21,6 +21,7 @@ mod typeof_result;
 mod union;
 mod unknown;
 mod utils;
+mod value;
 
 pub use array::ArrayEntity;
 pub use builtin_fn::PureBuiltinFnEntity;
@@ -28,6 +29,7 @@ pub use class::ClassEntity;
 pub use collector::LiteralCollector;
 pub use entity::{Entity, EntityTrait};
 pub use factory::EntityFactory;
+pub use function::CalleeId;
 pub use label::LabelEntity;
 pub use literal::LiteralEntity;
 pub use object::{ObjectEntity, ObjectProperty, ObjectPropertyValue};

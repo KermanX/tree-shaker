@@ -52,28 +52,44 @@ impl<'a> EntityFactory<'a> {
     let unknown_boolean = Entity::new_in(PrimitiveEntity::Boolean, allocator);
     let unknown_symbol = Entity::new_in(PrimitiveEntity::Symbol, allocator);
 
-    let pure_fn_returns_unknown =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown()), allocator);
+    let mut instance_id_counter = 0;
 
-    let pure_fn_returns_string =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown_string), allocator);
-    let pure_fn_returns_number =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown_number), allocator);
-    let pure_fn_returns_bigint =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown_bigint), allocator);
-    let pure_fn_returns_boolean =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown_boolean), allocator);
-    let pure_fn_returns_symbol =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown_symbol), allocator);
-    let pure_fn_returns_null = Entity::new_in(PureBuiltinFnEntity::new(|f| f.null), allocator);
-    let pure_fn_returns_undefined =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.undefined), allocator);
+    let pure_fn_returns_unknown = Entity::new_in(
+      PureBuiltinFnEntity::new(&mut instance_id_counter, |f| f.unknown()),
+      allocator,
+    );
+    let pure_fn_returns_string = Entity::new_in(
+      PureBuiltinFnEntity::new(&mut instance_id_counter, |f| f.unknown_string),
+      allocator,
+    );
+    let pure_fn_returns_number = Entity::new_in(
+      PureBuiltinFnEntity::new(&mut instance_id_counter, |f| f.unknown_number),
+      allocator,
+    );
+    let pure_fn_returns_bigint = Entity::new_in(
+      PureBuiltinFnEntity::new(&mut instance_id_counter, |f| f.unknown_bigint),
+      allocator,
+    );
+    let pure_fn_returns_boolean = Entity::new_in(
+      PureBuiltinFnEntity::new(&mut instance_id_counter, |f| f.unknown_boolean),
+      allocator,
+    );
+    let pure_fn_returns_symbol = Entity::new_in(
+      PureBuiltinFnEntity::new(&mut instance_id_counter, |f| f.unknown_symbol),
+      allocator,
+    );
+    let pure_fn_returns_null =
+      Entity::new_in(PureBuiltinFnEntity::new(&mut instance_id_counter, |f| f.null), allocator);
+    let pure_fn_returns_undefined = Entity::new_in(
+      PureBuiltinFnEntity::new(&mut instance_id_counter, |f| f.undefined),
+      allocator,
+    );
 
     let empty_arguments = Entity::new_in(ArgumentsEntity::default(), allocator);
 
     EntityFactory {
       allocator,
-      instance_id_counter: Cell::new(0),
+      instance_id_counter: Cell::new(instance_id_counter),
 
       r#true,
       r#false,

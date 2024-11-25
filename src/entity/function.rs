@@ -1,6 +1,7 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
+  value::EntityValueKind,
   Entity, EntityTrait, ObjectEntity, TypeofResult,
 };
 use crate::{
@@ -12,11 +13,13 @@ use crate::{
 use oxc::{semantic::ScopeId, span::GetSpan};
 use std::{cell::Cell, rc::Rc};
 
+pub type CalleeId<'a> = (CalleeNode<'a>, usize);
+
 #[derive(Debug, Clone)]
 pub struct FunctionEntity<'a> {
   consumed: Rc<Cell<bool>>,
   body_consumed: Rc<Cell<bool>>,
-  pub callee: (CalleeNode<'a>, usize),
+  pub callee: CalleeId<'a>,
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
   pub finite_recursion: bool,
   pub object: &'a ObjectEntity<'a>,
@@ -135,6 +138,10 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
   ) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_value(&self) -> EntityValueKind<'a> {
+    EntityValueKind::Function(self.callee)
   }
 
   fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {

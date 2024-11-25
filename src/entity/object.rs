@@ -1,6 +1,7 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
+  value::EntityValueKind,
   Entity, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
@@ -511,6 +512,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   ) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
+  }
+
+  fn get_value(&self) -> EntityValueKind<'a> {
+    EntityValueKind::AnyObject
   }
 
   fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {

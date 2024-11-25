@@ -101,7 +101,7 @@ impl<'a> Analyzer<'a> {
 
     self.scope_context.assert_final_state();
 
-    // println!("debug: {:?}", self.debug);
+    println!("debug: {:?}", self.debug);
   }
 
   pub fn consume_exports(&mut self) {

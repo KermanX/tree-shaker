@@ -1,6 +1,7 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
+  value::EntityValueKind,
   Entity, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
@@ -125,6 +126,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
       }
     }
     (elements, rest.map(|val| analyzer.factory.union(val)), dep)
+  }
+
+  fn get_value(&self) -> EntityValueKind<'a> {
+    unreachable!()
   }
 
   fn get_destructable(&self, _rc: Entity<'a>, _dep: Consumable<'a>) -> Consumable<'a> {

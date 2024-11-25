@@ -1,15 +1,18 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityFactory, EntityTrait, ObjectEntity, TypeofResult,
+  CalleeId, Entity, EntityFactory, EntityTrait, ObjectEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
+  entity::value::EntityValueKind,
+  scope::call_scope::CalleeNode,
 };
 use std::fmt::Debug;
 
 pub trait BuiltinFnEntity<'a>: Debug {
+  fn callee_id(&self) -> usize;
   fn object(&self) -> Option<&'a ObjectEntity<'a>> {
     None
   }
@@ -132,6 +135,10 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     consumed_object::iterate(analyzer, dep)
   }
 
+  fn get_value(&self) -> EntityValueKind<'a> {
+    EntityValueKind::Function((CalleeNode::Builtin, self.callee_id()))
+  }
+
   fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
     box_consumable((rc, dep))
   }
@@ -185,6 +192,7 @@ impl<'a, T: Fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Ent
 
 #[derive(Clone, Copy)]
 pub struct ImplementedBuiltinFnEntity<'a, F: BuiltinFnImplementation<'a> + 'a> {
+  callee_id: usize,
   implementation: F,
   object: Option<&'a ObjectEntity<'a>>,
 }
@@ -198,6 +206,9 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnEnti
 impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
   for ImplementedBuiltinFnEntity<'a, F>
 {
+  fn callee_id(&self) -> usize {
+    self.callee_id
+  }
   fn object(&self) -> Option<&'a ObjectEntity<'a>> {
     self.object
   }
@@ -217,7 +228,11 @@ impl<'a> EntityFactory<'a> {
     &self,
     implementation: F,
   ) -> Entity<'a> {
-    self.entity(ImplementedBuiltinFnEntity { implementation, object: None })
+    self.entity(ImplementedBuiltinFnEntity {
+      callee_id: self.alloc_instance_id(),
+      implementation,
+      object: None,
+    })
   }
 }
 
@@ -227,6 +242,7 @@ impl<'a> Analyzer<'a> {
     implementation: F,
   ) -> Entity<'a> {
     self.factory.entity(ImplementedBuiltinFnEntity {
+      callee_id: self.factory.alloc_instance_id(),
       implementation,
       object: Some(self.new_function_object()),
     })
@@ -235,10 +251,14 @@ impl<'a> Analyzer<'a> {
 
 #[derive(Debug, Clone)]
 pub struct PureBuiltinFnEntity<'a> {
+  callee_id: usize,
   return_value: fn(&EntityFactory<'a>) -> Entity<'a>,
 }
 
 impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
+  fn callee_id(&self) -> usize {
+    self.callee_id
+  }
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
@@ -255,7 +275,11 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
 }
 
 impl<'a> PureBuiltinFnEntity<'a> {
-  pub fn new(return_value: fn(&EntityFactory<'a>) -> Entity<'a>) -> Self {
-    Self { return_value }
+  pub fn new(
+    instance_id_counter: &mut usize,
+    return_value: fn(&EntityFactory<'a>) -> Entity<'a>,
+  ) -> Self {
+    *instance_id_counter += 1;
+    Self { callee_id: *instance_id_counter, return_value }
   }
 }
