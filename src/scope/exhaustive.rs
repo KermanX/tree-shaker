@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
     let runner = Rc::new(runner);
 
-    self.exec_exhaustively(runner.clone(), false);
+    self.exec_exhaustively("loop", runner.clone(), false);
 
     let cf_scope = self.cf_scope();
     if cf_scope.referred_state != ReferredState::ReferredClean && cf_scope.deps.may_not_referred() {
@@ -51,24 +51,32 @@ impl<'a> Analyzer<'a> {
       }
       analyzer.pop_cf_scope();
     });
-    let deps = self.exec_exhaustively(runner.clone(), false);
+    let deps = self.exec_exhaustively("consumed_fn", runner.clone(), false);
     self.track_dep_after_finished(false, runner, deps);
   }
 
   pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
     let runner = Rc::new(runner);
-    let deps = self.exec_exhaustively(runner.clone(), true);
+    let deps = self.exec_exhaustively("async/generator", runner.clone(), true);
     self.track_dep_after_finished(true, runner, deps);
   }
 
   fn exec_exhaustively(
     &mut self,
+    kind: &'static str,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
     once: bool,
   ) -> FxHashSet<(ScopeId, SymbolId)> {
     self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
     let mut round_counter = 0;
     while self.cf_scope_mut().iterate_exhaustively() {
+      #[cfg(feature = "flame")]
+      let _scope_guard = flame::start_guard(format!(
+        "!{kind}@{:06X} x{}",
+        (Rc::as_ptr(&runner) as *const () as usize) & 0xFFFFFF,
+        round_counter
+      ));
+
       runner(self);
       round_counter += 1;
       if once {
@@ -166,7 +174,7 @@ impl<'a> Analyzer<'a> {
       for runner in runners {
         // let old_count = self.referred_deps.debug_count();
         let TrackerRunner { runner, once } = runner;
-        let deps = self.exec_exhaustively(runner.clone(), once);
+        let deps = self.exec_exhaustively("dep", runner.clone(), once);
         self.track_dep_after_finished(once, runner, deps);
         // let new_count = self.referred_deps.debug_count();
         // self.debug += 1;

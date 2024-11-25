@@ -9,7 +9,7 @@ use crate::{
 use oxc::{
   ast::ast::{ArrowFunctionExpression, Class, Function},
   semantic::ScopeId,
-  span::{GetSpan, Span},
+  span::{GetSpan, Span, SPAN},
 };
 use std::{hash, mem};
 
@@ -41,7 +41,8 @@ impl<'a> CallScope<'a> {
   ) -> Self {
     let name = callee.0.name();
     let span = callee.0.span();
-    let flame_text = format!("{}@{}-{}", name, span.start, span.end);
+    let flame_text =
+      if span == SPAN { name } else { format!("{}@{}-{}", name, span.start, span.end) };
 
     CallScope {
       call_id,
