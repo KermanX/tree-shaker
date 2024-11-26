@@ -1,4 +1,4 @@
-use super::exhaustive::TrackerRunner;
+use super::exhaustive::ExhaustiveCallback;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
@@ -24,7 +24,7 @@ pub struct VariableScope<'a> {
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
   pub super_class: Option<Entity<'a>>,
-  pub exhaustive_deps: FxHashMap<SymbolId, FxHashSet<TrackerRunner<'a>>>,
+  pub exhaustive_callbacks: FxHashMap<SymbolId, FxHashSet<ExhaustiveCallback<'a>>>,
 }
 
 impl fmt::Debug for VariableScope<'_> {
@@ -93,7 +93,7 @@ impl<'a> Analyzer<'a> {
       }));
       self.scope_context.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
-        self.trigger_exhaustive_deps(false, (id, symbol));
+        self.add_exhaustive_callbacks(false, (id, symbol));
       }
     }
   }
@@ -121,7 +121,7 @@ impl<'a> Analyzer<'a> {
       drop(variable_ref);
       variable.borrow_mut().value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_dep));
-      self.trigger_exhaustive_deps(false, (id, symbol));
+      self.add_exhaustive_callbacks(false, (id, symbol));
     }
   }
 
@@ -213,7 +213,7 @@ impl<'a> Analyzer<'a> {
           };
           drop(variable_ref);
 
-          self.trigger_exhaustive_deps(should_consume, (id, symbol));
+          self.add_exhaustive_callbacks(should_consume, (id, symbol));
         }
       }
       true

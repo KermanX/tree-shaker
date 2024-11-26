@@ -340,6 +340,6 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    self.call_exhaustive_deps();
+    self.call_exhaustive_callbacks();
   }
 }

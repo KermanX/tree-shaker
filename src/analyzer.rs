@@ -4,7 +4,8 @@ use crate::{
   dep::{DepId, ReferredDeps},
   entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
   scope::{
-    conditional::ConditionalDataMap, exhaustive::TrackerRunner, r#loop::LoopDataMap, ScopeContext,
+    conditional::ConditionalDataMap, exhaustive::ExhaustiveCallback, r#loop::LoopDataMap,
+    ScopeContext,
   },
   tree_shaker::TreeShaker,
   utils::{DebuggerEvent, ExtraData, Logger, StatementVecData},
@@ -36,7 +37,7 @@ pub struct Analyzer<'a> {
   pub default_export: Option<Entity<'a>>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
-  pub pending_deps: FxHashSet<TrackerRunner<'a>>,
+  pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub builtins: Builtins<'a>,
   pub entity_op: EntityOpHost<'a>,
   pub logger: Option<&'a Logger>,
@@ -94,7 +95,7 @@ impl<'a> Analyzer<'a> {
 
       let mut dirty = false;
       dirty |= self.consume_top_level_uncaught();
-      dirty |= self.call_exhaustive_deps();
+      dirty |= self.call_exhaustive_callbacks();
       dirty |= self.post_analyze_handle_conditional();
       dirty |= self.post_analyze_handle_loops();
       if !dirty {

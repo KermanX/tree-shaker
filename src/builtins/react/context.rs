@@ -100,7 +100,7 @@ fn create_react_context_provider_impl<'a>(
 
         let object_id = data.object_id;
         let should_consume = analyzer
-          .trigger_exhaustive_deps(true, (analyzer.scope_context.object_scope_id, object_id));
+          .add_exhaustive_callbacks(true, (analyzer.scope_context.object_scope_id, object_id));
 
         if should_consume {
           analyzer.consume(context_id);
