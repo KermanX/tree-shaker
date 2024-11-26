@@ -147,7 +147,7 @@ impl<'a> Analyzer<'a> {
 
     // Non-static properties
     let variable_scope_stack = class.variable_scope_stack.clone();
-    self.exec_consumed_fn(move |analyzer| {
+    self.exec_consumed_fn("class_property", move |analyzer| {
       analyzer.push_call_scope(
         analyzer.new_callee_info(CalleeNode::ClassConstructor(node)),
         box_consumable(()),

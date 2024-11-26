@@ -242,7 +242,7 @@ impl<'a> FunctionEntity<'a> {
     analyzer.consume_arguments(Some(self.callee));
 
     let self_cloned = self.clone();
-    analyzer.exec_consumed_fn(move |analyzer| {
+    analyzer.exec_consumed_fn("consume_fn", move |analyzer| {
       self_cloned.call_impl(
         analyzer.factory.unknown(),
         analyzer,

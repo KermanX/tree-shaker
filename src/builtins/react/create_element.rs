@@ -22,7 +22,7 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
     let r#ref = props.get_property(analyzer, box_consumable(()), analyzer.factory.string("ref"));
     if r#ref.test_nullish() != Some(true) {
       // TODO: currently we haven't implemented useRef, so we just consider it as a callback
-      analyzer.exec_consumed_fn(move |analyzer| {
+      analyzer.exec_consumed_fn("React_ref", move |analyzer| {
         r#ref.call(
           analyzer,
           box_consumable(()),

@@ -39,7 +39,11 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn exec_consumed_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a) {
+  pub fn exec_consumed_fn(
+    &mut self,
+    kind: &str,
+    runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a,
+  ) {
     let runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a> = Rc::new(move |analyzer| {
       analyzer.push_indeterminate_cf_scope();
       analyzer.push_try_scope();
@@ -51,7 +55,7 @@ impl<'a> Analyzer<'a> {
       }
       analyzer.pop_cf_scope();
     });
-    let deps = self.exec_exhaustively("consumed_fn", runner.clone(), false);
+    let deps = self.exec_exhaustively(kind, runner.clone(), false);
     self.track_dep_after_finished(false, runner, deps);
   }
 
@@ -63,7 +67,7 @@ impl<'a> Analyzer<'a> {
 
   fn exec_exhaustively(
     &mut self,
-    kind: &'static str,
+    kind: &str,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
     once: bool,
   ) -> FxHashSet<(ScopeId, SymbolId)> {
