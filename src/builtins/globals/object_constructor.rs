@@ -11,11 +11,7 @@ impl<'a> Builtins<'a> {
 
     let object =
       ObjectEntity::new_builtin(OBJECT_CONSTRUCTOR_OBJECT_ID, &self.prototypes.function, false);
-    object
-      .rest
-      .borrow_mut()
-      .values
-      .push(ObjectPropertyValue::Field(factory.immutable_unknown, Some(true)));
+    object.init_rest(ObjectPropertyValue::Field(factory.immutable_unknown, true));
 
     init_namespace!(object, {
       "prototype" => factory.immutable_unknown,
@@ -29,7 +25,7 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_assign_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn(|analyzer, dep, _, args| {
+    self.factory.implemented_builtin_fn("Object.assign", |analyzer, dep, _, args| {
       let (known, rest, deps) = args.iterate(analyzer, dep.cloned());
 
       if known.len() < 2 {
@@ -63,15 +59,15 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_keys_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn(|analyzer, dep, _, args| {
+    self.factory.implemented_builtin_fn("Object.keys", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
       let (properties, deps) = object.enumerate_properties(analyzer, dep);
 
       let array = analyzer.new_empty_array();
 
-      for (_, key, _) in properties {
+      for (_, key, value) in properties {
         if key.test_typeof().contains(TypeofResult::String) {
-          array.init_rest(key.get_to_string(analyzer));
+          array.init_rest(analyzer.factory.computed(key.get_to_string(analyzer), value));
         }
       }
 
@@ -80,7 +76,7 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_values_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn(|analyzer, dep, _, args| {
+    self.factory.implemented_builtin_fn("Object.values", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
       let (properties, deps) = object.enumerate_properties(analyzer, dep);
 
@@ -95,7 +91,7 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_entries_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn(|analyzer, dep, _, args| {
+    self.factory.implemented_builtin_fn("Object.entries", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
       let (properties, deps) = object.enumerate_properties(analyzer, dep);
 

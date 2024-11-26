@@ -54,7 +54,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Vec<T> {
     }
   }
   fn cloned(&self) -> Consumable<'a> {
-    unreachable!()
+    unreachable!("Should not clone Consumable Vec")
   }
 }
 

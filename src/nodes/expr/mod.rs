@@ -119,12 +119,12 @@ impl<'a> Transformer<'a> {
       | Expression::NullLiteral(_)
       | Expression::RegExpLiteral(_) => need_val.then(|| self.clone_node(node)),
       Expression::TemplateLiteral(node) => self.transform_template_literal(node, need_val),
-      Expression::Identifier(node) => self
-        .transform_identifier_reference_read(node, need_val)
-        .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
-      Expression::FunctionExpression(node) => self
-        .transform_function(node, need_val)
-        .map(|f| self.ast_builder.expression_from_function(f)),
+      Expression::Identifier(node) => {
+        self.transform_identifier_reference_read(node, need_val).map(Expression::Identifier)
+      }
+      Expression::FunctionExpression(node) => {
+        self.transform_function(node, need_val).map(Expression::FunctionExpression)
+      }
       Expression::ArrowFunctionExpression(node) => {
         self.transform_arrow_function_expression(node, need_val)
       }
@@ -154,9 +154,9 @@ impl<'a> Transformer<'a> {
       Expression::ImportExpression(node) => self.transform_import_expression(node, need_val),
       Expression::MetaProperty(node) => self.transform_meta_property(node, need_val),
       Expression::NewExpression(node) => self.transform_new_expression(node, need_val),
-      Expression::ClassExpression(node) => self
-        .transform_class(node, need_val)
-        .map(|class| self.ast_builder.expression_from_class(class)),
+      Expression::ClassExpression(node) => {
+        self.transform_class(node, need_val).map(Expression::ClassExpression)
+      }
       Expression::ThisExpression(node) => self.transform_this_expression(node, need_val),
       Expression::Super(node) => self.transform_super(node, need_val),
       Expression::PrivateInExpression(node) => self.transform_private_in_expression(node, need_val),

@@ -20,10 +20,9 @@ pub fn boolean_from_test_result<'a>(
 #[macro_export]
 macro_rules! use_consumed_flag {
   ($self: expr) => {
-    if $self.consumed.get() {
+    if $self.consumed.replace(true) {
       return;
     }
-    $self.consumed.set(true);
   };
 }
 

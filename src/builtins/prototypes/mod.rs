@@ -11,6 +11,8 @@ mod string;
 mod symbol;
 mod utils;
 
+use std::fmt;
+
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
@@ -23,11 +25,23 @@ use super::Builtins;
 
 #[derive(Default)]
 pub struct Prototype<'a> {
+  name: &'static str,
   string_keyed: FxHashMap<&'static str, Entity<'a>>,
   symbol_keyed: FxHashMap<SymbolId, Entity<'a>>,
 }
 
+impl<'a> fmt::Debug for Prototype<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.write_str(format!("Prototype({})", self.name).as_str())
+  }
+}
+
 impl<'a> Prototype<'a> {
+  pub fn with_name(mut self, name: &'static str) -> Self {
+    self.name = name;
+    self
+  }
+
   pub fn insert_string_keyed(&mut self, key: &'static str, value: impl Into<Entity<'a>>) {
     self.string_keyed.insert(key, value.into());
   }
@@ -48,7 +62,7 @@ impl<'a> Prototype<'a> {
     match key {
       LiteralEntity::String(key) => self.get_string_keyed(key),
       LiteralEntity::Symbol(key, _) => self.get_symbol_keyed(key),
-      _ => unreachable!(),
+      _ => unreachable!("Invalid property key"),
     }
   }
 

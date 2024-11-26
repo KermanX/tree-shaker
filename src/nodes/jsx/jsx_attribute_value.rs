@@ -49,11 +49,12 @@ impl<'a> Transformer<'a> {
     need_val: bool,
   ) -> Option<JSXAttributeValue<'a>> {
     node.as_ref().and_then(|node| match node {
-      JSXAttributeValue::StringLiteral(node) => need_val
-        .then(|| self.ast_builder.jsx_attribute_value_from_string_literal(self.clone_node(node))),
+      JSXAttributeValue::StringLiteral(node) => {
+        need_val.then(|| JSXAttributeValue::StringLiteral(self.clone_node(node)))
+      }
       JSXAttributeValue::ExpressionContainer(node) => {
         if need_val {
-          Some(self.ast_builder.jsx_attribute_value_from_jsx_expression_container(
+          Some(JSXAttributeValue::ExpressionContainer(
             self.transform_jsx_expression_container_need_val(&node),
           ))
         } else {
@@ -64,11 +65,7 @@ impl<'a> Transformer<'a> {
       }
       JSXAttributeValue::Element(node) => {
         if need_val {
-          Some(
-            self
-              .ast_builder
-              .jsx_attribute_value_from_jsx_element(self.transform_jsx_element_need_val(&node)),
-          )
+          Some(JSXAttributeValue::Element(self.transform_jsx_element_need_val(&node)))
         } else {
           self
             .transform_jsx_element_effect_only(&node)
@@ -77,11 +74,7 @@ impl<'a> Transformer<'a> {
       }
       JSXAttributeValue::Fragment(node) => {
         if need_val {
-          Some(
-            self
-              .ast_builder
-              .jsx_attribute_value_from_jsx_fragment(self.transform_jsx_fragment_need_val(&node)),
-          )
+          Some(JSXAttributeValue::Fragment(self.transform_jsx_fragment_need_val(&node)))
         } else {
           self
             .transform_jsx_fragment_effect_only(&node)
@@ -96,9 +89,6 @@ impl<'a> Transformer<'a> {
     span: Span,
     expression: Expression<'a>,
   ) -> JSXAttributeValue<'a> {
-    self.ast_builder.jsx_attribute_value_jsx_expression_container(
-      span,
-      self.ast_builder.jsx_expression_expression(expression),
-    )
+    self.ast_builder.jsx_attribute_value_jsx_expression_container(span, expression.into())
   }
 }

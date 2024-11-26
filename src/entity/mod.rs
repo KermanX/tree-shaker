@@ -35,5 +35,3 @@ pub use operations::EntityOpHost;
 pub use primitive::PrimitiveEntity;
 pub use typeof_result::TypeofResult;
 pub use unknown::UnknownEntity;
-
-pub const UNDEFINED_ENTITY: Entity<'static> = Entity(&LiteralEntity::Undefined);

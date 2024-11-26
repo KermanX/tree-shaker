@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
         let v2 = exec_alternate(self);
         self.factory.union((v1, v2))
       }
-      _ => unreachable!(),
+      _ => unreachable!("Conditional expression should have at least one possible branch"),
     }
   }
 }

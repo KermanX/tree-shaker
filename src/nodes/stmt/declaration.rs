@@ -36,14 +36,14 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_declaration(&self, node: &'a Declaration<'a>) -> Option<Declaration<'a>> {
     match node {
-      Declaration::VariableDeclaration(node) => self
-        .transform_variable_declaration(node)
-        .map(|decl| self.ast_builder.declaration_from_variable(decl)),
+      Declaration::VariableDeclaration(node) => {
+        self.transform_variable_declaration(node).map(Declaration::VariableDeclaration)
+      }
       Declaration::FunctionDeclaration(node) => {
-        self.transform_function(node, false).map(|f| self.ast_builder.declaration_from_function(f))
+        self.transform_function(node, false).map(Declaration::FunctionDeclaration)
       }
       Declaration::ClassDeclaration(node) => {
-        self.transform_class(node, false).map(|c| self.ast_builder.declaration_from_class(c))
+        self.transform_class(node, false).map(Declaration::ClassDeclaration)
       }
       _ => unreachable!(),
     }

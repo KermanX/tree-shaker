@@ -13,15 +13,14 @@ use crate::{
   consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
   entity::{Entity, EntityFactory, LabelEntity},
-  utils::DebuggerEvent,
+  utils::{CalleeInfo, CalleeNode, DebuggerEvent},
 };
-use call_scope::{CallScope, CalleeNode};
+use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
 use oxc::{
   index::Idx,
   semantic::{ScopeId, SymbolId},
-  span::GetSpan,
 };
 use scope_tree::ScopeTree;
 use std::rc::Rc;
@@ -52,7 +51,12 @@ impl<'a> ScopeContext<'a> {
     ScopeContext {
       call: vec![CallScope::new(
         DepId::from_counter(),
-        (CalleeNode::Module, factory.alloc_instance_id()),
+        CalleeInfo {
+          node: CalleeNode::Module,
+          instance_id: factory.alloc_instance_id(),
+          #[cfg(feature = "flame")]
+          debug_name: "<Module>",
+        },
         vec![],
         0,
         body_variable_scope,
@@ -68,11 +72,20 @@ impl<'a> ScopeContext<'a> {
     }
   }
 
-  pub fn assert_final_state(&self) {
+  pub fn assert_final_state(&mut self) {
     debug_assert_eq!(self.call.len(), 1);
     debug_assert_eq!(self.variable.current_depth(), 0);
     debug_assert_eq!(self.cf.current_depth(), 0);
     debug_assert_eq!(self.pure, 0);
+
+    for scope in self.cf.iter_all() {
+      if let Some(data) = &scope.exhaustive_data {
+        debug_assert!(!data.dirty);
+      }
+    }
+
+    #[cfg(feature = "flame")]
+    self.call.pop().unwrap().scope_guard.end();
   }
 
   pub fn alloc_object_id(&mut self) -> SymbolId {
@@ -134,7 +147,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_call_scope(
     &mut self,
-    callee: (CalleeNode<'a>, usize),
+    callee: CalleeInfo<'a>,
     call_dep: Consumable<'a>,
     variable_scope_stack: Vec<ScopeId>,
     is_async: bool,
@@ -157,7 +170,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(logger) = self.logger {
       logger.push_event(DebuggerEvent::PushCallScope(
-        callee.0.span(),
+        callee.span(),
         old_variable_scope_stack.clone(),
         cf_scope_depth,
         body_variable_scope,

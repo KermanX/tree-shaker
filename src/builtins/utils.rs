@@ -8,7 +8,8 @@ macro_rules! init_namespace {
         $k,
         ObjectProperty {
           definite: true,
-          values: vec![ObjectPropertyValue::Field($v, Some(true))],
+          possible_values: vec![ObjectPropertyValue::Field($v, true)],
+          non_existent: Default::default(),
         },
       );)*
     }
@@ -25,7 +26,8 @@ macro_rules! init_object {
         $k,
         ObjectProperty {
           definite: true,
-          values: vec![ObjectPropertyValue::Field($v, Some(false))],
+          possible_values: vec![ObjectPropertyValue::Field($v, false)],
+          non_existent: Default::default(),
         },
       );)*
     }

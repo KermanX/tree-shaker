@@ -1,5 +1,7 @@
 use super::{
-  react::{create_react_jsx_runtime_namespace, create_react_namespace},
+  react::{
+    create_class_names_namespace, create_react_jsx_runtime_namespace, create_react_namespace,
+  },
   Builtins,
 };
 use crate::entity::Entity;
@@ -20,6 +22,10 @@ impl<'a> Builtins<'a> {
     });
     known_modules.insert("react/jsx-runtime", {
       let value = create_react_jsx_runtime_namespace(self.factory, self.prototypes);
+      KnownModule { namespace: value, default: value }
+    });
+    known_modules.insert("classnames", {
+      let value = create_class_names_namespace(self.factory, self.prototypes);
       KnownModule { namespace: value, default: value }
     });
   }

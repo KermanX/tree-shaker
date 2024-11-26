@@ -23,9 +23,7 @@ impl<'a> Transformer<'a> {
     need_val: bool,
   ) -> Option<PropertyKey<'a>> {
     if self.declaration_only.get() {
-      return need_val.then_some(
-        self.ast_builder.property_key_expression(self.build_unused_expression(node.span())),
-      );
+      return need_val.then_some(PropertyKey::from(self.build_unused_expression(node.span())));
     }
 
     match node {
@@ -37,7 +35,7 @@ impl<'a> Transformer<'a> {
         let node = node.to_expression();
         if need_val || self.transform_expression(node, false).is_some() {
           let expr = self.transform_expression(node, true).unwrap();
-          Some(self.ast_builder.property_key_expression(expr))
+          Some(PropertyKey::from(expr))
         } else {
           None
         }

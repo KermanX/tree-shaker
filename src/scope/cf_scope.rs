@@ -206,8 +206,8 @@ impl<'a> Analyzer<'a> {
     target_depth: usize,
     from_depth: usize,
     mut must_exit: bool,
-    mut acc_dep: Option<ConsumableNode<'a, Consumable<'a>>>,
-  ) -> Option<Option<ConsumableNode<'a, Consumable<'a>>>> {
+    mut acc_dep: Option<ConsumableNode<'a>>,
+  ) -> Option<Option<ConsumableNode<'a>>> {
     for depth in (target_depth..from_depth).rev() {
       let id = self.scope_context.cf.stack[depth];
       let cf_scope = self.scope_context.cf.get_mut(id);
@@ -318,21 +318,19 @@ impl<'a> Analyzer<'a> {
       match scope.referred_state {
         ReferredState::Never => {
           scope.referred_state = ReferredState::ReferredClean;
-          let mut deps = mem::take(&mut scope.deps);
-          deps.consume_all(self);
+          mem::take(&mut scope.deps).consume_all(self);
         }
         ReferredState::ReferredClean => break,
         ReferredState::ReferredDirty => {
           scope.referred_state = ReferredState::ReferredClean;
-          let mut deps = mem::take(&mut scope.deps);
-          deps.consume_all(self);
+          mem::take(&mut scope.deps).consume_all(self);
           for depth in (0..depth).rev() {
             let scope = self.scope_context.cf.get_mut_from_depth(depth);
             match scope.referred_state {
-              ReferredState::Never => unreachable!(),
+              ReferredState::Never => unreachable!("Logic error in refer_to_global"),
               ReferredState::ReferredClean => break,
               ReferredState::ReferredDirty => {
-                scope.deps.force_clean();
+                scope.deps.force_clear();
                 scope.referred_state = ReferredState::ReferredClean;
               }
             }
@@ -341,5 +339,7 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
+
+    self.call_exhaustive_callbacks();
   }
 }

@@ -27,7 +27,7 @@ impl<'a> Transformer<'a> {
       Some(if need_spread {
         self.ast_builder.array_expression_element_spread_element(*span, argument)
       } else {
-        self.ast_builder.array_expression_element_expression(argument)
+        argument.into()
       })
     } else {
       None

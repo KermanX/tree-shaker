@@ -1,5 +1,9 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer,
+  ast::AstKind2,
+  build_effect,
+  consumable::box_consumable,
+  entity::{Entity, LiteralEntity},
   transformer::Transformer,
 };
 use oxc::{
@@ -67,7 +71,14 @@ impl<'a> Analyzer<'a> {
         },
         argument,
       ),
-      UnaryOperator::BitwiseNot => self.factory.computed_unknown(argument),
+      UnaryOperator::BitwiseNot => {
+        if let Some(LiteralEntity::Number(num, _)) = argument.get_literal(self) {
+          let num = !(num.0 as i32) as f64;
+          self.factory.number(num, None)
+        } else {
+          self.factory.computed_unknown_primitive(argument)
+        }
+      }
       UnaryOperator::Typeof => argument.get_typeof(self),
       UnaryOperator::Void => self.factory.undefined,
       UnaryOperator::Delete => unreachable!(),
@@ -88,7 +99,7 @@ impl<'a> Transformer<'a> {
         let argument = match &node.argument {
           Expression::StaticMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
-            self.ast_builder.expression_member(self.ast_builder.member_expression_static(
+            Expression::from(self.ast_builder.member_expression_static(
               node.span,
               object,
               node.property.clone(),
@@ -97,28 +108,24 @@ impl<'a> Transformer<'a> {
           }
           Expression::PrivateFieldExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
-            self.ast_builder.expression_member(
-              self.ast_builder.member_expression_private_field_expression(
-                node.span,
-                object,
-                node.field.clone(),
-                node.optional,
-              ),
-            )
+            Expression::from(self.ast_builder.member_expression_private_field_expression(
+              node.span,
+              object,
+              node.field.clone(),
+              node.optional,
+            ))
           }
           Expression::ComputedMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
             let property = self.transform_expression(&node.expression, true).unwrap();
-            self.ast_builder.expression_member(self.ast_builder.member_expression_computed(
+            Expression::from(self.ast_builder.member_expression_computed(
               node.span,
               object,
               property,
               node.optional,
             ))
           }
-          Expression::Identifier(node) => {
-            self.ast_builder.expression_from_identifier_reference(self.clone_node(node))
-          }
+          Expression::Identifier(node) => Expression::Identifier(self.clone_node(node)),
           _ => unreachable!(),
         };
         Some(self.ast_builder.expression_unary(*span, *operator, argument))

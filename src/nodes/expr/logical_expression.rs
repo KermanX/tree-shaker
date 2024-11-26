@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
         let right = exec_right(self);
         self.factory.logical_result(left, right, node.operator)
       }
-      (false, false) => unreachable!(),
+      (false, false) => unreachable!("Logical expression should have at least one possible branch"),
     };
 
     self.pop_cf_scope();

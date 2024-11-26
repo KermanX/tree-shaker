@@ -1,5 +1,5 @@
 use clap::Parser;
-use oxc::minifier::MinifierOptions;
+use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
 use std::{fs::File, io::Write, path::PathBuf};
 use tree_shake::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
@@ -12,10 +12,22 @@ struct Args {
   output: Option<String>,
 
   #[arg(short, long, default_value_t = false)]
+  no_shake: bool,
+
+  #[arg(short, long, default_value_t = false)]
   minify: bool,
 
   #[arg(short, long, default_value_t = false)]
   logging: bool,
+
+  #[arg(short, long, default_value_t = String::from("recommended"))]
+  preset: String,
+
+  #[arg(short, long, default_value_t = false)]
+  always_inline_literal: bool,
+
+  #[arg(short, long, default_value_t = true)]
+  jsx: bool,
 }
 
 fn main() {
@@ -31,29 +43,83 @@ fn main() {
 
   let start_time = std::time::Instant::now();
 
-  let result = tree_shake(
-    content,
+  let copied = tree_shake(
+    content.clone(),
     TreeShakeOptions {
-      config: TreeShakeConfig::recommended(),
-      minify_options: args.minify.then(MinifierOptions::default),
-      codegen_options: Default::default(),
+      config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
+      minify_options: None,
+      codegen_options: CodegenOptions::default(),
+      logging: false,
+    },
+  );
+  let minified = tree_shake(
+    content.clone(),
+    TreeShakeOptions {
+      config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
+      minify_options: Some(MinifierOptions::default()),
+      codegen_options: CodegenOptions { minify: true, comments: false, ..Default::default() },
+      logging: false,
+    },
+  );
+  let shaken = tree_shake(
+    content.clone(),
+    TreeShakeOptions {
+      config: match args.preset.as_str() {
+        "safest" => TreeShakeConfig::safest(),
+        "recommended" => TreeShakeConfig::recommended(),
+        "smallest" => TreeShakeConfig::smallest(),
+        _ => {
+          eprintln!("Invalid preset: {}", args.preset);
+          std::process::exit(1);
+        }
+      }
+      .with_react_jsx(args.jsx)
+      .with_always_inline_literal(args.always_inline_literal),
+      minify_options: None,
+      codegen_options: CodegenOptions::default(),
       logging: args.logging,
+    },
+  );
+  let shaken_minified = tree_shake(
+    shaken.codegen_return.code.clone(),
+    TreeShakeOptions {
+      config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
+      minify_options: Some(MinifierOptions::default()),
+      codegen_options: CodegenOptions { minify: true, comments: false, ..Default::default() },
+      logging: false,
     },
   );
 
   let elapsed = start_time.elapsed();
 
-  for diagnostic in result.diagnostics.iter() {
+  for diagnostic in shaken.diagnostics.iter() {
     eprintln!("{}", diagnostic);
   }
 
-  eprintln!("[tree-shaker] Finished in {:?}", elapsed);
+  eprintln!("Completed in {:?}", elapsed);
+  eprintln!("Original: {}B", copied.codegen_return.code.len());
+  eprintln!("Minified: {}B", minified.codegen_return.code.len());
+  eprintln!("  Shaken: {}B", shaken.codegen_return.code.len());
+  eprintln!("    Both: {}B", shaken_minified.codegen_return.code.len());
+  eprintln!(
+    "Minified/Both = {:.2}%",
+    (shaken_minified.codegen_return.code.len() as f64 / minified.codegen_return.code.len() as f64)
+      * 100.0
+  );
 
   // If the input file is dir/a.js, the output file will be dir/a.out.js
   let output_path = args.output.map_or_else(
     || {
       let mut output_path = PathBuf::from(&args.path);
-      output_path.set_extension("out.js");
+      if !args.no_shake {
+        output_path.set_extension("out.js");
+      }
+      if args.minify {
+        output_path.set_extension("min.js");
+      }
+      if args.no_shake && !args.minify {
+        output_path.set_extension("copy.js");
+      }
       output_path
     },
     PathBuf::from,
@@ -67,7 +133,13 @@ fn main() {
     Ok(file) => file,
   };
 
-  match output_file.write_all(result.codegen_return.code.as_bytes()) {
+  let code = match (!args.no_shake, args.minify) {
+    (true, true) => shaken_minified.codegen_return.code,
+    (true, false) => shaken.codegen_return.code,
+    (false, true) => minified.codegen_return.code,
+    (false, false) => copied.codegen_return.code,
+  };
+  match output_file.write_all(code.as_bytes()) {
     Err(why) => {
       eprintln!("Couldn't write to {}: {}", output_path.display(), why);
       std::process::exit(1);

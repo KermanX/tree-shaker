@@ -6,7 +6,7 @@ use super::{
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use std::cell::Cell;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ArgumentsEntity<'a> {
   consumed: Cell<bool>,
   pub arguments: Vec<(bool, Entity<'a>)>,

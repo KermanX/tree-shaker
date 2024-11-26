@@ -4,7 +4,7 @@ expression: tree_shake(input)
 input_file: src/tests/fixtures/lifted_declaration.js
 ---
 effect((f(), 1), void 0);
-function f(__unused_B62C) {
+function f(__unused_88C5) {
 	effect(2);
 	return;
 }

@@ -362,7 +362,7 @@ impl<'a> LiteralEntity<'a> {
         ast_builder.expression_big_int_literal(span, *value, BigintBase::Decimal)
       }
       LiteralEntity::Boolean(value) => ast_builder.expression_boolean_literal(span, *value),
-      LiteralEntity::Symbol(_, _) => unreachable!(),
+      LiteralEntity::Symbol(_, _) => unreachable!("Cannot build expression for Symbol"),
       LiteralEntity::Infinity(positive) => {
         if *positive {
           ast_builder.expression_identifier_reference(span, "Infinity")
@@ -471,7 +471,9 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::Symbol(_, _) => &analyzer.builtins.prototypes.symbol,
       LiteralEntity::Infinity(_) => &analyzer.builtins.prototypes.number,
       LiteralEntity::NaN => &analyzer.builtins.prototypes.number,
-      LiteralEntity::Null | LiteralEntity::Undefined => unreachable!(),
+      LiteralEntity::Null | LiteralEntity::Undefined => {
+        unreachable!("Cannot get prototype of null or undefined")
+      }
     }
   }
 

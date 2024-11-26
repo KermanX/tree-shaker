@@ -3,14 +3,15 @@ use crate::{
   ast::{AstKind2, DeclarationKind},
   consumable::{box_consumable, ConsumableTrait},
   entity::{ClassEntity, Entity},
-  scope::call_scope::CalleeNode,
   transformer::Transformer,
+  utils::CalleeNode,
 };
 use oxc::{
+  allocator,
   ast::{
     ast::{
       Class, ClassBody, ClassElement, ClassType, MethodDefinitionKind, PropertyDefinitionType,
-      PropertyKind,
+      PropertyKind, StaticBlock,
     },
     NONE,
   },
@@ -58,7 +59,7 @@ impl<'a> Analyzer<'a> {
 
     let variable_scope_stack = self.scope_context.variable.stack.clone();
     self.push_call_scope(
-      (CalleeNode::ClassStatics(node), 0),
+      self.new_callee_info(CalleeNode::ClassStatics(node)),
       box_consumable(()),
       variable_scope_stack,
       false,
@@ -146,9 +147,9 @@ impl<'a> Analyzer<'a> {
 
     // Non-static properties
     let variable_scope_stack = class.variable_scope_stack.clone();
-    self.exec_consumed_fn(move |analyzer| {
+    self.exec_consumed_fn("class_property", move |analyzer| {
       analyzer.push_call_scope(
-        (CalleeNode::ClassConstructor(node), 0),
+        analyzer.new_callee_info(CalleeNode::ClassConstructor(node)),
         box_consumable(()),
         variable_scope_stack.as_ref().clone(),
         false,
@@ -187,7 +188,11 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_class(&self, node: &'a Class<'a>, need_val: bool) -> Option<Class<'a>> {
+  pub fn transform_class(
+    &self,
+    node: &'a Class<'a>,
+    need_val: bool,
+  ) -> Option<allocator::Box<'a, Class<'a>>> {
     let Class { r#type, span, id, super_class, body, .. } = node;
 
     let transformed_id = id.as_ref().and_then(|node| self.transform_binding_identifier(node));
@@ -223,9 +228,9 @@ impl<'a> Transformer<'a> {
         for element in body {
           if ever_constructed || element.r#static() {
             if let Some(element) = match element {
-              ClassElement::StaticBlock(node) => self
-                .transform_static_block(node)
-                .map(|node| self.ast_builder.class_element_from_static_block(node)),
+              ClassElement::StaticBlock(node) => {
+                self.transform_static_block(node).map(ClassElement::StaticBlock)
+              }
               ClassElement::MethodDefinition(node) => self.transform_method_definition(node),
               ClassElement::PropertyDefinition(node) => self.transform_property_definition(node),
               ClassElement::AccessorProperty(_node) => unreachable!(),
@@ -258,7 +263,7 @@ impl<'a> Transformer<'a> {
         self.ast_builder.class_body(*span, transformed_body)
       };
 
-      Some(self.ast_builder.class(
+      Some(self.ast_builder.alloc_class(
         *r#type,
         *span,
         self.ast_builder.vec(),
@@ -295,7 +300,8 @@ impl<'a> Transformer<'a> {
         match element {
           ClassElement::StaticBlock(node) => {
             if let Some(node) = self.transform_static_block(node) {
-              statements.push(self.ast_builder.statement_block(node.span, node.body));
+              let StaticBlock { span, body, .. } = node.unbox();
+              statements.push(self.ast_builder.statement_block(span, body));
             }
           }
           ClassElement::PropertyDefinition(node) if node.r#static => {
@@ -314,7 +320,7 @@ impl<'a> Transformer<'a> {
         None
       } else {
         Some(
-          self.ast_builder.class(
+          self.ast_builder.alloc_class(
             *r#type,
             *span,
             self.ast_builder.vec(),

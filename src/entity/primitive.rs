@@ -34,7 +34,8 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if *self == PrimitiveEntity::Mixed {
+    // TODO: PrimitiveEntity::String
+    if *self == PrimitiveEntity::Mixed || *self == PrimitiveEntity::String {
       analyzer.factory.computed_unknown((rc, dep, key))
     } else {
       let prototype = self.get_prototype(analyzer);
@@ -193,7 +194,7 @@ impl<'a> PrimitiveEntity {
       PrimitiveEntity::BigInt => &analyzer.builtins.prototypes.bigint,
       PrimitiveEntity::Boolean => &analyzer.builtins.prototypes.boolean,
       PrimitiveEntity::Symbol => &analyzer.builtins.prototypes.symbol,
-      PrimitiveEntity::Mixed => unreachable!(),
+      PrimitiveEntity::Mixed => unreachable!("Cannot get prototype of mixed primitive"),
     }
   }
 }

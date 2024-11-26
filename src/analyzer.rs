@@ -3,17 +3,22 @@ use crate::{
   builtins::Builtins,
   dep::{DepId, ReferredDeps},
   entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
-  scope::{conditional::ConditionalDataMap, r#loop::LoopDataMap, ScopeContext},
+  scope::{
+    conditional::ConditionalDataMap, exhaustive::ExhaustiveCallback, r#loop::LoopDataMap,
+    ScopeContext,
+  },
   tree_shaker::TreeShaker,
   utils::{DebuggerEvent, ExtraData, Logger, StatementVecData},
   TreeShakeConfig,
 };
+use line_index::LineIndex;
 use oxc::{
   allocator::Allocator,
   ast::ast::Program,
   semantic::{Semantic, SymbolId},
   span::{GetSpan, Span},
 };
+use rustc_hash::FxHashSet;
 use std::{mem, rc::Rc};
 
 pub struct Analyzer<'a> {
@@ -21,8 +26,9 @@ pub struct Analyzer<'a> {
   pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub factory: &'a EntityFactory<'a>,
+  pub line_index: LineIndex,
   pub semantic: Semantic<'a>,
-  pub current_span: Vec<Span>,
+  pub span_stack: Vec<Span>,
   pub data: ExtraData<'a>,
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
@@ -31,9 +37,12 @@ pub struct Analyzer<'a> {
   pub default_export: Option<Entity<'a>>,
   pub scope_context: ScopeContext<'a>,
   pub pending_labels: Vec<LabelEntity<'a>>,
+  pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub builtins: Builtins<'a>,
   pub entity_op: EntityOpHost<'a>,
   pub logger: Option<&'a Logger>,
+
+  pub debug: usize,
 }
 
 impl<'a> Analyzer<'a> {
@@ -48,8 +57,9 @@ impl<'a> Analyzer<'a> {
       config,
       allocator,
       factory,
+      line_index: LineIndex::new(semantic.source_text()),
       semantic,
-      current_span: vec![],
+      span_stack: vec![],
       data: Default::default(),
       referred_deps: Default::default(),
       conditional_data: Default::default(),
@@ -58,9 +68,11 @@ impl<'a> Analyzer<'a> {
       default_export: None,
       scope_context: ScopeContext::new(&factory),
       pending_labels: Vec::new(),
+      pending_deps: Default::default(),
       builtins: Builtins::new(config, factory),
       entity_op: EntityOpHost::new(allocator),
       logger,
+      debug: 0,
     }
   }
 
@@ -72,16 +84,7 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<StatementVecData>(AstKind2::Program(node));
     self.exec_statement_vec(data, &node.body);
 
-    // Consume exports
-    self.default_export.take().map(|entity| entity.consume(self));
-    for symbol in self.named_exports.clone() {
-      let entity = self.read_symbol(symbol).unwrap();
-      entity.consume(self);
-    }
-    // Consume uncaught thrown values
-    self.call_scope_mut().try_scopes.pop().unwrap().thrown_val(self).map(|entity| {
-      entity.consume(self);
-    });
+    self.consume_exports();
 
     let mut round = 0usize;
     loop {
@@ -91,6 +94,8 @@ impl<'a> Analyzer<'a> {
       }
 
       let mut dirty = false;
+      dirty |= self.consume_top_level_uncaught();
+      dirty |= self.call_exhaustive_callbacks();
       dirty |= self.post_analyze_handle_conditional();
       dirty |= self.post_analyze_handle_loops();
       if !dirty {
@@ -99,6 +104,30 @@ impl<'a> Analyzer<'a> {
     }
 
     self.scope_context.assert_final_state();
+
+    // println!("debug: {:?}", self.debug);
+
+    #[cfg(feature = "flame")]
+    flamescope::dump(&mut std::fs::File::create("flamescope.json").unwrap()).unwrap();
+  }
+
+  pub fn consume_exports(&mut self) {
+    self.default_export.take().map(|entity| entity.consume(self));
+    for symbol in self.named_exports.clone() {
+      let entity = self.read_symbol(symbol).unwrap();
+      entity.consume(self);
+    }
+  }
+
+  pub fn consume_top_level_uncaught(&mut self) -> bool {
+    let thrown_values = &mut self.call_scope_mut().try_scopes.last_mut().unwrap().thrown_values;
+    if thrown_values.is_empty() {
+      false
+    } else {
+      let values = mem::take(thrown_values);
+      self.consume(values);
+      true
+    }
   }
 }
 
@@ -123,19 +152,22 @@ impl<'a> Analyzer<'a> {
     }
   }
 
+  pub fn current_span(&self) -> Span {
+    *self.span_stack.last().unwrap()
+  }
+
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {
-    let span = self.current_span.last().unwrap();
-    self
-      .tree_shaker
-      .0
-      .diagnostics
-      .borrow_mut()
-      .insert(message.into() + format!(" at {}-{}", span.start, span.end).as_str());
+    let span = self.current_span();
+    let start = self.line_index.line_col(span.start.into());
+    let end = self.line_index.line_col(span.end.into());
+    let span_text =
+      format!(" at {}:{}-{}:{}", start.line + 1, start.col + 1, end.line + 1, end.col + 1);
+    self.tree_shaker.0.diagnostics.borrow_mut().insert(message.into() + &span_text);
   }
 
   pub fn push_stmt_span(&mut self, node: &'a impl GetSpan, decl: bool) {
     let span = node.span();
-    self.current_span.push(span);
+    self.span_stack.push(span);
     if !decl {
       if let Some(debugger) = &mut self.logger {
         debugger.push_event(DebuggerEvent::PushStmtSpan(span));
@@ -145,14 +177,14 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_expr_span(&mut self, node: &'a impl GetSpan) {
     let span = node.span();
-    self.current_span.push(span);
+    self.span_stack.push(span);
     if let Some(debugger) = &mut self.logger {
       debugger.push_event(DebuggerEvent::PushExprSpan(span));
     }
   }
 
   pub fn pop_stmt_span(&mut self, decl: bool) {
-    self.current_span.pop();
+    self.span_stack.pop();
     if !decl {
       if let Some(debugger) = &mut self.logger {
         debugger.push_event(DebuggerEvent::PopStmtSpan);
@@ -161,7 +193,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn pop_expr_span(&mut self) {
-    self.current_span.pop();
+    self.span_stack.pop();
     if let Some(debugger) = &mut self.logger {
       debugger.push_event(DebuggerEvent::PopExprSpan);
     }

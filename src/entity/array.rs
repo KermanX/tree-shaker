@@ -56,7 +56,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
 
-    let (has_exhaustive, _, exec_deps) = analyzer.pre_must_mutate(self.cf_scope, self.object_id);
+    let (has_exhaustive, _, exec_deps) = analyzer.pre_mutate_object(self.cf_scope, self.object_id);
 
     if has_exhaustive {
       self.consume(analyzer);
@@ -120,7 +120,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
-          _ => unreachable!(),
+          _ => unreachable!("Invalid property key"),
         }
       }
       analyzer.factory.computed_union(result, dep)
@@ -153,7 +153,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
 
     let (has_exhaustive, indeterminate, exec_deps) =
-      analyzer.pre_must_mutate(self.cf_scope, self.object_id);
+      analyzer.pre_mutate_object(self.cf_scope, self.object_id);
 
     if has_exhaustive {
       self.consume(analyzer);
@@ -218,7 +218,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),
-          _ => unreachable!(),
+          _ => unreachable!("Invalid property key"),
         }
       }
       if has_effect {
@@ -277,7 +277,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return consumed_object::delete_property(analyzer, dep, key);
     }
 
-    let (has_exhaustive, _, exec_deps) = analyzer.pre_must_mutate(self.cf_scope, self.object_id);
+    let (has_exhaustive, _, exec_deps) = analyzer.pre_mutate_object(self.cf_scope, self.object_id);
 
     if has_exhaustive {
       self.consume(analyzer);

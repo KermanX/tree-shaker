@@ -25,7 +25,7 @@ impl<'a> Transformer<'a> {
     let ContinueStatement { span, .. } = node;
 
     Some(if data.label_used {
-      self.ast_builder.statement_from_continue(self.clone_node(node))
+      Statement::ContinueStatement(self.ast_builder.alloc(self.clone_node(node)))
     } else {
       self.ast_builder.statement_continue(*span, None)
     })

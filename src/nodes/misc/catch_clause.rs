@@ -36,7 +36,7 @@ impl<'a> Transformer<'a> {
     self.ast_builder.catch_clause(
       *span,
       param,
-      body.unwrap_or(self.ast_builder.block_statement(body_span, self.ast_builder.vec())),
+      body.unwrap_or(self.ast_builder.alloc_block_statement(body_span, self.ast_builder.vec())),
     )
   }
 }

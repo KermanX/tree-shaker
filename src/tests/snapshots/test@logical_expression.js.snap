@@ -23,11 +23,11 @@ export function impure(a) {
 	t2 = (effect2, 0);
 	t3 = (effect3, 1);
 	t4 = (effect4, effect4);
-	function f(__unused_0B97) {
+	function f(__unused_4E81) {
 		effect;
 	}
 	f();
-	function g(__unused_14EB) {
+	function g(__unused_702E) {
 		effect;
 	}
 	g();
