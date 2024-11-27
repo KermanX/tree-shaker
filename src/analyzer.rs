@@ -8,7 +8,7 @@ use crate::{
     ScopeContext,
   },
   tree_shaker::TreeShaker,
-  utils::{DebuggerEvent, ExtraData, Logger, StatementVecData},
+  utils::{ExtraData, StatementVecData},
   TreeShakeConfig,
 };
 use line_index::LineIndex;
@@ -40,7 +40,6 @@ pub struct Analyzer<'a> {
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub builtins: Builtins<'a>,
   pub entity_op: &'a EntityOpHost<'a>,
-  pub logger: Option<&'a Logger>,
 
   pub debug: usize,
 }
@@ -50,7 +49,6 @@ impl<'a> Analyzer<'a> {
     let config = tree_shaker.0.config;
     let allocator = tree_shaker.0.allocator;
     let factory = tree_shaker.0.factory;
-    let logger = tree_shaker.0.logger;
 
     Analyzer {
       tree_shaker,
@@ -71,7 +69,6 @@ impl<'a> Analyzer<'a> {
       pending_deps: Default::default(),
       builtins: Builtins::new(config, factory),
       entity_op: allocator.alloc(EntityOpHost::new(allocator)),
-      logger,
       debug: 0,
     }
   }
@@ -165,38 +162,12 @@ impl<'a> Analyzer<'a> {
     self.tree_shaker.0.diagnostics.borrow_mut().insert(message.into() + &span_text);
   }
 
-  pub fn push_stmt_span(&mut self, node: &'a impl GetSpan, decl: bool) {
-    let span = node.span();
-    self.span_stack.push(span);
-    if !decl {
-      if let Some(debugger) = &mut self.logger {
-        debugger.push_event(DebuggerEvent::PushStmtSpan(span));
-      }
-    }
+  pub fn push_span(&mut self, node: &'a impl GetSpan) {
+    self.span_stack.push(node.span());
   }
 
-  pub fn push_expr_span(&mut self, node: &'a impl GetSpan) {
-    let span = node.span();
-    self.span_stack.push(span);
-    if let Some(debugger) = &mut self.logger {
-      debugger.push_event(DebuggerEvent::PushExprSpan(span));
-    }
-  }
-
-  pub fn pop_stmt_span(&mut self, decl: bool) {
+  pub fn pop_span(&mut self) {
     self.span_stack.pop();
-    if !decl {
-      if let Some(debugger) = &mut self.logger {
-        debugger.push_event(DebuggerEvent::PopStmtSpan);
-      }
-    }
-  }
-
-  pub fn pop_expr_span(&mut self) {
-    self.span_stack.pop();
-    if let Some(debugger) = &mut self.logger {
-      debugger.push_event(DebuggerEvent::PopExprSpan);
-    }
   }
 }
 

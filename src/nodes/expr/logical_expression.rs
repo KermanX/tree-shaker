@@ -34,16 +34,19 @@ impl<'a> Analyzer<'a> {
       )
     };
 
-    let conditional_dep = self.push_logical_right_cf_scope(
-      AstKind2::LogicalExpressionLeft(node),
-      left.clone(),
-      maybe_left,
-      maybe_right,
-    );
-
     let exec_right = |analyzer: &mut Analyzer<'a>| {
-      let val = analyzer.exec_expression(&node.right);
-      analyzer.factory.computed(val, conditional_dep)
+      let conditional_dep = analyzer.push_logical_right_cf_scope(
+        AstKind2::LogicalExpressionLeft(node),
+        left.clone(),
+        maybe_left,
+        maybe_right,
+      );
+
+      let val = analyzer.factory.computed(analyzer.exec_expression(&node.right), conditional_dep);
+
+      analyzer.pop_cf_scope();
+
+      val
     };
 
     let value = match (maybe_left, maybe_right) {
@@ -56,8 +59,6 @@ impl<'a> Analyzer<'a> {
       }
       (false, false) => unreachable!("Logical expression should have at least one possible branch"),
     };
-
-    self.pop_cf_scope();
 
     value
   }

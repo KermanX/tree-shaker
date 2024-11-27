@@ -244,23 +244,27 @@ impl<'a> EntityFactory<'a> {
     &self,
     values: V,
   ) -> Option<Entity<'a>> {
-    if values.len() == 0 {
-      None
-    } else {
-      Some(if values.len() == 1 {
-        values.iter().next().unwrap()
-      } else {
-        self.entity(UnionEntity {
-          values,
-          consumed: Cell::new(false),
-          phantom: std::marker::PhantomData,
-        })
-      })
+    match values.len() {
+      0 => None,
+      1 => Some(values.iter().next().unwrap()),
+      _ => Some(self.entity(UnionEntity {
+        values,
+        consumed: Cell::new(false),
+        phantom: std::marker::PhantomData,
+      })),
     }
   }
 
   pub fn union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(&self, values: V) -> Entity<'a> {
     self.try_union(values).unwrap()
+  }
+
+  pub fn optional_union(&self, a: Entity<'a>, b: Option<Entity<'a>>) -> Entity<'a> {
+    if let Some(b) = b {
+      self.union((a, b))
+    } else {
+      a
+    }
   }
 
   pub fn computed_union<T: ConsumableTrait<'a> + 'a>(

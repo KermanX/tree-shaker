@@ -7,14 +7,8 @@ use oxc::{
     ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
     StaticMemberExpression,
   },
-  span::{GetSpan, SPAN},
+  span::GetSpan,
 };
-
-#[derive(Debug, Default)]
-struct DataRead {
-  need_access: bool,
-  need_optional: bool,
-}
 
 impl<'a> Analyzer<'a> {
   /// Returns (short-circuit, value, cache)
@@ -23,43 +17,45 @@ impl<'a> Analyzer<'a> {
     node: &'a MemberExpression<'a>,
     will_write: bool,
   ) -> (Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
-    let (short_circuit, value, cache) = self.exec_member_expression_read_in_chain(node, will_write);
-    debug_assert_eq!(short_circuit, Some(false));
-    (value, cache)
+    let (scope_count, value, undefined, cache) =
+      self.exec_member_expression_read_in_chain(node, will_write).unwrap();
+
+    assert_eq!(scope_count, 0);
+    assert!(undefined.is_none());
+
+    (value, Some(cache))
   }
 
-  /// Returns (short-circuit, value, cache)
+  /// Returns (scope_count, value, forwarded_undefined, cache)
   pub fn exec_member_expression_read_in_chain(
     &mut self,
     node: &'a MemberExpression<'a>,
     will_write: bool,
-  ) -> (Option<bool>, Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
-    let (short_circuit, object) = self.exec_expression_in_chain(node.object());
+  ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>, (Entity<'a>, Entity<'a>)), Entity<'a>> {
+    let (mut scope_count, object, mut undefined) = self.exec_expression_in_chain(node.object())?;
 
-    let object_indeterminate = match short_circuit {
-      Some(true) => return (Some(true), self.factory.undefined, None),
-      Some(false) => false,
-      None => true,
-    };
+    let dep_id = AstKind2::MemberExpression(node);
 
-    let self_indeterminate = if node.optional() {
-      match object.test_nullish(self) {
-        Some(true) => return (Some(true), self.factory.undefined, None),
+    if node.optional() {
+      let maybe_left = match object.test_nullish() {
+        Some(true) => {
+          self.pop_multiple_cf_scopes(scope_count);
+          return Err(self.forward_logical_left_val(dep_id, self.factory.undefined, true, false));
+        }
         Some(false) => false,
-        None => true,
-      }
-    } else {
-      false
-    };
+        None => {
+          undefined = Some(self.forward_logical_left_val(
+            dep_id,
+            undefined.unwrap_or(self.factory.undefined),
+            true,
+            false,
+          ));
+          true
+        }
+      };
 
-    let data = self.load_data::<DataRead>(AstKind2::MemberExpressionRead(node));
-    data.need_access = true;
-    data.need_optional |= self_indeterminate;
-
-    let indeterminate = object_indeterminate || self_indeterminate;
-
-    if indeterminate {
-      self.push_indeterminate_cf_scope();
+      self.push_logical_right_cf_scope(dep_id, object, maybe_left, true);
+      scope_count += 1;
     }
 
     if will_write {
@@ -70,15 +66,9 @@ impl<'a> Analyzer<'a> {
       self.pop_cf_scope();
     }
 
-    let value = object.get_property(self, box_consumable(AstKind2::MemberExpression(node)), key);
-    let cache = Some((object, key));
+    let value = object.get_property(self, box_consumable(dep_id), key);
 
-    if indeterminate {
-      self.pop_cf_scope();
-      (None, self.factory.union((value, self.factory.undefined)), cache)
-    } else {
-      (Some(false), value, cache)
-    }
+    Ok((scope_count, value, undefined, (object, key)))
   }
 
   pub fn exec_member_expression_write(
@@ -119,26 +109,34 @@ impl<'a> Transformer<'a> {
     node: &'a MemberExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<DataRead>(AstKind2::MemberExpressionRead(node));
+    let dep_id = AstKind2::MemberExpression(node);
 
-    if !data.need_access {
-      return if need_val {
-        Some(build_effect!(
-          &self.ast_builder,
+    let need_read = need_val || self.is_referred(dep_id);
+
+    let (need_optional, may_not_short_circuit) = self.get_chain_result(dep_id, node.optional());
+
+    if !need_read {
+      let key_effect = may_not_short_circuit.then(|| match node {
+        MemberExpression::ComputedMemberExpression(node) => {
+          self.transform_expression(&node.expression, false)
+        }
+        _ => None,
+      });
+      return if need_optional {
+        Some(self.build_chain_expression_mock(
           node.span(),
-          self.transform_expression(node.object(), false);
-          self.build_undefined(SPAN)
+          self.transform_expression(node.object(), true).unwrap(),
+          key_effect.unwrap().unwrap(),
         ))
       } else {
         build_effect!(
           &self.ast_builder,
           node.span(),
-          self.transform_expression(node.object(), false)
+          self.transform_expression(node.object(), false),
+          key_effect
         )
       };
     }
-
-    let need_read = need_val || self.is_referred(AstKind2::MemberExpression(node));
 
     match node {
       MemberExpression::ComputedMemberExpression(node) => {
@@ -151,7 +149,7 @@ impl<'a> Transformer<'a> {
             *span,
             object,
             key,
-            data.need_optional,
+            need_optional,
           )))
         } else {
           let object = self.transform_expression(object, false);
@@ -168,7 +166,7 @@ impl<'a> Transformer<'a> {
             *span,
             object.unwrap(),
             property.clone(),
-            data.need_optional,
+            need_optional,
           )))
         } else {
           object
@@ -187,7 +185,7 @@ impl<'a> Transformer<'a> {
                 *span,
                 object.unwrap(),
                 field.clone(),
-                data.need_optional,
+                need_optional,
               )
               .into(),
           )

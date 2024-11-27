@@ -3,7 +3,8 @@ use crate::{
   entity::{ArrayEntity, EntityFactory},
   init_prototype,
 };
-use oxc::{index::Idx, semantic::SymbolId};
+use oxc::semantic::SymbolId;
+use oxc_index::Idx;
 
 pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
   init_prototype!("Function", create_object_prototype(factory), {

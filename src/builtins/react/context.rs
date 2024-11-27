@@ -1,15 +1,12 @@
-use std::mem;
-
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableTrait},
   entity::{Entity, EntityFactory},
   init_object,
 };
-use oxc::{
-  index::{Idx, IndexVec},
-  semantic::SymbolId,
-};
+use oxc::semantic::SymbolId;
+use oxc_index::{Idx, IndexVec};
+use std::mem;
 
 #[derive(Debug)]
 pub struct ReactContextData<'a> {

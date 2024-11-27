@@ -43,7 +43,7 @@ struct Data<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
-    self.push_expr_span(node);
+    self.push_span(node);
     let entity = match node {
       match_member_expression!(Expression) => {
         self.exec_member_expression_read(node.to_member_expression(), false).0
@@ -90,7 +90,7 @@ impl<'a> Analyzer<'a> {
       | Expression::TSNonNullExpression(_)
       | Expression::TSSatisfiesExpression(_) => unreachable!(),
     };
-    self.pop_expr_span();
+    self.pop_span();
     let data = self.load_data::<Data>(AstKind2::Expression(node));
     data.collector.collect(self, entity)
   }

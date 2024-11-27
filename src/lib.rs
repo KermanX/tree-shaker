@@ -25,7 +25,6 @@ pub struct TreeShakeReturn {
   pub minifier_return: Option<MinifierReturn>,
   pub codegen_return: CodegenReturn,
   pub diagnostics: Diagnostics,
-  pub logs: Vec<String>,
 }
 
 pub fn tree_shake<'a>(source_text: String, options: TreeShakeOptions) -> TreeShakeReturn {
@@ -33,10 +32,5 @@ pub fn tree_shake<'a>(source_text: String, options: TreeShakeOptions) -> TreeSha
   let tree_shaker = TreeShaker::new(&allocator, options);
   let (minifier_return, codegen_return) = tree_shaker.tree_shake(source_text);
 
-  TreeShakeReturn {
-    minifier_return,
-    codegen_return,
-    diagnostics: tree_shaker.0.diagnostics.take(),
-    logs: tree_shaker.0.logger.map(|l| l.serialize()).unwrap_or_default(),
-  }
+  TreeShakeReturn { minifier_return, codegen_return, diagnostics: tree_shaker.0.diagnostics.take() }
 }
