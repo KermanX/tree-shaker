@@ -16,14 +16,14 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a MemberExpression<'a>,
     will_write: bool,
-  ) -> (Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
+  ) -> (Entity<'a>, (Entity<'a>, Entity<'a>)) {
     let (scope_count, value, undefined, cache) =
       self.exec_member_expression_read_in_chain(node, will_write).unwrap();
 
     assert_eq!(scope_count, 0);
     assert!(undefined.is_none());
 
-    (value, Some(cache))
+    (value, cache)
   }
 
   /// Returns (scope_count, value, forwarded_undefined, cache)
