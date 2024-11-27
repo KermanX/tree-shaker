@@ -39,7 +39,7 @@ pub struct Analyzer<'a> {
   pub pending_labels: Vec<LabelEntity<'a>>,
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub builtins: Builtins<'a>,
-  pub entity_op: EntityOpHost<'a>,
+  pub entity_op: &'a EntityOpHost<'a>,
   pub logger: Option<&'a Logger>,
 
   pub debug: usize,
@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
       pending_labels: Vec::new(),
       pending_deps: Default::default(),
       builtins: Builtins::new(config, factory),
-      entity_op: EntityOpHost::new(allocator),
+      entity_op: allocator.alloc(EntityOpHost::new(allocator)),
       logger,
       debug: 0,
     }

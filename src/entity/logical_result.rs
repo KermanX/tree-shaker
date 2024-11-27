@@ -2,7 +2,7 @@ use oxc::ast::ast::LogicalOperator;
 
 use super::{
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityFactory, EntityTrait, TypeofResult,
+  Entity, EntityTrait, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable};
 
@@ -99,23 +99,28 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.iterate(analyzer, dep)
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    self.value.get_destructable(dep)
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
+    self.value.get_destructable(analyzer, dep)
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value.get_typeof(analyzer)
   }
 
-  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value.get_to_string(analyzer)
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value.get_to_numeric(analyzer)
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     let value = self.value.get_to_boolean(analyzer);
     if self.is_coalesce {
       value
@@ -126,56 +131,56 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     }
   }
 
-  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value.get_to_property_key(analyzer)
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value.get_to_jsx_child(analyzer)
   }
 
-  fn test_typeof(&self) -> TypeofResult {
-    self.value.test_typeof()
+  fn test_typeof(&self, analyzer: &mut Analyzer<'a>) -> TypeofResult {
+    self.value.test_typeof(analyzer)
   }
 
-  fn test_truthy(&self) -> Option<bool> {
+  fn test_truthy(&self, analyzer: &mut Analyzer<'a>) -> Option<bool> {
     if self.is_coalesce {
-      self.value.test_truthy()
+      self.value.test_truthy(analyzer)
     } else {
       self.result
     }
   }
 
-  fn test_nullish(&self) -> Option<bool> {
+  fn test_nullish(&self, analyzer: &mut Analyzer<'a>) -> Option<bool> {
     if self.is_coalesce {
       self.result
     } else {
-      self.value.test_nullish()
+      self.value.test_nullish(analyzer)
     }
   }
 }
 
-impl<'a> EntityFactory<'a> {
+impl<'a> Analyzer<'a> {
   /// Only used when (maybe_left, maybe_right) == (true, true)
   pub fn logical_result(
-    &self,
+    &mut self,
     left: Entity<'a>,
     right: Entity<'a>,
     operator: LogicalOperator,
   ) -> Entity<'a> {
-    self.entity(LogicalResultEntity {
-      value: self.union((left, right)),
+    self.factory.entity(LogicalResultEntity {
+      value: self.factory.union((left, right)),
       is_coalesce: operator == LogicalOperator::Coalesce,
       result: match operator {
-        LogicalOperator::Or => match right.test_truthy() {
+        LogicalOperator::Or => match right.test_truthy(self) {
           Some(true) => Some(true),
           _ => None,
         },
-        LogicalOperator::And => match right.test_truthy() {
+        LogicalOperator::And => match right.test_truthy(self) {
           Some(false) => Some(false),
           _ => None,
         },
-        LogicalOperator::Coalesce => match right.test_nullish() {
+        LogicalOperator::Coalesce => match right.test_nullish(self) {
           Some(false) => Some(false),
           _ => None,
         },

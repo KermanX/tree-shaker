@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
     self.factory.string(self.allocator.alloc(format!("__#symbol__{}", symbol_id.index())))
   }
 
-  pub fn parse_internal_symbol_id<T: Idx>(&self, entity: Entity<'a>) -> Option<T> {
+  pub fn parse_internal_symbol_id<T: Idx>(&mut self, entity: Entity<'a>) -> Option<T> {
     let literal = entity.get_literal(self)?;
     let LiteralEntity::String(string) = literal else { return None };
     if string.starts_with("__#symbol__") {

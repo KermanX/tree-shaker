@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
     };
 
     let self_indeterminate = if node.optional() {
-      match object.test_nullish() {
+      match object.test_nullish(self) {
         Some(true) => return (Some(true), self.factory.undefined, None),
         Some(false) => false,
         None => true,

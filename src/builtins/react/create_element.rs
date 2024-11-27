@@ -7,7 +7,7 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
   factory.implemented_builtin_fn("React::createElement", |analyzer, dep, _this, args| {
     let (args, children, _) = args.destruct_as_array(analyzer, dep, 2);
     let [tag, props] = args[..] else { unreachable!() };
-    let props = match props.test_nullish() {
+    let props = match props.test_nullish(analyzer) {
       Some(true) => {
         analyzer.factory.entity(analyzer.new_empty_object(&analyzer.builtins.prototypes.object))
       }
@@ -20,7 +20,7 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
 
     // Special prop: ref
     let r#ref = props.get_property(analyzer, box_consumable(()), analyzer.factory.string("ref"));
-    if r#ref.test_nullish() != Some(true) {
+    if r#ref.test_nullish(analyzer) != Some(true) {
       // TODO: currently we haven't implemented useRef, so we just consider it as a callback
       analyzer.exec_consumed_fn("React_ref", move |analyzer| {
         r#ref.call(
@@ -34,7 +34,7 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
 
     // Special prop: key
     let key = props.get_property(analyzer, box_consumable(()), analyzer.factory.string("key"));
-    if r#ref.test_nullish() != Some(true) {
+    if r#ref.test_nullish(analyzer) != Some(true) {
       analyzer.consume(key);
     }
 

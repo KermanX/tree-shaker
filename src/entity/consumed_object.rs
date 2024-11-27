@@ -133,11 +133,11 @@ pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Iterated
   }
 }
 
-pub fn get_to_string<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
+pub fn get_to_string<'a>(analyzer: &mut Analyzer<'a>) -> Entity<'a> {
   analyzer.factory.unknown_string
 }
 
-pub fn get_to_numeric<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
+pub fn get_to_numeric<'a>(analyzer: &mut Analyzer<'a>) -> Entity<'a> {
   // Possibly number or bigint
   analyzer.factory.unknown()
 }

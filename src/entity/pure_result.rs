@@ -20,7 +20,6 @@ pub enum PureCallNode<'a> {
 pub struct PureResult<'a> {
   pub node: PureCallNode<'a>,
   pub result: OnceCell<Entity<'a>>,
-  pub referred_deps: ReferredDeps,
 }
 
 impl<'a> EntityTrait<'a> for PureResult<'a> {
@@ -109,44 +108,49 @@ impl<'a> EntityTrait<'a> for PureResult<'a> {
     self.value(analyzer).iterate(analyzer, dep)
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    self.value(analyzer).get_destructable(dep)
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
+    self.value(analyzer).get_destructable(analyzer, dep)
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value(analyzer).get_typeof(analyzer)
   }
 
-  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value(analyzer).get_to_string(analyzer)
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value(analyzer).get_to_numeric(analyzer)
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value(analyzer).get_to_boolean(analyzer)
   }
 
-  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value(analyzer).get_to_property_key(analyzer)
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.value(analyzer).get_to_jsx_child(analyzer)
   }
 
-  fn test_typeof(&self) -> TypeofResult {
-    self.value(analyzer).test_typeof()
+  fn test_typeof(&self, analyzer: &mut Analyzer<'a>) -> TypeofResult {
+    self.value(analyzer).test_typeof(analyzer)
   }
 
-  fn test_truthy(&self) -> Option<bool> {
-    self.value(analyzer).test_truthy()
+  fn test_truthy(&self, analyzer: &mut Analyzer<'a>) -> Option<bool> {
+    self.value(analyzer).test_truthy(analyzer)
   }
 
-  fn test_nullish(&self) -> Option<bool> {
-    self.value(analyzer).test_nullish()
+  fn test_nullish(&self, analyzer: &mut Analyzer<'a>) -> Option<bool> {
+    self.value(analyzer).test_nullish(analyzer)
   }
 }
 

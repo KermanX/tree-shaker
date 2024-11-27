@@ -347,49 +347,54 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     )
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
     dep
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("object")
   }
 
-  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
     analyzer.factory.computed_unknown_string(rc)
   }
 
-  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
     analyzer.factory.computed_unknown(rc)
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(true)
   }
 
-  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.get_to_string(rc, analyzer)
   }
 
-  fn get_to_jsx_child(&self, rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&self, rc: Entity<'a>, _analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     rc
   }
 
-  fn test_typeof(&self) -> TypeofResult {
+  fn test_typeof(&self, _analyzer: &mut Analyzer<'a>) -> TypeofResult {
     TypeofResult::Object
   }
 
-  fn test_truthy(&self) -> Option<bool> {
+  fn test_truthy(&self, _analyzer: &mut Analyzer<'a>) -> Option<bool> {
     Some(true)
   }
 
-  fn test_nullish(&self) -> Option<bool> {
+  fn test_nullish(&self, _analyzer: &mut Analyzer<'a>) -> Option<bool> {
     Some(false)
   }
 }

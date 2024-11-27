@@ -66,7 +66,7 @@ impl<'a> Builtins<'a> {
       let array = analyzer.new_empty_array();
 
       for (_, key, value) in properties {
-        if key.test_typeof().contains(TypeofResult::String) {
+        if key.test_typeof(analyzer).contains(TypeofResult::String) {
           array.init_rest(analyzer.factory.computed(key.get_to_string(analyzer), value));
         }
       }

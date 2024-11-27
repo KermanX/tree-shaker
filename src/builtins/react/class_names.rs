@@ -14,12 +14,12 @@ pub fn create_class_names_namespace<'a>(
     let mut deps_1 = vec![];
     let mut deps_2 = vec![iterate_dep];
     for class_name in class_names {
-      if TypeofResult::Object.contains(class_name.test_typeof()) {
+      if TypeofResult::Object.contains(class_name.test_typeof(analyzer)) {
         // This may be an array. However, this makes no difference in this logic.
         let (properties, enumerate_dep) = class_name.enumerate_properties(analyzer, dep.cloned());
         deps_2.push(enumerate_dep);
         for (_, key, value) in properties {
-          if value.test_truthy() != Some(false) {
+          if value.test_truthy(analyzer) != Some(false) {
             deps_1.push(key);
             deps_1.push(value);
           }

@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some((callee_indeterminate, callee, this)) = callee {
       let self_indeterminate = if node.optional {
-        match callee.test_nullish() {
+        match callee.test_nullish(self) {
           Some(true) => return (Some(true), self.factory.undefined),
           Some(false) => false,
           None => true,
