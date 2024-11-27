@@ -1,9 +1,6 @@
+use oxc::semantic::ScopeId;
+use oxc_index::{Idx, IndexVec};
 use std::ops::RangeFrom;
-
-use oxc::{
-  index::{Idx, IndexVec},
-  semantic::ScopeId,
-};
 
 struct NodeInfo<T> {
   data: T,

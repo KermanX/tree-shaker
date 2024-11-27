@@ -18,10 +18,8 @@ use crate::{
 use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
-use oxc::{
-  index::Idx,
-  semantic::{ScopeId, SymbolId},
-};
+use oxc::semantic::{ScopeId, SymbolId};
+use oxc_index::Idx;
 use scope_tree::ScopeTree;
 use std::rc::Rc;
 use try_scope::TryScope;

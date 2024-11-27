@@ -1,5 +1,6 @@
 use crate::scope::CfScopeKind;
-use oxc::{index::Idx, semantic::ScopeId, span::Span};
+use oxc::{semantic::ScopeId, span::Span};
+use oxc_index::Idx;
 use rustc_hash::FxHashMap;
 use std::cell::RefCell;
 
