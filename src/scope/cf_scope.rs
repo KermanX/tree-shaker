@@ -309,10 +309,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn refer_to_global(&mut self) {
-    if self.is_inside_pure() {
-      return;
-    }
-
     for depth in (0..self.scope_context.cf.stack.len()).rev() {
       let scope = self.scope_context.cf.get_mut_from_depth(depth);
       match scope.referred_state {

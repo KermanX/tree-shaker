@@ -3,6 +3,7 @@ pub mod cf_scope;
 pub mod conditional;
 pub mod exhaustive;
 pub mod r#loop;
+mod pure;
 mod scope_tree;
 pub mod try_scope;
 mod utils;
@@ -31,7 +32,6 @@ pub struct ScopeContext<'a> {
   pub call: Vec<CallScope<'a>>,
   pub variable: ScopeTree<VariableScope<'a>>,
   pub cf: ScopeTree<CfScope<'a>>,
-  pub pure: usize,
 
   pub object_scope_id: ScopeId,
   pub object_symbol_counter: usize,
@@ -65,7 +65,6 @@ impl<'a> ScopeContext<'a> {
       )],
       variable,
       cf,
-      pure: 0,
 
       object_scope_id,
       object_symbol_counter: 128,
@@ -76,7 +75,6 @@ impl<'a> ScopeContext<'a> {
     debug_assert_eq!(self.call.len(), 1);
     debug_assert_eq!(self.variable.current_depth(), 0);
     debug_assert_eq!(self.cf.current_depth(), 0);
-    debug_assert_eq!(self.pure, 0);
 
     for scope in self.cf.iter_all() {
       if let Some(data) = &scope.exhaustive_data {
@@ -130,11 +128,6 @@ impl<'a> Analyzer<'a> {
 
   pub fn variable_scope_mut(&mut self) -> &mut VariableScope<'a> {
     self.scope_context.variable.get_current_mut()
-  }
-
-  pub fn is_inside_pure(&self) -> bool {
-    // TODO: self.scope_context.pure > 0
-    false
   }
 
   fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId> {

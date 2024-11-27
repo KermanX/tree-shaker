@@ -1,5 +1,9 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer,
+  ast::AstKind2,
+  build_effect,
+  consumable::box_consumable,
+  entity::{Entity, PureCallNode},
   transformer::Transformer,
 };
 use oxc::ast::{
@@ -14,19 +18,21 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_call_expression(&mut self, node: &'a CallExpression) -> Entity<'a> {
-    self.exec_call_expression_in_chain(node).1
+    self.exec_call_expression_in_chain(node, None).1
   }
 
   /// Returns (short-circuit, value)
   pub fn exec_call_expression_in_chain(
     &mut self,
     node: &'a CallExpression,
+    args_from_pure: Option<Entity<'a>>,
   ) -> (Option<bool>, Entity<'a>) {
-    let pure = self.has_pure_notation(node.span);
+    if args_from_pure.is_none() && self.has_pure_notation(node.span) {
+      let args = self.exec_arguments(&node.arguments);
+      return self.factory.pure_result(PureCallNode::CallExpression(node, args));
+    }
 
-    self.scope_context.pure += pure;
     let callee = self.exec_callee(&node.callee);
-    self.scope_context.pure -= pure;
 
     if let Some((callee_indeterminate, callee, this)) = callee {
       let self_indeterminate = if node.optional {
@@ -48,11 +54,9 @@ impl<'a> Analyzer<'a> {
         self.push_indeterminate_cf_scope();
       }
 
-      let args = self.exec_arguments(&node.arguments);
+      let args = args_from_pure.unwrap_or_else(|| self.exec_arguments(&node.arguments));
 
-      self.scope_context.pure += pure;
       let ret_val = callee.call(self, box_consumable(AstKind2::CallExpression(node)), this, args);
-      self.scope_context.pure -= pure;
 
       if indeterminate {
         self.pop_cf_scope();
@@ -62,6 +66,47 @@ impl<'a> Analyzer<'a> {
       }
     } else {
       (Some(true), self.factory.undefined)
+    }
+  }
+
+  pub fn exec_call_expression_by_pure(
+    &mut self,
+    node: &'a CallExpression,
+    arguments: Entity<'a>,
+  ) -> Entity<'a> {
+    let callee = self.exec_callee(&node.callee);
+
+    if let Some((callee_indeterminate, callee, this)) = callee {
+      let self_indeterminate = if node.optional {
+        match callee.test_nullish(self) {
+          Some(true) => return self.factory.undefined,
+          Some(false) => false,
+          None => true,
+        }
+      } else {
+        false
+      };
+
+      let data = self.load_data::<Data>(AstKind2::CallExpression(node));
+      data.need_optional |= self_indeterminate;
+
+      let indeterminate = callee_indeterminate || self_indeterminate;
+
+      if indeterminate {
+        self.push_indeterminate_cf_scope();
+      }
+
+      let ret_val =
+        callee.call(self, box_consumable(AstKind2::CallExpression(node)), this, arguments);
+
+      if indeterminate {
+        self.pop_cf_scope();
+        self.factory.union((ret_val, self.factory.undefined))
+      } else {
+        ret_val
+      }
+    } else {
+      self.factory.undefined
     }
   }
 }

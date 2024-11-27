@@ -34,5 +34,6 @@ pub use literal::LiteralEntity;
 pub use object::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
 pub use operations::EntityOpHost;
 pub use primitive::PrimitiveEntity;
+pub use pure_result::PureCallNode;
 pub use typeof_result::TypeofResult;
 pub use unknown::UnknownEntity;

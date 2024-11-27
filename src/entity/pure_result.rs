@@ -1,19 +1,18 @@
 use super::{
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityTrait, TypeofResult,
+  Entity, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableNode},
-  dep::ReferredDeps,
 };
 use oxc::ast::ast::{CallExpression, NewExpression};
-use std::{cell::OnceCell, mem};
+use std::cell::OnceCell;
 
 #[derive(Debug)]
 pub enum PureCallNode<'a> {
-  CallExpression(&'a CallExpression<'a>),
-  NewExpression(&'a NewExpression<'a>),
+  CallExpression(&'a CallExpression<'a>, Entity<'a>),
+  NewExpression(&'a NewExpression<'a>, Entity<'a>),
 }
 
 #[derive(Debug)]
@@ -157,13 +156,21 @@ impl<'a> EntityTrait<'a> for PureResult<'a> {
 impl<'a> PureResult<'a> {
   fn value(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     *self.result.get_or_init(|| {
-      let parent_referred_deps = mem::replace(&mut analyzer.referred_deps, ReferredDeps::default());
-      let val = analyzer.exec_indeterminately(|analyzer| match &self.node {
-        PureCallNode::CallExpression(node) => analyzer.exec_call_expression(node),
-        PureCallNode::NewExpression(node) => analyzer.exec_new_expression(node),
+      let (val, this_referred_deps) = analyzer.exec_in_pure(|analyzer| match &self.node {
+        PureCallNode::CallExpression(node, arguments) => {
+          analyzer.exec_call_expression_in_chain(node, Some(*arguments)).1
+        }
+        PureCallNode::NewExpression(node, arguments) => {
+          analyzer.exec_new_expression(node, Some(*arguments))
+        }
       });
-      let this_referred_deps = mem::replace(&mut analyzer.referred_deps, parent_referred_deps);
       analyzer.factory.computed(val, ConsumableNode::new(this_referred_deps))
     })
+  }
+}
+
+impl<'a> EntityFactory<'a> {
+  pub fn pure_result(&self, node: PureCallNode<'a>) -> Entity<'a> {
+    self.entity(PureResult { node, result: OnceCell::new() })
   }
 }

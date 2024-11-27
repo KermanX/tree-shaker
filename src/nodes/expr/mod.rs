@@ -75,7 +75,7 @@ impl<'a> Analyzer<'a> {
       Expression::ChainExpression(node) => self.exec_chain_expression(node),
       Expression::ImportExpression(node) => self.exec_import_expression(node),
       Expression::MetaProperty(node) => self.exec_meta_property(node),
-      Expression::NewExpression(node) => self.exec_new_expression(node),
+      Expression::NewExpression(node) => self.exec_new_expression(node,None),
       Expression::ClassExpression(node) => self.exec_class(node),
       Expression::ThisExpression(node) => self.exec_this_expression(node),
       Expression::Super(node) => self.exec_super(node),
