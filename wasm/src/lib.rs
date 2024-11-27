@@ -7,7 +7,6 @@ use wasm_bindgen::prelude::*;
 pub struct Result {
   pub output: String,
   pub diagnostics: Vec<String>,
-  pub logs: Vec<String>,
 }
 
 #[wasm_bindgen]
@@ -15,7 +14,6 @@ pub fn tree_shake(
   source_text: String,
   preset: String,
   do_minify: bool,
-  logging: bool,
   always_inline_literal: bool,
 ) -> Result {
   console_error_panic_hook::set_once();
@@ -38,12 +36,10 @@ pub fn tree_shake(
         comments: !do_minify,
         ..Default::default()
       },
-      logging,
     },
   );
   Result {
     output: result.codegen_return.code,
     diagnostics: result.diagnostics.into_iter().collect(),
-    logs: result.logs,
   }
 }

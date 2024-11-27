@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, entity::EntityFactory, transformer::Transformer, utils::Logger,
-  TreeShakeConfig,
-};
+use crate::{analyzer::Analyzer, entity::EntityFactory, transformer::Transformer, TreeShakeConfig};
 use oxc::{
   allocator::Allocator,
   codegen::{CodeGenerator, CodegenOptions, CodegenReturn},
@@ -16,14 +13,12 @@ pub struct TreeShakeOptions {
   pub config: TreeShakeConfig,
   pub minify_options: Option<MinifierOptions>,
   pub codegen_options: CodegenOptions,
-  pub logging: bool,
 }
 
 pub struct TreeShakerInner<'a> {
   pub allocator: &'a Allocator,
   pub config: &'a TreeShakeConfig,
   pub factory: &'a EntityFactory<'a>,
-  pub logger: Option<&'a Logger>,
   pub minify_options: Option<MinifierOptions>,
   pub codegen_options: CodegenOptions,
   pub diagnostics: RefCell<BTreeSet<String>>,
@@ -34,21 +29,20 @@ pub struct TreeShaker<'a>(pub Rc<TreeShakerInner<'a>>);
 
 impl<'a> TreeShaker<'a> {
   pub fn new(allocator: &'a Allocator, options: TreeShakeOptions) -> Self {
-    let TreeShakeOptions { config, minify_options, codegen_options, logging, .. } = options;
+    let TreeShakeOptions { config, minify_options, codegen_options, .. } = options;
 
     Self(Rc::new(TreeShakerInner {
       allocator,
       config: allocator.alloc(config),
       minify_options,
       codegen_options,
-      logger: logging.then(|| &*allocator.alloc(Logger::new())),
       factory: allocator.alloc(EntityFactory::new(allocator)),
       diagnostics: Default::default(),
     }))
   }
 
   pub fn tree_shake(&self, source_text: String) -> (Option<MinifierReturn>, CodegenReturn) {
-    let TreeShakerInner { allocator, config, minify_options, codegen_options, logger, .. } =
+    let TreeShakerInner { allocator, config, minify_options, codegen_options, .. } =
       self.0.as_ref();
 
     let parser = Parser::new(
@@ -80,8 +74,6 @@ impl<'a> TreeShaker<'a> {
     // Step 4: Generate output
     let codegen = CodeGenerator::new().with_options(codegen_options.clone());
     let codegen_return = codegen.build(ast);
-
-    logger.map(|l| l.print_fn_calls());
 
     (minifier_return, codegen_return)
   }

@@ -17,9 +17,6 @@ struct Args {
   #[arg(short, long, default_value_t = false)]
   minify: bool,
 
-  #[arg(short, long, default_value_t = false)]
-  logging: bool,
-
   #[arg(short, long, default_value_t = String::from("recommended"))]
   preset: String,
 
@@ -49,7 +46,6 @@ fn main() {
       config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
       minify_options: None,
       codegen_options: CodegenOptions::default(),
-      logging: false,
     },
   );
   let minified = tree_shake(
@@ -58,7 +54,6 @@ fn main() {
       config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
       minify_options: Some(MinifierOptions::default()),
       codegen_options: CodegenOptions { minify: true, comments: false, ..Default::default() },
-      logging: false,
     },
   );
   let shaken = tree_shake(
@@ -77,7 +72,6 @@ fn main() {
       .with_always_inline_literal(args.always_inline_literal),
       minify_options: None,
       codegen_options: CodegenOptions::default(),
-      logging: args.logging,
     },
   );
   let shaken_minified = tree_shake(
@@ -86,7 +80,6 @@ fn main() {
       config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
       minify_options: Some(MinifierOptions::default()),
       codegen_options: CodegenOptions { minify: true, comments: false, ..Default::default() },
-      logging: false,
     },
   );
 

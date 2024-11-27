@@ -3,7 +3,7 @@ use crate::{
   ast::AstKind2,
   dep::{DepId, ReferredDeps},
   scope::conditional::ConditionalDataMap,
-  utils::{DataPlaceholder, ExtraData, Logger, StatementVecData},
+  utils::{DataPlaceholder, ExtraData, StatementVecData},
   TreeShakeConfig,
 };
 use oxc::{
@@ -35,7 +35,6 @@ pub struct Transformer<'a> {
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   pub var_decls: RefCell<FxHashMap<SymbolId, bool>>,
-  pub logger: Option<&'a Logger>,
 
   /// The block statement has already exited, so we can and only can transform declarations themselves
   pub declaration_only: Cell<bool>,
@@ -52,7 +51,6 @@ impl<'a> Transformer<'a> {
       data,
       referred_deps: referred_nodes,
       conditional_data,
-      logger,
       ..
     } = analyzer;
 
@@ -74,7 +72,6 @@ impl<'a> Transformer<'a> {
       referred_deps: referred_nodes,
       conditional_data,
       var_decls: Default::default(),
-      logger,
 
       declaration_only: Cell::new(false),
       need_unused_assignment_target: Cell::new(false),

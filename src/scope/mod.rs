@@ -13,7 +13,7 @@ use crate::{
   consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
   entity::{Entity, EntityFactory, LabelEntity},
-  utils::{CalleeInfo, CalleeNode, DebuggerEvent},
+  utils::{CalleeInfo, CalleeNode},
 };
 use call_scope::CallScope;
 use cf_scope::CfScope;
@@ -136,10 +136,6 @@ impl<'a> Analyzer<'a> {
   }
 
   fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId> {
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::ReplaceVarScopeStack(new_stack.clone()));
-    }
-
     self.scope_context.variable.replace_stack(new_stack)
   }
 
@@ -166,15 +162,6 @@ impl<'a> Analyzer<'a> {
       Some(false),
     );
 
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PushCallScope(
-        callee.span(),
-        old_variable_scope_stack.clone(),
-        cf_scope_depth,
-        body_variable_scope,
-      ));
-    }
-
     self.scope_context.call.push(CallScope::new(
       dep_id,
       callee,
@@ -188,11 +175,6 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_call_scope(&mut self) -> Entity<'a> {
     let scope = self.scope_context.call.pop().unwrap();
-
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PopCallScope);
-    }
-
     let (old_variable_scope_stack, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
     self.pop_variable_scope();
@@ -201,20 +183,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_variable_scope(&mut self) -> ScopeId {
-    let id = self.scope_context.variable.push(VariableScope::new());
-
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PushVarScope(id, self.scope_context.cf.current_id()));
-    }
-
-    id
+    self.scope_context.variable.push(VariableScope::new())
   }
 
   pub fn pop_variable_scope(&mut self) -> ScopeId {
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PopVarScope);
-    }
-
     self.scope_context.variable.pop()
   }
 
@@ -235,15 +207,6 @@ impl<'a> Analyzer<'a> {
     exited: Option<bool>,
   ) -> usize {
     self.scope_context.cf.push(CfScope::new(kind, labels, deps, exited));
-
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PushCfScope(
-        self.scope_context.cf.current_id(),
-        kind,
-        exited,
-      ));
-    }
-
     self.scope_context.cf.current_depth()
   }
 
@@ -261,10 +224,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn pop_cf_scope(&mut self) -> ScopeId {
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PopCfScope);
-    }
-
     self.scope_context.cf.pop()
   }
 
