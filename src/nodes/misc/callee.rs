@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::Entity,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{ChainElement, Expression, MemberExpression},
@@ -28,7 +25,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a Expression<'a>,
   ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>, Entity<'a>), Entity<'a>> {
-    let dep = box_consumable(AstKind2::Callee(node));
+    let dep = AstKind2::Callee(node);
     if let Some(member_expr) = unwrap_to_member_expression(node) {
       let (scope_count, callee, undefined, (object, _)) =
         self.exec_member_expression_read_in_chain(member_expr, false)?;
