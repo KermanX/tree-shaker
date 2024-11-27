@@ -1,5 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, dep::DepId, entity::Entity,
+  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::Entity,
   transformer::Transformer,
 };
 use oxc::{
@@ -23,27 +23,19 @@ fn unwrap_to_member_expression<'a>(node: &'a Expression<'a>) -> Option<&'a Membe
 }
 
 impl<'a> Analyzer<'a> {
-  /// Returns: Some((indeterminate, callee, this)) or None for should not call due to ?. operator
+  /// Returns: Ok((scope_count, callee, undefined, this)) or Err(forwarded_undefined) for should not call due to ?. operator
   pub fn exec_callee(
     &mut self,
     node: &'a Expression<'a>,
-  ) -> Option<(bool, Entity<'a>, Entity<'a>)> {
-    let dep = box_consumable(DepId::from(AstKind2::Callee(node)));
+  ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>, Entity<'a>), Entity<'a>> {
+    let dep = box_consumable(AstKind2::Callee(node));
     if let Some(member_expr) = unwrap_to_member_expression(node) {
-      let (short_circuit, callee, cache) =
-        self.exec_member_expression_read_in_chain(member_expr, false);
-      cache.map(|(object, _)| {
-        assert_ne!(short_circuit, Some(true));
-        let indeterminate = short_circuit.is_none();
-        (indeterminate, callee, self.factory.computed(object, dep))
-      })
+      let (scope_count, callee, undefined, (object, _)) =
+        self.exec_member_expression_read_in_chain(member_expr, false)?;
+      Ok((scope_count, callee, undefined, self.factory.computed(object, dep)))
     } else {
-      let (short_circuit, callee) = self.exec_expression_in_chain(node);
-      if short_circuit == Some(true) {
-        None
-      } else {
-        Some((short_circuit.is_none(), callee, self.factory.computed(self.factory.undefined, dep)))
-      }
+      let (scope_count, callee, undefined) = self.exec_expression_in_chain(node)?;
+      Ok((scope_count, callee, undefined, self.factory.computed(self.factory.undefined, dep)))
     }
   }
 }

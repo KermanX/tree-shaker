@@ -227,6 +227,10 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf.pop()
   }
 
+  pub fn pop_multiple_cf_scopes(&mut self, count: usize) {
+    self.scope_context.cf.stack.truncate(self.scope_context.cf.stack.len() - count);
+  }
+
   pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {
     let id = self.pop_cf_scope();
     self.scope_context.cf.get_mut(id)

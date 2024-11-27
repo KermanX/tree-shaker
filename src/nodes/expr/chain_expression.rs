@@ -7,23 +7,39 @@ use oxc::ast::{
 impl<'a> Analyzer<'a> {
   pub fn exec_chain_expression(&mut self, node: &'a ChainExpression<'a>) -> Entity<'a> {
     match &node.expression {
-      ChainElement::CallExpression(node) => self.exec_call_expression_in_chain(node).1,
-      node => self.exec_member_expression_read_in_chain(node.to_member_expression(), false).1,
+      ChainElement::CallExpression(node) => {
+        let result = self.exec_call_expression_in_chain(node);
+        match result {
+          Ok((scope_count, value, undefined)) => {
+            self.pop_multiple_cf_scopes(scope_count);
+            self.factory.optional_union(value, undefined)
+          }
+          Err(value) => value,
+        }
+      }
+      node => {
+        let result = self.exec_member_expression_read_in_chain(node.to_member_expression(), false);
+        match result {
+          Ok((scope_count, value, undefined, _)) => {
+            self.pop_multiple_cf_scopes(scope_count);
+            self.factory.optional_union(value, undefined)
+          }
+          Err(value) => value,
+        }
+      }
     }
   }
 
   pub fn exec_expression_in_chain(
     &mut self,
     node: &'a Expression<'a>,
-  ) -> (Option<bool>, Entity<'a>) {
+  ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>), Entity<'a>> {
     match node {
-      match_member_expression!(Expression) => {
-        let (short_circuit, value, _cache) =
-          self.exec_member_expression_read_in_chain(node.to_member_expression(), false);
-        (short_circuit, value)
-      }
+      match_member_expression!(Expression) => self
+        .exec_member_expression_read_in_chain(node.to_member_expression(), false)
+        .map(|(scope_count, value, undefined, _)| (scope_count, value, undefined)),
       Expression::CallExpression(node) => self.exec_call_expression_in_chain(node),
-      _ => (Some(false), self.exec_expression(node)),
+      _ => Ok((0, self.exec_expression(node), None)),
     }
   }
 }

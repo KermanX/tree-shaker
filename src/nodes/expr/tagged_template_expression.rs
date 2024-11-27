@@ -15,35 +15,29 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a TaggedTemplateExpression<'a>,
   ) -> Entity<'a> {
-    if let Some((indeterminate, tag, this)) = self.exec_callee(&node.tag) {
-      if indeterminate {
-        self.push_indeterminate_cf_scope();
-      }
+    let (scope_count, tag, undefined, this) = match self.exec_callee(&node.tag) {
+      Ok(v) => v,
+      Err(v) => return v,
+    };
 
-      let mut arguments = vec![(false, self.factory.unknown())];
+    let mut arguments = vec![(false, self.factory.unknown())];
 
-      for expr in &node.quasi.expressions {
-        let value = self.exec_expression(expr);
-        let dep = DepId::from(AstKind2::ExpressionInTaggedTemplate(expr));
-        arguments.push((false, self.factory.computed(value, dep)));
-      }
-
-      let value = tag.call(
-        self,
-        box_consumable(AstKind2::TaggedTemplateExpression(node)),
-        this,
-        self.factory.arguments(arguments),
-      );
-
-      if indeterminate {
-        self.pop_cf_scope();
-        self.factory.union((value, self.factory.undefined))
-      } else {
-        value
-      }
-    } else {
-      self.factory.undefined
+    for expr in &node.quasi.expressions {
+      let value = self.exec_expression(expr);
+      let dep = DepId::from(AstKind2::ExpressionInTaggedTemplate(expr));
+      arguments.push((false, self.factory.computed(value, dep)));
     }
+
+    let value = tag.call(
+      self,
+      box_consumable(AstKind2::TaggedTemplateExpression(node)),
+      this,
+      self.factory.arguments(arguments),
+    );
+
+    self.pop_multiple_cf_scopes(scope_count);
+
+    self.factory.optional_union(value, undefined)
   }
 }
 
