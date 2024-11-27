@@ -1,5 +1,8 @@
 use crate::analyzer::Analyzer;
-use oxc::{ast::AstKind, semantic::ScopeId};
+use oxc::{
+  ast::{ast::PropertyKind, AstKind},
+  semantic::ScopeId,
+};
 
 impl<'a> Analyzer<'a> {
   /// Not that this is for flamegraph only. May not conform to the standard.
@@ -10,9 +13,14 @@ impl<'a> Analyzer<'a> {
       AstKind::VariableDeclarator(node) => node.id.get_identifier().map(|a| a.as_str()),
       AstKind::AssignmentPattern(node) => node.left.get_identifier().map(|a| a.as_str()),
       AstKind::AssignmentExpression(node) => node.left.get_identifier(),
-      AstKind::ObjectProperty(node) => {
-        node.key.static_name().map(|s| self.allocator.alloc(s.to_string()).as_str())
-      }
+      AstKind::ObjectProperty(node) => node.key.static_name().map(|s| {
+        let kind_text = match node.kind {
+          PropertyKind::Init => "",
+          PropertyKind::Get => "get ",
+          PropertyKind::Set => "set ",
+        };
+        self.allocator.alloc(kind_text.to_string() + &s).as_str()
+      }),
       AstKind::ImportSpecifier(node) => Some(node.imported.name().as_str()),
       _ => None,
     }
