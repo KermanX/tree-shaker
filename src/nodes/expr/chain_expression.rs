@@ -1,7 +1,10 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
-use oxc::ast::{
-  ast::{ChainElement, ChainExpression, Expression},
-  match_member_expression,
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
+use oxc::{
+  ast::{
+    ast::{ChainElement, ChainExpression, Expression},
+    match_member_expression,
+  },
+  span::GetSpan,
 };
 
 impl<'a> Analyzer<'a> {
@@ -77,7 +80,16 @@ impl<'a> Transformer<'a> {
       Expression::CallExpression(node) => {
         self.transform_call_expression_in_chain(node, need_val, parent_effects)
       }
-      expression => self.transform_expression(expression, need_val),
+      _ => {
+        let expression = self.transform_expression(node, need_val);
+        if need_val {
+          debug_assert!(parent_effects.is_none());
+          debug_assert!(expression.is_some());
+          expression
+        } else {
+          build_effect!(&self.ast_builder, node.span(), expression, parent_effects)
+        }
+      }
     }
   }
 }
