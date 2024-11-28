@@ -32,9 +32,6 @@ impl<'a> Analyzer<'a> {
     node: &'a MemberExpression<'a>,
     will_write: bool,
   ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>, (Entity<'a>, Entity<'a>)), Entity<'a>> {
-    
-
-
     let (mut scope_count, object, mut undefined) = self.exec_expression_in_chain(node.object())?;
 
     let dep_id = AstKind2::MemberExpression(node);

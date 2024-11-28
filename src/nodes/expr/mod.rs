@@ -75,7 +75,7 @@ impl<'a> Analyzer<'a> {
       Expression::ChainExpression(node) => self.exec_chain_expression(node),
       Expression::ImportExpression(node) => self.exec_import_expression(node),
       Expression::MetaProperty(node) => self.exec_meta_property(node),
-      Expression::NewExpression(node) => self.exec_new_expression(node,None),
+      Expression::NewExpression(node) => self.exec_new_expression(node, None),
       Expression::ClassExpression(node) => self.exec_class(node),
       Expression::ThisExpression(node) => self.exec_this_expression(node),
       Expression::Super(node) => self.exec_super(node),
@@ -120,7 +120,7 @@ impl<'a> Transformer<'a> {
       | Expression::RegExpLiteral(_) => need_val.then(|| self.clone_node(node)),
       Expression::TemplateLiteral(node) => self.transform_template_literal(node, need_val),
       Expression::Identifier(node) => {
-        self.transform_identifier_reference_read(node, need_val).map(Expression::Identifier)
+        self.transform_identifier_reference(node, need_val).map(Expression::Identifier)
       }
       Expression::FunctionExpression(node) => {
         self.transform_function(node, need_val).map(Expression::FunctionExpression)

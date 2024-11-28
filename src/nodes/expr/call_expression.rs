@@ -32,6 +32,8 @@ impl<'a> Analyzer<'a> {
     cache_from_pure: Option<(Entity<'a>, Entity<'a>, Entity<'a>)>,
   ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>), Entity<'a>> {
     let pure = cache_from_pure.is_none() && self.has_pure_notation(node);
+    println!("pure: {}", pure);
+
     let mut referred_deps = None;
 
     let (mut scope_count, callee, mut undefined, this) = if pure {
