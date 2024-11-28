@@ -3,6 +3,7 @@ use crate::{
   ast::AstKind2,
   build_effect,
   consumable::box_consumable,
+  dep::ReferredDeps,
   entity::{Entity, PureCallNode},
   transformer::Transformer,
 };
@@ -16,7 +17,7 @@ use oxc::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_call_expression(&mut self, node: &'a CallExpression) -> Entity<'a> {
-    let (scope_count, value, undefined) = self.exec_call_expression_in_chain(node).unwrap();
+    let (scope_count, value, undefined) = self.exec_call_expression_in_chain(node, None).unwrap();
 
     assert_eq!(scope_count, 0);
     assert!(undefined.is_none());
@@ -24,17 +25,30 @@ impl<'a> Analyzer<'a> {
     value
   }
 
-  /// Returns (short-circuit, value)
+  /// Returns (short-circuit, value, undefined)
   pub fn exec_call_expression_in_chain(
     &mut self,
     node: &'a CallExpression,
+    cache_from_pure: Option<(Entity<'a>, Entity<'a>, Entity<'a>)>,
   ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>), Entity<'a>> {
-    let (mut scope_count, callee, mut undefined, this) = self.exec_callee(&node.callee)?;
+    let pure = cache_from_pure.is_none() && self.has_pure_notation(node);
+    let mut referred_deps = None;
+
+    let (mut scope_count, callee, mut undefined, this) = if pure {
+      let (result, this_referred_deps) =
+        self.exec_in_pure(|analyzer| analyzer.exec_callee(&node.callee), ReferredDeps::default());
+      referred_deps = Some(this_referred_deps);
+      result?
+    } else if let Some((callee, this, _)) = cache_from_pure {
+      (0, callee, None, this)
+    } else {
+      self.exec_callee(&node.callee)?
+    };
 
     let dep_id = AstKind2::CallExpression(node);
 
     if node.optional {
-      let maybe_left = match callee.test_nullish() {
+      let maybe_left = match callee.test_nullish(self) {
         Some(true) => {
           self.pop_multiple_cf_scopes(scope_count);
           return Err(self.forward_logical_left_val(dep_id, self.factory.undefined, true, false));
@@ -55,52 +69,22 @@ impl<'a> Analyzer<'a> {
       scope_count += 1;
     }
 
-    let args = self.exec_arguments(&node.arguments);
+    let args = if let Some((_, _, args)) = cache_from_pure {
+      args
+    } else {
+      self.exec_arguments(&node.arguments)
+    };
 
-    let ret_val = callee.call(self, box_consumable(dep_id), this, args);
+    let ret_val = if pure {
+      self.factory.pure_result(
+        PureCallNode::CallExpression(node, (callee, this, args)),
+        referred_deps.unwrap(),
+      )
+    } else {
+      callee.call(self, box_consumable(dep_id), this, args)
+    };
 
     Ok((scope_count, ret_val, undefined))
-  }
-
-  pub fn exec_call_expression_by_pure(
-    &mut self,
-    node: &'a CallExpression,
-    arguments: Entity<'a>,
-  ) -> Entity<'a> {
-    let callee = self.exec_callee(&node.callee);
-
-    if let Some((callee_indeterminate, callee, this)) = callee {
-      let self_indeterminate = if node.optional {
-        match callee.test_nullish(self) {
-          Some(true) => return self.factory.undefined,
-          Some(false) => false,
-          None => true,
-        }
-      } else {
-        false
-      };
-
-      let data = self.load_data::<Data>(AstKind2::CallExpression(node));
-      data.need_optional |= self_indeterminate;
-
-      let indeterminate = callee_indeterminate || self_indeterminate;
-
-      if indeterminate {
-        self.push_indeterminate_cf_scope();
-      }
-
-      let ret_val =
-        callee.call(self, box_consumable(AstKind2::CallExpression(node)), this, arguments);
-
-      if indeterminate {
-        self.pop_cf_scope();
-        self.factory.union((ret_val, self.factory.undefined))
-      } else {
-        ret_val
-      }
-    } else {
-      self.factory.undefined
-    }
   }
 }
 

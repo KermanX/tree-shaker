@@ -5,13 +5,14 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableNode},
+  dep::ReferredDeps,
 };
 use oxc::ast::ast::{CallExpression, NewExpression};
-use std::cell::OnceCell;
+use std::cell::{OnceCell, RefCell};
 
 #[derive(Debug)]
 pub enum PureCallNode<'a> {
-  CallExpression(&'a CallExpression<'a>, Entity<'a>),
+  CallExpression(&'a CallExpression<'a>, (Entity<'a>, Entity<'a>, Entity<'a>)),
   NewExpression(&'a NewExpression<'a>, Entity<'a>),
 }
 
@@ -19,6 +20,7 @@ pub enum PureCallNode<'a> {
 pub struct PureResult<'a> {
   pub node: PureCallNode<'a>,
   pub result: OnceCell<Entity<'a>>,
+  pub referred_deps: RefCell<ReferredDeps>,
 }
 
 impl<'a> EntityTrait<'a> for PureResult<'a> {
@@ -156,21 +158,35 @@ impl<'a> EntityTrait<'a> for PureResult<'a> {
 impl<'a> PureResult<'a> {
   fn value(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     *self.result.get_or_init(|| {
-      let (val, this_referred_deps) = analyzer.exec_in_pure(|analyzer| match &self.node {
-        PureCallNode::CallExpression(node, arguments) => {
-          analyzer.exec_call_expression_in_chain(node, Some(*arguments)).1
-        }
-        PureCallNode::NewExpression(node, arguments) => {
-          analyzer.exec_new_expression(node, Some(*arguments))
-        }
-      });
+      let (val, this_referred_deps) = analyzer.exec_in_pure(
+        |analyzer| match &self.node {
+          PureCallNode::CallExpression(node, arguments) => {
+            let result = analyzer.exec_call_expression_in_chain(node, Some(*arguments));
+            match result {
+              Ok((scope_count, value, undefined)) => {
+                analyzer.pop_multiple_cf_scopes(scope_count);
+                analyzer.factory.optional_union(value, undefined)
+              }
+              Err(value) => value,
+            }
+          }
+          PureCallNode::NewExpression(node, arguments) => {
+            analyzer.exec_new_expression(node, Some(*arguments))
+          }
+        },
+        self.referred_deps.take(),
+      );
       analyzer.factory.computed(val, ConsumableNode::new(this_referred_deps))
     })
   }
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn pure_result(&self, node: PureCallNode<'a>) -> Entity<'a> {
-    self.entity(PureResult { node, result: OnceCell::new() })
+  pub fn pure_result(&self, node: PureCallNode<'a>, referred_deps: ReferredDeps) -> Entity<'a> {
+    self.entity(PureResult {
+      node,
+      result: OnceCell::new(),
+      referred_deps: RefCell::new(referred_deps),
+    })
   }
 }

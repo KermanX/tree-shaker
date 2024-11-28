@@ -3,6 +3,7 @@ use crate::{
   ast::AstKind2,
   build_effect,
   consumable::box_consumable,
+  dep::ReferredDeps,
   entity::{Entity, PureCallNode},
   transformer::Transformer,
 };
@@ -14,9 +15,11 @@ impl<'a> Analyzer<'a> {
     node: &'a NewExpression<'a>,
     args_from_pure: Option<Entity<'a>>,
   ) -> Entity<'a> {
-    if args_from_pure.is_none() && self.has_pure_notation(node.span) {
+    if args_from_pure.is_none() && self.has_pure_notation(node) {
       let arguments = self.exec_arguments(&node.arguments);
-      return self.factory.pure_result(PureCallNode::NewExpression(node, arguments));
+      return self
+        .factory
+        .pure_result(PureCallNode::NewExpression(node, arguments), ReferredDeps::default());
     }
 
     let callee = self.exec_expression(&node.callee);

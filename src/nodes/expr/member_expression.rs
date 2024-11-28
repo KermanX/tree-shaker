@@ -32,12 +32,15 @@ impl<'a> Analyzer<'a> {
     node: &'a MemberExpression<'a>,
     will_write: bool,
   ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>, (Entity<'a>, Entity<'a>)), Entity<'a>> {
+    
+
+
     let (mut scope_count, object, mut undefined) = self.exec_expression_in_chain(node.object())?;
 
     let dep_id = AstKind2::MemberExpression(node);
 
     if node.optional() {
-      let maybe_left = match object.test_nullish() {
+      let maybe_left = match object.test_nullish(self) {
         Some(true) => {
           self.pop_multiple_cf_scopes(scope_count);
           return Err(self.forward_logical_left_val(dep_id, self.factory.undefined, true, false));

@@ -8,7 +8,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_chain_expression(&mut self, node: &'a ChainExpression<'a>) -> Entity<'a> {
     match &node.expression {
       ChainElement::CallExpression(node) => {
-        let result = self.exec_call_expression_in_chain(node);
+        let result = self.exec_call_expression_in_chain(node, None);
         match result {
           Ok((scope_count, value, undefined)) => {
             self.pop_multiple_cf_scopes(scope_count);
@@ -38,7 +38,7 @@ impl<'a> Analyzer<'a> {
       match_member_expression!(Expression) => self
         .exec_member_expression_read_in_chain(node.to_member_expression(), false)
         .map(|(scope_count, value, undefined, _)| (scope_count, value, undefined)),
-      Expression::CallExpression(node) => self.exec_call_expression_in_chain(node),
+      Expression::CallExpression(node) => self.exec_call_expression_in_chain(node, None),
       _ => Ok((0, self.exec_expression(node), None)),
     }
   }
