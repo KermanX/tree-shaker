@@ -8,7 +8,7 @@ use crate::{
   dep::ReferredDeps,
 };
 use oxc::ast::ast::{CallExpression, NewExpression};
-use std::cell::{OnceCell, RefCell};
+use std::cell::{Cell, RefCell};
 
 #[derive(Debug)]
 pub enum PureCallNode<'a> {
@@ -18,9 +18,9 @@ pub enum PureCallNode<'a> {
 
 #[derive(Debug)]
 pub struct PureResult<'a> {
-  pub node: PureCallNode<'a>,
-  pub result: OnceCell<Entity<'a>>,
-  pub referred_deps: RefCell<Option<&'a mut ReferredDeps>>,
+  node: PureCallNode<'a>,
+  result: Cell<Option<Entity<'a>>>,
+  referred_deps: RefCell<Option<&'a mut ReferredDeps>>,
 }
 
 impl<'a> EntityTrait<'a> for PureResult<'a> {
@@ -156,41 +156,53 @@ impl<'a> EntityTrait<'a> for PureResult<'a> {
 }
 
 impl<'a> PureResult<'a> {
+  fn exec(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+    match &self.node {
+      PureCallNode::CallExpression(node, cache) => {
+        let result = analyzer.exec_call_expression_in_chain(node, Some(*cache));
+        match result {
+          Ok((scope_count, value, undefined)) => {
+            analyzer.pop_multiple_cf_scopes(scope_count);
+            analyzer.factory.optional_union(value, undefined)
+          }
+          Err(value) => value,
+        }
+      }
+      PureCallNode::NewExpression(node, arguments) => {
+        analyzer.exec_new_expression(node, Some(*arguments))
+      }
+    }
+  }
+
   fn value(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
-    *self.result.get_or_init(|| {
-      let (val, this_referred_deps) = analyzer.exec_in_pure(
-        |analyzer| match &self.node {
-          PureCallNode::CallExpression(node, arguments) => {
-            let result = analyzer.exec_call_expression_in_chain(node, Some(*arguments));
-            match result {
-              Ok((scope_count, value, undefined)) => {
-                analyzer.pop_multiple_cf_scopes(scope_count);
-                analyzer.factory.optional_union(value, undefined)
-              }
-              Err(value) => value,
-            }
-          }
-          PureCallNode::NewExpression(node, arguments) => {
-            analyzer.exec_new_expression(node, Some(*arguments))
-          }
-        },
-        self.referred_deps.take().unwrap(),
-      );
-      analyzer.factory.computed(val, ConsumableNode::new(this_referred_deps))
-    })
+    if let Some(result) = self.result.get() {
+      result
+    } else {
+      let result = if let Some(referred_deps) = self.referred_deps.take() {
+        let (val, this_referred_deps) =
+          analyzer.exec_in_pure(|analyzer| self.exec(analyzer), referred_deps);
+        analyzer.factory.computed(val, ConsumableNode::new(this_referred_deps))
+      } else {
+        self.exec(analyzer)
+      };
+      self.result.set(Some(result));
+      result
+    }
   }
 }
 
-impl<'a> EntityFactory<'a> {
+impl<'a> Analyzer<'a> {
   pub fn pure_result(
-    &self,
+    &mut self,
     node: PureCallNode<'a>,
     referred_deps: &'a mut ReferredDeps,
   ) -> Entity<'a> {
-    self.entity(PureResult {
+    let x = PureResult {
       node,
-      result: OnceCell::new(),
+      result: Cell::new(None),
       referred_deps: RefCell::new(Some(referred_deps)),
-    })
+    };
+    x.value(self);
+    self.factory.entity(x)
   }
 }

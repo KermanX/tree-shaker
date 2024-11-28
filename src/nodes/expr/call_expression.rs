@@ -76,7 +76,7 @@ impl<'a> Analyzer<'a> {
     };
 
     let ret_val = if pure {
-      self.factory.pure_result(
+      self.pure_result(
         PureCallNode::CallExpression(node, (callee, this, args)),
         referred_deps.unwrap(),
       )

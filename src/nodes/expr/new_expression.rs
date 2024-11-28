@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     if args_from_pure.is_none() && self.has_pure_notation(node) {
       let arguments = self.exec_arguments(&node.arguments);
-      return self.factory.pure_result(
+      return self.pure_result(
         PureCallNode::NewExpression(node, arguments),
         self.allocator.alloc(ReferredDeps::default()),
       );
