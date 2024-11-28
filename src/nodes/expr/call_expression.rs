@@ -35,8 +35,10 @@ impl<'a> Analyzer<'a> {
     let mut referred_deps = None;
 
     let (mut scope_count, callee, mut undefined, this) = if pure {
-      let (result, this_referred_deps) =
-        self.exec_in_pure(|analyzer| analyzer.exec_callee(&node.callee), ReferredDeps::default());
+      let (result, this_referred_deps) = self.exec_in_pure(
+        |analyzer| analyzer.exec_callee(&node.callee),
+        self.allocator.alloc(ReferredDeps::default()),
+      );
       referred_deps = Some(this_referred_deps);
       result?
     } else if let Some((callee, this, _)) = cache_from_pure {

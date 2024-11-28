@@ -20,7 +20,7 @@ pub enum PureCallNode<'a> {
 pub struct PureResult<'a> {
   pub node: PureCallNode<'a>,
   pub result: OnceCell<Entity<'a>>,
-  pub referred_deps: RefCell<ReferredDeps>,
+  pub referred_deps: RefCell<Option<&'a mut ReferredDeps>>,
 }
 
 impl<'a> EntityTrait<'a> for PureResult<'a> {
@@ -174,7 +174,7 @@ impl<'a> PureResult<'a> {
             analyzer.exec_new_expression(node, Some(*arguments))
           }
         },
-        self.referred_deps.take(),
+        self.referred_deps.take().unwrap(),
       );
       analyzer.factory.computed(val, ConsumableNode::new(this_referred_deps))
     })
@@ -182,11 +182,11 @@ impl<'a> PureResult<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn pure_result(&self, node: PureCallNode<'a>, referred_deps: ReferredDeps) -> Entity<'a> {
+  pub fn pure_result(&self, node: PureCallNode<'a>, referred_deps: &'a mut ReferredDeps) -> Entity<'a> {
     self.entity(PureResult {
       node,
       result: OnceCell::new(),
-      referred_deps: RefCell::new(referred_deps),
+      referred_deps: RefCell::new(Some(referred_deps)),
     })
   }
 }

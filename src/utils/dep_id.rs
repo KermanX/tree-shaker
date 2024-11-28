@@ -108,7 +108,7 @@ impl<'a> fmt::Debug for ReferredDeps {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for ReferredDeps {
+impl<'a> ConsumableTrait<'a> for &'a mut ReferredDeps {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     if self.by_index.len() > analyzer.referred_deps.by_index.len() {
       analyzer.referred_deps.by_index.resize(self.by_index.len(), 0);
