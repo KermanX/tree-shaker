@@ -1,6 +1,6 @@
 use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::ast::{
-  ast::{ChainElement, ChainExpression, Expression, MemberExpression},
+  ast::{ChainElement, ChainExpression, Expression},
   match_member_expression,
 };
 
@@ -50,23 +50,34 @@ impl<'a> Transformer<'a> {
     node: &'a ChainExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let ChainExpression { span, expression } = node;
+    let ChainExpression { expression, .. } = node;
 
-    let expression = match expression {
-      ChainElement::CallExpression(node) => self.transform_call_expression(node, need_val),
-      node => self.transform_member_expression_read(node.to_member_expression(), need_val),
-    };
-
-    // FIXME: is this correct?
-    expression.map(|expression| match expression {
-      Expression::CallExpression(node) => {
-        self.ast_builder.expression_chain(*span, ChainElement::CallExpression(node))
+    match expression {
+      ChainElement::CallExpression(node) => {
+        self.transform_call_expression_in_chain(node, need_val, None)
       }
-      match_member_expression!(Expression) => self.ast_builder.expression_chain(
-        *span,
-        ChainElement::from(MemberExpression::try_from(expression).unwrap()),
+      node => {
+        self.transform_member_expression_read_in_chain(node.to_member_expression(), need_val, None)
+      }
+    }
+  }
+
+  pub fn transform_expression_in_chain(
+    &self,
+    node: &'a Expression<'a>,
+    need_val: bool,
+    parent_effects: Option<Expression<'a>>,
+  ) -> Option<Expression<'a>> {
+    match node {
+      match_member_expression!(Expression) => self.transform_member_expression_read_in_chain(
+        node.to_member_expression(),
+        need_val,
+        parent_effects,
       ),
-      _ => expression,
-    })
+      Expression::CallExpression(node) => {
+        self.transform_call_expression_in_chain(node, need_val, parent_effects)
+      }
+      expression => self.transform_expression(expression, need_val),
+    }
   }
 }

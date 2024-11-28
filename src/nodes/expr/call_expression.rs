@@ -7,12 +7,9 @@ use crate::{
   entity::{Entity, PureCallNode},
   transformer::Transformer,
 };
-use oxc::{
-  ast::{
-    ast::{CallExpression, Expression},
-    NONE,
-  },
-  span::SPAN,
+use oxc::ast::{
+  ast::{CallExpression, Expression},
+  NONE,
 };
 
 impl<'a> Analyzer<'a> {
@@ -32,7 +29,6 @@ impl<'a> Analyzer<'a> {
     cache_from_pure: Option<(Entity<'a>, Entity<'a>, Entity<'a>)>,
   ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>), Entity<'a>> {
     let pure = cache_from_pure.is_none() && self.has_pure_notation(node);
-    println!("pure: {}", pure);
 
     let mut referred_deps = None;
 
@@ -98,6 +94,15 @@ impl<'a> Transformer<'a> {
     node: &'a CallExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
+    self.transform_call_expression_in_chain(node, need_val, None)
+  }
+
+  pub fn transform_call_expression_in_chain(
+    &self,
+    node: &'a CallExpression<'a>,
+    need_val: bool,
+    parent_effects: Option<Expression<'a>>,
+  ) -> Option<Expression<'a>> {
     let dep_id: AstKind2<'_> = AstKind2::CallExpression(node);
 
     let CallExpression { span, callee, arguments, optional, .. } = node;
@@ -108,21 +113,15 @@ impl<'a> Transformer<'a> {
 
     if !need_call {
       let args_effect = may_not_short_circuit.then(|| self.transform_arguments_no_call(arguments));
+      let all_effects = build_effect!(&self.ast_builder, *span, parent_effects, args_effect);
       return if need_optional {
-        // FIXME: How to get the actual span?
-        let args_span = SPAN;
         Some(self.build_chain_expression_mock(
           *span,
           self.transform_expression(callee, true).unwrap(),
-          build_effect!(&self.ast_builder, args_span, args_effect).unwrap(),
+          all_effects.unwrap(),
         ))
       } else {
-        build_effect!(
-          &self.ast_builder,
-          *span,
-          self.transform_expression(callee, false),
-          args_effect
-        )
+        self.transform_expression_in_chain(callee, false, all_effects)
       };
     }
 

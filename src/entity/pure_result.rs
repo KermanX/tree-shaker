@@ -182,7 +182,11 @@ impl<'a> PureResult<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn pure_result(&self, node: PureCallNode<'a>, referred_deps: &'a mut ReferredDeps) -> Entity<'a> {
+  pub fn pure_result(
+    &self,
+    node: PureCallNode<'a>,
+    referred_deps: &'a mut ReferredDeps,
+  ) -> Entity<'a> {
     self.entity(PureResult {
       node,
       result: OnceCell::new(),

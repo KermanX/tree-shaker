@@ -46,15 +46,8 @@ pub struct Transformer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn new(analyzer: Analyzer<'a>) -> Self {
-    let Analyzer {
-      config,
-      allocator,
-      semantic,
-      data,
-      referred_deps,
-      conditional_data,
-      ..
-    } = analyzer;
+    let Analyzer { config, allocator, semantic, data, referred_deps, conditional_data, .. } =
+      analyzer;
 
     Transformer {
       config,
