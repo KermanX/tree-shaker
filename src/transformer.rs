@@ -33,7 +33,7 @@ pub struct Transformer<'a> {
   pub semantic: Semantic<'a>,
   pub ast_builder: AstBuilder<'a>,
   pub data: ExtraData<'a>,
-  pub referred_deps: ReferredDeps,
+  pub referred_deps: Box<ReferredDeps>,
   pub conditional_data: ConditionalDataMap<'a>,
   pub var_decls: RefCell<FxHashMap<SymbolId, bool>>,
 
@@ -46,24 +46,8 @@ pub struct Transformer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn new(analyzer: Analyzer<'a>) -> Self {
-    let Analyzer {
-      config,
-      allocator,
-      semantic,
-      data,
-      referred_deps: referred_nodes,
-      conditional_data,
-      ..
-    } = analyzer;
-
-    // let mut counts: Vec<_> = referred_nodes.clone().into_iter().collect();
-    // counts.sort_by(|a, b| b.1.cmp(&a.1));
-    // for (key, v) in counts {
-    //   if v > 10 {
-    //     println!("{key:?}: {v}");
-    //   }
-    // }
-    // println!("---");
+    let Analyzer { config, allocator, semantic, data, referred_deps, conditional_data, .. } =
+      analyzer;
 
     Transformer {
       config,
@@ -71,7 +55,7 @@ impl<'a> Transformer<'a> {
       semantic,
       ast_builder: AstBuilder::new(allocator),
       data,
-      referred_deps: referred_nodes,
+      referred_deps,
       conditional_data,
       var_decls: Default::default(),
 

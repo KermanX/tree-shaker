@@ -24,7 +24,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     match node {
       JSXMemberExpressionObject::IdentifierReference(node) => {
-        self.transform_identifier_reference_read(node, need_val).map(Expression::Identifier)
+        self.transform_identifier_reference(node, need_val).map(Expression::Identifier)
       }
       JSXMemberExpressionObject::MemberExpression(node) => {
         self.transform_jsx_member_expression_effect_only(node, need_val)
@@ -42,7 +42,7 @@ impl<'a> Transformer<'a> {
     match node {
       JSXMemberExpressionObject::IdentifierReference(node) => {
         JSXMemberExpressionObject::IdentifierReference(
-          self.transform_identifier_reference_read(node, true).unwrap(),
+          self.transform_identifier_reference(node, true).unwrap(),
         )
       }
       JSXMemberExpressionObject::MemberExpression(node) => {

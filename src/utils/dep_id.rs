@@ -1,8 +1,13 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer,
+  ast::AstKind2,
+  consumable::{Consumable, ConsumableTrait},
+  transformer::Transformer,
+};
 use oxc::span::{GetSpan, Span};
 use rustc_hash::FxHashMap;
 use std::{
-  fmt::Debug,
+  fmt::{self, Debug},
   hash::Hash,
   sync::atomic::{AtomicUsize, Ordering},
 };
@@ -75,6 +80,10 @@ impl ReferredDeps {
       _ => self.by_ptr.contains_key(&dep),
     }
   }
+
+  pub fn debug_count(&self) -> usize {
+    self.by_ptr.len() + self.by_index.iter().filter(|&&x| x > 0).count()
+  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -90,5 +99,27 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn is_referred(&self, dep: impl Into<DepId>) -> bool {
     self.referred_deps.is_referred(dep)
+  }
+}
+
+impl<'a> fmt::Debug for ReferredDeps {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    "ReferencedDeps".fmt(f)
+  }
+}
+
+impl<'a> ConsumableTrait<'a> for Box<ReferredDeps> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    if self.by_index.len() > analyzer.referred_deps.by_index.len() {
+      analyzer.referred_deps.by_index.resize(self.by_index.len(), 0);
+    }
+    for (i, v) in self.by_index.iter().enumerate() {
+      analyzer.referred_deps.by_index[i] += v;
+    }
+    analyzer.referred_deps.by_ptr.extend(self.by_ptr.iter().map(|(k, v)| (k.clone(), *v)));
+  }
+
+  fn cloned(&self) -> Consumable<'a> {
+    unreachable!("Should not clone ReferredDeps")
   }
 }

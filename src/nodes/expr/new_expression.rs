@@ -1,24 +1,27 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer,
+  ast::AstKind2,
+  build_effect,
+  consumable::{box_consumable, ConsumableNode},
+  entity::Entity,
   transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, NewExpression, TSTypeParameterInstantiation};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_new_expression(&mut self, node: &'a NewExpression<'a>) -> Entity<'a> {
-    let pure = self.has_pure_notation(node.span);
+    let pure_deps = self.has_pure_notation(node);
 
-    self.scope_context.pure += pure;
-    let callee = self.exec_expression(&node.callee);
-    self.scope_context.pure -= pure;
+    let (callee, pure_deps) =
+      self.exec_in_pure(pure_deps, |analyzer| analyzer.exec_expression(&node.callee));
 
     let arguments = self.exec_arguments(&node.arguments);
 
-    self.scope_context.pure += pure;
-    let value = callee.construct(self, box_consumable(AstKind2::NewExpression(node)), arguments);
-    self.scope_context.pure -= pure;
+    let (instance, pure_deps) = self.exec_in_pure(pure_deps, |analyzer| {
+      callee.construct(analyzer, box_consumable(AstKind2::NewExpression(node)), arguments)
+    });
 
-    value
+    self.factory.optional_computed(instance, pure_deps.map(ConsumableNode::new))
   }
 }
 

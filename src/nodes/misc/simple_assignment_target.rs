@@ -50,7 +50,7 @@ impl<'a> Transformer<'a> {
         self.transform_member_expression_read(node.to_member_expression(), need_val)
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
-        self.transform_identifier_reference_read(node, need_val).map(Expression::Identifier)
+        self.transform_identifier_reference(node, need_val).map(Expression::Identifier)
       }
       _ => unreachable!(),
     }
@@ -65,7 +65,7 @@ impl<'a> Transformer<'a> {
         .transform_member_expression_write(node.to_member_expression())
         .map(SimpleAssignmentTarget::from),
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => self
-        .transform_identifier_reference_write(node)
+        .transform_identifier_reference(node, false)
         .map(SimpleAssignmentTarget::AssignmentTargetIdentifier),
       _ => unreachable!(),
     }

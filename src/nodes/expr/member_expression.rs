@@ -109,6 +109,15 @@ impl<'a> Transformer<'a> {
     node: &'a MemberExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
+    self.transform_member_expression_read_in_chain(node, need_val, None)
+  }
+
+  pub fn transform_member_expression_read_in_chain(
+    &self,
+    node: &'a MemberExpression<'a>,
+    need_val: bool,
+    parent_effects: Option<Expression<'a>>,
+  ) -> Option<Expression<'a>> {
     let dep_id = AstKind2::MemberExpression(node);
 
     let need_read = need_val || self.is_referred(dep_id);
@@ -122,19 +131,15 @@ impl<'a> Transformer<'a> {
         }
         _ => None,
       });
+      let all_effects = build_effect!(&self.ast_builder, node.span(), parent_effects, key_effect);
       return if need_optional {
         Some(self.build_chain_expression_mock(
           node.span(),
           self.transform_expression(node.object(), true).unwrap(),
-          key_effect.unwrap().unwrap(),
+          all_effects.unwrap(),
         ))
       } else {
-        build_effect!(
-          &self.ast_builder,
-          node.span(),
-          self.transform_expression(node.object(), false),
-          key_effect
-        )
+        self.transform_expression_in_chain(node.object(), false, all_effects)
       };
     }
 

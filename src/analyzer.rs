@@ -30,7 +30,7 @@ pub struct Analyzer<'a> {
   pub semantic: Semantic<'a>,
   pub span_stack: Vec<Span>,
   pub data: ExtraData<'a>,
-  pub referred_deps: ReferredDeps,
+  pub referred_deps: Box<ReferredDeps>,
   pub conditional_data: ConditionalDataMap<'a>,
   pub loop_data: LoopDataMap<'a>,
   pub named_exports: Vec<SymbolId>,
