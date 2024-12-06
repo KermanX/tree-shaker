@@ -47,9 +47,21 @@ function save() {
 load()
 watchEffect(save)
 
-const minifiedOnly = computed(() => tree_shake(debouncedInput.value, "disabled", true, false))
-const treeShakedOnly = computed(() => tree_shake(debouncedInput.value, preset.value, false, false))
-const treeShakedMinified = computed(() => tree_shake(treeShakedOnly.value.output, "disabled", true, false))
+function safeTreeShake(...args: Parameters<typeof tree_shake>) {
+  try {
+    return tree_shake(...args)
+  }
+  catch (e) {
+    console.error(e)
+    const diagnostics = [String(e)] as any
+    diagnostics.isError = true
+    return { diagnostics, output: '' }
+  }
+}
+
+const minifiedOnly = computed(() => safeTreeShake(debouncedInput.value, "disabled", true, false))
+const treeShakedOnly = computed(() => safeTreeShake(debouncedInput.value, preset.value, false, false))
+const treeShakedMinified = computed(() => safeTreeShake(treeShakedOnly.value.output, "disabled", true, false))
 
 const result = computed(() => {
   return {

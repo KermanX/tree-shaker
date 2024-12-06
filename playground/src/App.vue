@@ -75,10 +75,10 @@ import { alwaysInline, debouncedInput, diagnostics, doMinify, hideDiagnostics, i
           <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
           <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex
             flex-col gap-2>
-            <div v-if="diagnostics.length" v-show="!hideDiagnostics" relative text-yellow-200 bg-yellow-900 bg-op-80
-              b-yellow-500>
+            <div v-if="diagnostics.length" v-show="!hideDiagnostics" relative bg-op-80
+              :class="diagnostics.isError ? 'text-red-200 bg-red-900 b-red-500' : 'text-yellow-200 bg-yellow-900 b-yellow-500'">
               <h3 text-lg pb-1>
-                Warning
+                {{ diagnostics.isError ? 'Error' : 'Warning' }}
               </h3>
               <div font-mono max-h-8em overflow-y-auto>
                 <p v-for="d, i in diagnostics" :key="i" style="text-indent: -1em" ml-1em>
