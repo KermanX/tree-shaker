@@ -65,7 +65,7 @@ impl<'a> Analyzer<'a> {
       }
       UnaryOperator::UnaryPlus => argument.get_to_numeric(self),
       UnaryOperator::LogicalNot => self.factory.computed(
-        match argument.test_truthy() {
+        match argument.test_truthy(self) {
           Some(value) => self.factory.boolean(!value),
           None => self.factory.unknown_boolean,
         },

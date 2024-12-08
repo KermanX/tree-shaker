@@ -141,37 +141,42 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+  fn get_destructable(
+    &self,
+    rc: Entity<'a>,
+    _analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
     box_consumable((rc, dep))
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("function")
   }
 
-  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
     analyzer.factory.computed_unknown_string(rc)
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
     analyzer.factory.nan
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(true)
   }
 
-  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.get_to_string(rc, analyzer)
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       analyzer.factory.immutable_unknown
     } else {
@@ -180,15 +185,15 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     }
   }
 
-  fn test_typeof(&self) -> TypeofResult {
+  fn test_typeof(&self, _analyzer: &mut Analyzer<'a>) -> TypeofResult {
     TypeofResult::Function
   }
 
-  fn test_truthy(&self) -> Option<bool> {
+  fn test_truthy(&self, _analyzer: &mut Analyzer<'a>) -> Option<bool> {
     Some(true)
   }
 
-  fn test_nullish(&self) -> Option<bool> {
+  fn test_nullish(&self, _analyzer: &mut Analyzer<'a>) -> Option<bool> {
     Some(false)
   }
 }

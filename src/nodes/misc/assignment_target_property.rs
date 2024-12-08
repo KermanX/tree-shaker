@@ -71,7 +71,7 @@ impl<'a> Transformer<'a> {
 
         let binding_span = binding.span();
         let binding_name = binding.name.as_str();
-        let binding = self.transform_identifier_reference_write(binding);
+        let binding = self.transform_identifier_reference(binding, false);
         let init = data
           .need_init
           .then(|| {

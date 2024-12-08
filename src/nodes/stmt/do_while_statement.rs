@@ -32,7 +32,7 @@ impl<'a> Analyzer<'a> {
     let test = self.exec_expression(&node.test);
 
     // The rest is the same as while statement.
-    if test.test_truthy() == Some(false) {
+    if test.test_truthy(self) == Some(false) {
       self.pop_cf_scope();
       return;
     }

@@ -1,22 +1,33 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer,
+  ast::AstKind2,
+  build_effect,
+  consumable::box_consumable,
+  dep::ReferredDeps,
+  entity::{Entity, PureCallNode},
   transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, NewExpression, TSTypeParameterInstantiation};
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_new_expression(&mut self, node: &'a NewExpression<'a>) -> Entity<'a> {
-    let pure = self.has_pure_notation(node.span);
+  pub fn exec_new_expression(
+    &mut self,
+    node: &'a NewExpression<'a>,
+    args_from_pure: Option<Entity<'a>>,
+  ) -> Entity<'a> {
+    if args_from_pure.is_none() && self.has_pure_notation(node) {
+      let arguments = self.exec_arguments(&node.arguments);
+      return self.pure_result(
+        PureCallNode::NewExpression(node, arguments),
+        self.allocator.alloc(ReferredDeps::default()),
+      );
+    }
 
-    self.scope_context.pure += pure;
     let callee = self.exec_expression(&node.callee);
-    self.scope_context.pure -= pure;
 
-    let arguments = self.exec_arguments(&node.arguments);
+    let arguments = args_from_pure.unwrap_or_else(|| self.exec_arguments(&node.arguments));
 
-    self.scope_context.pure += pure;
     let value = callee.construct(self, box_consumable(AstKind2::NewExpression(node)), arguments);
-    self.scope_context.pure -= pure;
 
     value
   }

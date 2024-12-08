@@ -21,7 +21,7 @@ impl<'a> Transformer<'a> {
     match node {
       JSXElementName::Identifier(_node) => None,
       JSXElementName::IdentifierReference(node) => {
-        self.transform_identifier_reference_read(node, false).map(Expression::Identifier)
+        self.transform_identifier_reference(node, false).map(Expression::Identifier)
       }
       JSXElementName::NamespacedName(_node) => None,
       JSXElementName::MemberExpression(node) => {
@@ -38,7 +38,7 @@ impl<'a> Transformer<'a> {
     match node {
       JSXElementName::Identifier(node) => JSXElementName::Identifier(self.clone_node(node)),
       JSXElementName::IdentifierReference(node) => JSXElementName::IdentifierReference(
-        self.transform_identifier_reference_read(node, true).unwrap(),
+        self.transform_identifier_reference(node, true).unwrap(),
       ),
       JSXElementName::MemberExpression(node) => {
         JSXElementName::MemberExpression(self.transform_jsx_member_expression_need_val(node))

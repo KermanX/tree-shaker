@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
     // `a: while(() => { break a }) { }` is illegal.
     let test = self.exec_expression(&node.test);
 
-    if test.test_truthy() == Some(false) {
+    if test.test_truthy(self) == Some(false) {
       return;
     }
 
