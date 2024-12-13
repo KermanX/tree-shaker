@@ -90,6 +90,7 @@ impl<'a> Analyzer<'a> {
     maybe_left: bool,
     maybe_right: bool,
   ) -> Entity<'a> {
+    assert!(maybe_left);
     let dep = self.register_conditional_data(dep_id, left, maybe_left, maybe_right, true, true);
     self.factory.computed(left, dep)
   }
@@ -101,6 +102,7 @@ impl<'a> Analyzer<'a> {
     maybe_left: bool,
     maybe_right: bool,
   ) -> impl ConsumableTrait<'a> + 'a {
+    assert!(maybe_right);
     self.push_conditional_cf_scope(
       dep_id,
       CfScopeKind::LogicalRight,
@@ -224,5 +226,14 @@ impl<'a> Transformer<'a> {
       assert!(data.tests_to_consume.is_empty());
     }
     (data.maybe_true && data.maybe_false, data.maybe_true, data.maybe_false)
+  }
+
+  pub fn get_chain_result(&self, dep_id: impl Into<DepId>, optional: bool) -> (bool, bool) {
+    if optional {
+      let (need_optional, _, may_not_short_circuit) = self.get_conditional_result(dep_id);
+      (need_optional, may_not_short_circuit)
+    } else {
+      (false, true)
+    }
   }
 }

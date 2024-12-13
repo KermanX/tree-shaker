@@ -41,17 +41,19 @@ impl<'a> Analyzer<'a> {
           maybe_right,
         )
       };
-
-      let conditional_dep = self.push_logical_right_cf_scope(
-        AstKind2::LogicalAssignmentExpressionLeft(node),
-        left.clone(),
-        maybe_left,
-        maybe_right,
-      );
-
       let exec_right = |analyzer: &mut Analyzer<'a>| {
-        let val = analyzer.exec_expression(&node.right);
-        analyzer.factory.computed(val, conditional_dep)
+        let conditional_dep = analyzer.push_logical_right_cf_scope(
+          AstKind2::LogicalAssignmentExpressionLeft(node),
+          left.clone(),
+          maybe_left,
+          maybe_right,
+        );
+
+        let val = analyzer.factory.computed(analyzer.exec_expression(&node.right), conditional_dep);
+
+        analyzer.pop_cf_scope();
+
+        val
       };
 
       let value = match (maybe_left, maybe_right) {
@@ -66,8 +68,6 @@ impl<'a> Analyzer<'a> {
           unreachable!("Logical assignment expression should have at least one side")
         }
       };
-
-      self.pop_cf_scope();
 
       if maybe_right {
         self.exec_assignment_target_write(&node.left, value.clone(), cache);

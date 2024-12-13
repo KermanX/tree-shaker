@@ -11,7 +11,8 @@ impl<'a> Analyzer<'a> {
   ) -> (Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
     match node {
       match_member_expression!(SimpleAssignmentTarget) => {
-        self.exec_member_expression_read(node.to_member_expression(), true)
+        let (value, cache) = self.exec_member_expression_read(node.to_member_expression(), true);
+        (value, Some(cache))
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
         (self.exec_identifier_reference_read(node), None)

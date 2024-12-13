@@ -11,7 +11,6 @@ fn run_tree_shaker(source_text: String) -> String {
       config: TreeShakeConfig::recommended(),
       minify_options: None,
       codegen_options: Default::default(),
-      logging: false,
     },
   );
 

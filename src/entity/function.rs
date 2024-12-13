@@ -203,10 +203,6 @@ impl<'a> FunctionEntity<'a> {
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    if let Some(logger) = analyzer.logger {
-      logger.push_fn_call(self.callee.span(), self.callee.name().to_string());
-    }
-
     let call_dep = box_consumable((self.callee.into_dep_id(), dep));
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.callee.node {

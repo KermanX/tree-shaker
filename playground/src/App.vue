@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import Input from './Input.vue';
-import Logs from './Logs.vue';
 import Editor from './Editor.vue';
-import { hideDiagnostics, debouncedInput, doMinify, preset, diagnostics, load, output, showLogs, onlyMinifiedSize, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate, alwaysInline } from './states';
+import { alwaysInline, debouncedInput, diagnostics, doMinify, hideDiagnostics, input, load, onlyMinifiedSize, output, preset, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
 </script>
 
 <template>
@@ -47,7 +45,7 @@ import { hideDiagnostics, debouncedInput, doMinify, preset, diagnostics, load, o
       </div>
     </div>
     <div flex-grow h-0 flex flex-col md:flex-row gap-x-2 gap-y-2>
-      <div :class="showLogs ? 'flex-grow-2' : 'flex-grow'" h-0 md:h-full md:w-0 flex flex-col>
+      <div flex-grow h-0 md:h-full md:w-0 flex flex-col>
         <div flex items-center>
           <h2 md:text-xl pb-2 pl-4 select-none>
             Input
@@ -56,7 +54,7 @@ import { hideDiagnostics, debouncedInput, doMinify, preset, diagnostics, load, o
             </span>
           </h2>
         </div>
-        <Input class="flex-grow h-0 max-h-full" />
+        <Editor v-model="input" lang="javascript" class="flex-grow h-0 max-h-full" />
       </div>
       <div flex-grow h-0 md:h-full md:w-0 flex flex-col>
         <h2 md:text-xl pb-2 pl-4 select-none flex items-center>
@@ -72,16 +70,15 @@ import { hideDiagnostics, debouncedInput, doMinify, preset, diagnostics, load, o
             </math>={{ treeShakeRate.toFixed(2) }}%<span op80>)</span>
           </span>
           <div flex-grow />
-          <!-- <button v-if="!showLogs" @click="showLogs = true" mr-4 op-80 w-5 h-5 b-none i-carbon-asset-view /> -->
         </h2>
         <div flex-grow relative max-h-full>
           <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
           <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex
             flex-col gap-2>
-            <div v-if="diagnostics.length" v-show="!hideDiagnostics" relative text-yellow-200 bg-yellow-900 bg-op-80
-              b-yellow-500>
+            <div v-if="diagnostics.length" v-show="!hideDiagnostics" relative bg-op-80
+              :class="diagnostics.isError ? 'text-red-200 bg-red-900 b-red-500' : 'text-yellow-200 bg-yellow-900 b-yellow-500'">
               <h3 text-lg pb-1>
-                Warning
+                {{ diagnostics.isError ? 'Error' : 'Warning' }}
               </h3>
               <div font-mono max-h-8em overflow-y-auto>
                 <p v-for="d, i in diagnostics" :key="i" style="text-indent: -1em" ml-1em>
@@ -92,14 +89,6 @@ import { hideDiagnostics, debouncedInput, doMinify, preset, diagnostics, load, o
             </div>
           </div>
         </div>
-      </div>
-      <div v-show="showLogs" flex-grow-2 h-0 md:h-full md:w-0 flex flex-col>
-        <h2 md:text-xl pb-2 pl-4 select-none flex items-end>
-          Logs
-          <div flex-grow />
-          <button i-carbon-close mr-4 op-80 w-6 h-6 b-none @click="showLogs = false" />
-        </h2>
-        <Logs class="flex-grow relative h-full" />
       </div>
     </div>
   </div>
