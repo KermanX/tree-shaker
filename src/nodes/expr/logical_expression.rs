@@ -8,17 +8,17 @@ impl<'a> Analyzer<'a> {
     let left = self.exec_expression(&node.left);
 
     let (maybe_left, maybe_right) = match &node.operator {
-      LogicalOperator::And => match left.test_truthy() {
+      LogicalOperator::And => match left.test_truthy(self) {
         Some(true) => (false, true),
         Some(false) => (true, false),
         None => (true, true),
       },
-      LogicalOperator::Or => match left.test_truthy() {
+      LogicalOperator::Or => match left.test_truthy(self) {
         Some(true) => (true, false),
         Some(false) => (false, true),
         None => (true, true),
       },
-      LogicalOperator::Coalesce => match left.test_nullish() {
+      LogicalOperator::Coalesce => match left.test_nullish(self) {
         Some(true) => (false, true),
         Some(false) => (true, false),
         None => (true, true),
@@ -55,7 +55,7 @@ impl<'a> Analyzer<'a> {
       (true, true) => {
         let left = forward_left(self);
         let right = exec_right(self);
-        self.factory.logical_result(left, right, node.operator)
+        self.logical_result(left, right, node.operator)
       }
       (false, false) => unreachable!("Logical expression should have at least one possible branch"),
     };

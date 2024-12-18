@@ -186,19 +186,24 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    _analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
     dep
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.string(self.test_typeof().to_string().unwrap())
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.string(self.test_typeof(analyzer).to_string().unwrap())
   }
 
-  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string(self.to_string(analyzer.allocator))
   }
 
-  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     match self {
       LiteralEntity::Number(_, _)
       | LiteralEntity::BigInt(_)
@@ -232,22 +237,22 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    match self.test_truthy() {
+  fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+    match self.test_truthy(analyzer) {
       Some(value) => analyzer.factory.boolean(value),
       None => analyzer.factory.computed_unknown_boolean(rc),
     }
   }
 
-  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     match self {
       LiteralEntity::Symbol(_, _) => rc,
       _ => self.get_to_string(rc, analyzer),
     }
   }
 
-  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    if (TypeofResult::String | TypeofResult::Number).contains(self.test_typeof()) {
+  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+    if (TypeofResult::String | TypeofResult::Number).contains(self.test_typeof(analyzer)) {
       self.get_to_string(rc, analyzer)
     } else {
       analyzer.factory.string("")
@@ -257,18 +262,22 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn get_to_literals(
     &self,
     _rc: Entity<'a>,
-    _analyzer: &Analyzer<'a>,
+    _analyzer: &mut Analyzer<'a>,
   ) -> Option<FxHashSet<LiteralEntity<'a>>> {
     let mut result = FxHashSet::default();
     result.insert(*self);
     Some(result)
   }
 
-  fn get_literal(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
+  fn get_literal(
+    &self,
+    _rc: Entity<'a>,
+    _analyzer: &mut Analyzer<'a>,
+  ) -> Option<LiteralEntity<'a>> {
     Some(*self)
   }
 
-  fn test_typeof(&self) -> TypeofResult {
+  fn test_typeof(&self, _analyzer: &mut Analyzer<'a>) -> TypeofResult {
     match self {
       LiteralEntity::String(_) => TypeofResult::String,
       LiteralEntity::Number(_, _) => TypeofResult::Number,
@@ -282,7 +291,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn test_truthy(&self) -> Option<bool> {
+  fn test_truthy(&self, _analyzer: &mut Analyzer<'a>) -> Option<bool> {
     Some(match self {
       LiteralEntity::String(value) => !value.is_empty(),
       LiteralEntity::Number(value, _) => *value != 0.0.into() && *value != (-0.0).into(),
@@ -294,7 +303,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     })
   }
 
-  fn test_nullish(&self) -> Option<bool> {
+  fn test_nullish(&self, _analyzer: &mut Analyzer<'a>) -> Option<bool> {
     Some(matches!(self, LiteralEntity::Null | LiteralEntity::Undefined))
   }
 }
@@ -384,7 +393,7 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
-  pub fn can_build_expr(&self, analyzer: &Analyzer<'a>) -> bool {
+  pub fn can_build_expr(&self, analyzer: &mut Analyzer<'a>) -> bool {
     let config = &analyzer.config;
     match self {
       LiteralEntity::String(value) => value.len() <= config.max_simple_string_length,
@@ -479,7 +488,7 @@ impl<'a> LiteralEntity<'a> {
 
   fn get_known_instance_property(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     key: LiteralEntity<'a>,
   ) -> Option<Entity<'a>> {
     match self {

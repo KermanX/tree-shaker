@@ -1,19 +1,12 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::Entity,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{allocator, ast::ast::IdentifierReference};
-
-#[derive(Debug, Default, Clone)]
-pub struct Data {
-  has_effect: bool,
-}
 
 impl<'a> Analyzer<'a> {
   pub fn exec_identifier_reference_read(
     &mut self,
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
+    let dep_id = AstKind2::IdentifierReference(node);
     let reference = self.semantic.symbols().get_reference(node.reference_id());
     let symbol = reference.symbol_id();
 
@@ -23,7 +16,7 @@ impl<'a> Analyzer<'a> {
         value
       } else {
         // TDZ
-        self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
+        self.refer_dep(dep_id);
         self.factory.unknown()
       }
     } else if node.name == "arguments" {
@@ -36,16 +29,12 @@ impl<'a> Analyzer<'a> {
       *global
     } else {
       // Unknown global
-      if self.is_inside_pure() {
-        self.factory.computed_unknown(AstKind2::IdentifierReference(node))
-      } else {
-        if self.config.unknown_global_side_effects {
-          self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
-          self.refer_to_global();
-          self.may_throw();
-        }
-        self.factory.unknown()
+      if self.config.unknown_global_side_effects {
+        self.refer_dep(dep_id);
+        self.refer_to_global();
+        self.may_throw();
       }
+      self.factory.unknown()
     }
   }
 
@@ -54,8 +43,8 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
     value: Entity<'a>,
   ) {
-    let dep = box_consumable(AstKind2::IdentifierReference(node));
-    let value = self.factory.computed(value, dep);
+    let dep_id = AstKind2::IdentifierReference(node);
+    let value = self.factory.computed(value, dep_id);
 
     let reference = self.semantic.symbols().get_reference(node.reference_id());
     debug_assert!(reference.is_write());
@@ -68,8 +57,8 @@ impl<'a> Analyzer<'a> {
         "Should not write to builtin object, it may cause unexpected tree-shaking behavior",
       );
     } else {
-      self.set_data(AstKind2::IdentifierReference(node), Data { has_effect: true });
       value.consume(self);
+      self.refer_dep(dep_id);
       self.may_throw();
       self.refer_to_global();
     }
@@ -77,33 +66,12 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_identifier_reference_read(
+  pub fn transform_identifier_reference(
     &self,
     node: &'a IdentifierReference<'a>,
     need_val: bool,
   ) -> Option<allocator::Box<'a, IdentifierReference<'a>>> {
-    let data = self.get_data::<Data>(AstKind2::IdentifierReference(node));
-
-    self.transform_identifier_reference(node, data.has_effect || need_val)
-  }
-
-  pub fn transform_identifier_reference_write(
-    &self,
-    node: &'a IdentifierReference<'a>,
-  ) -> Option<allocator::Box<'a, IdentifierReference<'a>>> {
-    let data = self.get_data::<Data>(AstKind2::IdentifierReference(node));
-
-    let referred = self.is_referred(AstKind2::IdentifierReference(node));
-
-    self.transform_identifier_reference(node, data.has_effect || referred)
-  }
-
-  fn transform_identifier_reference(
-    &self,
-    node: &'a IdentifierReference<'a>,
-    included: bool,
-  ) -> Option<allocator::Box<'a, IdentifierReference<'a>>> {
-    if included {
+    if need_val || self.is_referred(AstKind2::IdentifierReference(node)) {
       let IdentifierReference { span, name, .. } = node;
 
       let reference = self.semantic.symbols().get_reference(node.reference_id());

@@ -73,7 +73,7 @@ impl<'a> Analyzer<'a> {
           self.factory.unknown()
         });
 
-        let is_nullish = init.test_nullish();
+        let is_nullish = init.test_nullish(self);
         if is_nullish != Some(false) {
           if is_nullish == Some(true) {
             self.thrown_builtin_error("Cannot destructure nullish value");
