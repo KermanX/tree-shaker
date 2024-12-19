@@ -30,9 +30,10 @@ impl<'a> Analyzer<'a> {
         self.pop_cf_scope();
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
-        self.push_dependent_cf_scope(value.get_destructable(box_consumable(())));
+        let destructable_dep = value.get_destructable(self, box_consumable(()));
+        self.push_dependent_cf_scope(destructable_dep);
 
-        let is_nullish = value.test_nullish();
+        let is_nullish = value.test_nullish(self);
         if is_nullish != Some(false) {
           if is_nullish == Some(true) {
             self.thrown_builtin_error("Cannot destructure nullish value");

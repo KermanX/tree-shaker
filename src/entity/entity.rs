@@ -64,21 +64,26 @@ pub trait EntityTrait<'a>: Debug {
     dep: Consumable<'a>,
   ) -> IteratedElements<'a>;
 
-  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a>;
-  fn get_typeof(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_destructable(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a>;
+  fn get_typeof(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a>;
+  fn get_to_string(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a>;
+  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a>;
+  fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a>;
+  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a>;
+  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a>;
   fn get_to_literals(
     &self,
     _rc: Entity<'a>,
-    _analyzer: &Analyzer<'a>,
+    _analyzer: &mut Analyzer<'a>,
   ) -> Option<FxHashSet<LiteralEntity<'a>>> {
     None
   }
-  fn get_literal(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
+  fn get_literal(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Option<LiteralEntity<'a>> {
     self.get_to_literals(rc, analyzer).and_then(|set| {
       if set.len() == 1 {
         set.into_iter().next()
@@ -88,11 +93,11 @@ pub trait EntityTrait<'a>: Debug {
     })
   }
 
-  fn test_typeof(&self) -> TypeofResult;
-  fn test_truthy(&self) -> Option<bool>;
-  fn test_nullish(&self) -> Option<bool>;
-  fn test_is_undefined(&self) -> Option<bool> {
-    let t = self.test_typeof();
+  fn test_typeof(&self, analyzer: &mut Analyzer<'a>) -> TypeofResult;
+  fn test_truthy(&self, analyzer: &mut Analyzer<'a>) -> Option<bool>;
+  fn test_nullish(&self, analyzer: &mut Analyzer<'a>) -> Option<bool>;
+  fn test_is_undefined(&self, analyzer: &mut Analyzer<'a>) -> Option<bool> {
+    let t = self.test_typeof(analyzer);
     match (t == TypeofResult::Undefined, t.contains(TypeofResult::Undefined)) {
       (true, _) => Some(true),
       (false, true) => None,
@@ -198,56 +203,63 @@ impl<'a> Entity<'a> {
     self.0.iterate(*self, analyzer, dep.into())
   }
 
-  pub fn get_destructable(&self, dep: impl Into<Consumable<'a>>) -> Consumable<'a> {
-    self.0.get_destructable(*self, dep.into())
+  pub fn get_destructable(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl Into<Consumable<'a>>,
+  ) -> Consumable<'a> {
+    self.0.get_destructable(*self, analyzer, dep.into())
   }
 
-  pub fn get_typeof(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  pub fn get_typeof(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.0.get_typeof(*self, analyzer)
   }
 
-  pub fn get_to_string(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  pub fn get_to_string(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.0.get_to_string(*self, analyzer)
   }
 
-  pub fn get_to_numeric(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  pub fn get_to_numeric(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.0.get_to_numeric(*self, analyzer)
   }
 
-  pub fn get_to_boolean(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  pub fn get_to_boolean(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.0.get_to_boolean(*self, analyzer)
   }
 
-  pub fn get_to_property_key(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  pub fn get_to_property_key(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.0.get_to_property_key(*self, analyzer)
   }
 
-  pub fn get_to_jsx_child(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  pub fn get_to_jsx_child(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     self.0.get_to_jsx_child(*self, analyzer)
   }
 
-  pub fn get_to_literals(&self, analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralEntity<'a>>> {
+  pub fn get_to_literals(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+  ) -> Option<FxHashSet<LiteralEntity<'a>>> {
     self.0.get_to_literals(*self, analyzer)
   }
 
-  pub fn get_literal(&self, analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
+  pub fn get_literal(&self, analyzer: &mut Analyzer<'a>) -> Option<LiteralEntity<'a>> {
     self.0.get_literal(*self, analyzer)
   }
 
-  pub fn test_typeof(&self) -> TypeofResult {
-    self.0.test_typeof()
+  pub fn test_typeof(&self, analyzer: &mut Analyzer<'a>) -> TypeofResult {
+    self.0.test_typeof(analyzer)
   }
 
-  pub fn test_truthy(&self) -> Option<bool> {
-    self.0.test_truthy()
+  pub fn test_truthy(&self, analyzer: &mut Analyzer<'a>) -> Option<bool> {
+    self.0.test_truthy(analyzer)
   }
 
-  pub fn test_nullish(&self) -> Option<bool> {
-    self.0.test_nullish()
+  pub fn test_nullish(&self, analyzer: &mut Analyzer<'a>) -> Option<bool> {
+    self.0.test_nullish(analyzer)
   }
 
-  pub fn test_is_undefined(&self) -> Option<bool> {
-    self.0.test_is_undefined()
+  pub fn test_is_undefined(&self, analyzer: &mut Analyzer<'a>) -> Option<bool> {
+    self.0.test_is_undefined(analyzer)
   }
 
   pub fn destruct_as_array(
