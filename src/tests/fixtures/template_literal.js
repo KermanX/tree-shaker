@@ -5,9 +5,11 @@ export function main(a) {
 
   test3(`a${(effect,2)}b${(effect,3)}`)
 
-  test3(`a${(effect,2)}b${3}c${a}`)
+  test4(`a${(effect,2)}b${3}c${a}`)
 
-  test3(`a${(effect,2)}b${a}c${3}`)
+  test5(`a${(effect,2)}b${a}c${3}`)
   
-  test3(`a${(effect,2)}b${a}c${(effect, 3)}`)
+  test6(`a${(effect,2)}b${a}c${(effect, 3)}`)
+
+  test7(`\\${a}\`${b}\n${c}\${}`)
 }

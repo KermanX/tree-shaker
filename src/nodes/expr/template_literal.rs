@@ -84,7 +84,7 @@ impl<'a> Transformer<'a> {
             index == quasis_len - 1,
             TemplateElementValue {
               // FIXME: escape
-              raw: str.as_str().into(),
+              raw: self.escape_template_element_value(str.as_str()).into(),
               cooked: Some(str.as_str().into()),
             },
           ));
