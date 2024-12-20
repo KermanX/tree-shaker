@@ -15,25 +15,25 @@ impl<'a> EntityOpHost<'a> {
     Self { allocator }
   }
 
-  pub fn eq(&self, analyzer: &Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Option<bool> {
+  pub fn eq(&self, analyzer: &mut Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Option<bool> {
     if self.strict_eq(analyzer, lhs, rhs) == Some(true) {
       return Some(true);
     }
 
-    if lhs.test_nullish() == Some(true) && rhs.test_nullish() == Some(true) {
+    if lhs.test_nullish(analyzer) == Some(true) && rhs.test_nullish(analyzer) == Some(true) {
       return Some(true);
     }
 
     None
   }
 
-  pub fn neq(&self, analyzer: &Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Option<bool> {
+  pub fn neq(&self, analyzer: &mut Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Option<bool> {
     self.eq(analyzer, lhs, rhs).map(|v| !v)
   }
 
   pub fn strict_eq(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> Option<bool> {
@@ -42,8 +42,8 @@ impl<'a> EntityOpHost<'a> {
     //   return Some(true);
     // }
 
-    let lhs_t = lhs.test_typeof();
-    let rhs_t = rhs.test_typeof();
+    let lhs_t = lhs.test_typeof(analyzer);
+    let rhs_t = rhs.test_typeof(analyzer);
     if lhs_t & rhs_t == TypeofResult::_None {
       return Some(false);
     }
@@ -76,7 +76,7 @@ impl<'a> EntityOpHost<'a> {
 
   pub fn strict_neq(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> Option<bool> {
@@ -85,7 +85,7 @@ impl<'a> EntityOpHost<'a> {
 
   pub fn lt(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
     eq: bool,
@@ -139,7 +139,7 @@ impl<'a> EntityOpHost<'a> {
 
   pub fn gt(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
     eq: bool,
@@ -147,15 +147,20 @@ impl<'a> EntityOpHost<'a> {
     self.lt(analyzer, rhs, lhs, eq)
   }
 
-  pub fn instanceof(&self, lhs: Entity<'a>, _rhs: Entity<'a>) -> Option<bool> {
+  pub fn instanceof(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    lhs: Entity<'a>,
+    _rhs: Entity<'a>,
+  ) -> Option<bool> {
     if (TypeofResult::String
       | TypeofResult::Number
       | TypeofResult::BigInt
       | TypeofResult::Boolean
       | TypeofResult::Symbol
       | TypeofResult::Undefined)
-      .contains(lhs.test_typeof())
-      || lhs.test_nullish() == Some(true)
+      .contains(lhs.test_typeof(analyzer))
+      || lhs.test_nullish(analyzer) == Some(true)
     {
       Some(false)
     } else {
@@ -163,9 +168,9 @@ impl<'a> EntityOpHost<'a> {
     }
   }
 
-  pub fn add(&self, analyzer: &Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Entity<'a> {
-    let lhs_t = lhs.test_typeof();
-    let rhs_t = rhs.test_typeof();
+  pub fn add(&self, analyzer: &mut Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Entity<'a> {
+    let lhs_t = lhs.test_typeof(analyzer);
+    let rhs_t = rhs.test_typeof(analyzer);
     let lhs_lit = lhs.get_literal(analyzer);
     let rhs_lit = rhs.get_literal(analyzer);
 
@@ -231,7 +236,7 @@ impl<'a> EntityOpHost<'a> {
 
   fn number_only_op(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
     calc: fn(f64, f64) -> f64,
@@ -250,7 +255,7 @@ impl<'a> EntityOpHost<'a> {
 
   pub fn update(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     input: Entity<'a>,
     operator: UpdateOperator,
   ) -> Entity<'a> {
@@ -272,7 +277,7 @@ impl<'a> EntityOpHost<'a> {
       );
     }
 
-    let input_t = input.test_typeof();
+    let input_t = input.test_typeof(analyzer);
 
     let mut values = vec![];
     if input_t.contains(TypeofResult::BigInt) {
@@ -291,23 +296,48 @@ impl<'a> EntityOpHost<'a> {
 
   pub fn binary_op(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     operator: BinaryOperator,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> Entity<'a> {
-    let to_result =
-      |result: Option<bool>| boolean_from_test_result(analyzer, result, (lhs.clone(), rhs.clone()));
+    let to_entity = |analyzer: &mut Analyzer<'a>, result: Option<bool>| {
+      boolean_from_test_result(analyzer, result, (lhs.clone(), rhs.clone()))
+    };
 
     match operator {
-      BinaryOperator::Equality => to_result(self.eq(analyzer, lhs, rhs)),
-      BinaryOperator::Inequality => to_result(self.neq(analyzer, lhs, rhs)),
-      BinaryOperator::StrictEquality => to_result(self.strict_eq(analyzer, lhs, rhs)),
-      BinaryOperator::StrictInequality => to_result(self.strict_neq(analyzer, lhs, rhs)),
-      BinaryOperator::LessThan => to_result(self.lt(analyzer, lhs, rhs, false)),
-      BinaryOperator::LessEqualThan => to_result(self.lt(analyzer, lhs, rhs, true)),
-      BinaryOperator::GreaterThan => to_result(self.gt(analyzer, lhs, rhs, false)),
-      BinaryOperator::GreaterEqualThan => to_result(self.gt(analyzer, lhs, rhs, true)),
+      BinaryOperator::Equality => {
+        let result = self.eq(analyzer, lhs, rhs);
+        to_entity(analyzer, result)
+      }
+      BinaryOperator::Inequality => {
+        let result = self.neq(analyzer, lhs, rhs);
+        to_entity(analyzer, result)
+      }
+      BinaryOperator::StrictEquality => {
+        let result = self.strict_eq(analyzer, lhs, rhs);
+        to_entity(analyzer, result)
+      }
+      BinaryOperator::StrictInequality => {
+        let result = self.strict_neq(analyzer, lhs, rhs);
+        to_entity(analyzer, result)
+      }
+      BinaryOperator::LessThan => {
+        let result = self.lt(analyzer, lhs, rhs, false);
+        to_entity(analyzer, result)
+      }
+      BinaryOperator::LessEqualThan => {
+        let result = self.lt(analyzer, lhs, rhs, true);
+        to_entity(analyzer, result)
+      }
+      BinaryOperator::GreaterThan => {
+        let result = self.gt(analyzer, lhs, rhs, false);
+        to_entity(analyzer, result)
+      }
+      BinaryOperator::GreaterEqualThan => {
+        let result = self.gt(analyzer, lhs, rhs, true);
+        to_entity(analyzer, result)
+      }
       BinaryOperator::Addition => self.add(analyzer, lhs, rhs),
       BinaryOperator::Subtraction => self.number_only_op(analyzer, lhs, rhs, |l, r| l - r),
       BinaryOperator::Multiplication => self.number_only_op(analyzer, lhs, rhs, |l, r| l * r),
@@ -333,7 +363,10 @@ impl<'a> EntityOpHost<'a> {
       }
       BinaryOperator::Exponential => self.number_only_op(analyzer, lhs, rhs, |l, r| l.powf(r)),
       BinaryOperator::In => analyzer.factory.computed_unknown_boolean((lhs.clone(), rhs.clone())),
-      BinaryOperator::Instanceof => to_result(self.instanceof(lhs, rhs)),
+      BinaryOperator::Instanceof => {
+        let result = self.instanceof(analyzer, lhs, rhs);
+        to_entity(analyzer, result)
+      }
     }
   }
 }

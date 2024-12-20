@@ -15,7 +15,7 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
         let cf_scope = analyzer.scope_context.cf.current_id();
         // This can be any value
         let arguments_object_id = SymbolId::from_usize(0);
-        match arg.test_is_undefined() {
+        match arg.test_is_undefined(analyzer) {
           Some(true) => analyzer.factory.entity(ArrayEntity::new(cf_scope, arguments_object_id)),
           Some(false) => arg,
           None => analyzer.factory.union((

@@ -22,8 +22,8 @@ impl<'a> Analyzer<'a> {
       | TypeofResult::Symbol;
 
     // TODO: empty object, simple function, array
-    if (right.test_typeof() & !types_have_no_keys) == TypeofResult::_None
-      || right.test_nullish() == Some(true)
+    if (right.test_typeof(self) & !types_have_no_keys) == TypeofResult::_None
+      || right.test_nullish(self) == Some(true)
     {
       return;
     }

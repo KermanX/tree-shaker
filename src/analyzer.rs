@@ -30,7 +30,7 @@ pub struct Analyzer<'a> {
   pub semantic: Semantic<'a>,
   pub span_stack: Vec<Span>,
   pub data: ExtraData<'a>,
-  pub referred_deps: ReferredDeps,
+  pub referred_deps: &'a mut ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   pub loop_data: LoopDataMap<'a>,
   pub named_exports: Vec<SymbolId>,
@@ -39,7 +39,7 @@ pub struct Analyzer<'a> {
   pub pending_labels: Vec<LabelEntity<'a>>,
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub builtins: Builtins<'a>,
-  pub entity_op: EntityOpHost<'a>,
+  pub entity_op: &'a EntityOpHost<'a>,
 
   pub debug: usize,
 }
@@ -59,7 +59,7 @@ impl<'a> Analyzer<'a> {
       semantic,
       span_stack: vec![],
       data: Default::default(),
-      referred_deps: Default::default(),
+      referred_deps: allocator.alloc(ReferredDeps::default()),
       conditional_data: Default::default(),
       loop_data: Default::default(),
       named_exports: Vec::new(),
@@ -68,7 +68,7 @@ impl<'a> Analyzer<'a> {
       pending_labels: Vec::new(),
       pending_deps: Default::default(),
       builtins: Builtins::new(config, factory),
-      entity_op: EntityOpHost::new(allocator),
+      entity_op: allocator.alloc(EntityOpHost::new(allocator)),
       debug: 0,
     }
   }

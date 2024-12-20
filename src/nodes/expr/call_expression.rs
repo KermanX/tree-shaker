@@ -1,18 +1,20 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
+  analyzer::Analyzer,
+  ast::AstKind2,
+  build_effect,
+  consumable::box_consumable,
+  dep::ReferredDeps,
+  entity::{Entity, PureCallNode},
   transformer::Transformer,
 };
-use oxc::{
-  ast::{
-    ast::{CallExpression, Expression},
-    NONE,
-  },
-  span::SPAN,
+use oxc::ast::{
+  ast::{CallExpression, Expression},
+  NONE,
 };
 
 impl<'a> Analyzer<'a> {
   pub fn exec_call_expression(&mut self, node: &'a CallExpression) -> Entity<'a> {
-    let (scope_count, value, undefined) = self.exec_call_expression_in_chain(node).unwrap();
+    let (scope_count, value, undefined) = self.exec_call_expression_in_chain(node, None).unwrap();
 
     assert_eq!(scope_count, 0);
     assert!(undefined.is_none());
@@ -20,17 +22,33 @@ impl<'a> Analyzer<'a> {
     value
   }
 
-  /// Returns (short-circuit, value)
+  /// Returns (short-circuit, value, undefined)
   pub fn exec_call_expression_in_chain(
     &mut self,
     node: &'a CallExpression,
+    cache_from_pure: Option<(Entity<'a>, Entity<'a>, Entity<'a>)>,
   ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>), Entity<'a>> {
-    let (mut scope_count, callee, mut undefined, this) = self.exec_callee(&node.callee)?;
+    let pure = cache_from_pure.is_none() && self.has_pure_notation(node);
+
+    let mut referred_deps = None;
+
+    let (mut scope_count, callee, mut undefined, this) = if pure {
+      let (result, this_referred_deps) = self.exec_in_pure(
+        |analyzer| analyzer.exec_callee(&node.callee),
+        self.allocator.alloc(ReferredDeps::default()),
+      );
+      referred_deps = Some(this_referred_deps);
+      result?
+    } else if let Some((callee, this, _)) = cache_from_pure {
+      (0, callee, None, this)
+    } else {
+      self.exec_callee(&node.callee)?
+    };
 
     let dep_id = AstKind2::CallExpression(node);
 
     if node.optional {
-      let maybe_left = match callee.test_nullish() {
+      let maybe_left = match callee.test_nullish(self) {
         Some(true) => {
           self.pop_multiple_cf_scopes(scope_count);
           return Err(self.forward_logical_left_val(dep_id, self.factory.undefined, true, false));
@@ -51,9 +69,20 @@ impl<'a> Analyzer<'a> {
       scope_count += 1;
     }
 
-    let args = self.exec_arguments(&node.arguments);
+    let args = if let Some((_, _, args)) = cache_from_pure {
+      args
+    } else {
+      self.exec_arguments(&node.arguments)
+    };
 
-    let ret_val = callee.call(self, box_consumable(dep_id), this, args);
+    let ret_val = if pure {
+      self.pure_result(
+        PureCallNode::CallExpression(node, (callee, this, args)),
+        referred_deps.unwrap(),
+      )
+    } else {
+      callee.call(self, box_consumable(dep_id), this, args)
+    };
 
     Ok((scope_count, ret_val, undefined))
   }
@@ -65,6 +94,15 @@ impl<'a> Transformer<'a> {
     node: &'a CallExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
+    self.transform_call_expression_in_chain(node, need_val, None)
+  }
+
+  pub fn transform_call_expression_in_chain(
+    &self,
+    node: &'a CallExpression<'a>,
+    need_val: bool,
+    parent_effects: Option<Expression<'a>>,
+  ) -> Option<Expression<'a>> {
     let dep_id: AstKind2<'_> = AstKind2::CallExpression(node);
 
     let CallExpression { span, callee, arguments, optional, .. } = node;
@@ -75,21 +113,15 @@ impl<'a> Transformer<'a> {
 
     if !need_call {
       let args_effect = may_not_short_circuit.then(|| self.transform_arguments_no_call(arguments));
+      let all_effects = build_effect!(&self.ast_builder, *span, parent_effects, args_effect);
       return if need_optional {
-        // FIXME: How to get the actual span?
-        let args_span = SPAN;
         Some(self.build_chain_expression_mock(
           *span,
           self.transform_expression(callee, true).unwrap(),
-          build_effect!(&self.ast_builder, args_span, args_effect).unwrap(),
+          all_effects.unwrap(),
         ))
       } else {
-        build_effect!(
-          &self.ast_builder,
-          *span,
-          self.transform_expression(callee, false),
-          args_effect
-        )
+        self.transform_expression_in_chain(callee, false, all_effects)
       };
     }
 

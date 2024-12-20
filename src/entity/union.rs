@@ -149,43 +149,48 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     (vec![], analyzer.factory.try_union(results), box_consumable(()))
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
     let mut values = Vec::new();
     for entity in self.values.iter() {
-      values.push(entity.get_destructable(dep.cloned()));
+      values.push(entity.get_destructable(analyzer, dep.cloned()));
     }
     box_consumable(values)
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     // TODO: collect literals
     let values = self.values.map(|v| v.get_typeof(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     // TODO: dedupe
     let values = self.values.map(|v| v.get_to_string(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     // TODO: dedupe
     let values = self.values.map(|v| v.get_to_numeric(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     let values = self.values.map(|v| v.get_to_boolean(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     let values = self.values.map(|v| v.get_to_property_key(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
     let values = self.values.map(|v| v.get_to_jsx_child(analyzer));
     analyzer.factory.union(values)
   }
@@ -193,7 +198,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
   fn get_to_literals(
     &self,
     _rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
   ) -> Option<FxHashSet<LiteralEntity<'a>>> {
     let mut iter = self.values.iter();
     let mut result = iter.next().unwrap().get_to_literals(analyzer)?;
@@ -203,30 +208,30 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     Some(result)
   }
 
-  fn test_typeof(&self) -> TypeofResult {
+  fn test_typeof(&self, analyzer: &mut Analyzer<'a>) -> TypeofResult {
     let mut result = TypeofResult::_None;
     for entity in self.values.iter() {
-      result |= entity.test_typeof();
+      result |= entity.test_typeof(analyzer);
     }
     result
   }
 
-  fn test_truthy(&self) -> Option<bool> {
+  fn test_truthy(&self, analyzer: &mut Analyzer<'a>) -> Option<bool> {
     let mut iter = self.values.iter();
-    let result = iter.next().unwrap().test_truthy()?;
+    let result = iter.next().unwrap().test_truthy(analyzer)?;
     for entity in iter {
-      if entity.test_truthy()? != result {
+      if entity.test_truthy(analyzer)? != result {
         return None;
       }
     }
     Some(result)
   }
 
-  fn test_nullish(&self) -> Option<bool> {
+  fn test_nullish(&self, analyzer: &mut Analyzer<'a>) -> Option<bool> {
     let mut iter = self.values.iter();
-    let result = iter.next().unwrap().test_nullish()?;
+    let result = iter.next().unwrap().test_nullish(analyzer)?;
     for entity in iter {
-      if entity.test_nullish()? != result {
+      if entity.test_nullish(analyzer)? != result {
         return None;
       }
     }

@@ -1,14 +1,17 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
-use oxc::ast::{
-  ast::{ChainElement, ChainExpression, Expression, MemberExpression},
-  match_member_expression,
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
+use oxc::{
+  ast::{
+    ast::{ChainElement, ChainExpression, Expression},
+    match_member_expression,
+  },
+  span::GetSpan,
 };
 
 impl<'a> Analyzer<'a> {
   pub fn exec_chain_expression(&mut self, node: &'a ChainExpression<'a>) -> Entity<'a> {
     match &node.expression {
       ChainElement::CallExpression(node) => {
-        let result = self.exec_call_expression_in_chain(node);
+        let result = self.exec_call_expression_in_chain(node, None);
         match result {
           Ok((scope_count, value, undefined)) => {
             self.pop_multiple_cf_scopes(scope_count);
@@ -38,7 +41,7 @@ impl<'a> Analyzer<'a> {
       match_member_expression!(Expression) => self
         .exec_member_expression_read_in_chain(node.to_member_expression(), false)
         .map(|(scope_count, value, undefined, _)| (scope_count, value, undefined)),
-      Expression::CallExpression(node) => self.exec_call_expression_in_chain(node),
+      Expression::CallExpression(node) => self.exec_call_expression_in_chain(node, None),
       _ => Ok((0, self.exec_expression(node), None)),
     }
   }
@@ -50,23 +53,43 @@ impl<'a> Transformer<'a> {
     node: &'a ChainExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let ChainExpression { span, expression } = node;
+    let ChainExpression { expression, .. } = node;
 
-    let expression = match expression {
-      ChainElement::CallExpression(node) => self.transform_call_expression(node, need_val),
-      node => self.transform_member_expression_read(node.to_member_expression(), need_val),
-    };
-
-    // FIXME: is this correct?
-    expression.map(|expression| match expression {
-      Expression::CallExpression(node) => {
-        self.ast_builder.expression_chain(*span, ChainElement::CallExpression(node))
+    match expression {
+      ChainElement::CallExpression(node) => {
+        self.transform_call_expression_in_chain(node, need_val, None)
       }
-      match_member_expression!(Expression) => self.ast_builder.expression_chain(
-        *span,
-        ChainElement::from(MemberExpression::try_from(expression).unwrap()),
+      node => {
+        self.transform_member_expression_read_in_chain(node.to_member_expression(), need_val, None)
+      }
+    }
+  }
+
+  pub fn transform_expression_in_chain(
+    &self,
+    node: &'a Expression<'a>,
+    need_val: bool,
+    parent_effects: Option<Expression<'a>>,
+  ) -> Option<Expression<'a>> {
+    match node {
+      match_member_expression!(Expression) => self.transform_member_expression_read_in_chain(
+        node.to_member_expression(),
+        need_val,
+        parent_effects,
       ),
-      _ => expression,
-    })
+      Expression::CallExpression(node) => {
+        self.transform_call_expression_in_chain(node, need_val, parent_effects)
+      }
+      _ => {
+        let expression = self.transform_expression(node, need_val);
+        if need_val {
+          debug_assert!(parent_effects.is_none());
+          debug_assert!(expression.is_some());
+          expression
+        } else {
+          build_effect!(&self.ast_builder, node.span(), expression, parent_effects)
+        }
+      }
+    }
   }
 }

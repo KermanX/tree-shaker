@@ -13,7 +13,7 @@ impl<'a> Analyzer<'a> {
 
     let test = self.exec_expression(&node.test).get_to_boolean(self);
 
-    let (maybe_consequent, maybe_alternate) = match test.test_truthy() {
+    let (maybe_consequent, maybe_alternate) = match test.test_truthy(self) {
       Some(true) => (true, false),
       Some(false) => (false, true),
       None => (true, true),

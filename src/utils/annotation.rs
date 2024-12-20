@@ -1,5 +1,5 @@
 use crate::analyzer::Analyzer;
-use oxc::{ast::CommentKind, span::Span};
+use oxc::span::{GetSpan, Span};
 
 impl<'a> Analyzer<'a> {
   fn has_annotation(&self, span: Span, test: fn(&str) -> bool) -> bool {
@@ -12,14 +12,16 @@ impl<'a> Analyzer<'a> {
     // we treat the `comment` not belongs to the `span`.
     let range_text =
       Span::new(comment.span.end, span.start).source_text(self.semantic.source_text());
-    let only_whitespace = match comment.kind {
-      CommentKind::Line => range_text.trim().is_empty(),
-      CommentKind::Block => {
-        range_text
-          .strip_prefix("*/") // for multi-line comment
-          .is_some_and(|s| s.trim().is_empty())
-      }
-    };
+
+    // let only_whitespace = match comment.kind {
+    //   CommentKind::Line => range_text.trim().is_empty(),
+    //   CommentKind::Block => {
+    //     range_text
+    //       .strip_prefix("*/") // for multi-line comment
+    //       .is_some_and(|s| s.trim().is_empty())
+    //   }
+    // };
+    let only_whitespace = range_text.trim().is_empty();
     if !only_whitespace {
       return false;
     }
@@ -27,16 +29,12 @@ impl<'a> Analyzer<'a> {
     test(raw)
   }
 
-  pub fn has_pure_notation(&self, span: Span) -> usize {
-    if self.has_annotation(span, |raw| raw.contains("@__PURE__") || raw.contains("#__PURE__")) {
-      1
-    } else {
-      0
-    }
+  pub fn has_pure_notation(&self, node: &impl GetSpan) -> bool {
+    self.has_annotation(node.span(), |raw| raw.contains("@__PURE__") || raw.contains("#__PURE__"))
   }
 
-  pub fn has_finite_recursion_notation(&self, span: Span) -> bool {
-    self.has_annotation(span, |raw| {
+  pub fn has_finite_recursion_notation(&self, node: impl GetSpan) -> bool {
+    self.has_annotation(node.span(), |raw| {
       raw.contains("@__FINITE_RECURSION__") || raw.contains("#__FINITE_RECURSION__")
     })
   }

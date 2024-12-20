@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
 
     let dep = if let Some(test) = &node.test {
       let test = self.exec_expression(test);
-      if test.test_truthy() == Some(false) {
+      if test.test_truthy(self) == Some(false) {
         return;
       }
       box_consumable((AstKind2::ForStatement(node), test))

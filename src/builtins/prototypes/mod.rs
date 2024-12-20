@@ -68,7 +68,7 @@ impl<'a> Prototype<'a> {
 
   pub fn get_property(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     rc: Entity<'a>,
     key: Entity<'a>,
     dep: Consumable<'a>,

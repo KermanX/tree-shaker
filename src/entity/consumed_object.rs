@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableTrait},
+  consumable::{box_consumable, Consumable},
 };
 
 pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
@@ -19,10 +19,7 @@ pub fn get_property<'a>(
   key: Entity<'a>,
 ) -> Entity<'a> {
   let dep = (rc, dep, key);
-  if analyzer.is_inside_pure() {
-    rc.unknown_mutate(analyzer, dep.cloned());
-    analyzer.factory.computed_unknown(dep)
-  } else if analyzer.config.unknown_property_read_side_effects {
+  if analyzer.config.unknown_property_read_side_effects {
     analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_to_global();
@@ -80,16 +77,10 @@ pub fn call<'a>(
   args: Entity<'a>,
 ) -> Entity<'a> {
   let dep = (rc, dep, this, args);
-  if analyzer.is_inside_pure() {
-    this.unknown_mutate(analyzer, dep.cloned());
-    args.unknown_mutate(analyzer, dep.cloned());
-    analyzer.factory.computed_unknown(dep)
-  } else {
-    analyzer.consume(dep);
-    analyzer.may_throw();
-    analyzer.refer_to_global();
-    analyzer.factory.unknown()
-  }
+  analyzer.consume(dep);
+  analyzer.may_throw();
+  analyzer.refer_to_global();
+  analyzer.factory.unknown()
 }
 
 pub fn construct<'a>(
@@ -99,15 +90,10 @@ pub fn construct<'a>(
   args: Entity<'a>,
 ) -> Entity<'a> {
   let dep = (rc, dep, args);
-  if analyzer.is_inside_pure() {
-    args.unknown_mutate(analyzer, dep.cloned());
-    analyzer.factory.computed_unknown(dep)
-  } else {
-    analyzer.consume(dep);
-    analyzer.may_throw();
-    analyzer.refer_to_global();
-    analyzer.factory.unknown()
-  }
+  analyzer.consume(dep);
+  analyzer.may_throw();
+  analyzer.refer_to_global();
+  analyzer.factory.unknown()
 }
 
 pub fn jsx<'a>(rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
@@ -133,11 +119,11 @@ pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Iterated
   }
 }
 
-pub fn get_to_string<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
+pub fn get_to_string<'a>(analyzer: &mut Analyzer<'a>) -> Entity<'a> {
   analyzer.factory.unknown_string
 }
 
-pub fn get_to_numeric<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
+pub fn get_to_numeric<'a>(analyzer: &mut Analyzer<'a>) -> Entity<'a> {
   // Possibly number or bigint
   analyzer.factory.unknown()
 }

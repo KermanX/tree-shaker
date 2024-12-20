@@ -4,7 +4,7 @@ use core::slice;
 use std::{array, iter::Copied};
 
 pub fn boolean_from_test_result<'a>(
-  analyzer: &Analyzer<'a>,
+  analyzer: &mut Analyzer<'a>,
   result: Option<bool>,
   dep: impl ConsumableTrait<'a> + 'a,
 ) -> Entity<'a> {

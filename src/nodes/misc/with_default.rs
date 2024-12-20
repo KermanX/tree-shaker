@@ -7,7 +7,7 @@ impl<'a> Analyzer<'a> {
     default: &'a Expression<'a>,
     value: Entity<'a>,
   ) -> (bool, Entity<'a>) {
-    let is_undefined = value.test_is_undefined();
+    let is_undefined = value.test_is_undefined(self);
 
     self.push_dependent_cf_scope(value.to_consumable());
     let binding_val = match is_undefined {

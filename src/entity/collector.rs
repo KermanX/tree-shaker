@@ -16,7 +16,11 @@ pub struct LiteralCollector<'a> {
 }
 
 impl<'a> LiteralCollector<'a> {
-  fn try_collect(&self, analyzer: &Analyzer<'a>, entity: Entity<'a>) -> Option<LiteralEntity<'a>> {
+  fn try_collect(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    entity: Entity<'a>,
+  ) -> Option<LiteralEntity<'a>> {
     if let Some(lit) = entity.get_literal(analyzer) {
       lit.can_build_expr(analyzer).then_some(lit)
     } else {
@@ -24,7 +28,7 @@ impl<'a> LiteralCollector<'a> {
     }
   }
 
-  pub fn collect(&mut self, analyzer: &Analyzer<'a>, entity: Entity<'a>) -> Entity<'a> {
+  pub fn collect(&mut self, analyzer: &mut Analyzer<'a>, entity: Entity<'a>) -> Entity<'a> {
     if self.invalid {
       entity
     } else if let Some(literal) = self.try_collect(analyzer, entity) {
@@ -50,7 +54,7 @@ impl<'a> LiteralCollector<'a> {
   pub fn get_entity_on_invalid(
     &mut self,
     entity: Entity<'a>,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
   ) -> Entity<'a> {
     if self.collected.is_empty() {
       entity

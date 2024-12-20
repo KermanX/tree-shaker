@@ -15,17 +15,17 @@ impl<'a> Analyzer<'a> {
       let (left, cache) = self.exec_assignment_target_read(&node.left);
 
       let (maybe_left, maybe_right) = match &node.operator {
-        AssignmentOperator::LogicalAnd => match left.test_truthy() {
+        AssignmentOperator::LogicalAnd => match left.test_truthy(self) {
           Some(true) => (false, true),
           Some(false) => (true, false),
           None => (true, true),
         },
-        AssignmentOperator::LogicalOr => match left.test_truthy() {
+        AssignmentOperator::LogicalOr => match left.test_truthy(self) {
           Some(true) => (true, false),
           Some(false) => (false, true),
           None => (true, true),
         },
-        AssignmentOperator::LogicalNullish => match left.test_nullish() {
+        AssignmentOperator::LogicalNullish => match left.test_nullish(self) {
           Some(true) => (false, true),
           Some(false) => (true, false),
           None => (true, true),
@@ -62,7 +62,7 @@ impl<'a> Analyzer<'a> {
         (true, true) => {
           let left = forward_left(self);
           let right = exec_right(self);
-          self.factory.logical_result(left, right, to_logical_operator(node.operator))
+          self.logical_result(left, right, to_logical_operator(node.operator))
         }
         (false, false) => {
           unreachable!("Logical assignment expression should have at least one side")
