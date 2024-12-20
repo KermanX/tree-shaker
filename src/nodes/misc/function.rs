@@ -102,6 +102,8 @@ impl<'a> Transformer<'a> {
     if need_val || self.is_referred(AstKind2::Function(&node)) {
       let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
 
+      let old_declaration_only = self.declaration_only.replace(false);
+
       let params = self.transform_formal_parameters(params);
 
       let body =
@@ -111,6 +113,8 @@ impl<'a> Transformer<'a> {
         let symbol = id.symbol_id.get().unwrap();
         self.update_var_decl_state(symbol, true);
       }
+
+      self.declaration_only.set(old_declaration_only);
 
       Some(self.ast_builder.alloc_function(
         *r#type,

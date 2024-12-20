@@ -2,10 +2,12 @@
 
 \[WIP\] This is an experimental tree shaker for JS based on [Oxc](https://oxc.rs).
 
-> If this project goes well, I personally hope it can become part of the Oxc or the Rolldown project.
-
 - **Try it online**: https://kermanx.github.io/tree-shaker/
 - **Test262 Result**: Goto [commits](https://github.com/KermanX/tree-shaker/commits/main/) and view the latest comment
+
+> [!NOTE]
+> 
+> I am currently busy with my schoolwork, so the development of this project will be slow in few months. I promise this project won't be abandoned.
 
 ## Features
 
