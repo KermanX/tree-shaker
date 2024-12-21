@@ -89,7 +89,12 @@ impl<'a> Transformer<'a> {
         *span,
         body.unwrap_or_else(|| self.ast_builder.statement_empty(body_span)),
         if !data.need_test {
-          self.ast_builder.expression_numeric_literal(test.span(), 0.0, "0", NumberBase::Decimal)
+          self.ast_builder.expression_numeric_literal(
+            test.span(),
+            0.0,
+            Some("0".into()),
+            NumberBase::Decimal,
+          )
         } else if data.need_loop {
           self.transform_expression(test, true).unwrap()
         } else {

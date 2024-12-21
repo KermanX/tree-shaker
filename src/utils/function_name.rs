@@ -5,7 +5,7 @@ use oxc::{
 };
 
 impl<'a> Analyzer<'a> {
-  /// Not that this is for flamegraph only. May not conform to the standard.
+  /// Note: this is for flamegraph only. May not conform to the standard.
   pub fn resolve_function_name(&self, scope_id: ScopeId) -> Option<&'a str> {
     let node_id = self.semantic.scopes().get_node_id(scope_id);
     let parent = self.semantic.nodes().parent_kind(node_id)?;

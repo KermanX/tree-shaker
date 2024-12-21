@@ -71,7 +71,7 @@ impl<'a> Transformer<'a> {
           &self.ast_builder,
           *span,
           pending_effects;
-          self.ast_builder.expression_string_literal(*span, transformed_quasis.first().unwrap().clone())
+          self.ast_builder.expression_string_literal(*span, transformed_quasis.first().unwrap().clone(), None)
         ))
       } else {
         assert!(pending_effects.is_empty());

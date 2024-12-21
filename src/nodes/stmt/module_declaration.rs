@@ -127,7 +127,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<ModuleDeclaration<'a>> {
     match node {
       ModuleDeclaration::ImportDeclaration(node) => {
-        let ImportDeclaration { span, specifiers, source, with_clause, import_kind, .. } =
+        let ImportDeclaration { span, specifiers, source, with_clause, import_kind, phase, .. } =
           node.as_ref();
         if let Some(specifiers) = specifiers {
           let mut transformed_specifiers = self.ast_builder.vec();
@@ -173,6 +173,7 @@ impl<'a> Transformer<'a> {
               *span,
               Some(transformed_specifiers),
               source.clone(),
+              *phase,
               self.clone_node(with_clause),
               *import_kind,
             ))
@@ -182,6 +183,7 @@ impl<'a> Transformer<'a> {
             *span,
             None,
             source.clone(),
+            *phase,
             self.clone_node(with_clause),
             *import_kind,
           ))

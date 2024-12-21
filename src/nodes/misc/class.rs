@@ -242,8 +242,8 @@ impl<'a> Transformer<'a> {
             element.property_key().and_then(|key| self.transform_property_key(key, false))
           {
             transformed_body.push(self.ast_builder.class_element_property_definition(
-              PropertyDefinitionType::PropertyDefinition,
               element.span(),
+              PropertyDefinitionType::PropertyDefinition,
               self.ast_builder.vec(),
               key,
               None,
@@ -264,8 +264,8 @@ impl<'a> Transformer<'a> {
       };
 
       Some(self.ast_builder.alloc_class(
-        *r#type,
         *span,
+        *r#type,
         self.ast_builder.vec(),
         id,
         NONE,
@@ -321,8 +321,8 @@ impl<'a> Transformer<'a> {
       } else {
         Some(
           self.ast_builder.alloc_class(
-            *r#type,
             *span,
+            *r#type,
             self.ast_builder.vec(),
             (node.r#type == ClassType::ClassDeclaration)
               .then(|| self.build_unused_binding_identifier(id.as_ref().unwrap().span)),

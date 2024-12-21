@@ -40,8 +40,12 @@ impl<'a> Transformer<'a> {
             UpdateOperator::Increment => BinaryOperator::Addition,
             UpdateOperator::Decrement => BinaryOperator::Subtraction,
           };
-          let rhs =
-            self.ast_builder.expression_numeric_literal(SPAN, 1f64, "1", NumberBase::Decimal);
+          let rhs = self.ast_builder.expression_numeric_literal(
+            SPAN,
+            1f64,
+            Some("1".into()),
+            NumberBase::Decimal,
+          );
           self.ast_builder.expression_binary(*span, argument, operator, rhs)
         } else {
           self.ast_builder.expression_unary(*span, UnaryOperator::UnaryPlus, argument)

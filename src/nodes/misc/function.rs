@@ -117,8 +117,8 @@ impl<'a> Transformer<'a> {
       self.declaration_only.set(old_declaration_only);
 
       Some(self.ast_builder.alloc_function(
-        *r#type,
         *span,
+        *r#type,
         id.clone(),
         *generator,
         *r#async,

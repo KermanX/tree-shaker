@@ -17,7 +17,7 @@ use oxc::{
     AstBuilder,
   },
   semantic::SymbolId,
-  span::{Span, SPAN},
+  span::{Atom, Span, SPAN},
 };
 use rustc_hash::FxHashSet;
 use std::hash::{Hash, Hasher};
@@ -349,14 +349,13 @@ impl<'a> Hash for LiteralEntity<'a> {
 impl<'a> LiteralEntity<'a> {
   pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Expression<'a> {
     match self {
-      LiteralEntity::String(value, _) => ast_builder.expression_string_literal(span, *value),
+      LiteralEntity::String(value, _) => ast_builder.expression_string_literal(span, *value, None),
       LiteralEntity::Number(value, raw) => {
-        let raw = raw.unwrap_or_else(|| ast_builder.allocator.alloc(value.0.to_string()));
-        let negated = raw.chars().nth(0).unwrap() == '-';
+        let negated = value.0.is_sign_negative();
         let absolute = ast_builder.expression_numeric_literal(
           span,
           value.0.abs(),
-          if negated { &raw[1..] } else { raw },
+          raw.map(Atom::from),
           NumberBase::Decimal,
         );
         if negated {
@@ -386,7 +385,7 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::Undefined => ast_builder.expression_unary(
         span,
         UnaryOperator::Void,
-        ast_builder.expression_numeric_literal(SPAN, 0.0, "0", NumberBase::Decimal),
+        ast_builder.expression_numeric_literal(SPAN, 0.0, Some("0".into()), NumberBase::Decimal),
       ),
     }
   }
