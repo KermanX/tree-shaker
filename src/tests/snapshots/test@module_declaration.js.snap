@@ -1,11 +1,9 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/module_declaration.js
 ---
-import { foo } from "source" with {
-type: "json",};
+import { foo } from "source" with { type: "json" };
 import "side-effect-only";
 import de from "default-export";
 export * as t from "export-all";
