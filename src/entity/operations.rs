@@ -51,18 +51,22 @@ impl<'a> EntityOpHost<'a> {
     let rhs_lit = rhs.get_to_literals(analyzer);
     if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit) {
       if lhs_lit.len() == 1 && rhs_lit.len() == 1 {
-        let lhs_lit = lhs_lit.iter().next().unwrap();
-        let rhs_lit = rhs_lit.iter().next().unwrap();
+        let lhs_lit = *lhs_lit.iter().next().unwrap();
+        let rhs_lit = *rhs_lit.iter().next().unwrap();
 
         // 0.0 === -0.0
         if let (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) = (lhs_lit, rhs_lit) {
-          if *l == 0.0.into() || *l == (-0.0).into() {
-            return Some(*r == 0.0.into() || *r == (-0.0).into());
+          if l == 0.0.into() || l == (-0.0).into() {
+            return Some(r == 0.0.into() || r == (-0.0).into());
           }
           return Some(l == r);
         }
 
-        return Some(lhs_lit == rhs_lit && *lhs_lit != LiteralEntity::NaN);
+        if let (LiteralEntity::String(l, _), LiteralEntity::String(r, _)) = (lhs_lit, rhs_lit) {
+          return Some(l == r);
+        }
+
+        return Some(lhs_lit == rhs_lit && lhs_lit != LiteralEntity::NaN);
       }
 
       if lhs_lit.iter().all(|lit| !rhs_lit.contains(lit)) {
