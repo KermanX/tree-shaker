@@ -3,6 +3,7 @@ mod builtins;
 mod config;
 mod consumable;
 mod entity;
+mod mangling;
 mod nodes;
 mod scope;
 mod transformer;

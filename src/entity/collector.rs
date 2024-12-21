@@ -1,5 +1,5 @@
 use super::{Entity, LiteralEntity};
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, mangling::MangleAtom};
 use oxc::{
   ast::{ast::Expression, AstBuilder},
   span::Span,
@@ -13,6 +13,7 @@ pub struct LiteralCollector<'a> {
   /// Collected literal entities
   collected: Vec<Entity<'a>>,
   invalid: bool,
+  mangle_atom: Option<MangleAtom>,
 }
 
 impl<'a> LiteralCollector<'a> {
@@ -24,39 +25,48 @@ impl<'a> LiteralCollector<'a> {
     }
   }
 
-  pub fn collect(&mut self, analyzer: &Analyzer<'a>, entity: Entity<'a>) -> Entity<'a> {
+  pub fn collect(&mut self, analyzer: &mut Analyzer<'a>, entity: Entity<'a>) -> Entity<'a> {
     if self.invalid {
       entity
     } else if let Some(literal) = self.try_collect(analyzer, entity) {
-      if let Some(collected) = &self.literal {
-        if collected != &literal {
-          self.invalid = true;
-          self.get_entity_on_invalid(entity, analyzer)
+      if let Some(collected) = self.literal {
+        if collected == literal {
+          self.on_collectable(analyzer, entity, literal)
         } else {
-          self.collected.push(entity);
-          analyzer.factory.entity(literal)
+          self.on_invalid(analyzer, entity)
         }
       } else {
         self.literal = Some(literal);
-        self.collected.push(entity);
-        analyzer.factory.entity(literal)
+        self.on_collectable(analyzer, entity, literal)
       }
     } else {
-      self.invalid = true;
-      self.get_entity_on_invalid(entity, analyzer)
+      self.on_invalid(analyzer, entity)
     }
   }
 
-  pub fn get_entity_on_invalid(
-    &mut self,
-    entity: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-  ) -> Entity<'a> {
+  fn on_invalid(&mut self, analyzer: &mut Analyzer<'a>, entity: Entity<'a>) -> Entity<'a> {
+    self.invalid = true;
     if self.collected.is_empty() {
       entity
     } else {
-      analyzer.factory.collected(entity, Rc::new(RefCell::new(mem::take(&mut self.collected))))
+      let val =
+        analyzer.factory.collected(entity, Rc::new(RefCell::new(mem::take(&mut self.collected))));
+      if let Some(mangle_atom) = mem::take(&mut self.mangle_atom) {
+        analyzer.factory.computed(val, mangle_atom)
+      } else {
+        val
+      }
     }
+  }
+
+  fn on_collectable(
+    &mut self,
+    analyzer: &mut Analyzer<'a>,
+    entity: Entity<'a>,
+    literal: LiteralEntity<'a>,
+  ) -> Entity<'a> {
+    self.collected.push(entity);
+    literal.with_mangle_atom(analyzer, &mut self.mangle_atom)
   }
 
   pub fn collected(&self) -> Option<LiteralEntity<'a>> {

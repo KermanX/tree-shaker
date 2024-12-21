@@ -7,6 +7,7 @@ use crate::{
   analyzer::Analyzer,
   builtins::Prototype,
   consumable::{box_consumable, Consumable},
+  mangling::{MangleAtom, MangleConstraint},
   utils::F64WithEq,
 };
 use oxc::{
@@ -23,7 +24,7 @@ use std::hash::{Hash, Hasher};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum LiteralEntity<'a> {
-  String(&'a str),
+  String(&'a str, Option<MangleAtom>),
   Number(F64WithEq, Option<&'a str>),
   BigInt(&'a str),
   Boolean(bool),
@@ -35,7 +36,11 @@ pub enum LiteralEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
-  fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    if let LiteralEntity::String(_, atom) = self {
+      analyzer.consume(*atom);
+    }
+  }
 
   fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
     // No effect
@@ -97,7 +102,8 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
-    if let LiteralEntity::String(value) = self {
+    if let LiteralEntity::String(value, atom) = self {
+      let dep = box_consumable((dep, *atom));
       if value.len() <= analyzer.config.max_simple_string_length {
         (
           value
@@ -173,10 +179,10 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     dep: Consumable<'a>,
   ) -> IteratedElements<'a> {
     match self {
-      LiteralEntity::String(value) => (
+      LiteralEntity::String(value, atom) => (
         vec![],
         (*value != "").then_some(analyzer.factory.unknown_string),
-        box_consumable((rc, dep)),
+        box_consumable((rc, dep, *atom)),
       ),
       _ => {
         self.consume(analyzer);
@@ -211,9 +217,9 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
           analyzer.factory.number(0.0, Some("0"))
         }
       }
-      LiteralEntity::String(str) => {
+      LiteralEntity::String(str, atom) => {
         let str = str.trim();
-        if str.is_empty() {
+        let val = if str.is_empty() {
           analyzer.factory.number(0.0, Some("0"))
         } else {
           if let Ok(value) = str.parse::<f64>() {
@@ -221,7 +227,8 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
           } else {
             analyzer.factory.nan
           }
-        }
+        };
+        analyzer.factory.computed(val, *atom)
       }
       LiteralEntity::Null => analyzer.factory.number(0.0, Some("0")),
       LiteralEntity::Symbol(_, _) => {
@@ -270,7 +277,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn test_typeof(&self) -> TypeofResult {
     match self {
-      LiteralEntity::String(_) => TypeofResult::String,
+      LiteralEntity::String(_, _) => TypeofResult::String,
       LiteralEntity::Number(_, _) => TypeofResult::Number,
       LiteralEntity::BigInt(_) => TypeofResult::BigInt,
       LiteralEntity::Boolean(_) => TypeofResult::Boolean,
@@ -284,7 +291,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn test_truthy(&self) -> Option<bool> {
     Some(match self {
-      LiteralEntity::String(value) => !value.is_empty(),
+      LiteralEntity::String(value, _) => !value.is_empty(),
       LiteralEntity::Number(value, _) => *value != 0.0.into() && *value != (-0.0).into(),
       LiteralEntity::BigInt(value) => !value.chars().all(|c| c == '0'),
       LiteralEntity::Boolean(value) => *value,
@@ -302,7 +309,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 impl<'a> Hash for LiteralEntity<'a> {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
-      LiteralEntity::String(value) => {
+      LiteralEntity::String(value, _) => {
         state.write_u8(0);
         value.hash(state);
       }
@@ -342,7 +349,7 @@ impl<'a> Hash for LiteralEntity<'a> {
 impl<'a> LiteralEntity<'a> {
   pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Expression<'a> {
     match self {
-      LiteralEntity::String(value) => ast_builder.expression_string_literal(span, *value),
+      LiteralEntity::String(value, _) => ast_builder.expression_string_literal(span, *value),
       LiteralEntity::Number(value, raw) => {
         let raw = raw.unwrap_or_else(|| ast_builder.allocator.alloc(value.0.to_string()));
         let negated = raw.chars().nth(0).unwrap() == '-';
@@ -387,7 +394,7 @@ impl<'a> LiteralEntity<'a> {
   pub fn can_build_expr(&self, analyzer: &Analyzer<'a>) -> bool {
     let config = &analyzer.config;
     match self {
-      LiteralEntity::String(value) => value.len() <= config.max_simple_string_length,
+      LiteralEntity::String(value, _) => value.len() <= config.max_simple_string_length,
       LiteralEntity::Number(value, _) => {
         value.0.fract() == 0.0
           && config.min_simple_number_value <= (value.0 as i64)
@@ -405,7 +412,7 @@ impl<'a> LiteralEntity<'a> {
 
   pub fn to_string(&self, allocator: &'a Allocator) -> &'a str {
     match self {
-      LiteralEntity::String(value) => *value,
+      LiteralEntity::String(value, _) => *value,
       LiteralEntity::Number(value, str_rep) => {
         str_rep.unwrap_or_else(|| allocator.alloc(value.0.to_string()))
       }
@@ -440,7 +447,7 @@ impl<'a> LiteralEntity<'a> {
         None
       }
       LiteralEntity::Boolean(value) => Some(Some(if *value { 1.0 } else { 0.0 }.into())),
-      LiteralEntity::String(value) => {
+      LiteralEntity::String(value, _) => {
         let value = value.trim();
         Some(if value.is_empty() {
           Some(0.0.into())
@@ -464,7 +471,7 @@ impl<'a> LiteralEntity<'a> {
 
   fn get_prototype<'b>(&self, analyzer: &mut Analyzer<'a>) -> &'a Prototype<'a> {
     match self {
-      LiteralEntity::String(_) => &analyzer.builtins.prototypes.string,
+      LiteralEntity::String(_, _) => &analyzer.builtins.prototypes.string,
       LiteralEntity::Number(_, _) => &analyzer.builtins.prototypes.number,
       LiteralEntity::BigInt(_) => &analyzer.builtins.prototypes.bigint,
       LiteralEntity::Boolean(_) => &analyzer.builtins.prototypes.boolean,
@@ -483,8 +490,8 @@ impl<'a> LiteralEntity<'a> {
     key: LiteralEntity<'a>,
   ) -> Option<Entity<'a>> {
     match self {
-      LiteralEntity::String(value) => {
-        let LiteralEntity::String(key) = key else { return None };
+      LiteralEntity::String(value, atom_self) => {
+        let LiteralEntity::String(key, atom_key) = key else { return None };
         if key == "length" {
           Some(analyzer.factory.number(value.len() as f64, None))
         } else if let Some(index) = key.parse::<usize>().ok() {
@@ -496,15 +503,39 @@ impl<'a> LiteralEntity<'a> {
         } else {
           None
         }
+        .map(|val| analyzer.factory.computed(val, (*atom_self, atom_key)))
       }
       _ => None,
+    }
+  }
+
+  pub fn with_mangle_atom(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    existing_atom: &mut Option<MangleAtom>,
+  ) -> Entity<'a> {
+    match self {
+      LiteralEntity::String(value, None) => {
+        let atom = existing_atom.get_or_insert_with(MangleAtom::new);
+        analyzer.factory.entity(LiteralEntity::String(value, Some(*atom)))
+      }
+      LiteralEntity::String(_, Some(atom)) => {
+        let val = analyzer.factory.entity(*self);
+        if let Some(existing_atom) = existing_atom {
+          analyzer.factory.computed(val, MangleConstraint::Equality(*atom, *existing_atom))
+        } else {
+          *existing_atom = Some(*atom);
+          val
+        }
+      }
+      _ => analyzer.factory.entity(*self),
     }
   }
 }
 
 impl<'a> EntityFactory<'a> {
   pub fn string(&self, value: &'a str) -> Entity<'a> {
-    self.entity(LiteralEntity::String(value))
+    self.entity(LiteralEntity::String(value, None))
   }
 
   pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {

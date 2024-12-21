@@ -65,7 +65,9 @@ impl<'a> Transformer<'a> {
       *span,
       if let Some(literal) = data.collector.build_expr(&self.ast_builder, *span) {
         let effect = self.transform_jsx_expression_container_effect_only(node);
-        if effect.is_none() && data.collector.collected().unwrap() == LiteralEntity::String("") {
+        if effect.is_none()
+          && matches!(data.collector.collected().unwrap(), LiteralEntity::String("", _))
+        {
           self.ast_builder.jsx_expression_jsx_empty_expression(expression.span())
         } else {
           JSXExpression::from(build_effect!(self.ast_builder, expression.span(), effect; literal))

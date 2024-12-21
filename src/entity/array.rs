@@ -91,13 +91,13 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       let mut undefined_added = false;
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key) => {
+          LiteralEntity::String(key, _) => {
             if let Some(index) = key.parse::<usize>().ok() {
               if let Some(element) = self.elements.borrow().get(index) {
-                result.push(element.clone());
+                result.push(*element);
               } else if !rest_added {
                 rest_added = true;
-                result.extend(self.rest.borrow().iter().cloned());
+                result.extend(self.rest.borrow().iter().copied());
                 if !undefined_added {
                   undefined_added = true;
                   result.push(analyzer.factory.undefined);
@@ -174,7 +174,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       let mut rest_added = false;
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key_str) => {
+          LiteralEntity::String(key_str, _) => {
             if let Some(index) = key_str.parse::<usize>().ok() {
               has_effect = true;
               if let Some(element) = self.elements.borrow_mut().get_mut(index) {

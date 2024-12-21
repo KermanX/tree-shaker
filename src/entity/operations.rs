@@ -4,7 +4,6 @@ use oxc::{
   allocator::Allocator,
   ast::ast::{BinaryOperator, UpdateOperator},
 };
-use std::cell::RefCell;
 
 pub struct EntityOpHost<'a> {
   allocator: &'a Allocator,
@@ -95,12 +94,12 @@ impl<'a> EntityOpHost<'a> {
         (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) => {
           Some(if eq { l.0 <= r.0 } else { l.0 < r.0 })
         }
-        (LiteralEntity::String(l), LiteralEntity::String(r)) => {
+        (LiteralEntity::String(l, _), LiteralEntity::String(r, _)) => {
           Some(if eq { l <= r } else { l < r })
         }
         (LiteralEntity::BigInt(_), LiteralEntity::BigInt(_))
-        | (LiteralEntity::BigInt(_), LiteralEntity::String(_))
-        | (LiteralEntity::String(_), LiteralEntity::BigInt(_)) => None,
+        | (LiteralEntity::BigInt(_), LiteralEntity::String(_, _))
+        | (LiteralEntity::String(_, _), LiteralEntity::BigInt(_)) => None,
         (lhs, rhs) => {
           let lhs = lhs.to_number();
           let rhs = rhs.to_number();
@@ -210,7 +209,7 @@ impl<'a> EntityOpHost<'a> {
       let rhs_str_lit = rhs_str.get_literal(analyzer);
 
       match (lhs_str_lit, rhs_str_lit) {
-        (Some(LiteralEntity::String(l)), Some(LiteralEntity::String(r))) => {
+        (Some(LiteralEntity::String(l, _)), Some(LiteralEntity::String(r, _))) => {
           let val = l.to_string() + r;
           values.push(analyzer.factory.string(self.allocator.alloc(val)));
         }
@@ -263,12 +262,12 @@ impl<'a> EntityOpHost<'a> {
     };
 
     if let Some(num) = input.get_literal(analyzer).and_then(|lit| lit.to_number()) {
-      return analyzer.factory.collected(
+      return analyzer.factory.computed(
         match num {
           Some(num) => apply_update(num.0),
           None => analyzer.factory.nan,
         },
-        RefCell::new(vec![input.clone()]),
+        input,
       );
     }
 

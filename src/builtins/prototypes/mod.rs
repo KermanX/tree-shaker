@@ -60,7 +60,7 @@ impl<'a> Prototype<'a> {
 
   pub fn get_literal_keyed(&self, key: LiteralEntity) -> Option<Entity<'a>> {
     match key {
-      LiteralEntity::String(key) => self.get_string_keyed(key),
+      LiteralEntity::String(key, _) => self.get_string_keyed(key),
       LiteralEntity::Symbol(key, _) => self.get_symbol_keyed(key),
       _ => unreachable!("Invalid property key"),
     }

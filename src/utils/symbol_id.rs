@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn parse_internal_symbol_id<T: Idx>(&self, entity: Entity<'a>) -> Option<T> {
     let literal = entity.get_literal(self)?;
-    let LiteralEntity::String(string) = literal else { return None };
+    let LiteralEntity::String(string, _) = literal else { return None };
     if string.starts_with("__#symbol__") {
       string["__#symbol__".len()..].parse().ok().map(Idx::from_usize)
     } else {

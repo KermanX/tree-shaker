@@ -3,6 +3,7 @@ use crate::{
   builtins::Builtins,
   dep::{DepId, ReferredDeps},
   entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
+  mangling::Mangler,
   scope::{
     conditional::ConditionalDataMap, exhaustive::ExhaustiveCallback, r#loop::LoopDataMap,
     ScopeContext,
@@ -33,6 +34,7 @@ pub struct Analyzer<'a> {
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   pub loop_data: LoopDataMap<'a>,
+  pub mangler: Mangler,
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
   pub scope_context: ScopeContext<'a>,
@@ -62,6 +64,7 @@ impl<'a> Analyzer<'a> {
       referred_deps: Default::default(),
       conditional_data: Default::default(),
       loop_data: Default::default(),
+      mangler: Mangler::new(),
       named_exports: Vec::new(),
       default_export: None,
       scope_context: ScopeContext::new(&factory),

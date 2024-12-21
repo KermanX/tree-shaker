@@ -196,7 +196,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       let mut string_keyed = self.string_keyed.borrow_mut();
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key) => {
+          LiteralEntity::String(key, atom) => {
             if let Some(property) = string_keyed.get_mut(key) {
               property.get(analyzer, &mut values, &mut getters, &mut non_existent);
             } else {
@@ -307,7 +307,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       let mut rest = self.rest.borrow_mut();
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key) => {
+          LiteralEntity::String(key, atom) => {
             if let Some(property) = string_keyed.get_mut(key) {
               property.set(indeterminate, value, &mut setters);
             } else if let Some(rest) = &mut *rest {
@@ -446,7 +446,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       let mut string_keyed = self.string_keyed.borrow_mut();
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key) => {
+          LiteralEntity::String(key, atom) => {
             if let Some(property) = string_keyed.get_mut(key) {
               property.delete(indeterminate, dep.cloned());
             }
@@ -590,7 +590,7 @@ impl<'a> ObjectEntity<'a> {
       let definite = definite && key_literals.len() == 1;
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key) => {
+          LiteralEntity::String(key, atom) => {
             let mut string_keyed = self.string_keyed.borrow_mut();
             let existing = string_keyed.get_mut(key);
             let reused_property = definite
