@@ -1,9 +1,6 @@
 use super::{Entity, LiteralEntity};
-use crate::{analyzer::Analyzer, mangling::MangleAtom};
-use oxc::{
-  ast::{ast::Expression, AstBuilder},
-  span::Span,
-};
+use crate::{analyzer::Analyzer, mangling::MangleAtom, transformer::Transformer};
+use oxc::{ast::ast::Expression, span::Span};
 use std::{cell::RefCell, mem, rc::Rc};
 
 #[derive(Debug, Default)]
@@ -51,11 +48,11 @@ impl<'a> LiteralCollector<'a> {
     } else {
       let val =
         analyzer.factory.collected(entity, Rc::new(RefCell::new(mem::take(&mut self.collected))));
-      if let Some(mangle_atom) = mem::take(&mut self.mangle_atom) {
-        analyzer.factory.computed(val, mangle_atom)
-      } else {
-        val
-      }
+      // if let Some(mangle_atom) = mem::take(&mut self.mangle_atom) {
+      //   analyzer.factory.computed(val, mangle_atom)
+      // } else {
+      val
+      // }
     }
   }
 
@@ -77,11 +74,11 @@ impl<'a> LiteralCollector<'a> {
     }
   }
 
-  pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Option<Expression<'a>> {
+  pub fn build_expr(&self, transformer: &Transformer<'a>, span: Span) -> Option<Expression<'a>> {
     if self.invalid {
       None
     } else {
-      self.literal.as_ref().map(|literal| literal.build_expr(ast_builder, span))
+      self.literal.as_ref().map(|literal| literal.build_expr(transformer, span, self.mangle_atom))
     }
   }
 }

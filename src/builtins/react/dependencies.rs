@@ -48,7 +48,7 @@ pub fn check_dependencies<'a>(
     for (index, element) in elements.iter().enumerate() {
       match previous.get(index) {
         Some(Some(old)) => {
-          if analyzer.entity_op.strict_eq(analyzer, *element, *old) != Some(true) {
+          if analyzer.entity_op.strict_eq(analyzer, *element, *old).0 != Some(true) {
             changed.push(index);
             require_rerun = true;
           }

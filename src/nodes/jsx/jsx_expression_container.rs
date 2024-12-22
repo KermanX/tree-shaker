@@ -63,7 +63,7 @@ impl<'a> Transformer<'a> {
 
     self.ast_builder.alloc_jsx_expression_container(
       *span,
-      if let Some(literal) = data.collector.build_expr(&self.ast_builder, *span) {
+      if let Some(literal) = data.collector.build_expr(self, *span) {
         let effect = self.transform_jsx_expression_container_effect_only(node);
         if effect.is_none()
           && matches!(data.collector.collected().unwrap(), LiteralEntity::String("", _))

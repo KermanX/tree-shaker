@@ -7,9 +7,13 @@ pub mod effect_builder;
 mod escape_template_element_value;
 mod f64_with_eq;
 mod function_name;
+mod get_mangled_name;
+mod get_two_mut;
 mod private_identifier_name;
 mod symbol_id;
 
 pub use callee_info::*;
 pub use data::*;
 pub use f64_with_eq::*;
+pub use get_mangled_name::*;
+pub use get_two_mut::*;

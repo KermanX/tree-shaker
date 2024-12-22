@@ -4,30 +4,29 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableTrait},
+  consumable::{box_consumable, Consumable},
+  mangling::MangleConstraint,
   use_consumed_flag,
 };
 use rustc_hash::FxHashSet;
 use std::cell::Cell;
 
 #[derive(Debug)]
-pub struct ComputedEntity<'a, T: ConsumableTrait<'a> + 'a> {
+pub struct MangableEntity<'a> {
   val: Entity<'a>,
-  dep: T,
+  deps: (Entity<'a>, Entity<'a>),
+  constraint: MangleConstraint,
   consumed: Cell<bool>,
 }
 
-impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> {
+impl<'a> EntityTrait<'a> for MangableEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    self.val.consume(analyzer);
-    self.dep.consume(analyzer);
-  }
-
-  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) {
-    self.val.consume_mangable(analyzer);
-    self.dep.consume(analyzer);
+    analyzer.consume(self.val);
+    self.deps.0.consume_mangable(analyzer);
+    self.deps.1.consume_mangable(analyzer);
+    analyzer.consume(self.constraint);
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
@@ -160,22 +159,27 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
   }
 }
 
-impl<'a, T: ConsumableTrait<'a> + 'a> ComputedEntity<'a, T> {
+impl<'a> MangableEntity<'a> {
   pub fn forward_dep(&self, dep: Consumable<'a>) -> Consumable<'a> {
     if self.consumed.get() {
       dep
     } else {
-      box_consumable((self.dep.cloned(), dep))
+      box_consumable((self.deps, self.constraint, dep))
     }
   }
 
   pub fn forward_value(&self, val: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.computed(val, self.dep.cloned())
+    analyzer.factory.mangable(val, self.deps, self.constraint)
   }
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn computed<T: ConsumableTrait<'a> + 'a>(&self, val: Entity<'a>, dep: T) -> Entity<'a> {
-    self.entity(ComputedEntity { val, dep, consumed: Cell::new(false) })
+  pub fn mangable(
+    &self,
+    val: Entity<'a>,
+    deps: (Entity<'a>, Entity<'a>),
+    constraint: MangleConstraint,
+  ) -> Entity<'a> {
+    self.entity(MangableEntity { val, deps, constraint, consumed: Cell::new(false) })
   }
 }

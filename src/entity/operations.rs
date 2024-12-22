@@ -1,5 +1,5 @@
-use super::{utils::boolean_from_test_result, Entity, LiteralEntity, TypeofResult};
-use crate::{analyzer::Analyzer, consumable::box_consumable};
+use super::{Entity, LiteralEntity, TypeofResult};
+use crate::{analyzer::Analyzer, consumable::box_consumable, mangling::MangleConstraint};
 use oxc::{
   allocator::Allocator,
   ast::ast::{BinaryOperator, UpdateOperator},
@@ -14,20 +14,31 @@ impl<'a> EntityOpHost<'a> {
     Self { allocator }
   }
 
-  pub fn eq(&self, analyzer: &Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Option<bool> {
-    if self.strict_eq(analyzer, lhs, rhs) == Some(true) {
-      return Some(true);
+  pub fn eq(
+    &self,
+    analyzer: &Analyzer<'a>,
+    lhs: Entity<'a>,
+    rhs: Entity<'a>,
+  ) -> (Option<bool>, Option<MangleConstraint>) {
+    if let (Some(true), m) = self.strict_eq(analyzer, lhs, rhs) {
+      return (Some(true), m);
     }
 
     if lhs.test_nullish() == Some(true) && rhs.test_nullish() == Some(true) {
-      return Some(true);
+      return (Some(true), None);
     }
 
-    None
+    (None, None)
   }
 
-  pub fn neq(&self, analyzer: &Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Option<bool> {
-    self.eq(analyzer, lhs, rhs).map(|v| !v)
+  pub fn neq(
+    &self,
+    analyzer: &Analyzer<'a>,
+    lhs: Entity<'a>,
+    rhs: Entity<'a>,
+  ) -> (Option<bool>, Option<MangleConstraint>) {
+    let (eq, m) = self.eq(analyzer, lhs, rhs);
+    (eq.map(|v| !v), m.map(MangleConstraint::negate))
   }
 
   pub fn strict_eq(
@@ -35,7 +46,7 @@ impl<'a> EntityOpHost<'a> {
     analyzer: &Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
-  ) -> Option<bool> {
+  ) -> (Option<bool>, Option<MangleConstraint>) {
     // TODO: Find another way to do this
     // if Entity::ptr_eq(lhs, rhs) {
     //   return Some(true);
@@ -44,7 +55,7 @@ impl<'a> EntityOpHost<'a> {
     let lhs_t = lhs.test_typeof();
     let rhs_t = rhs.test_typeof();
     if lhs_t & rhs_t == TypeofResult::_None {
-      return Some(false);
+      return (Some(false), None);
     }
 
     let lhs_lit = lhs.get_to_literals(analyzer);
@@ -53,28 +64,15 @@ impl<'a> EntityOpHost<'a> {
       if lhs_lit.len() == 1 && rhs_lit.len() == 1 {
         let lhs_lit = *lhs_lit.iter().next().unwrap();
         let rhs_lit = *rhs_lit.iter().next().unwrap();
-
-        // 0.0 === -0.0
-        if let (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) = (lhs_lit, rhs_lit) {
-          if l == 0.0.into() || l == (-0.0).into() {
-            return Some(r == 0.0.into() || r == (-0.0).into());
-          }
-          return Some(l == r);
-        }
-
-        if let (LiteralEntity::String(l, _), LiteralEntity::String(r, _)) = (lhs_lit, rhs_lit) {
-          return Some(l == r);
-        }
-
-        return Some(lhs_lit == rhs_lit && lhs_lit != LiteralEntity::NaN);
+        return lhs_lit.strict_eq(rhs_lit);
       }
 
       if lhs_lit.iter().all(|lit| !rhs_lit.contains(lit)) {
-        return Some(false);
+        return (Some(false), None);
       }
     }
 
-    None
+    (None, None)
   }
 
   pub fn strict_neq(
@@ -82,8 +80,9 @@ impl<'a> EntityOpHost<'a> {
     analyzer: &Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
-  ) -> Option<bool> {
-    self.strict_eq(analyzer, lhs, rhs).map(|v| !v)
+  ) -> (Option<bool>, Option<MangleConstraint>) {
+    let (eq, m) = self.strict_eq(analyzer, lhs, rhs);
+    (eq.map(|v| !v), m.map(MangleConstraint::negate))
   }
 
   pub fn lt(
@@ -299,13 +298,27 @@ impl<'a> EntityOpHost<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> Entity<'a> {
-    let to_result = |result: Option<bool>| boolean_from_test_result(analyzer, result, (lhs, rhs));
+    let to_result = |result: Option<bool>| {
+      analyzer.factory.computed(analyzer.factory.boolean_maybe_unknown(result), (lhs, rhs))
+    };
+
+    let to_eq_result = |(equality, mangle_constraint): (Option<bool>, Option<MangleConstraint>)| {
+      if let Some(mangle_constraint) = mangle_constraint {
+        analyzer.factory.mangable(
+          analyzer.factory.boolean_maybe_unknown(equality),
+          (lhs, rhs),
+          mangle_constraint,
+        )
+      } else {
+        to_result(equality)
+      }
+    };
 
     match operator {
-      BinaryOperator::Equality => to_result(self.eq(analyzer, lhs, rhs)),
-      BinaryOperator::Inequality => to_result(self.neq(analyzer, lhs, rhs)),
-      BinaryOperator::StrictEquality => to_result(self.strict_eq(analyzer, lhs, rhs)),
-      BinaryOperator::StrictInequality => to_result(self.strict_neq(analyzer, lhs, rhs)),
+      BinaryOperator::Equality => to_eq_result(self.eq(analyzer, lhs, rhs)),
+      BinaryOperator::Inequality => to_eq_result(self.neq(analyzer, lhs, rhs)),
+      BinaryOperator::StrictEquality => to_eq_result(self.strict_eq(analyzer, lhs, rhs)),
+      BinaryOperator::StrictInequality => to_eq_result(self.strict_neq(analyzer, lhs, rhs)),
       BinaryOperator::LessThan => to_result(self.lt(analyzer, lhs, rhs, false)),
       BinaryOperator::LessEqualThan => to_result(self.lt(analyzer, lhs, rhs, true)),
       BinaryOperator::GreaterThan => to_result(self.gt(analyzer, lhs, rhs, false)),

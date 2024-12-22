@@ -23,8 +23,13 @@ pub struct CollectedEntity<'a> {
 impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
+    self.val.consume(analyzer);
     self.consume_deps(analyzer);
-    self.val.consume(analyzer)
+  }
+
+  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) {
+    self.val.consume_mangable(analyzer);
+    self.consume_deps(analyzer);
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
@@ -172,7 +177,7 @@ impl<'a> CollectedEntity<'a> {
 
   fn consume_deps(&self, analyzer: &mut Analyzer<'a>) {
     for entity in self.deps.take().iter() {
-      entity.consume(analyzer);
+      entity.consume_mangable(analyzer);
     }
   }
 }

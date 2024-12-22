@@ -105,7 +105,7 @@ impl<'a> Transformer<'a> {
     let data = self.get_data::<Data>(AstKind2::Expression(node));
 
     let span = node.span();
-    let literal = need_val.then(|| data.collector.build_expr(&self.ast_builder, span)).flatten();
+    let literal = need_val.then(|| data.collector.build_expr(self, span)).flatten();
     let need_val = need_val && literal.is_none();
 
     let inner = match node {

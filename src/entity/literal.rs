@@ -8,14 +8,12 @@ use crate::{
   builtins::Prototype,
   consumable::{box_consumable, Consumable},
   mangling::{MangleAtom, MangleConstraint},
+  transformer::Transformer,
   utils::F64WithEq,
 };
 use oxc::{
   allocator::Allocator,
-  ast::{
-    ast::{BigintBase, Expression, NumberBase, UnaryOperator},
-    AstBuilder,
-  },
+  ast::ast::{BigintBase, Expression, NumberBase, UnaryOperator},
   semantic::SymbolId,
   span::{Atom, Span, SPAN},
 };
@@ -37,9 +35,13 @@ pub enum LiteralEntity<'a> {
 
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    if let LiteralEntity::String(_, atom) = self {
+    if let LiteralEntity::String(_, Some(atom)) = self {
       analyzer.consume(*atom);
     }
+  }
+
+  fn consume_mangable(&self, _analyzer: &mut Analyzer<'a>) {
+    // No effect
   }
 
   fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
@@ -201,7 +203,10 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.string(self.to_string(analyzer.allocator))
+    analyzer.factory.entity(LiteralEntity::String(
+      self.to_string(analyzer.allocator),
+      if let LiteralEntity::String(_, Some(atom)) = self { Some(*atom) } else { None },
+    ))
   }
 
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -345,9 +350,19 @@ impl<'a> Hash for LiteralEntity<'a> {
 }
 
 impl<'a> LiteralEntity<'a> {
-  pub fn build_expr(&self, ast_builder: &AstBuilder<'a>, span: Span) -> Expression<'a> {
+  pub fn build_expr(
+    &self,
+    transformer: &Transformer<'a>,
+    span: Span,
+    atom: Option<MangleAtom>,
+  ) -> Expression<'a> {
+    let ast_builder = transformer.ast_builder;
     match self {
-      LiteralEntity::String(value, _) => ast_builder.expression_string_literal(span, *value, None),
+      LiteralEntity::String(value, _) => {
+        let mut mangler = transformer.mangler.borrow_mut();
+        let mangled = atom.and_then(|a| mangler.resolve(a)).unwrap_or(value);
+        ast_builder.expression_string_literal(span, mangled, None)
+      }
       LiteralEntity::Number(value, raw) => {
         let negated = value.0.is_sign_negative();
         let absolute = ast_builder.expression_numeric_literal(
@@ -504,6 +519,25 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
+  pub fn strict_eq(self, other: LiteralEntity) -> (Option<bool>, Option<MangleConstraint>) {
+    // 0.0 === -0.0
+    if let (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) = (self, other) {
+      let eq = if l == 0.0.into() || l == (-0.0).into() {
+        r == 0.0.into() || r == (-0.0).into()
+      } else {
+        l == r
+      };
+      return (Some(eq), None);
+    }
+
+    if let (LiteralEntity::String(l, atom_l), LiteralEntity::String(r, atom_r)) = (self, other) {
+      let eq = l == r;
+      return (Some(eq), MangleConstraint::equality(eq, atom_l, atom_r));
+    }
+
+    (Some(self == other && self != LiteralEntity::NaN), None)
+  }
+
   pub fn with_mangle_atom(
     &self,
     analyzer: &mut Analyzer<'a>,
@@ -511,13 +545,13 @@ impl<'a> LiteralEntity<'a> {
   ) -> Entity<'a> {
     match self {
       LiteralEntity::String(value, None) => {
-        let atom = existing_atom.get_or_insert_with(MangleAtom::new);
+        let atom = existing_atom.get_or_insert_with(|| MangleAtom::new(value));
         analyzer.factory.entity(LiteralEntity::String(value, Some(*atom)))
       }
       LiteralEntity::String(_, Some(atom)) => {
         let val = analyzer.factory.entity(*self);
         if let Some(existing_atom) = existing_atom {
-          analyzer.factory.computed(val, MangleConstraint::Equality(*atom, *existing_atom))
+          analyzer.factory.computed(val, MangleConstraint::Eq(*atom, *existing_atom))
         } else {
           *existing_atom = Some(*atom);
           val
@@ -543,6 +577,14 @@ impl<'a> EntityFactory<'a> {
 
   pub fn boolean(&self, value: bool) -> Entity<'a> {
     self.entity(LiteralEntity::Boolean(value))
+  }
+
+  pub fn boolean_maybe_unknown(&self, value: Option<bool>) -> Entity<'a> {
+    if let Some(value) = value {
+      self.boolean(value)
+    } else {
+      self.unknown_boolean
+    }
   }
 
   pub fn infinity(&self, positive: bool) -> Entity<'a> {

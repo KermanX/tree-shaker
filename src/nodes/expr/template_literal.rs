@@ -47,7 +47,7 @@ impl<'a> Transformer<'a> {
               &self.ast_builder,
               expr_span,
               mem::take(&mut pending_effects);
-              literal.build_expr(&self.ast_builder, SPAN)
+              literal.build_expr(self, SPAN, None)
             ));
             transformed_quasis.push(quasi_str);
           } else {
