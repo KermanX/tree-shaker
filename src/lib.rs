@@ -28,7 +28,7 @@ pub struct TreeShakeReturn {
   pub diagnostics: Diagnostics,
 }
 
-pub fn tree_shake<'a>(source_text: String, options: TreeShakeOptions) -> TreeShakeReturn {
+pub fn tree_shake(source_text: String, options: TreeShakeOptions) -> TreeShakeReturn {
   let allocator = Allocator::default();
   let tree_shaker = TreeShaker::new(&allocator, options);
   let (minifier_return, codegen_return) = tree_shaker.tree_shake(source_text);

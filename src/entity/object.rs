@@ -213,8 +213,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         }
       }
 
-      check_rest |= non_existent.len() > 0;
-      may_add_undefined |= non_existent.len() > 0;
+      check_rest |= !non_existent.is_empty();
+      may_add_undefined |= !non_existent.is_empty();
     } else {
       for property in self.string_keyed.borrow_mut().values_mut() {
         property.get(analyzer, &mut values, &mut getters, &mut non_existent);
@@ -238,14 +238,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       }
     }
 
-    let indeterminate_getter = values.len() > 0 || getters.len() > 1 || non_existent.len() > 0;
+    let indeterminate_getter = !values.is_empty() || getters.len() > 1 || !non_existent.is_empty();
 
     {
       let mut unknown_keyed = self.unknown_keyed.borrow_mut();
       unknown_keyed.get(analyzer, &mut values, &mut getters, &mut non_existent);
     }
 
-    if getters.len() > 0 {
+    if !getters.is_empty() {
       if indeterminate_getter {
         analyzer.push_indeterminate_cf_scope();
       }
@@ -293,7 +293,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       for possible_value in &unknown_keyed.possible_values {
         if let ObjectPropertyValue::Property(_, setter) = possible_value {
           if let Some(setter) = setter {
-            setters.push((true, None, setter.clone()));
+            setters.push((true, None, *setter));
           }
           indeterminate = true;
         }
@@ -343,7 +343,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       }
     }
 
-    if setters.len() > 0 {
+    if !setters.is_empty() {
       let indeterminate = indeterminate || setters.len() > 1 || setters[0].0;
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
@@ -597,11 +597,8 @@ impl<'a> ObjectEntity<'a> {
               .then(|| {
                 existing.and_then(|existing| {
                   for property in existing.possible_values.iter() {
-                    match property {
-                      ObjectPropertyValue::Property(getter, setter) => {
-                        return Some((getter.clone(), setter.clone()));
-                      }
-                      _ => {}
+                    if let ObjectPropertyValue::Property(getter, setter) = property {
+                      return Some((*getter, *setter));
                     }
                   }
                   None
@@ -609,14 +606,14 @@ impl<'a> ObjectEntity<'a> {
               })
               .flatten();
             let property_val = match kind {
-              PropertyKind::Init => ObjectPropertyValue::Field(value.clone(), false),
+              PropertyKind::Init => ObjectPropertyValue::Field(value, false),
               PropertyKind::Get => ObjectPropertyValue::Property(
-                Some(value.clone()),
+                Some(value),
                 reused_property.and_then(|(_, setter)| setter),
               ),
               PropertyKind::Set => ObjectPropertyValue::Property(
                 reused_property.and_then(|(getter, _)| getter),
-                Some(value.clone()),
+                Some(value),
               ),
             };
             let existing = string_keyed.get_mut(key);
@@ -637,9 +634,9 @@ impl<'a> ObjectEntity<'a> {
       }
     } else {
       let property_val = match kind {
-        PropertyKind::Init => ObjectPropertyValue::Field(value.clone(), false),
-        PropertyKind::Get => ObjectPropertyValue::Property(Some(value.clone()), None),
-        PropertyKind::Set => ObjectPropertyValue::Property(None, Some(value.clone())),
+        PropertyKind::Init => ObjectPropertyValue::Field(value, false),
+        PropertyKind::Get => ObjectPropertyValue::Property(Some(value), None),
+        PropertyKind::Set => ObjectPropertyValue::Property(None, Some(value)),
       };
       self.unknown_keyed.borrow_mut().possible_values.push(property_val);
     }

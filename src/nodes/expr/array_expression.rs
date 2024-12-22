@@ -54,7 +54,7 @@ impl<'a> Transformer<'a> {
     node: &'a ArrayExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let ArrayExpression { span, elements, trailing_comma, .. } = node;
+    let ArrayExpression { span, elements, trailing_comma } = node;
 
     let mut transformed_elements = self.ast_builder.vec();
 

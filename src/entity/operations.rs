@@ -223,7 +223,7 @@ impl<'a> EntityOpHost<'a> {
       }
     }
 
-    let dep = box_consumable((lhs.clone(), rhs.clone()));
+    let dep = box_consumable((lhs, rhs));
     if values.is_empty() {
       // TODO: throw warning
       analyzer.factory.computed_unknown(dep)
@@ -299,8 +299,7 @@ impl<'a> EntityOpHost<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> Entity<'a> {
-    let to_result =
-      |result: Option<bool>| boolean_from_test_result(analyzer, result, (lhs.clone(), rhs.clone()));
+    let to_result = |result: Option<bool>| boolean_from_test_result(analyzer, result, (lhs, rhs));
 
     match operator {
       BinaryOperator::Equality => to_result(self.eq(analyzer, lhs, rhs)),
@@ -335,7 +334,7 @@ impl<'a> EntityOpHost<'a> {
         self.number_only_op(analyzer, lhs, rhs, |l, r| (l as i64 & r as i64) as f64)
       }
       BinaryOperator::Exponential => self.number_only_op(analyzer, lhs, rhs, |l, r| l.powf(r)),
-      BinaryOperator::In => analyzer.factory.computed_unknown_boolean((lhs.clone(), rhs.clone())),
+      BinaryOperator::In => analyzer.factory.computed_unknown_boolean((lhs, rhs)),
       BinaryOperator::Instanceof => to_result(self.instanceof(lhs, rhs)),
     }
   }

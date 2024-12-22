@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_assignment_expression(&mut self, node: &'a AssignmentExpression<'a>) -> Entity<'a> {
     if node.operator == AssignmentOperator::Assign {
       let rhs = self.exec_expression(&node.right);
-      self.exec_assignment_target_write(&node.left, rhs.clone(), None);
+      self.exec_assignment_target_write(&node.left, rhs, None);
       rhs
     } else if node.operator.is_logical() {
       let (left, cache) = self.exec_assignment_target_read(&node.left);
@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
       let exec_right = |analyzer: &mut Analyzer<'a>| {
         let conditional_dep = analyzer.push_logical_right_cf_scope(
           AstKind2::LogicalAssignmentExpressionLeft(node),
-          left.clone(),
+          left,
           maybe_left,
           maybe_right,
         );
@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
       };
 
       if maybe_right {
-        self.exec_assignment_target_write(&node.left, value.clone(), cache);
+        self.exec_assignment_target_write(&node.left, value, cache);
       }
 
       value
@@ -78,7 +78,7 @@ impl<'a> Analyzer<'a> {
       let (lhs, cache) = self.exec_assignment_target_read(&node.left);
       let rhs = self.exec_expression(&node.right);
       let value = self.entity_op.binary_op(self, to_binary_operator(node.operator), lhs, rhs);
-      self.exec_assignment_target_write(&node.left, value.clone(), cache);
+      self.exec_assignment_target_write(&node.left, value, cache);
       value
     }
   }

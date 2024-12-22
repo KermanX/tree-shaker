@@ -47,10 +47,8 @@ impl<'a> Analyzer<'a> {
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
-        for element in &node.elements {
-          if let Some(element) = element {
-            self.declare_binding_pattern(element, exporting, kind);
-          }
+        for element in node.elements.iter().flatten() {
+          self.declare_binding_pattern(element, exporting, kind);
         }
         if let Some(rest) = &node.rest {
           self.declare_binding_rest_element(rest, exporting, kind);
@@ -89,11 +87,11 @@ impl<'a> Analyzer<'a> {
         for property in &node.properties {
           let dep = box_consumable(DepId::from(AstKind2::BindingProperty(property)));
 
-          self.push_dependent_cf_scope(init.clone());
+          self.push_dependent_cf_scope(init);
           let key = self.exec_property_key(&property.key);
           self.pop_cf_scope();
 
-          enumerated.push(key.clone());
+          enumerated.push(key);
           let init = init.get_property(self, dep, key);
           self.init_binding_pattern(&property.value, Some(init));
         }
@@ -166,7 +164,7 @@ impl<'a> Transformer<'a> {
         }
       }
       BindingPatternKind::ObjectPattern(node) => {
-        let ObjectPattern { span, properties, rest, .. } = node.as_ref();
+        let ObjectPattern { span, properties, rest } = node.as_ref();
 
         let data = self.get_data::<ObjectPatternData>(AstKind2::ObjectPattern(node.as_ref()));
 
@@ -182,7 +180,7 @@ impl<'a> Transformer<'a> {
           let dep = AstKind2::BindingProperty(property);
           let need_property = rest.is_some() || self.is_referred(dep);
 
-          let BindingProperty { span, key, value, shorthand, computed, .. } = property;
+          let BindingProperty { span, key, value, shorthand, computed } = property;
 
           if *shorthand && matches!(value.kind, BindingPatternKind::BindingIdentifier(_)) {
             if self.transform_binding_pattern(value, false).is_some()
@@ -222,7 +220,7 @@ impl<'a> Transformer<'a> {
         }
       }
       BindingPatternKind::ArrayPattern(node) => {
-        let ArrayPattern { span, elements, rest, .. } = node.as_ref();
+        let ArrayPattern { span, elements, rest } = node.as_ref();
 
         let is_referred = self.is_referred(AstKind2::ArrayPattern(node));
 
@@ -256,7 +254,7 @@ impl<'a> Transformer<'a> {
         let data =
           self.get_data::<AssignmentPatternData>(AstKind2::AssignmentPattern(node.as_ref()));
 
-        let AssignmentPattern { span, left, right, .. } = node.as_ref();
+        let AssignmentPattern { span, left, right } = node.as_ref();
 
         let left_span = left.span();
         let transformed_left = self.transform_binding_pattern(left, false);

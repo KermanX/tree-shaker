@@ -83,7 +83,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return analyzer.factory.computed_unknown((rc, dep, key));
     }
 
-    let dep = ConsumableNode::new((self.deps.borrow_mut().collect(), dep, key.clone()));
+    let dep = ConsumableNode::new((self.deps.borrow_mut().collect(), dep, key));
     let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut result = vec![];
@@ -92,7 +92,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key, _) => {
-            if let Some(index) = key.parse::<usize>().ok() {
+            if let Ok(index) = key.parse::<usize>() {
               if let Some(element) = self.elements.borrow().get(index) {
                 result.push(*element);
               } else if !rest_added {
@@ -113,7 +113,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               ));
             } else if let Some(property) = analyzer.builtins.prototypes.array.get_string_keyed(key)
             {
-              result.push(property.clone());
+              result.push(property);
             } else if !undefined_added {
               undefined_added = true;
               result.push(analyzer.factory.undefined);
@@ -175,17 +175,13 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key_str, _) => {
-            if let Some(index) = key_str.parse::<usize>().ok() {
+            if let Ok(index) = key_str.parse::<usize>() {
               has_effect = true;
               if let Some(element) = self.elements.borrow_mut().get_mut(index) {
-                *element = if definite {
-                  value.clone()
-                } else {
-                  analyzer.factory.union((element.clone(), value.clone()))
-                };
+                *element = if definite { value } else { analyzer.factory.union((*element, value)) };
               } else if !rest_added {
                 rest_added = true;
-                self.rest.borrow_mut().push(value.clone());
+                self.rest.borrow_mut().push(value);
               }
             } else if key_str == "length" {
               if let Some(length) = value.get_literal(analyzer).and_then(|lit| lit.to_number()) {
@@ -248,7 +244,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if !self.deps.borrow().is_empty() {
       return (
         vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
-        box_consumable((rc.clone(), dep)),
+        box_consumable((rc, dep)),
       );
     }
 
@@ -257,7 +253,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       entries.push((
         true,
         analyzer.factory.string(analyzer.allocator.alloc(i.to_string())),
-        element.clone(),
+        *element,
       ));
     }
     let rest = self.rest.borrow();

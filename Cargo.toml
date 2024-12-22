@@ -41,3 +41,14 @@ codegen-units = 1
 strip = "symbols" # Set to `false` for debug information
 debug = false     # Set to `true` for debug information
 panic = "abort"   # Let it crash and force ourselves to write safe Rust
+
+[lints.clippy]
+dbg_macro = "deny"
+empty_drop = "deny"
+filetype_is_file = "deny"
+get_unwrap = "deny"
+rest_pat_in_fully_bound_structs = "deny"
+unnecessary_safety_comment = "deny"
+
+missing_transmute_annotations = "allow"
+too_many_arguments = "allow"

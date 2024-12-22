@@ -59,7 +59,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     } else {
       let prototype = self.get_prototype(analyzer);
       let key = key.get_to_property_key(analyzer);
-      let dep = box_consumable((dep, rc.clone(), key.clone()));
+      let dep = box_consumable((dep, rc, key));
       if let Some(key_literals) = key.get_to_literals(analyzer) {
         let mut values = vec![];
         let mut undefined_added = false;
@@ -181,7 +181,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     match self {
       LiteralEntity::String(value, atom) => (
         vec![],
-        (*value != "").then_some(analyzer.factory.unknown_string),
+        (!value.is_empty()).then_some(analyzer.factory.unknown_string),
         box_consumable((rc, dep, *atom)),
       ),
       _ => {
@@ -221,12 +221,10 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
         let str = str.trim();
         let val = if str.is_empty() {
           analyzer.factory.number(0.0, Some("0"))
+        } else if let Ok(value) = str.parse::<f64>() {
+          analyzer.factory.number(value, Some(str))
         } else {
-          if let Ok(value) = str.parse::<f64>() {
-            analyzer.factory.number(value, Some(str))
-          } else {
-            analyzer.factory.nan
-          }
+          analyzer.factory.nan
         };
         analyzer.factory.computed(val, *atom)
       }
@@ -409,15 +407,15 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
-  pub fn to_string(&self, allocator: &'a Allocator) -> &'a str {
+  pub fn to_string(self, allocator: &'a Allocator) -> &'a str {
     match self {
-      LiteralEntity::String(value, _) => *value,
+      LiteralEntity::String(value, _) => value,
       LiteralEntity::Number(value, str_rep) => {
         str_rep.unwrap_or_else(|| allocator.alloc(value.0.to_string()))
       }
-      LiteralEntity::BigInt(value) => *value,
+      LiteralEntity::BigInt(value) => value,
       LiteralEntity::Boolean(value) => {
-        if *value {
+        if value {
           "true"
         } else {
           "false"
@@ -425,7 +423,7 @@ impl<'a> LiteralEntity<'a> {
       }
       LiteralEntity::Symbol(_, str_rep) => str_rep,
       LiteralEntity::Infinity(positive) => {
-        if *positive {
+        if positive {
           "Infinity"
         } else {
           "-Infinity"
@@ -438,24 +436,22 @@ impl<'a> LiteralEntity<'a> {
   }
 
   // `None` for unresolvable, `Some(None)` for NaN, `Some(Some(value))` for number
-  pub fn to_number(&self) -> Option<Option<F64WithEq>> {
+  pub fn to_number(self) -> Option<Option<F64WithEq>> {
     match self {
-      LiteralEntity::Number(value, _) => Some(Some(*value)),
+      LiteralEntity::Number(value, _) => Some(Some(value)),
       LiteralEntity::BigInt(_value) => {
         // TODO: warn: TypeError: Cannot convert a BigInt value to a number
         None
       }
-      LiteralEntity::Boolean(value) => Some(Some(if *value { 1.0 } else { 0.0 }.into())),
+      LiteralEntity::Boolean(value) => Some(Some(if value { 1.0 } else { 0.0 }.into())),
       LiteralEntity::String(value, _) => {
         let value = value.trim();
         Some(if value.is_empty() {
           Some(0.0.into())
+        } else if let Ok(value) = value.parse::<f64>() {
+          Some(value.into())
         } else {
-          if let Ok(value) = value.parse::<f64>() {
-            Some(value.into())
-          } else {
-            None
-          }
+          None
         })
       }
       LiteralEntity::Null => Some(Some(0.0.into())),
@@ -468,7 +464,7 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
-  fn get_prototype<'b>(&self, analyzer: &mut Analyzer<'a>) -> &'a Prototype<'a> {
+  fn get_prototype(&self, analyzer: &mut Analyzer<'a>) -> &'a Prototype<'a> {
     match self {
       LiteralEntity::String(_, _) => &analyzer.builtins.prototypes.string,
       LiteralEntity::Number(_, _) => &analyzer.builtins.prototypes.number,
@@ -493,7 +489,7 @@ impl<'a> LiteralEntity<'a> {
         let LiteralEntity::String(key, atom_key) = key else { return None };
         if key == "length" {
           Some(analyzer.factory.number(value.len() as f64, None))
-        } else if let Some(index) = key.parse::<usize>().ok() {
+        } else if let Ok(index) = key.parse::<usize>() {
           Some(
             value
               .get(index..index + 1)

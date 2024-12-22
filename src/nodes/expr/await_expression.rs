@@ -23,7 +23,7 @@ impl<'a> Transformer<'a> {
     node: &'a AwaitExpression<'a>,
     _need_val: bool,
   ) -> Option<Expression<'a>> {
-    let AwaitExpression { span, argument, .. } = node;
+    let AwaitExpression { span, argument } = node;
 
     let argument = self.transform_expression(argument, true).unwrap();
     Some(self.ast_builder.expression_await(*span, argument))

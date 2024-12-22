@@ -63,10 +63,10 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     if *self == PrimitiveEntity::String {
       (
         vec![(false, analyzer.factory.unknown_string, analyzer.factory.unknown_string)],
-        box_consumable((rc.clone(), dep)),
+        box_consumable((rc, dep)),
       )
     } else {
-      (vec![], box_consumable((rc.clone(), dep)))
+      (vec![], box_consumable((rc, dep)))
     }
   }
 
@@ -187,7 +187,7 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
 }
 
 impl<'a> PrimitiveEntity {
-  fn get_prototype<'b>(&self, analyzer: &mut Analyzer<'a>) -> &'a Prototype<'a> {
+  fn get_prototype(&self, analyzer: &mut Analyzer<'a>) -> &'a Prototype<'a> {
     match self {
       PrimitiveEntity::String => &analyzer.builtins.prototypes.string,
       PrimitiveEntity::Number => &analyzer.builtins.prototypes.number,

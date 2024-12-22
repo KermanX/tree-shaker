@@ -30,7 +30,7 @@ impl<'a, T: AppendEffect<'a>> AppendEffect<'a> for Option<T> {
 macro_rules! build_effect {
   ($builder:expr, $span:expr, $($x:expr),+ $(,)?) => {
     {
-      use crate::utils::effect_builder::AppendEffect;
+      use $crate::utils::effect_builder::AppendEffect;
       let mut effects = $builder.vec();
       $($x.append_effect(&mut effects);)*
       if effects.is_empty() {
@@ -46,7 +46,7 @@ macro_rules! build_effect {
   };
   ($builder:expr, $span:expr, $($x:expr),+ $(,)?; $val:expr) => {
     {
-      use crate::utils::effect_builder::AppendEffect;
+      use $crate::utils::effect_builder::AppendEffect;
       let mut effects = $builder.vec();
       $($x.append_effect(&mut effects);)*
       if effects.is_empty() {

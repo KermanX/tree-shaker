@@ -59,7 +59,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
   ) {
     analyzer.exec_indeterminately(|analyzer| {
       for entity in self.values.iter() {
-        entity.set_property(analyzer, dep.cloned(), key, value.clone())
+        entity.set_property(analyzer, dep.cloned(), key, value)
       }
     });
   }
@@ -104,14 +104,14 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     args: Entity<'a>,
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
-      self.values.map(|v| v.construct(analyzer, dep.cloned(), args.clone()))
+      self.values.map(|v| v.construct(analyzer, dep.cloned(), args))
     });
     analyzer.factory.union(values)
   }
 
   fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     let values =
-      analyzer.exec_indeterminately(|analyzer| self.values.map(|v| v.jsx(analyzer, props.clone())));
+      analyzer.exec_indeterminately(|analyzer| self.values.map(|v| v.jsx(analyzer, props)));
     analyzer.factory.union(values)
   }
 

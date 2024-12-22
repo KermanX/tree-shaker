@@ -20,7 +20,7 @@ pub fn create_react_use_memo_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<
       analyzer.builtins.react_data.memos.insert(span, result);
       result
     } else {
-      analyzer.factory.computed(*analyzer.builtins.react_data.memos.get(&span).unwrap(), dep)
+      analyzer.factory.computed(analyzer.builtins.react_data.memos[&span], dep)
     }
   })
 }

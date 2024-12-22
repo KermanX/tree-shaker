@@ -19,7 +19,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_break_statement(&self, node: &'a BreakStatement<'a>) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AstKind2::BreakStatement(node));
 
-    let BreakStatement { span, label, .. } = node;
+    let BreakStatement { span, label } = node;
 
     let label = data.label_used.then(|| self.clone_node(label)).flatten();
 

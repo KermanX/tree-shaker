@@ -18,9 +18,9 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_throw_statement(&self, node: &'a ThrowStatement<'a>) -> Option<Statement<'a>> {
-    let need_val = self.is_referred(AstKind2::ThrowStatement(&node));
+    let need_val = self.is_referred(AstKind2::ThrowStatement(node));
 
-    let ThrowStatement { span, argument, .. } = node;
+    let ThrowStatement { span, argument } = node;
 
     let argument_span = argument.span();
 

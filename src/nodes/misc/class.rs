@@ -108,7 +108,7 @@ impl<'a> Analyzer<'a> {
   pub fn init_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
     let value = self.exec_class(node);
 
-    self.init_binding_identifier(node.id.as_ref().unwrap(), Some(value.clone()));
+    self.init_binding_identifier(node.id.as_ref().unwrap(), Some(value));
 
     value
   }
@@ -221,7 +221,7 @@ impl<'a> Transformer<'a> {
       });
 
       let body = {
-        let ClassBody { span, body, .. } = body.as_ref();
+        let ClassBody { span, body } = body.as_ref();
 
         let mut transformed_body = self.ast_builder.vec();
 

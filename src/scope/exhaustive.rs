@@ -10,7 +10,7 @@ use std::{
 
 #[derive(Clone)]
 pub struct ExhaustiveCallback<'a> {
-  pub handler: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
+  pub handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
   pub once: bool,
 }
 impl<'a> PartialEq for ExhaustiveCallback<'a> {
@@ -26,7 +26,7 @@ impl Hash for ExhaustiveCallback<'_> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
+  pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
     let runner = Rc::new(runner);
 
     self.exec_exhaustively("loop", runner.clone(), false);
@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
     kind: &str,
     runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a,
   ) {
-    let runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a> = Rc::new(move |analyzer| {
+    let runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a> = Rc::new(move |analyzer| {
       analyzer.push_indeterminate_cf_scope();
       analyzer.push_try_scope();
       let ret_val = runner(analyzer);
@@ -59,7 +59,7 @@ impl<'a> Analyzer<'a> {
     self.register_exhaustive_callbacks(false, runner, deps);
   }
 
-  pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
+  pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
     let runner = Rc::new(runner);
     let deps = self.exec_exhaustively("async/generator", runner.clone(), true);
     self.register_exhaustive_callbacks(true, runner, deps);
@@ -68,7 +68,7 @@ impl<'a> Analyzer<'a> {
   fn exec_exhaustively(
     &mut self,
     kind: &str,
-    runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
+    runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     once: bool,
   ) -> FxHashSet<(ScopeId, SymbolId)> {
     self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
@@ -98,7 +98,7 @@ impl<'a> Analyzer<'a> {
   fn register_exhaustive_callbacks(
     &mut self,
     once: bool,
-    handler: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
+    handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     deps: FxHashSet<(ScopeId, SymbolId)>,
   ) {
     for (scope, symbol) in deps {
@@ -108,7 +108,7 @@ impl<'a> Analyzer<'a> {
         .get_mut(scope)
         .exhaustive_callbacks
         .entry(symbol)
-        .or_insert_with(Default::default)
+        .or_default()
         .insert(ExhaustiveCallback { handler: handler.clone(), once });
     }
   }

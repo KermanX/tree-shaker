@@ -26,7 +26,7 @@ impl<'a> Transformer<'a> {
     node: &'a ImportExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let ImportExpression { span, source, arguments, phase, .. } = node;
+    let ImportExpression { span, source, arguments, phase } = node;
 
     // FIXME: side effects
     let need_import = need_val;

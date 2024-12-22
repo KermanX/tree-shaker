@@ -67,7 +67,7 @@ impl<'a> Analyzer<'a> {
       mangler: Mangler::new(),
       named_exports: Vec::new(),
       default_export: None,
-      scope_context: ScopeContext::new(&factory),
+      scope_context: ScopeContext::new(factory),
       pending_labels: Vec::new(),
       pending_deps: Default::default(),
       builtins: Builtins::new(config, factory),
@@ -112,7 +112,9 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn consume_exports(&mut self) {
-    self.default_export.take().map(|entity| entity.consume(self));
+    if let Some(entity) = self.default_export.take() {
+      entity.consume(self)
+    }
     for symbol in self.named_exports.clone() {
       let entity = self.read_symbol(symbol).unwrap();
       entity.consume(self);
@@ -144,6 +146,7 @@ impl<'a> Analyzer<'a> {
     unsafe { mem::transmute(boxed.as_mut()) }
   }
 
+  #[allow(clippy::rc_buffer)]
   pub fn take_labels(&mut self) -> Option<Rc<Vec<LabelEntity<'a>>>> {
     if self.pending_labels.is_empty() {
       None
@@ -174,8 +177,8 @@ impl<'a> Analyzer<'a> {
   }
 }
 
-impl<'a> Into<&'a Allocator> for Analyzer<'a> {
-  fn into(self) -> &'a Allocator {
-    self.allocator
+impl<'a> From<Analyzer<'a>> for &'a Allocator {
+  fn from(val: Analyzer<'a>) -> Self {
+    val.allocator
   }
 }

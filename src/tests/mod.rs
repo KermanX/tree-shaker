@@ -10,7 +10,7 @@ fn tree_shake(input: String) -> String {
     input,
     TreeShakeOptions {
       config: TreeShakeConfig::default().with_react_jsx(react_jsx),
-      minify_options: do_minify.then(|| MinifierOptions::default()),
+      minify_options: do_minify.then(MinifierOptions::default),
       codegen_options: CodegenOptions::default(),
     },
   );

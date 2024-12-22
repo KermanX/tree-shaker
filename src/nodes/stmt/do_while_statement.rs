@@ -60,7 +60,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AstKind2::DoWhileStatement(node));
 
-    let DoWhileStatement { span, test, body, .. } = node;
+    let DoWhileStatement { span, test, body } = node;
     let body_span = body.span();
     let test_span = test.span();
 

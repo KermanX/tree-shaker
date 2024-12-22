@@ -61,7 +61,7 @@ pub fn enumerate_properties<'a>(
   } else {
     (
       vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
-      box_consumable((rc.clone(), dep)),
+      box_consumable((rc, dep)),
     )
   }
 }

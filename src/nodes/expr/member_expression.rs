@@ -59,7 +59,7 @@ impl<'a> Analyzer<'a> {
     }
 
     if will_write {
-      self.push_dependent_cf_scope(object.clone());
+      self.push_dependent_cf_scope(object);
     }
     let key = self.exec_key(node);
     if will_write {
@@ -80,7 +80,7 @@ impl<'a> Analyzer<'a> {
     let (object, key) = cache.unwrap_or_else(|| {
       let object = self.exec_expression(node.object());
 
-      self.push_dependent_cf_scope(object.clone());
+      self.push_dependent_cf_scope(object);
       let key = self.exec_key(node);
       self.pop_cf_scope();
 

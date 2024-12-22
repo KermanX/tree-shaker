@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
 
     // 1. discriminant
     let discriminant = self.exec_expression(&node.discriminant);
-    self.push_dependent_cf_scope(discriminant.clone());
+    self.push_dependent_cf_scope(discriminant);
 
     // 2. tests
     let mut default_case = None;
@@ -93,11 +93,11 @@ impl<'a> Analyzer<'a> {
 
         let data = self.load_data::<StatementVecData>(AstKind2::SwitchCase(case));
 
-        if entered == None {
+        if entered.is_none() {
           self.push_indeterminate_cf_scope();
         }
         self.exec_statement_vec(data, &case.consequent);
-        if entered == None {
+        if entered.is_none() {
           self.pop_cf_scope();
         }
       }

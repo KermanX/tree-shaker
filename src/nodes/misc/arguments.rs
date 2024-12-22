@@ -42,7 +42,7 @@ impl<'a> Transformer<'a> {
     node: &'a Argument<'a>,
     preserve_args_num: bool,
   ) -> Option<Argument<'a>> {
-    let is_referred = self.is_referred(AstKind2::Argument(&node));
+    let is_referred = self.is_referred(AstKind2::Argument(node));
     let span = node.span();
     match node {
       Argument::SpreadElement(node) => {

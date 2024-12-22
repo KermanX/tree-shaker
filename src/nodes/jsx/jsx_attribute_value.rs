@@ -11,12 +11,12 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     if let Some(node) = node {
       match node {
-        JSXAttributeValue::StringLiteral(node) => self.exec_string_literal(&node),
+        JSXAttributeValue::StringLiteral(node) => self.exec_string_literal(node),
         JSXAttributeValue::ExpressionContainer(node) => {
-          self.exec_jsx_expression_container_as_attribute_value(&node)
+          self.exec_jsx_expression_container_as_attribute_value(node)
         }
-        JSXAttributeValue::Element(node) => self.exec_jsx_element(&node),
-        JSXAttributeValue::Fragment(node) => self.exec_jsx_fragment(&node),
+        JSXAttributeValue::Element(node) => self.exec_jsx_element(node),
+        JSXAttributeValue::Fragment(node) => self.exec_jsx_fragment(node),
       }
     } else {
       self.factory.r#true
@@ -33,10 +33,10 @@ impl<'a> Transformer<'a> {
       match node {
         JSXAttributeValue::StringLiteral(_node) => None,
         JSXAttributeValue::ExpressionContainer(node) => {
-          self.transform_jsx_expression_container_effect_only(&node)
+          self.transform_jsx_expression_container_effect_only(node)
         }
-        JSXAttributeValue::Element(node) => self.transform_jsx_element_effect_only(&node),
-        JSXAttributeValue::Fragment(node) => self.transform_jsx_fragment_effect_only(&node),
+        JSXAttributeValue::Element(node) => self.transform_jsx_element_effect_only(node),
+        JSXAttributeValue::Fragment(node) => self.transform_jsx_fragment_effect_only(node),
       }
     } else {
       None
@@ -55,29 +55,29 @@ impl<'a> Transformer<'a> {
       JSXAttributeValue::ExpressionContainer(node) => {
         if need_val {
           Some(JSXAttributeValue::ExpressionContainer(
-            self.transform_jsx_expression_container_need_val(&node),
+            self.transform_jsx_expression_container_need_val(node),
           ))
         } else {
           self
-            .transform_jsx_expression_container_effect_only(&node)
+            .transform_jsx_expression_container_effect_only(node)
             .map(|effect| self.build_jsx_expression_container_from_expression(node.span, effect))
         }
       }
       JSXAttributeValue::Element(node) => {
         if need_val {
-          Some(JSXAttributeValue::Element(self.transform_jsx_element_need_val(&node)))
+          Some(JSXAttributeValue::Element(self.transform_jsx_element_need_val(node)))
         } else {
           self
-            .transform_jsx_element_effect_only(&node)
+            .transform_jsx_element_effect_only(node)
             .map(|effect| self.build_jsx_expression_container_from_expression(node.span, effect))
         }
       }
       JSXAttributeValue::Fragment(node) => {
         if need_val {
-          Some(JSXAttributeValue::Fragment(self.transform_jsx_fragment_need_val(&node)))
+          Some(JSXAttributeValue::Fragment(self.transform_jsx_fragment_need_val(node)))
         } else {
           self
-            .transform_jsx_fragment_effect_only(&node)
+            .transform_jsx_fragment_effect_only(node)
             .map(|effect| self.build_jsx_expression_container_from_expression(node.span, effect))
         }
       }

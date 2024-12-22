@@ -21,9 +21,9 @@ impl From<f64> for F64WithEq {
   }
 }
 
-impl Into<f64> for F64WithEq {
-  fn into(self) -> f64 {
-    self.0
+impl From<F64WithEq> for f64 {
+  fn from(val: F64WithEq) -> Self {
+    val.0
   }
 }
 

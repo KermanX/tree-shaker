@@ -260,7 +260,7 @@ impl<'a> Entity<'a> {
     let deps = box_consumable(ConsumableNode::new(deps));
     let mut result_elements = Vec::new();
     for i in 0..length.min(elements.len()) {
-      result_elements.push(analyzer.factory.computed(elements[i].clone(), deps.cloned()));
+      result_elements.push(analyzer.factory.computed(elements[i], deps.cloned()));
     }
     for _ in 0..length.saturating_sub(elements.len()) {
       if let Some(rest) = rest {
@@ -274,7 +274,7 @@ impl<'a> Entity<'a> {
     let mut rest_arr_is_empty = true;
     if length < elements.len() {
       for element in &elements[length..elements.len()] {
-        rest_arr.push_element(element.clone());
+        rest_arr.push_element(*element);
         rest_arr_is_empty = false;
       }
     }
@@ -325,7 +325,7 @@ impl<'a> Entity<'a> {
   }
 
   pub fn to_consumable(&self) -> Consumable<'a> {
-    box_consumable(self.clone())
+    box_consumable(*self)
   }
 }
 

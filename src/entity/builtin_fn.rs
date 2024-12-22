@@ -269,7 +269,7 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    let ret_val = (self.return_value)(&analyzer.factory);
+    let ret_val = (self.return_value)(analyzer.factory);
     let dep = box_consumable((dep, this, args));
     this.unknown_mutate(analyzer, dep.cloned());
     args.unknown_mutate(analyzer, dep.cloned());

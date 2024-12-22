@@ -29,7 +29,7 @@ pub struct TreeShaker<'a>(pub Rc<TreeShakerInner<'a>>);
 
 impl<'a> TreeShaker<'a> {
   pub fn new(allocator: &'a Allocator, options: TreeShakeOptions) -> Self {
-    let TreeShakeOptions { config, minify_options, codegen_options, .. } = options;
+    let TreeShakeOptions { config, minify_options, codegen_options } = options;
 
     Self(Rc::new(TreeShakerInner {
       allocator,
@@ -68,7 +68,7 @@ impl<'a> TreeShaker<'a> {
     // Step 3: Minify
     let minifier_return = minify_options.map(|options| {
       let minifier = Minifier::new(options);
-      minifier.build(&allocator, ast)
+      minifier.build(allocator, ast)
     });
 
     // Step 4: Generate output

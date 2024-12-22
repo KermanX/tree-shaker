@@ -1,6 +1,6 @@
 use super::{box_consumable, Consumable, ConsumableTrait};
 use crate::analyzer::Analyzer;
-use std::{cell::UnsafeCell, marker::PhantomData, mem, rc::Rc};
+use std::{cell::UnsafeCell, marker::PhantomData, rc::Rc};
 
 #[derive(Debug)]
 pub struct ConsumableNode<'a, T: ConsumableTrait<'a> + 'a = Consumable<'a>>(
@@ -30,7 +30,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> Clone for ConsumableNode<'a, T> {
 
 impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for ConsumableNode<'a, T> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    if let Some(value) = mem::replace(unsafe { &mut *self.0.get() }, None) {
+    if let Some(value) = unsafe { &mut *self.0.get() }.take() {
       analyzer.consume(value);
     }
   }

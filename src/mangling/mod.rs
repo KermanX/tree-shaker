@@ -14,7 +14,13 @@ static MANGLE_ATOM_COUNT: AtomicU64 = AtomicU64::new(1);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MangleAtom(NonZeroU64);
 
-impl<'a> MangleAtom {
+impl Default for MangleAtom {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
+impl MangleAtom {
   pub fn new() -> MangleAtom {
     MangleAtom(NonZero::new(MANGLE_ATOM_COUNT.fetch_add(1, Ordering::SeqCst)).unwrap())
   }

@@ -65,21 +65,16 @@ impl<'a> Transformer<'a> {
     let ForStatement { span, init, test, update, body, .. } = node;
 
     if self.is_referred(AstKind2::ForStatement(node)) {
-      let init = init
-        .as_ref()
-        .map(|init| match init {
-          ForStatementInit::VariableDeclaration(node) => self
-            .transform_variable_declaration(node)
-            .map(|inner| ForStatementInit::VariableDeclaration(inner)),
-          node => self
-            .transform_expression(node.to_expression(), false)
-            .map(|inner| ForStatementInit::from(inner)),
-        })
-        .flatten();
+      let init = init.as_ref().and_then(|init| match init {
+        ForStatementInit::VariableDeclaration(node) => {
+          self.transform_variable_declaration(node).map(ForStatementInit::VariableDeclaration)
+        }
+        node => self.transform_expression(node.to_expression(), false).map(ForStatementInit::from),
+      });
 
       let test = test.as_ref().map(|test| self.transform_expression(test, true).unwrap());
 
-      let update = update.as_ref().map(|update| self.transform_expression(update, false)).flatten();
+      let update = update.as_ref().and_then(|update| self.transform_expression(update, false));
 
       let body = self
         .transform_statement(body)
@@ -87,22 +82,18 @@ impl<'a> Transformer<'a> {
 
       Some(self.ast_builder.statement_for(*span, init, test, update, body))
     } else {
-      let init = init
-        .as_ref()
-        .map(|init| match init {
-          ForStatementInit::VariableDeclaration(node) => self
-            .transform_variable_declaration(node)
-            .map(|inner| Statement::VariableDeclaration(inner)),
-          node => self
-            .transform_expression(node.to_expression(), false)
-            .map(|inner| self.ast_builder.statement_expression(inner.span(), inner)),
-        })
-        .flatten();
+      let init = init.as_ref().and_then(|init| match init {
+        ForStatementInit::VariableDeclaration(node) => {
+          self.transform_variable_declaration(node).map(Statement::VariableDeclaration)
+        }
+        node => self
+          .transform_expression(node.to_expression(), false)
+          .map(|inner| self.ast_builder.statement_expression(inner.span(), inner)),
+      });
 
       let test = test
         .as_ref()
-        .map(|test| self.transform_expression(test, false))
-        .flatten()
+        .and_then(|test| self.transform_expression(test, false))
         .map(|test| self.ast_builder.statement_expression(test.span(), test));
 
       match (init, test) {

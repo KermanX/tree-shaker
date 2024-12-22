@@ -97,24 +97,22 @@ impl<'a> Transformer<'a> {
                 false,
                 *computed,
               )
+            } else if let Some(key) = self.transform_property_key(key, false) {
+              self.ast_builder.object_property_kind_object_property(
+                *span,
+                *kind,
+                key,
+                self.build_unused_expression(value_span),
+                *method,
+                false,
+                *computed,
+              )
             } else {
-              if let Some(key) = self.transform_property_key(key, false) {
-                self.ast_builder.object_property_kind_object_property(
-                  *span,
-                  *kind,
-                  key,
-                  self.build_unused_expression(value_span),
-                  *method,
-                  false,
-                  *computed,
-                )
-              } else {
-                continue;
-              }
+              continue;
             }
           }
           ObjectPropertyKind::SpreadProperty(node) => {
-            let SpreadElement { span, argument, .. } = node.as_ref();
+            let SpreadElement { span, argument } = node.as_ref();
 
             let referred = self.is_referred(AstKind2::SpreadElement(node));
 
@@ -158,7 +156,7 @@ impl<'a> Transformer<'a> {
             }
           }
           ObjectPropertyKind::SpreadProperty(node) => {
-            let SpreadElement { span, argument, .. } = node.as_ref();
+            let SpreadElement { span, argument } = node.as_ref();
 
             let need_spread = self.is_referred(AstKind2::SpreadElement(node));
             if let Some(argument) = self.transform_expression(argument, need_spread) {

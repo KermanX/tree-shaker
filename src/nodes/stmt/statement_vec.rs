@@ -49,7 +49,7 @@ impl<'a> Transformer<'a> {
         if let Some(statement) = self.transform_statement(statement) {
           result.push(statement);
         }
-      } else if self.is_declaration(statement) {
+      } else if is_declaration(statement) {
         self.declaration_only.set(true);
         if let Some(statement) = self.transform_statement(statement) {
           result.push(statement);
@@ -64,13 +64,13 @@ impl<'a> Transformer<'a> {
 
     result
   }
+}
 
-  fn is_declaration(&self, statement: &'a Statement<'a>) -> bool {
-    match statement {
-      match_declaration!(Statement) => true,
-      match_module_declaration!(Statement) => true,
-      Statement::LabeledStatement(node) => self.is_declaration(&node.body),
-      _ => false,
-    }
+fn is_declaration<'a>(statement: &'a Statement<'a>) -> bool {
+  match statement {
+    match_declaration!(Statement) => true,
+    match_module_declaration!(Statement) => true,
+    Statement::LabeledStatement(node) => is_declaration(&node.body),
+    _ => false,
   }
 }

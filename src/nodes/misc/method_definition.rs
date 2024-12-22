@@ -20,7 +20,6 @@ impl<'a> Transformer<'a> {
       r#override,
       optional,
       accessibility,
-      ..
     } = node;
 
     let key = self.transform_property_key(key, true).unwrap();

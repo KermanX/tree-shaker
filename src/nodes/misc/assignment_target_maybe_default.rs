@@ -39,7 +39,7 @@ impl<'a> Transformer<'a> {
       AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(node) => {
         let data = self.get_data::<WithDefaultData>(AstKind2::AssignmentTargetWithDefault(node));
 
-        let AssignmentTargetWithDefault { span, binding, init, .. } = node.as_ref();
+        let AssignmentTargetWithDefault { span, binding, init } = node.as_ref();
 
         let binding_span = binding.span();
         let (binding_is_empty, binding) =

@@ -37,7 +37,7 @@ impl<'a> Analyzer<'a> {
     let exec_right = |analyzer: &mut Analyzer<'a>| {
       let conditional_dep = analyzer.push_logical_right_cf_scope(
         AstKind2::LogicalExpressionLeft(node),
-        left.clone(),
+        left,
         maybe_left,
         maybe_right,
       );
@@ -70,7 +70,7 @@ impl<'a> Transformer<'a> {
     node: &'a LogicalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let LogicalExpression { span, left, operator, right, .. } = node;
+    let LogicalExpression { span, left, operator, right } = node;
 
     let (need_left_test_val, maybe_left, maybe_right) =
       self.get_conditional_result(AstKind2::LogicalExpressionLeft(node));

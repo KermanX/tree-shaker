@@ -116,12 +116,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
             rest = Some(vec![iterated]);
           }
         }
+      } else if let Some(rest) = &mut rest {
+        rest.push(*entity);
       } else {
-        if let Some(rest) = &mut rest {
-          rest.push(entity.clone());
-        } else {
-          elements.push(entity.clone());
-        }
+        elements.push(*entity);
       }
     }
     (elements, rest.map(|val| analyzer.factory.union(val)), dep)

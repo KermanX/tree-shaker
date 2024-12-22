@@ -25,7 +25,7 @@ impl<'a> Transformer<'a> {
     node: &'a TemplateLiteral<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let TemplateLiteral { span, expressions, quasis, .. } = node;
+    let TemplateLiteral { span, expressions, quasis } = node;
     if need_val {
       let mut quasis_iter = quasis.into_iter();
       let mut transformed_exprs = self.ast_builder.vec();

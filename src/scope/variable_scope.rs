@@ -59,7 +59,9 @@ impl<'a> Analyzer<'a> {
 
       if old_kind.is_untracked() {
         self.consume(decl_dep);
-        fn_value.map(|val| val.consume(self));
+        if let Some(val) = fn_value {
+          val.consume(self)
+        }
         return;
       }
 
@@ -131,7 +133,7 @@ impl<'a> Analyzer<'a> {
   fn read_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> Option<Option<Entity<'a>>> {
     self.scope_context.variable.get(id).variables.get(&symbol).copied().map(|variable| {
       let variable_ref = variable.borrow();
-      let value = variable_ref.value.clone().or_else(|| {
+      let value = variable_ref.value.or_else(|| {
         variable_ref
           .kind
           .is_var()

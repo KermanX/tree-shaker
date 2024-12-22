@@ -13,6 +13,12 @@ pub struct ScopeTree<T> {
   pub stack: Vec<ScopeId>,
 }
 
+impl<T> Default for ScopeTree<T> {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl<T> ScopeTree<T> {
   pub fn new() -> Self {
     ScopeTree { nodes: IndexVec::new(), stack: vec![] }
@@ -52,16 +58,14 @@ impl<T> ScopeTree<T> {
     self.get_mut(*self.stack.last().unwrap())
   }
 
-  pub fn iter_stack(
-    &self,
-  ) -> impl Iterator<Item = &T> + DoubleEndedIterator<Item = &T> + ExactSizeIterator<Item = &T> {
+  pub fn iter_stack(&self) -> impl DoubleEndedIterator<Item = &T> + ExactSizeIterator<Item = &T> {
     self.stack.iter().map(move |id| self.get(*id))
   }
 
   pub fn iter_stack_range(
     &self,
     range: RangeFrom<usize>,
-  ) -> impl Iterator<Item = &T> + DoubleEndedIterator<Item = &T> + ExactSizeIterator<Item = &T> {
+  ) -> impl DoubleEndedIterator<Item = &T> + ExactSizeIterator<Item = &T> {
     self.stack[range].iter().map(move |id| self.get(*id))
   }
 
