@@ -146,12 +146,13 @@ impl<'a> Mangler<'a> {
         if let Some(eq_group) = identity_group {
           self.resolve_identity_group(*eq_group)
         } else {
-          let n =
+          let mut n =
             uniqueness_groups.iter().map(|&index| self.uniqueness_groups[index].1).max().unwrap();
+          let name = get_mangled_name(&mut n);
           for &index in uniqueness_groups {
-            self.uniqueness_groups[index].1 = n + 1;
+            self.uniqueness_groups[index].1 = n;
           }
-          self.allocator.alloc(get_mangled_name(n))
+          self.allocator.alloc(name)
         }
       } else {
         // No constraints
@@ -174,10 +175,11 @@ impl<'a> Mangler<'a> {
           n = n.max(uniqueness_groups[*index].1);
         }
       }
+      let name = get_mangled_name(&mut n);
       for index in related_uniq_groups {
-        uniqueness_groups[index].1 = n + 1;
+        uniqueness_groups[index].1 = n;
       }
-      self.allocator.alloc(get_mangled_name(n))
+      self.allocator.alloc(name)
     })
   }
 }
