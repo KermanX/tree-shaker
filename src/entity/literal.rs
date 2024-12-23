@@ -569,6 +569,10 @@ impl<'a> EntityFactory<'a> {
     self.entity(LiteralEntity::String(value, None))
   }
 
+  pub fn mangable_string(&self, value: &'a str, atom: MangleAtom) -> Entity<'a> {
+    self.entity(LiteralEntity::String(value, Some(atom)))
+  }
+
   pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {
     self.entity(LiteralEntity::Number(value.into(), str_rep))
   }
