@@ -90,7 +90,7 @@ impl<'a> ConsumableTrait<'a> for &'a MangleConstraint {
   }
 
   fn cloned(&self) -> Consumable<'a> {
-    unreachable!("MangleConstraint cannot be cloned")
+    Box::new(*self)
   }
 }
 
