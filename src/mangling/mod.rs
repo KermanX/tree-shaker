@@ -34,10 +34,11 @@ impl<'a> ConsumableTrait<'a> for MangleAtom {
   }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum MangleConstraint {
   Eq(MangleAtom, MangleAtom),
   Neq(MangleAtom, MangleAtom),
+  Multiple(Vec<MangleConstraint>),
 }
 
 impl MangleConstraint {
@@ -57,24 +58,39 @@ impl MangleConstraint {
     match self {
       MangleConstraint::Eq(a, b) => MangleConstraint::Neq(a, b),
       MangleConstraint::Neq(a, b) => MangleConstraint::Eq(a, b),
+      MangleConstraint::Multiple(c) => {
+        MangleConstraint::Multiple(c.into_iter().map(Self::negate).collect())
+      }
     }
   }
 
-  fn to_pair(self) -> (MangleAtom, MangleAtom) {
+  fn into_pair(self) -> (MangleAtom, MangleAtom) {
     match self {
       MangleConstraint::Eq(a, b) => (a, b),
       MangleConstraint::Neq(a, b) => (a, b),
+      MangleConstraint::Multiple(_) => {
+        unreachable!("Multiple constraints cannot be converted to pair")
+      }
     }
   }
 }
 
-impl<'a> ConsumableTrait<'a> for MangleConstraint {
+impl<'a> ConsumableTrait<'a> for &'a MangleConstraint {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.mangler.constraints.insert(*self);
+    match *self {
+      MangleConstraint::Multiple(cs) => {
+        for constraint in cs {
+          constraint.consume(analyzer);
+        }
+      }
+      c => {
+        analyzer.mangler.constraints.insert(c.clone());
+      }
+    }
   }
 
   fn cloned(&self) -> Consumable<'a> {
-    Box::new(*self)
+    unreachable!("MangleConstraint cannot be cloned")
   }
 }
 
@@ -115,7 +131,7 @@ impl AnalyzerMangler {
     };
 
     for constraint in constraints {
-      let (a, b) = constraint.to_pair();
+      let (a, b) = constraint.clone().into_pair();
       debug_assert_ne!(a, b);
       let a_is_non_mangable = transformer.non_mangable.contains(&a);
       let b_is_non_mangable = transformer.non_mangable.contains(&b);
@@ -167,10 +183,12 @@ impl AnalyzerMangler {
           },
           MangleConstraint::Neq(a, b) => {
             let index = uniqueness_groups.len();
-            existing.0 .1.push(index);
-            existing.1 .1.push(index);
+            let ((_, uniq_groups_a), (_, uniq_groups_b)) = existing;
+            uniq_groups_a.push(index);
+            uniq_groups_b.push(index);
             uniqueness_groups.push((vec![a, b], 0));
           }
+          MangleConstraint::Multiple(_) => unreachable!(),
         }
       }
     }

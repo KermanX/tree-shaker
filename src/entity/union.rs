@@ -30,6 +30,12 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     }
   }
 
+  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) {
+    for value in self.values.iter() {
+      value.consume_mangable(analyzer);
+    }
+  }
+
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     for value in self.values.iter() {
       value.unknown_mutate(analyzer, dep.cloned());

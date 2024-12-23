@@ -551,7 +551,9 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::String(_, Some(atom)) => {
         let val = analyzer.factory.entity(*self);
         if let Some(existing_atom) = existing_atom {
-          analyzer.factory.computed(val, MangleConstraint::Eq(*atom, *existing_atom))
+          analyzer
+            .factory
+            .computed(val, &*analyzer.allocator.alloc(MangleConstraint::Eq(*atom, *existing_atom)))
         } else {
           *existing_atom = Some(*atom);
           val

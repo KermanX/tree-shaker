@@ -67,9 +67,28 @@ impl<'a> EntityOpHost<'a> {
         return lhs_lit.strict_eq(rhs_lit);
       }
 
-      if lhs_lit.iter().all(|lit| !rhs_lit.contains(lit)) {
-        return (Some(false), None);
+      let mut constraints = Some(vec![]);
+      let mut all_neq = true;
+      'check: for l in &lhs_lit {
+        for r in &rhs_lit {
+          let (eq, mc) = l.strict_eq(*r);
+          all_neq &= eq == Some(false);
+          if let Some(mc) = mc {
+            if let Some(constraints) = &mut constraints {
+              constraints.push(mc);
+            } else {
+              constraints = None;
+            }
+          } else if !all_neq {
+            break 'check;
+          }
+        }
       }
+
+      return (
+        if all_neq { Some(false) } else { None },
+        constraints.map(MangleConstraint::Multiple),
+      );
     }
 
     (None, None)
@@ -307,7 +326,7 @@ impl<'a> EntityOpHost<'a> {
         analyzer.factory.mangable(
           analyzer.factory.boolean_maybe_unknown(equality),
           (lhs, rhs),
-          mangle_constraint,
+          analyzer.allocator.alloc(mangle_constraint),
         )
       } else {
         to_result(equality)

@@ -15,7 +15,7 @@ use std::cell::Cell;
 pub struct MangableEntity<'a> {
   val: Entity<'a>,
   deps: (Entity<'a>, Entity<'a>),
-  constraint: MangleConstraint,
+  constraint: &'a MangleConstraint,
   consumed: Cell<bool>,
 }
 
@@ -178,7 +178,7 @@ impl<'a> EntityFactory<'a> {
     &self,
     val: Entity<'a>,
     deps: (Entity<'a>, Entity<'a>),
-    constraint: MangleConstraint,
+    constraint: &'a MangleConstraint,
   ) -> Entity<'a> {
     self.entity(MangableEntity { val, deps, constraint, consumed: Cell::new(false) })
   }
