@@ -38,7 +38,7 @@ impl<'a> EntityOpHost<'a> {
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint>) {
     let (eq, m) = self.eq(analyzer, lhs, rhs);
-    (eq.map(|v| !v), m.map(MangleConstraint::negate))
+    (eq.map(|v| !v), m.map(MangleConstraint::negate_equality))
   }
 
   pub fn strict_eq(
@@ -101,7 +101,7 @@ impl<'a> EntityOpHost<'a> {
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint>) {
     let (eq, m) = self.strict_eq(analyzer, lhs, rhs);
-    (eq.map(|v| !v), m.map(MangleConstraint::negate))
+    (eq.map(|v| !v), m.map(MangleConstraint::negate_equality))
   }
 
   pub fn lt(
