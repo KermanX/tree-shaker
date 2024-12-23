@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
   dep::{DepId, ReferredDeps},
-  mangling::TransformerMangler,
+  mangling::Mangler,
   scope::conditional::ConditionalDataMap,
   utils::{DataPlaceholder, ExtraData, StatementVecData},
   TreeShakeConfig,
@@ -37,7 +37,7 @@ pub struct Transformer<'a> {
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   pub var_decls: RefCell<FxHashMap<SymbolId, bool>>,
-  pub mangler: RefCell<TransformerMangler<'a>>,
+  pub mangler: RefCell<Mangler<'a>>,
 
   /// The block statement has already exited, so we can and only can transform declarations themselves
   pub declaration_only: Cell<bool>,
@@ -77,7 +77,7 @@ impl<'a> Transformer<'a> {
       referred_deps: referred_nodes,
       conditional_data,
       var_decls: Default::default(),
-      mangler: RefCell::new(mangler.into_transformer(allocator)),
+      mangler: RefCell::new(mangler),
 
       declaration_only: Cell::new(false),
       need_unused_assignment_target: Cell::new(false),
