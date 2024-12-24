@@ -91,7 +91,7 @@ impl<'a> Analyzer<'a> {
     maybe_left: bool,
     maybe_right: bool,
   ) -> Entity<'a> {
-    assert!(maybe_left);
+    debug_assert!(maybe_left);
     let dep = self.register_conditional_data(dep_id, left, maybe_left, maybe_right, true, true);
     self.factory.computed(left, dep)
   }
@@ -103,7 +103,7 @@ impl<'a> Analyzer<'a> {
     maybe_left: bool,
     maybe_right: bool,
   ) -> impl ConsumableTrait<'a> + 'a {
-    assert!(maybe_right);
+    debug_assert!(maybe_right);
     self.push_conditional_cf_scope(
       dep_id,
       CfScopeKind::LogicalRight,

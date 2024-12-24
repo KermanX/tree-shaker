@@ -10,7 +10,7 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
+  consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait, ConsumableVec},
   dep::DepId,
   entity::{Entity, EntityFactory, LabelEntity},
   utils::{CalleeInfo, CalleeNode},
@@ -227,8 +227,22 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf.pop()
   }
 
-  pub fn pop_multiple_cf_scopes(&mut self, count: usize) {
-    self.scope_context.cf.stack.truncate(self.scope_context.cf.stack.len() - count);
+  pub fn pop_multiple_cf_scopes(
+    &mut self,
+    count: usize,
+  ) -> Option<ConsumableNode<'a, Vec<ConsumableNode<'a>>>> {
+    let mut exec_deps = vec![];
+    for _ in 0..count {
+      let id = self.scope_context.cf.stack.pop().unwrap();
+      if let Some(dep) = self.scope_context.cf.get_mut(id).deps.try_collect() {
+        exec_deps.push(dep);
+      }
+    }
+    if exec_deps.is_empty() {
+      None
+    } else {
+      Some(ConsumableNode::new(exec_deps))
+    }
   }
 
   pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {

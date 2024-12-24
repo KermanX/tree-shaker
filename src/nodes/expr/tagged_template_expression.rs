@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a TaggedTemplateExpression<'a>,
   ) -> Entity<'a> {
-    let (scope_count, tag, undefined, this) = match self.exec_callee(&node.tag) {
+    let (_, tag, _, this) = match self.exec_callee(&node.tag) {
       Ok(v) => v,
       Err(v) => return v,
     };
@@ -35,9 +35,7 @@ impl<'a> Analyzer<'a> {
       self.factory.arguments(arguments),
     );
 
-    self.pop_multiple_cf_scopes(scope_count);
-
-    self.factory.optional_union(value, undefined)
+    value
   }
 }
 

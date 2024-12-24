@@ -184,4 +184,15 @@ impl<'a> EntityFactory<'a> {
   pub fn computed<T: ConsumableTrait<'a> + 'a>(&self, val: Entity<'a>, dep: T) -> Entity<'a> {
     self.entity(ComputedEntity { val, dep, consumed: Cell::new(false) })
   }
+
+  pub fn optional_computed<T: ConsumableTrait<'a> + 'a>(
+    &self,
+    val: Entity<'a>,
+    dep: Option<T>,
+  ) -> Entity<'a> {
+    match dep {
+      Some(dep) => self.computed(val, dep),
+      None => val,
+    }
+  }
 }

@@ -11,8 +11,8 @@ impl<'a> Analyzer<'a> {
         let result = self.exec_call_expression_in_chain(node);
         match result {
           Ok((scope_count, value, undefined)) => {
-            self.pop_multiple_cf_scopes(scope_count);
-            self.factory.optional_union(value, undefined)
+            let exec_dep = self.pop_multiple_cf_scopes(scope_count);
+            self.factory.optional_union(self.factory.optional_computed(value, exec_dep), undefined)
           }
           Err(value) => value,
         }
@@ -21,8 +21,8 @@ impl<'a> Analyzer<'a> {
         let result = self.exec_member_expression_read_in_chain(node.to_member_expression(), false);
         match result {
           Ok((scope_count, value, undefined, _)) => {
-            self.pop_multiple_cf_scopes(scope_count);
-            self.factory.optional_union(value, undefined)
+            let exec_dep = self.pop_multiple_cf_scopes(scope_count);
+            self.factory.optional_union(self.factory.optional_computed(value, exec_dep), undefined)
           }
           Err(value) => value,
         }
