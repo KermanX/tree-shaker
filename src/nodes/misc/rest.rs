@@ -6,6 +6,7 @@ use crate::{
 };
 
 impl<'a> Analyzer<'a> {
+  /// const { enumerated_1, enumerated_2, ...rest } = object;
   pub fn exec_object_rest(
     &mut self,
     dep: impl Into<DepId>,

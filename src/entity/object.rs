@@ -396,7 +396,9 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
             } else if let Some(rest) = &mut *rest {
               rest.set(true, value, &mut setters);
             } else {
-              self.add_to_mangling_group(analyzer, key_atom.unwrap());
+              if mangable {
+                self.add_to_mangling_group(analyzer, key_atom.unwrap());
+              }
               string_keyed.insert(
                 key_str,
                 ObjectProperty {
@@ -486,22 +488,28 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       let string_keyed = self.string_keyed.borrow();
       let keys = string_keyed.keys().cloned().collect::<Vec<_>>();
       mem::drop(string_keyed);
+      let mangable = self.is_mangable();
       for key in keys {
         let mut string_keyed = self.string_keyed.borrow_mut();
         let properties = string_keyed.get_mut(&key).unwrap();
 
         let definite = properties.definite;
+        let key_entity = if mangable {
+          analyzer.factory.mangable_string(key, properties.mangling.unwrap().1)
+        } else {
+          analyzer.factory.string(key)
+        };
+
         let mut values = vec![];
         let mut getters = vec![];
         properties.get(analyzer, &mut values, &mut getters, &mut non_existent);
         mem::drop(string_keyed);
-
         for getter in getters {
           values.push(getter.call_as_getter(analyzer, dep.cloned(), rc));
         }
 
         if let Some(value) = analyzer.factory.try_union(values) {
-          result.push((definite, analyzer.factory.string(key), value));
+          result.push((definite, key_entity, value));
         }
       }
     }
@@ -811,12 +819,16 @@ impl<'a> ObjectEntity<'a> {
     }
   }
 
+  fn is_mangable(&self) -> bool {
+    self.mangling_group.is_some_and(|group| group.get().is_some())
+  }
+
   fn check_mangable(
     &self,
     analyzer: &mut Analyzer<'a>,
     literals: &FxHashSet<LiteralEntity>,
   ) -> bool {
-    if self.mangling_group.is_some_and(|group| group.get().is_some()) {
+    if self.is_mangable() {
       if is_literal_mangable(literals) {
         true
       } else {
