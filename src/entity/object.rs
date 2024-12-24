@@ -359,6 +359,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         }
       }
     } else {
+      self.disable_mangling(analyzer);
+
       indeterminate = true;
 
       let mut unknown_keyed = self.unknown_keyed.borrow_mut();
@@ -619,6 +621,12 @@ impl<'a> ObjectEntity<'a> {
   ) {
     let value = analyzer.factory.computed(value, key);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
+      let mut mangable = self.is_mangable();
+      if !is_literal_mangable(&key_literals) {
+        self.disable_mangling(analyzer);
+        mangable = false;
+      }
+
       let definite = definite && key_literals.len() == 1;
       for key_literal in key_literals {
         match key_literal {
@@ -627,7 +635,7 @@ impl<'a> ObjectEntity<'a> {
             let existing = string_keyed.get_mut(key_str);
             let reused_property = definite
               .then(|| {
-                existing.and_then(|existing| {
+                existing.as_ref().and_then(|existing| {
                   for property in existing.possible_values.iter() {
                     if let ObjectPropertyValue::Property(getter, setter) = property {
                       return Some((*getter, *setter));
@@ -637,6 +645,19 @@ impl<'a> ObjectEntity<'a> {
                 })
               })
               .flatten();
+            let constraint = if mangable {
+              existing.as_ref().map(|existing| {
+                let (_, existing_atom) = existing.mangling.unwrap();
+                MangleConstraint::Eq(existing_atom, key_atom.unwrap())
+              })
+            } else {
+              None
+            };
+            let value = if let Some(constraint) = constraint {
+              analyzer.factory.computed(value, &*analyzer.factory.alloc(constraint))
+            } else {
+              value
+            };
             let property_val = match kind {
               PropertyKind::Init => ObjectPropertyValue::Field(value, false),
               PropertyKind::Get => ObjectPropertyValue::Property(
@@ -654,7 +675,7 @@ impl<'a> ObjectEntity<'a> {
                 definite,
                 possible_values: vec![property_val],
                 non_existent: ConsumableCollector::default(),
-                mangling: None,
+                mangling: mangable.then(|| (key, key_atom.unwrap())),
               };
               string_keyed.insert(key_str, property);
             } else {
@@ -666,6 +687,7 @@ impl<'a> ObjectEntity<'a> {
         }
       }
     } else {
+      self.disable_mangling(analyzer);
       let property_val = match kind {
         PropertyKind::Init => ObjectPropertyValue::Field(value, false),
         PropertyKind::Get => ObjectPropertyValue::Property(Some(value), None),
