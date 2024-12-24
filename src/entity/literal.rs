@@ -40,8 +40,9 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn consume_mangable(&self, _analyzer: &mut Analyzer<'a>) {
+  fn consume_mangable(&self, _analyzer: &mut Analyzer<'a>) -> bool {
     // No effect
+    !matches!(self, LiteralEntity::String(_, Some(_)))
   }
 
   fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {

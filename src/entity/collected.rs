@@ -27,9 +27,9 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     self.consume_deps(analyzer);
   }
 
-  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) {
-    self.val.consume_mangable(analyzer);
+  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
     self.consume_deps(analyzer);
+    self.val.consume_mangable(analyzer)
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {

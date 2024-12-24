@@ -30,9 +30,16 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     }
   }
 
-  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) {
-    for value in self.values.iter() {
-      value.consume_mangable(analyzer);
+  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
+    if !self.consumed.get() {
+      let mut consumed = true;
+      for value in self.values.iter() {
+        consumed &= value.consume_mangable(analyzer);
+      }
+      self.consumed.set(consumed);
+      consumed
+    } else {
+      true
     }
   }
 

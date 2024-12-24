@@ -25,9 +25,15 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     self.dep.consume(analyzer);
   }
 
-  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) {
-    self.val.consume_mangable(analyzer);
-    self.dep.consume(analyzer);
+  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
+    if !self.consumed.get() {
+      self.dep.consume(analyzer);
+      let consumed = self.val.consume_mangable(analyzer);
+      self.consumed.set(consumed);
+      consumed
+    } else {
+      true
+    }
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {

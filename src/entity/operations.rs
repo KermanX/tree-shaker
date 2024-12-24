@@ -326,7 +326,7 @@ impl<'a> EntityOpHost<'a> {
         analyzer.factory.mangable(
           analyzer.factory.boolean_maybe_unknown(equality),
           (lhs, rhs),
-          analyzer.allocator.alloc(mangle_constraint),
+          analyzer.factory.alloc(mangle_constraint),
         )
       } else {
         to_result(equality)

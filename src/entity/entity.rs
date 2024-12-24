@@ -15,8 +15,10 @@ pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable
 
 pub trait EntityTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
-  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) {
+  /// Returns true if the entity is completely consumed
+  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
     self.consume(analyzer);
+    true
   }
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>);
 
@@ -126,7 +128,7 @@ impl<'a> Entity<'a> {
     self.0.consume(analyzer)
   }
 
-  pub fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) {
+  pub fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
     self.0.consume_mangable(analyzer)
   }
 
