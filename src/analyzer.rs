@@ -64,7 +64,7 @@ impl<'a> Analyzer<'a> {
       referred_deps: Default::default(),
       conditional_data: Default::default(),
       loop_data: Default::default(),
-      mangler: Mangler::new(allocator),
+      mangler: Mangler::new(config.mangling, allocator),
       named_exports: Vec::new(),
       default_export: None,
       scope_context: ScopeContext::new(factory),

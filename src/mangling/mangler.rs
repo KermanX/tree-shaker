@@ -18,6 +18,8 @@ oxc_index::define_index_type! {
 pub type MangleAtomGroups = (Option<IdentityGroupId>, FxHashSet<UniquenessGroupId>);
 
 pub struct Mangler<'a> {
+  pub enabled: bool,
+
   pub allocator: &'a Allocator,
 
   pub non_mangable: FxHashSet<MangleAtom>,
@@ -32,8 +34,9 @@ pub struct Mangler<'a> {
 }
 
 impl<'a> Mangler<'a> {
-  pub fn new(allocator: &'a Allocator) -> Self {
+  pub fn new(enabled: bool, allocator: &'a Allocator) -> Self {
     Self {
+      enabled,
       allocator,
       non_mangable: FxHashSet::default(),
       identity_groups: IndexVec::new(),
@@ -71,7 +74,7 @@ impl<'a> Mangler<'a> {
   }
 
   pub fn resolve(&mut self, atom: MangleAtom) -> Option<&'a str> {
-    if self.non_mangable.contains(&atom) {
+    if !self.enabled || self.non_mangable.contains(&atom) {
       None
     } else {
       Some(if let Some((identity_group, uniqueness_groups)) = self.atoms.get(&atom) {

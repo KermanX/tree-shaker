@@ -25,6 +25,9 @@ struct Args {
 
   #[arg(short, long, default_value_t = true)]
   jsx: bool,
+
+  #[arg(long, default_value_t = false)]
+  no_mangle: bool,
 }
 
 fn main() {
@@ -69,7 +72,8 @@ fn main() {
         }
       }
       .with_react_jsx(args.jsx)
-      .with_always_inline_literal(args.always_inline_literal),
+      .with_always_inline_literal(args.always_inline_literal)
+      .with_mangling(!args.no_mangle),
       minify_options: None,
       codegen_options: CodegenOptions::default(),
     },

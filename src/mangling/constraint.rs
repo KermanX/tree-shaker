@@ -75,7 +75,10 @@ impl<'a> ConsumableTrait<'a> for &'a MangleConstraint {
 
 impl<'a> Mangler<'a> {
   fn mark_equality(&mut self, eq: bool, a: MangleAtom, b: MangleAtom) {
-    debug_assert_ne!(a, b);
+    if a == b {
+      return;
+    }
+
     let a_is_non_mangable = self.non_mangable.contains(&a);
     let b_is_non_mangable = self.non_mangable.contains(&b);
     if a_is_non_mangable || b_is_non_mangable {
