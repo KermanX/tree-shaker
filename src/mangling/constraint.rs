@@ -130,21 +130,4 @@ impl<'a> Mangler<'a> {
       }
     }
   }
-
-  fn mark_atom_non_mangable(&mut self, atom: MangleAtom) {
-    if self.non_mangable.insert(atom) {
-      if let Some((identity_group, uniqueness_groups)) = self.atoms.remove(&atom) {
-        if let Some(index) = identity_group {
-          for atom in mem::take(&mut self.identity_groups[index].0) {
-            self.mark_atom_non_mangable(atom);
-          }
-        }
-        for index in uniqueness_groups {
-          for atom in mem::take(&mut self.uniqueness_groups[index].0) {
-            self.mark_atom_non_mangable(atom);
-          }
-        }
-      }
-    }
-  }
 }

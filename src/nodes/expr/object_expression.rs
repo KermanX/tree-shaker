@@ -1,9 +1,11 @@
+use std::cell::Cell;
+
 use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
   build_effect,
   consumable::box_consumable,
-  entity::{Entity, EntityTrait},
+  entity::{Entity, EntityTrait, ObjectManglingGroupId},
   transformer::Transformer,
 };
 use oxc::{
@@ -16,7 +18,14 @@ use oxc::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
-    let object = self.new_empty_object(&self.builtins.prototypes.object);
+    let mangling_group = self
+      .load_data::<Option<ObjectManglingGroupId>>(AstKind2::ObjectExpression(node))
+      .get_or_insert_with(|| {
+        self
+          .allocator
+          .alloc(Cell::new(Some(self.mangler.uniqueness_groups.push(Default::default()))))
+      });
+    let object = self.new_empty_object(&self.builtins.prototypes.object, Some(*mangling_group));
 
     let mut has_proto = false;
 
@@ -27,16 +36,13 @@ impl<'a> Analyzer<'a> {
           let value = self.exec_expression(&node.value);
           let value = self.factory.computed(value, AstKind2::ObjectProperty(node));
 
-          match &node.key {
-            PropertyKey::StaticIdentifier(node) if node.name == "__proto__" => {
-              has_proto = true;
-              // Ensure the __proto__ is consumed - it may be overridden by the next property like ["__proto__"]: 1
-              self.consume(value);
-            }
-            _ => {
-              object.init_property(self, node.kind, key, value, true);
-            }
-          };
+          if matches!(&node.key, PropertyKey::StaticIdentifier(node) if node.name == "__proto__") {
+            has_proto = true;
+            // Ensure the __proto__ is consumed - it may be overridden by the next property like ["__proto__"]: 1
+            self.consume(value);
+          } else {
+            object.init_property(self, node.kind, key, value, true);
+          }
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);

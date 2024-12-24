@@ -1,5 +1,8 @@
 /// Adapted from https://github.com/oxc-project/oxc/blob/774babb7f2c9a36a12804d76c4c9b6b5684569bb/crates/oxc_mangler/src/lib.rs
 use oxc::span::CompactStr;
+use rustc_hash::FxHashSet;
+
+use crate::entity::LiteralEntity;
 
 #[rustfmt::skip]
 fn is_keyword(s: &str) -> bool {
@@ -49,4 +52,15 @@ pub fn get_mangled_name(count: &mut usize) -> CompactStr {
       break name;
     }
   }
+}
+
+pub fn is_literal_mangable(literals: &FxHashSet<LiteralEntity<'_>>) -> bool {
+  for key_literal in literals {
+    if let LiteralEntity::String(_, key_atom) = key_literal {
+      if key_atom.is_none() {
+        return false;
+      }
+    }
+  }
+  true
 }

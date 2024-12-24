@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
     self.push_variable_scope();
     self.variable_scope_mut().super_class = super_class;
 
-    let statics = self.new_empty_object(&self.builtins.prototypes.function);
+    let statics = self.new_empty_object(&self.builtins.prototypes.function, None);
     for (index, element) in node.body.body.iter().enumerate() {
       if let ClassElement::MethodDefinition(node) = element {
         if node.r#static {

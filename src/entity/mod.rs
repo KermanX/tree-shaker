@@ -31,7 +31,7 @@ pub use entity::{Entity, EntityTrait};
 pub use factory::EntityFactory;
 pub use label::LabelEntity;
 pub use literal::LiteralEntity;
-pub use object::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
+pub use object::{ObjectEntity, ObjectManglingGroupId, ObjectProperty, ObjectPropertyValue};
 pub use operations::EntityOpHost;
 pub use primitive::PrimitiveEntity;
 pub use typeof_result::TypeofResult;

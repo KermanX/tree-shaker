@@ -1,5 +1,6 @@
-use super::MangleAtom;
-use crate::utils::get_mangled_name;
+use std::mem;
+
+use super::{utils::get_mangled_name, MangleAtom};
 use oxc::allocator::Allocator;
 use oxc_index::IndexVec;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -38,6 +39,29 @@ impl<'a> Mangler<'a> {
       identity_groups: IndexVec::new(),
       uniqueness_groups: IndexVec::new(),
       atoms: FxHashMap::default(),
+    }
+  }
+
+  pub fn mark_atom_non_mangable(&mut self, atom: MangleAtom) {
+    if self.non_mangable.insert(atom) {
+      if let Some((identity_group, uniqueness_groups)) = self.atoms.remove(&atom) {
+        if let Some(index) = identity_group {
+          for atom in mem::take(&mut self.identity_groups[index].0) {
+            self.mark_atom_non_mangable(atom);
+          }
+        }
+        for index in uniqueness_groups {
+          for atom in mem::take(&mut self.uniqueness_groups[index].0) {
+            self.mark_atom_non_mangable(atom);
+          }
+        }
+      }
+    }
+  }
+
+  pub fn mark_uniqueness_group_non_mangable(&mut self, group: UniquenessGroupId) {
+    for atom in mem::take(&mut self.uniqueness_groups[group].0) {
+      self.mark_atom_non_mangable(atom);
     }
   }
 

@@ -8,13 +8,15 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
     let (args, children, _) = args.destruct_as_array(analyzer, dep, 2);
     let [tag, props] = args[..] else { unreachable!() };
     let props = match props.test_nullish() {
-      Some(true) => {
-        analyzer.factory.entity(analyzer.new_empty_object(&analyzer.builtins.prototypes.object))
-      }
+      Some(true) => analyzer
+        .factory
+        .entity(analyzer.new_empty_object(&analyzer.builtins.prototypes.object, None)),
       Some(false) => props,
       None => analyzer.factory.union((
         props,
-        analyzer.factory.entity(analyzer.new_empty_object(&analyzer.builtins.prototypes.object)),
+        analyzer
+          .factory
+          .entity(analyzer.new_empty_object(&analyzer.builtins.prototypes.object, None)),
       )),
     };
 

@@ -7,6 +7,7 @@ use crate::{
   analyzer::Analyzer,
   builtins::Prototype,
   consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
+  mangling::{is_literal_mangable, MangleAtom, MangleConstraint, UniquenessGroupId},
   scope::CfScopeKind,
   use_consumed_flag,
 };
@@ -19,6 +20,8 @@ use std::{
   cell::{Cell, RefCell},
   mem,
 };
+
+pub type ObjectManglingGroupId<'a> = &'a Cell<Option<UniquenessGroupId>>;
 
 #[derive(Debug)]
 pub struct ObjectEntity<'a> {
@@ -34,6 +37,7 @@ pub struct ObjectEntity<'a> {
   // TODO: symbol_keyed
   pub rest: RefCell<Option<ObjectProperty<'a>>>,
   pub prototype: &'a Prototype<'a>,
+  pub mangling_group: Option<ObjectManglingGroupId<'a>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -49,11 +53,17 @@ pub struct ObjectProperty<'a> {
   pub definite: bool,
   pub possible_values: Vec<ObjectPropertyValue<'a>>,
   pub non_existent: ConsumableCollector<'a>,
+  pub mangling: Option<(Entity<'a>, MangleAtom)>,
 }
 
 impl<'a> Default for ObjectProperty<'a> {
   fn default() -> Self {
-    Self { definite: true, possible_values: vec![], non_existent: ConsumableCollector::default() }
+    Self {
+      definite: true,
+      possible_values: vec![],
+      non_existent: ConsumableCollector::default(),
+      mangling: None,
+    }
   }
 }
 
@@ -283,13 +293,12 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 
-    let key = key.get_to_property_key(analyzer);
-    let value = analyzer.factory.computed(value, (exec_deps, dep.cloned(), key));
-
+    let mut mangable = self.is_mangable();
     let mut setters = vec![];
 
     {
       let unknown_keyed = self.unknown_keyed.borrow();
+      mangable &= unknown_keyed.possible_values.is_empty();
       for possible_value in &unknown_keyed.possible_values {
         if let ObjectPropertyValue::Property(_, setter) = possible_value {
           if let Some(setter) = setter {
@@ -300,25 +309,47 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       }
     }
 
+    let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
-      indeterminate |= key_literals.len() > 1;
-
       let mut string_keyed = self.string_keyed.borrow_mut();
       let mut rest = self.rest.borrow_mut();
+
+      indeterminate |= key_literals.len() > 1;
+      mangable &= rest.is_none();
+      mangable &= is_literal_mangable(&key_literals);
+
+      let value = if mangable {
+        analyzer.factory.computed(value, (exec_deps, dep.cloned()))
+      } else {
+        self.disable_mangling(analyzer);
+        analyzer.factory.computed(value, (exec_deps, dep.cloned(), key))
+      };
+
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key, atom) => {
-            if let Some(property) = string_keyed.get_mut(key) {
+          LiteralEntity::String(key_str, key_atom) => {
+            if let Some(property) = string_keyed.get_mut(key_str) {
+              let value = if mangable {
+                let (prev_key, prev_atom) = property.mangling.unwrap();
+                analyzer.factory.mangable(
+                  value,
+                  (prev_key, key),
+                  analyzer.allocator.alloc(MangleConstraint::Eq(prev_atom, key_atom.unwrap())),
+                )
+              } else {
+                value
+              };
               property.set(indeterminate, value, &mut setters);
             } else if let Some(rest) = &mut *rest {
               rest.set(true, value, &mut setters);
             } else {
               string_keyed.insert(
-                key,
+                key_str,
                 ObjectProperty {
                   definite: !indeterminate,
                   possible_values: vec![ObjectPropertyValue::Field(value, false)],
                   non_existent: ConsumableCollector::default(),
+                  mangling: mangable.then(|| (key, key_atom.unwrap())),
                 },
               );
             }
@@ -574,6 +605,7 @@ impl<'a> ObjectEntity<'a> {
       unknown_keyed: Default::default(),
       rest: Default::default(),
       prototype,
+      mangling_group: None,
     }
   }
 
@@ -590,9 +622,9 @@ impl<'a> ObjectEntity<'a> {
       let definite = definite && key_literals.len() == 1;
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key, atom) => {
+          LiteralEntity::String(key_str, key_atom) => {
             let mut string_keyed = self.string_keyed.borrow_mut();
-            let existing = string_keyed.get_mut(key);
+            let existing = string_keyed.get_mut(key_str);
             let reused_property = definite
               .then(|| {
                 existing.and_then(|existing| {
@@ -616,14 +648,15 @@ impl<'a> ObjectEntity<'a> {
                 Some(value),
               ),
             };
-            let existing = string_keyed.get_mut(key);
+            let existing = string_keyed.get_mut(key_str);
             if definite || existing.is_none() {
               let property = ObjectProperty {
                 definite,
                 possible_values: vec![property_val],
                 non_existent: ConsumableCollector::default(),
+                mangling: None,
               };
-              string_keyed.insert(key, property);
+              string_keyed.insert(key_str, property);
             } else {
               existing.unwrap().possible_values.push(property_val);
             }
@@ -664,13 +697,30 @@ impl<'a> ObjectEntity<'a> {
         definite: false,
         possible_values: vec![property],
         non_existent: ConsumableCollector::default(),
+        mangling: None,
       });
+    }
+  }
+
+  fn is_mangable(&self) -> bool {
+    self.mangling_group.is_some_and(|group| group.get().is_some())
+  }
+
+  fn disable_mangling(&self, analyzer: &mut Analyzer<'a>) {
+    if let Some(group) = self.mangling_group {
+      if let Some(group) = group.replace(None) {
+        analyzer.mangler.mark_uniqueness_group_non_mangable(group);
+      }
     }
   }
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new_empty_object(&mut self, prototype: &'a Prototype<'a>) -> ObjectEntity<'a> {
+  pub fn new_empty_object(
+    &mut self,
+    prototype: &'a Prototype<'a>,
+    mangling_group: Option<ObjectManglingGroupId<'a>>,
+  ) -> ObjectEntity<'a> {
     ObjectEntity {
       consumable: true,
       consumed: Cell::new(false),
@@ -681,20 +731,22 @@ impl<'a> Analyzer<'a> {
       unknown_keyed: RefCell::new(ObjectProperty::default()),
       rest: RefCell::new(None),
       prototype,
+      mangling_group,
     }
   }
 
   pub fn new_function_object(&mut self) -> &'a ObjectEntity<'a> {
-    let object = self.new_empty_object(&self.builtins.prototypes.function);
+    let object = self.new_empty_object(&self.builtins.prototypes.function, None);
     object.string_keyed.borrow_mut().insert(
       "prototype",
       ObjectProperty {
         definite: true,
         possible_values: vec![ObjectPropertyValue::Field(
-          self.factory.entity(self.new_empty_object(&self.builtins.prototypes.object)),
+          self.factory.entity(self.new_empty_object(&self.builtins.prototypes.object, None)),
           false,
         )],
         non_existent: Default::default(),
+        mangling: None,
       },
     );
     self.allocator.alloc(object)

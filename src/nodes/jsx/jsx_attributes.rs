@@ -12,7 +12,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a allocator::Vec<'a, JSXAttributeItem<'a>>,
   ) -> ObjectEntity<'a> {
-    let object = self.new_empty_object(&self.builtins.prototypes.object);
+    let object = self.new_empty_object(&self.builtins.prototypes.object, None);
 
     for attr in node.iter() {
       let dep_id = AstKind2::JSXAttributeItem(attr);

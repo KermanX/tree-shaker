@@ -24,6 +24,7 @@ impl<'a> Builtins<'a> {
           None,
         )],
         non_existent: Default::default(),
+        mangling: None,
       },
     );
 

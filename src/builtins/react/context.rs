@@ -44,7 +44,7 @@ pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> E
   factory.implemented_builtin_fn("React::createContext", |analyzer, dep, _this, args| {
     let default_value = args.destruct_as_array(analyzer, dep, 1).0[0];
 
-    let context = analyzer.new_empty_object(&analyzer.builtins.prototypes.object);
+    let context = analyzer.new_empty_object(&analyzer.builtins.prototypes.object, None);
 
     let context_id = analyzer.builtins.react_data.contexts.push(ReactContextData {
       object_id: context.object_id,
