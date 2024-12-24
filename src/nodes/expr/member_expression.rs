@@ -93,12 +93,8 @@ impl<'a> Analyzer<'a> {
   fn exec_key(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {
     match node {
       MemberExpression::ComputedMemberExpression(node) => self.exec_expression(&node.expression),
-      MemberExpression::StaticMemberExpression(node) => {
-        self.factory.string(node.property.name.as_str())
-      }
-      MemberExpression::PrivateFieldExpression(node) => {
-        self.factory.string(self.escape_private_identifier_name(node.field.name.as_str()))
-      }
+      MemberExpression::StaticMemberExpression(node) => self.exec_identifier_name(&node.property),
+      MemberExpression::PrivateFieldExpression(node) => self.exec_private_identifier(&node.field),
     }
   }
 }
@@ -145,6 +141,7 @@ impl<'a> Transformer<'a> {
         if need_read {
           let object = self.transform_expression(object, true).unwrap();
           let key = self.transform_expression(expression, true).unwrap();
+
           Some(Expression::from(self.ast_builder.member_expression_computed(
             *span,
             object,
@@ -161,11 +158,13 @@ impl<'a> Transformer<'a> {
         let StaticMemberExpression { span, object, property, .. } = node.as_ref();
 
         let object = self.transform_expression(object, need_read);
+        let property = self.transform_identifier_name(property);
+
         if need_read {
           Some(Expression::from(self.ast_builder.member_expression_static(
             *span,
             object.unwrap(),
-            property.clone(),
+            property,
             need_optional,
           )))
         } else {
@@ -184,7 +183,7 @@ impl<'a> Transformer<'a> {
               .member_expression_private_field_expression(
                 *span,
                 object.unwrap(),
-                field.clone(),
+                self.transform_private_identifier(field),
                 need_optional,
               )
               .into(),
@@ -233,18 +232,20 @@ impl<'a> Transformer<'a> {
         let StaticMemberExpression { span, object, property, .. } = node.as_ref();
 
         let transformed_object = self.transform_expression(object, need_write);
+        let property = self.transform_identifier_name(property);
+
         if need_write {
           Some(self.ast_builder.member_expression_static(
             *span,
             transformed_object.unwrap(),
-            property.clone(),
+            property,
             false,
           ))
         } else if transformed_object.is_some() {
           Some(self.ast_builder.member_expression_static(
             *span,
             self.transform_expression(object, true).unwrap(),
-            property.clone(),
+            property,
             false,
           ))
         } else {
@@ -255,19 +256,20 @@ impl<'a> Transformer<'a> {
         let PrivateFieldExpression { span, object, field, .. } = node.as_ref();
 
         let transformed_object = self.transform_expression(object, need_write);
+        let field = self.transform_private_identifier(field);
 
         if need_write {
           Some(self.ast_builder.member_expression_private_field_expression(
             *span,
             transformed_object.unwrap(),
-            field.clone(),
+            field,
             false,
           ))
         } else if transformed_object.is_some() {
           Some(self.ast_builder.member_expression_private_field_expression(
             *span,
             self.transform_expression(object, true).unwrap(),
-            field.clone(),
+            field,
             false,
           ))
         } else {

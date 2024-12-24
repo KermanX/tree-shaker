@@ -233,6 +233,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
+    let mut mangable = false;
     let mut values = vec![];
     let mut getters = vec![];
     let mut non_existent = vec![];
@@ -241,7 +242,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     let mut may_add_undefined = false;
     let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
-      let mangable = self.check_mangable(analyzer, &key_literals);
+      mangable = self.check_mangable(analyzer, &key_literals);
       let mut string_keyed = self.string_keyed.borrow_mut();
       for key_literal in key_literals {
         match key_literal {
@@ -319,7 +320,11 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
 
     let value = analyzer.factory.try_union(values).unwrap_or(analyzer.factory.undefined);
-    analyzer.factory.computed(value, ConsumableNode::new((non_existent, dep, key)))
+    if mangable {
+      analyzer.factory.computed(value, ConsumableNode::new((non_existent, dep)))
+    } else {
+      analyzer.factory.computed(value, ConsumableNode::new((non_existent, dep, key)))
+    }
   }
 
   fn set_property(
@@ -665,9 +670,9 @@ impl<'a> ObjectEntity<'a> {
     value: Entity<'a>,
     definite: bool,
   ) {
-    let value = analyzer.factory.computed(value, key);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mangable = self.check_mangable(analyzer, &key_literals);
+      let value = if mangable { value } else { analyzer.factory.computed(value, key) };
 
       let definite = definite && key_literals.len() == 1;
       for key_literal in key_literals {
@@ -688,10 +693,16 @@ impl<'a> ObjectEntity<'a> {
               })
               .flatten();
             let constraint = if mangable {
-              existing.as_ref().map(|existing| {
+              if let Some(existing) = &existing {
                 let (_, existing_atom) = existing.mangling.unwrap();
-                MangleConstraint::Eq(existing_atom, key_atom.unwrap())
-              })
+                Some(MangleConstraint::Eq(existing_atom, key_atom.unwrap()))
+              } else {
+                analyzer.mangler.add_to_uniqueness_group(
+                  self.mangling_group.unwrap().get().unwrap(),
+                  key_atom.unwrap(),
+                );
+                None
+              }
             } else {
               None
             };
@@ -730,6 +741,7 @@ impl<'a> ObjectEntity<'a> {
       }
     } else {
       self.disable_mangling(analyzer);
+      let value = analyzer.factory.computed(value, key);
       let property_val = match kind {
         PropertyKind::Init => ObjectPropertyValue::Field(value, false),
         PropertyKind::Get => ObjectPropertyValue::Property(Some(value), None),

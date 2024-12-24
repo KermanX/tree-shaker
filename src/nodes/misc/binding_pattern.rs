@@ -182,21 +182,30 @@ impl<'a> Transformer<'a> {
 
           let BindingProperty { span, key, value, shorthand, computed } = property;
 
-          if *shorthand && matches!(value.kind, BindingPatternKind::BindingIdentifier(_)) {
+          let transformed_key = self.transform_property_key(key, need_property);
+          let shorthand = *shorthand
+            && transformed_key
+              .as_ref()
+              .map_or(true, |transformed| transformed.name() == key.name());
+          if shorthand && matches!(value.kind, BindingPatternKind::BindingIdentifier(_)) {
             if self.transform_binding_pattern(value, false).is_some()
               || need_property
-              || self.transform_property_key(key, false).is_some()
+              || transformed_key.is_some()
             {
               transformed_properties.push(self.clone_node(property));
             }
           } else {
-            let transformed_key = self.transform_property_key(key, need_property);
             let value = self.transform_binding_pattern(value, transformed_key.is_some());
             if let Some(value) = value {
-              let key =
+              let transformed_key =
                 transformed_key.unwrap_or_else(|| self.transform_property_key(key, true).unwrap());
-              transformed_properties
-                .push(self.ast_builder.binding_property(*span, key, value, *shorthand, *computed));
+              transformed_properties.push(self.ast_builder.binding_property(
+                *span,
+                transformed_key,
+                value,
+                shorthand,
+                *computed,
+              ));
             }
           }
         }

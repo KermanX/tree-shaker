@@ -65,6 +65,11 @@ impl<'a> Mangler<'a> {
     }
   }
 
+  pub fn add_to_uniqueness_group(&mut self, group: UniquenessGroupId, atom: MangleAtom) {
+    self.atoms.entry(atom).or_default().1.insert(group);
+    self.uniqueness_groups[group].0.push(atom);
+  }
+
   pub fn resolve(&mut self, atom: MangleAtom) -> Option<&'a str> {
     if self.non_mangable.contains(&atom) {
       None
