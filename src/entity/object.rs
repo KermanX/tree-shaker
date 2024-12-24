@@ -197,6 +197,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
     // self.deps.take().consume_all(analyzer);
 
+    self.disable_mangling(analyzer);
+
     for property in self.string_keyed.take().into_values() {
       property.consume(analyzer);
     }
@@ -394,6 +396,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
             } else if let Some(rest) = &mut *rest {
               rest.set(true, value, &mut setters);
             } else {
+              self.add_to_mangling_group(analyzer, key_atom.unwrap());
               string_keyed.insert(
                 key_str,
                 ObjectProperty {
@@ -522,17 +525,50 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
 
     let key = key.get_to_property_key(analyzer);
-    let dep = (dep, exec_deps);
+
+    {
+      let mut unknown_keyed = self.unknown_keyed.borrow_mut();
+      if !unknown_keyed.possible_values.is_empty() {
+        unknown_keyed.delete(true, box_consumable((exec_deps.clone(), dep.cloned(), key)));
+      }
+    }
 
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let indeterminate = indeterminate || key_literals.len() > 1;
+      let mangable = self.check_mangable(analyzer, &key_literals);
+      let dep = if mangable {
+        box_consumable((exec_deps, dep))
+      } else {
+        box_consumable((exec_deps, dep, key))
+      };
 
       let mut string_keyed = self.string_keyed.borrow_mut();
+      let mut rest = self.rest.borrow_mut();
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key, atom) => {
-            if let Some(property) = string_keyed.get_mut(key) {
-              property.delete(indeterminate, dep.cloned());
+          LiteralEntity::String(key_str, key_atom) => {
+            if let Some(property) = string_keyed.get_mut(key_str) {
+              property.delete(
+                indeterminate,
+                if mangable {
+                  let (prev_key, prev_atom) = property.mangling.unwrap();
+                  box_consumable((
+                    dep.cloned(),
+                    // This is a hack
+                    analyzer.factory.mangable(
+                      analyzer.factory.immutable_unknown,
+                      (prev_key, key),
+                      analyzer.factory.alloc(MangleConstraint::Eq(prev_atom, key_atom.unwrap())),
+                    ),
+                  ))
+                } else {
+                  dep.cloned()
+                },
+              );
+            } else if let Some(rest) = &mut *rest {
+              rest.delete(true, box_consumable((dep.cloned(), key)));
+            } else if mangable {
+              self.add_to_mangling_group(analyzer, key_atom.unwrap());
             }
           }
           LiteralEntity::Symbol(_, _) => todo!(),
@@ -540,15 +576,14 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         }
       }
     } else {
+      self.disable_mangling(analyzer);
+
+      let dep = box_consumable((exec_deps, dep, key));
+
       let mut string_keyed = self.string_keyed.borrow_mut();
       for property in string_keyed.values_mut() {
         property.delete(true, dep.cloned());
       }
-    }
-
-    let mut unknown_keyed = self.unknown_keyed.borrow_mut();
-    if !unknown_keyed.possible_values.is_empty() {
-      unknown_keyed.delete(true, dep.cloned());
     }
   }
 
@@ -697,10 +732,7 @@ impl<'a> ObjectEntity<'a> {
                 let (_, existing_atom) = existing.mangling.unwrap();
                 Some(MangleConstraint::Eq(existing_atom, key_atom.unwrap()))
               } else {
-                analyzer.mangler.add_to_uniqueness_group(
-                  self.mangling_group.unwrap().get().unwrap(),
-                  key_atom.unwrap(),
-                );
+                self.add_to_mangling_group(analyzer, key_atom.unwrap());
                 None
               }
             } else {
@@ -802,6 +834,10 @@ impl<'a> ObjectEntity<'a> {
         analyzer.mangler.mark_uniqueness_group_non_mangable(group);
       }
     }
+  }
+
+  fn add_to_mangling_group(&self, analyzer: &mut Analyzer<'a>, key_atom: MangleAtom) {
+    analyzer.mangler.add_to_uniqueness_group(self.mangling_group.unwrap().get().unwrap(), key_atom);
   }
 }
 
