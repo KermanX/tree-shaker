@@ -15,7 +15,7 @@ use oxc::{
   ast::ast::PropertyKind,
   semantic::{ScopeId, SymbolId},
 };
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::{
   cell::{Cell, RefCell},
   mem,
@@ -293,12 +293,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 
-    let mut mangable = self.is_mangable();
     let mut setters = vec![];
 
     {
       let unknown_keyed = self.unknown_keyed.borrow();
-      mangable &= unknown_keyed.possible_values.is_empty();
       for possible_value in &unknown_keyed.possible_values {
         if let ObjectPropertyValue::Property(_, setter) = possible_value {
           if let Some(setter) = setter {
@@ -315,9 +313,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       let mut rest = self.rest.borrow_mut();
 
       indeterminate |= key_literals.len() > 1;
-      mangable &= rest.is_none();
-      mangable &= is_literal_mangable(&key_literals);
 
+      let mangable = self.check_mangable(analyzer, &key_literals);
       let value = if mangable {
         analyzer.factory.computed(value, (exec_deps, dep.cloned()))
       } else {
@@ -621,11 +618,7 @@ impl<'a> ObjectEntity<'a> {
   ) {
     let value = analyzer.factory.computed(value, key);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
-      let mut mangable = self.is_mangable();
-      if !is_literal_mangable(&key_literals) {
-        self.disable_mangling(analyzer);
-        mangable = false;
-      }
+      let mangable = self.check_mangable(analyzer, &key_literals);
 
       let definite = definite && key_literals.len() == 1;
       for key_literal in key_literals {
@@ -724,8 +717,21 @@ impl<'a> ObjectEntity<'a> {
     }
   }
 
-  fn is_mangable(&self) -> bool {
-    self.mangling_group.is_some_and(|group| group.get().is_some())
+  fn check_mangable(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    literals: &FxHashSet<LiteralEntity>,
+  ) -> bool {
+    if self.mangling_group.is_some_and(|group| group.get().is_some()) {
+      if is_literal_mangable(literals) {
+        true
+      } else {
+        self.disable_mangling(analyzer);
+        false
+      }
+    } else {
+      false
+    }
   }
 
   fn disable_mangling(&self, analyzer: &mut Analyzer<'a>) {
