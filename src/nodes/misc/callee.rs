@@ -65,14 +65,14 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a Expression<'a>,
     need_val: bool,
-  ) -> Option<Expression<'a>> {
+  ) -> Result<Option<Expression<'a>>, Option<Expression<'a>>> {
     if need_val {
-      let transformed_expr = self.transform_expression(node, true).unwrap();
+      let transformed_expr = self.transform_expression_in_chain(node, true)?.unwrap();
 
       let is_referred = self.is_referred(AstKind2::Callee(node));
       let was_member_expression = unwrap_to_member_expression(node).is_some();
       let is_member_expression = unwrap_to_member_expression(&transformed_expr).is_some();
-      Some(if is_referred && !was_member_expression && is_member_expression {
+      Ok(Some(if is_referred && !was_member_expression && is_member_expression {
         self.ast_builder.expression_sequence(transformed_expr.span(), {
           let mut seq = self.ast_builder.vec_with_capacity(2);
           seq.push(self.build_unused_expression(SPAN));
@@ -81,9 +81,9 @@ impl<'a> Transformer<'a> {
         })
       } else {
         transformed_expr
-      })
+      }))
     } else {
-      self.transform_expression(node, false)
+      self.transform_expression_in_chain(node, false)
     }
   }
 }

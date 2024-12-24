@@ -233,9 +233,9 @@ impl<'a> Transformer<'a> {
   pub fn get_chain_result(&self, dep_id: impl Into<DepId>, optional: bool) -> (bool, bool) {
     if optional {
       let (need_optional, _, may_not_short_circuit) = self.get_conditional_result(dep_id);
-      (need_optional, may_not_short_circuit)
+      (need_optional, !may_not_short_circuit)
     } else {
-      (false, true)
+      (false, false)
     }
   }
 }

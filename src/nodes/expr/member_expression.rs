@@ -105,52 +105,56 @@ impl<'a> Transformer<'a> {
     node: &'a MemberExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
+    self.transform_member_expression_read_in_chain(node, need_val).unwrap()
+  }
+
+  pub fn transform_member_expression_read_in_chain(
+    &self,
+    node: &'a MemberExpression<'a>,
+    need_val: bool,
+  ) -> Result<Option<Expression<'a>>, Option<Expression<'a>>> {
     let dep_id = AstKind2::MemberExpression(node);
+
+    let (need_optional, must_short_circuit) = self.get_chain_result(dep_id, node.optional());
+
+    if must_short_circuit {
+      let object = self.transform_expression_in_chain(node.object(), false)?;
+      return Err(object);
+    }
 
     let need_read = need_val || self.is_referred(dep_id);
 
-    let (need_optional, may_not_short_circuit) = self.get_chain_result(dep_id, node.optional());
-
     if !need_read {
-      let key_effect = may_not_short_circuit.then(|| match node {
+      let object = self.transform_expression_in_chain(node.object(), need_optional)?;
+      let key_effect = match node {
         MemberExpression::ComputedMemberExpression(node) => {
           self.transform_expression(&node.expression, false)
         }
         _ => None,
-      });
-      return if need_optional {
-        Some(self.build_chain_expression_mock(
-          node.span(),
-          self.transform_expression(node.object(), true).unwrap(),
-          key_effect.unwrap().unwrap(),
-        ))
-      } else {
-        build_effect!(
-          &self.ast_builder,
-          node.span(),
-          self.transform_expression(node.object(), false),
-          key_effect
-        )
       };
+
+      return Ok(if need_optional {
+        Some(self.build_chain_expression_mock(node.span(), object.unwrap(), key_effect.unwrap()))
+      } else {
+        build_effect!(&self.ast_builder, node.span(), object, key_effect)
+      });
     }
 
-    match node {
+    Ok(match node {
       MemberExpression::ComputedMemberExpression(node) => {
         let ComputedMemberExpression { span, object, expression, .. } = node.as_ref();
 
-        if need_read {
-          let object = self.transform_expression(object, true).unwrap();
-          let key = self.transform_expression(expression, true).unwrap();
+        let object = self.transform_expression_in_chain(object, need_read)?.unwrap();
+        let key = self.transform_expression(expression, need_read);
 
+        if need_read {
           Some(Expression::from(self.ast_builder.member_expression_computed(
             *span,
             object,
-            key,
+            key.unwrap(),
             need_optional,
           )))
         } else {
-          let object = self.transform_expression(object, false);
-          let key = self.transform_expression(expression, false);
           build_effect!(&self.ast_builder, *span, object, key)
         }
       }
@@ -158,13 +162,12 @@ impl<'a> Transformer<'a> {
         let StaticMemberExpression { span, object, property, .. } = node.as_ref();
 
         let object = self.transform_expression(object, need_read);
-        let property = self.transform_identifier_name(property);
 
         if need_read {
           Some(Expression::from(self.ast_builder.member_expression_static(
             *span,
             object.unwrap(),
-            property,
+            self.transform_identifier_name(property),
             need_optional,
           )))
         } else {
@@ -192,7 +195,7 @@ impl<'a> Transformer<'a> {
           object
         }
       }
-    }
+    })
   }
 
   pub fn transform_member_expression_write(

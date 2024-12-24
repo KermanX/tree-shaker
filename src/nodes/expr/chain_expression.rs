@@ -1,6 +1,6 @@
 use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::ast::{
-  ast::{ChainElement, ChainExpression, Expression, MemberExpression},
+  ast::{ChainElement, ChainExpression, Expression},
   match_member_expression,
 };
 
@@ -50,23 +50,26 @@ impl<'a> Transformer<'a> {
     node: &'a ChainExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let ChainExpression { span, expression } = node;
+    let ChainExpression { expression, .. } = node;
 
-    let expression = match expression {
-      ChainElement::CallExpression(node) => self.transform_call_expression(node, need_val),
-      node => self.transform_member_expression_read(node.to_member_expression(), need_val),
-    };
+    match expression {
+      ChainElement::CallExpression(node) => self.transform_call_expression_in_chain(node, need_val),
+      node => self.transform_member_expression_read_in_chain(node.to_member_expression(), need_val),
+    }
+    .unwrap_or_else(|v| v)
+  }
 
-    // FIXME: is this correct?
-    expression.map(|expression| match expression {
-      Expression::CallExpression(node) => {
-        self.ast_builder.expression_chain(*span, ChainElement::CallExpression(node))
+  pub fn transform_expression_in_chain(
+    &self,
+    node: &'a Expression<'a>,
+    need_val: bool,
+  ) -> Result<Option<Expression<'a>>, Option<Expression<'a>>> {
+    match node {
+      match_member_expression!(Expression) => {
+        self.transform_member_expression_read_in_chain(node.to_member_expression(), need_val)
       }
-      match_member_expression!(Expression) => self.ast_builder.expression_chain(
-        *span,
-        ChainElement::from(MemberExpression::try_from(expression).unwrap()),
-      ),
-      _ => expression,
-    })
+      Expression::CallExpression(node) => self.transform_call_expression_in_chain(node, need_val),
+      _ => Ok(self.transform_expression(node, need_val)),
+    }
   }
 }

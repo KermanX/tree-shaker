@@ -51,12 +51,12 @@ impl<'a> Transformer<'a> {
 
     let need_call = need_val || self.is_referred(AstKind2::TaggedTemplateExpression(node));
 
-    if need_call {
-      let tag = self.transform_callee(tag, true).unwrap();
+    let tag = self.transform_callee(tag, need_call).unwrap();
 
+    if need_call {
       Some(self.ast_builder.expression_tagged_template(
         *span,
-        tag,
+        tag.unwrap(),
         self.transform_quasi(quasi),
         NONE,
       ))
@@ -64,7 +64,7 @@ impl<'a> Transformer<'a> {
       build_effect!(
         &self.ast_builder,
         *span,
-        self.transform_callee(tag, false),
+        tag,
         quasi.expressions.iter().map(|x| self.transform_expression(x, false)).collect::<Vec<_>>()
       )
     }

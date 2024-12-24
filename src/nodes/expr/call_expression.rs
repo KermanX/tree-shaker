@@ -65,38 +65,46 @@ impl<'a> Transformer<'a> {
     node: &'a CallExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
+    self.transform_call_expression_in_chain(node, need_val).unwrap()
+  }
+
+  pub fn transform_call_expression_in_chain(
+    &self,
+    node: &'a CallExpression<'a>,
+    need_val: bool,
+  ) -> Result<Option<Expression<'a>>, Option<Expression<'a>>> {
     let dep_id: AstKind2<'_> = AstKind2::CallExpression(node);
 
     let CallExpression { span, callee, arguments, optional, .. } = node;
 
+    let (need_optional, must_short_circuit) = self.get_chain_result(dep_id, *optional);
+
+    if must_short_circuit {
+      let callee = self.transform_expression_in_chain(callee, false)?;
+      return Err(callee);
+    }
+
     let need_call = need_val || self.is_referred(dep_id);
 
-    let (need_optional, may_not_short_circuit) = self.get_chain_result(dep_id, *optional);
-
     if !need_call {
-      let args_effect = may_not_short_circuit.then(|| self.transform_arguments_no_call(arguments));
-      return if need_optional {
+      let callee = self.transform_expression_in_chain(callee, need_optional)?;
+      let args_effect = self.transform_arguments_no_call(arguments);
+      return Ok(if need_optional {
         // FIXME: How to get the actual span?
         let args_span = SPAN;
         Some(self.build_chain_expression_mock(
           *span,
-          self.transform_expression(callee, true).unwrap(),
+          callee.unwrap(),
           build_effect!(&self.ast_builder, args_span, args_effect).unwrap(),
         ))
       } else {
-        build_effect!(
-          &self.ast_builder,
-          *span,
-          self.transform_expression(callee, false),
-          args_effect
-        )
-      };
+        build_effect!(&self.ast_builder, *span, callee, args_effect)
+      });
     }
 
-    let callee = self.transform_callee(callee, true).unwrap();
-
+    let callee = self.transform_callee(callee, true)?.unwrap();
     let arguments = self.transform_arguments_need_call(arguments);
 
-    Some(self.ast_builder.expression_call(*span, callee, NONE, arguments, need_optional))
+    Ok(Some(self.ast_builder.expression_call(*span, callee, NONE, arguments, need_optional)))
   }
 }
