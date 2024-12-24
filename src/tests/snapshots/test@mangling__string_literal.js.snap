@@ -1,0 +1,26 @@
+---
+source: src/tests/mod.rs
+expression: tree_shake(input)
+input_file: src/tests/fixtures/mangling/string_literal.js
+---
+export function test1() {
+	function f(x) {
+		if (x === "a") {
+			console.log("x is foo");
+		} else {
+			console.log("x is bar");
+		}
+	}
+	f("a");
+	f("b");
+}
+export function test2(unknown) {
+	const key = unknown ? "a" : "b";
+	if (key === "a") {
+		console.log("key is foo");
+	} else if (key === "b") {
+		console.log("key is bar");
+	} else {
+		console.log("unreachable");
+	}
+}
