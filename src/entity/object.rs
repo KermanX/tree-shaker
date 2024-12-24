@@ -32,12 +32,18 @@ pub struct ObjectEntity<'a> {
   /// Where the object is created
   cf_scope: ScopeId,
   pub object_id: SymbolId,
-  pub string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
-  pub unknown_keyed: RefCell<ObjectProperty<'a>>,
-  // TODO: symbol_keyed
-  pub rest: RefCell<Option<ObjectProperty<'a>>>,
   pub prototype: &'a Prototype<'a>,
+  /// `None` if not mangable
+  /// `Some(None)` if mangable at the beginning, but disabled later
   pub mangling_group: Option<ObjectManglingGroupId<'a>>,
+
+  /// Properties keyed by known string
+  pub string_keyed: RefCell<FxHashMap<&'a str, ObjectProperty<'a>>>,
+  /// Properties keyed by unknown value
+  pub unknown_keyed: RefCell<ObjectProperty<'a>>,
+  /// Properties keyed by unknown value, but not included in `string_keyed`
+  pub rest: RefCell<Option<ObjectProperty<'a>>>,
+  // TODO: symbol_keyed
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -50,9 +56,9 @@ pub enum ObjectPropertyValue<'a> {
 
 #[derive(Debug)]
 pub struct ObjectProperty<'a> {
-  pub definite: bool,
-  pub possible_values: Vec<ObjectPropertyValue<'a>>,
-  pub non_existent: ConsumableCollector<'a>,
+  pub definite: bool,                                // 是否一定存在
+  pub possible_values: Vec<ObjectPropertyValue<'a>>, // 可能的值，可能有多个
+  pub non_existent: ConsumableCollector<'a>,         // 如果不存在，为什么？
   pub mangling: Option<(Entity<'a>, MangleAtom)>,
 }
 
@@ -80,6 +86,38 @@ impl<'a> ObjectProperty<'a> {
         ObjectPropertyValue::Field(value, _) => values.push(*value),
         ObjectPropertyValue::Property(Some(getter), _) => getters.push(*getter),
         ObjectPropertyValue::Property(None, _) => values.push(analyzer.factory.undefined),
+      }
+    }
+
+    if let Some(dep) = self.non_existent.try_collect() {
+      non_existent.push(dep);
+    } else if !self.definite && non_existent.is_empty() {
+      non_existent.push(ConsumableNode::new_box(()));
+    }
+  }
+
+  pub fn get_mangable(
+    &mut self,
+    analyzer: &Analyzer<'a>,
+    values: &mut Vec<Entity<'a>>,
+    getters: &mut Vec<Entity<'a>>,
+    non_existent: &mut Vec<ConsumableNode<'a>>,
+    key: Entity<'a>,
+    key_atom: MangleAtom,
+  ) {
+    let (prev_key, prev_atom) = self.mangling.unwrap();
+    let constraint = analyzer.factory.alloc(MangleConstraint::Eq(prev_atom, key_atom));
+    for possible_value in &self.possible_values {
+      match possible_value {
+        ObjectPropertyValue::Field(value, _) => {
+          values.push(analyzer.factory.mangable(*value, (prev_key, key), constraint))
+        }
+        ObjectPropertyValue::Property(Some(getter), _) => getters.push(*getter),
+        ObjectPropertyValue::Property(None, _) => values.push(analyzer.factory.mangable(
+          analyzer.factory.undefined,
+          (prev_key, key),
+          constraint,
+        )),
       }
     }
 
@@ -203,15 +241,27 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     let mut may_add_undefined = false;
     let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
+      let mangable = self.check_mangable(analyzer, &key_literals);
       let mut string_keyed = self.string_keyed.borrow_mut();
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key, atom) => {
-            if let Some(property) = string_keyed.get_mut(key) {
-              property.get(analyzer, &mut values, &mut getters, &mut non_existent);
+          LiteralEntity::String(key_str, key_atom) => {
+            if let Some(property) = string_keyed.get_mut(key_str) {
+              if mangable {
+                property.get_mangable(
+                  analyzer,
+                  &mut values,
+                  &mut getters,
+                  &mut non_existent,
+                  key,
+                  key_atom.unwrap(),
+                );
+              } else {
+                property.get(analyzer, &mut values, &mut getters, &mut non_existent);
+              }
             } else {
               check_rest = true;
-              if let Some(property) = self.prototype.get_string_keyed(key) {
+              if let Some(property) = self.prototype.get_string_keyed(key_str) {
                 values.push(property);
               } else {
                 may_add_undefined = true;
@@ -260,6 +310,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         analyzer.push_indeterminate_cf_scope();
       }
       for getter in getters {
+        // TODO: Support mangling
         values.push(getter.call_as_getter(analyzer, box_consumable((dep.cloned(), key)), rc));
       }
       if indeterminate_getter {
@@ -267,10 +318,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       }
     }
 
-    let dep = box_consumable(ConsumableNode::new((non_existent, dep, key)));
-    analyzer
-      .factory
-      .computed(analyzer.factory.try_union(values).unwrap_or(analyzer.factory.undefined), dep)
+    let value = analyzer.factory.try_union(values).unwrap_or(analyzer.factory.undefined);
+    analyzer.factory.computed(value, ConsumableNode::new((non_existent, dep, key)))
   }
 
   fn set_property(
@@ -331,7 +380,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
                 analyzer.factory.mangable(
                   value,
                   (prev_key, key),
-                  analyzer.allocator.alloc(MangleConstraint::Eq(prev_atom, key_atom.unwrap())),
+                  analyzer.factory.alloc(MangleConstraint::Eq(prev_atom, key_atom.unwrap())),
                 )
               } else {
                 value
@@ -704,6 +753,7 @@ impl<'a> ObjectEntity<'a> {
   }
 
   pub fn init_rest(&self, property: ObjectPropertyValue<'a>) {
+    debug_assert_eq!(self.mangling_group, None);
     let mut rest = self.rest.borrow_mut();
     if let Some(rest) = &mut *rest {
       rest.possible_values.push(property);
