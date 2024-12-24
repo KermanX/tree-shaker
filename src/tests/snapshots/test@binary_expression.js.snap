@@ -3,7 +3,7 @@ source: src/tests/mod.rs
 expression: tree_shake(input)
 input_file: src/tests/fixtures/binary_expression.js
 ---
-export const strict_equality = (a, __unused_E289) => ({
+export const strict_equality = (a) => ({
 	s1: !0,
 	s2: !1,
 	s3: unknown === 1,

@@ -14,7 +14,7 @@ export function f1() {
 		effect(y);
 	}
 }
-export function f2(__unused_D8B2) {
+export function f2() {
 	let a = true;
 	while (sth()) {
 		a = true;

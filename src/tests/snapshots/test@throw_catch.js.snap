@@ -7,7 +7,7 @@ export function f1(a) {
 	effect1();
 	throw effect2(), a;
 }
-export function f2(__unused_A1DC) {
+export function f2() {
 	effect1();
 	try {
 		throw effect2();
@@ -17,7 +17,7 @@ export function f2(__unused_A1DC) {
 		effect4();
 	}
 }
-export function f3(__unused_2C9D) {
+export function f3() {
 	{
 		effect2();
 	}

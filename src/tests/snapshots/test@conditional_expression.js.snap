@@ -19,11 +19,11 @@ export function main(a, b) {
 	a || e10;
 }
 export function complex_1() {
-	function f(__unused_050C) {
+	function f() {
 		effect();
 	}
 	f();
-	function g(__unused_9E5D) {
+	function g() {
 		effect(2);
 	}
 	g();

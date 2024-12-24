@@ -8,7 +8,7 @@ class A extends 2 {
 		super(a);
 		b();
 	}
-	fn(__unused_58FE) {
+	fn() {
 		1();
 	}
 	[2] = 2;
@@ -20,7 +20,7 @@ class A extends 2 {
 	}
 }
 new A();
-export const a = class X {
+export const a = class {
 	[2] = 2;
 };
 export const b = class extends 2 {

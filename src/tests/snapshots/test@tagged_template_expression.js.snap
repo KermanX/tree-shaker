@@ -3,7 +3,7 @@ source: src/tests/mod.rs
 expression: tree_shake(input)
 input_file: src/tests/fixtures/tagged_template_expression.js
 ---
-export function main(__unused_E58F) {
+export function main() {
 	effect(2);
 	effect(1);
 	let impure = (x) => effect(x);

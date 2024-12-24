@@ -6,14 +6,14 @@ input_file: src/tests/fixtures/assignment_expression.js
 export function f1() {
 	return 2;
 }
-export function f2(__unused_A1DC) {
+export function f2() {
 	return 2;
 }
 export function f3(a, b) {
 	if (b) a = 2;
 	return a;
 }
-export function f4(__unused_9622, __unused_265B) {
+export function f4() {
 	return 3;
 }
 export function f5(a, b) {

@@ -3,7 +3,7 @@ source: src/tests/mod.rs
 expression: tree_shake(input)
 input_file: src/tests/fixtures/react/jsx.js
 ---
-function Comp(__unused_3A69) {
+function Comp() {
 	const __unused_FD45 = effect();
 	return <div>
       {"1"}
