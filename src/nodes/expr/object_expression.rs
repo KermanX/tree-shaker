@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
           if matches!(&node.key, PropertyKey::StaticIdentifier(node) if node.name == "__proto__") {
             has_proto = true;
             // Ensure the __proto__ is consumed - it may be overridden by the next property like ["__proto__"]: 1
-            self.consume(value);
+            self.consume((key, value));
           } else {
             object.init_property(self, node.kind, key, value, true);
           }
