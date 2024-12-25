@@ -1,11 +1,9 @@
-use std::cell::Cell;
-
 use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
   build_effect,
   consumable::box_consumable,
-  entity::{Entity, EntityTrait, ObjectManglingGroupId},
+  entity::{Entity, EntityTrait},
   transformer::Transformer,
 };
 use oxc::{
@@ -18,14 +16,7 @@ use oxc::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
-    let mangling_group = self
-      .load_data::<Option<ObjectManglingGroupId>>(AstKind2::ObjectExpression(node))
-      .get_or_insert_with(|| {
-        self
-          .allocator
-          .alloc(Cell::new(Some(self.mangler.uniqueness_groups.push(Default::default()))))
-      });
-    let object = self.new_empty_object(&self.builtins.prototypes.object, Some(*mangling_group));
+    let object = self.use_mangable_plain_object(AstKind2::ObjectExpression(node));
 
     let mut has_proto = false;
 

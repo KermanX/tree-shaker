@@ -31,6 +31,7 @@ pub struct AnalyzerDataForReact<'a> {
   pub contexts: ReactContexts<'a>,
   pub memos: ReactUseMemos<'a>,
   pub dependencies: ReactDependencies<'a>,
+  pub key_children: Option<Entity<'a>>,
 }
 
 pub fn create_react_namespace<'a>(

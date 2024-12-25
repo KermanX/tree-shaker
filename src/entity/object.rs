@@ -7,6 +7,7 @@ use crate::{
   analyzer::Analyzer,
   builtins::Prototype,
   consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
+  dep::DepId,
   mangling::{is_literal_mangable, MangleAtom, MangleConstraint, UniquenessGroupId},
   scope::CfScopeKind,
   use_consumed_flag,
@@ -21,7 +22,7 @@ use std::{
   mem,
 };
 
-pub type ObjectManglingGroupId<'a> = &'a Cell<Option<UniquenessGroupId>>;
+type ObjectManglingGroupId<'a> = &'a Cell<Option<UniquenessGroupId>>;
 
 #[derive(Debug)]
 pub struct ObjectEntity<'a> {
@@ -883,5 +884,16 @@ impl<'a> Analyzer<'a> {
       },
     );
     self.allocator.alloc(object)
+  }
+
+  pub fn new_object_mangling_group(&mut self) -> ObjectManglingGroupId<'a> {
+    self.allocator.alloc(Cell::new(Some(self.mangler.uniqueness_groups.push(Default::default()))))
+  }
+
+  pub fn use_mangable_plain_object(&mut self, dep_id: impl Into<DepId>) -> ObjectEntity<'a> {
+    let mangling_group = self
+      .load_data::<Option<ObjectManglingGroupId>>(dep_id)
+      .get_or_insert_with(|| self.new_object_mangling_group());
+    self.new_empty_object(&self.builtins.prototypes.object, Some(*mangling_group))
   }
 }

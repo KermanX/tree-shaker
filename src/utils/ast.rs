@@ -127,6 +127,8 @@ pub enum AstKind2<'a> {
   ExpressionInTaggedTemplate(&'a Expression<'a>),
   LogicalExpressionLeft(&'a LogicalExpression<'a>),
   LogicalAssignmentExpressionLeft(&'a AssignmentExpression<'a>),
+  JSXOpeningElement(&'a JSXOpeningElement<'a>),
+  JSXAttributeName(&'a JSXAttributeName<'a>),
 }
 
 impl<'a> GetSpan for AstKind2<'a> {
@@ -243,6 +245,8 @@ impl<'a> GetSpan for AstKind2<'a> {
       AstKind2::ExpressionInTaggedTemplate(node) => node.span(),
       AstKind2::LogicalExpressionLeft(node) => node.span(),
       AstKind2::LogicalAssignmentExpressionLeft(node) => node.span(),
+      AstKind2::JSXOpeningElement(node) => node.span(),
+      AstKind2::JSXAttributeName(node) => node.span(),
     }
   }
 }

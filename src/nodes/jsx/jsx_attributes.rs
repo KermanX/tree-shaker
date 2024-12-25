@@ -4,17 +4,16 @@ use crate::{
 };
 use oxc::{
   allocator,
-  ast::ast::{Expression, JSXAttribute, JSXAttributeItem, JSXSpreadAttribute, PropertyKind},
+  ast::ast::{
+    Expression, JSXAttribute, JSXAttributeItem, JSXOpeningElement, JSXSpreadAttribute, PropertyKind,
+  },
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_jsx_attributes(
-    &mut self,
-    node: &'a allocator::Vec<'a, JSXAttributeItem<'a>>,
-  ) -> ObjectEntity<'a> {
-    let object = self.new_empty_object(&self.builtins.prototypes.object, None);
+  pub fn exec_jsx_attributes(&mut self, node: &'a JSXOpeningElement<'a>) -> ObjectEntity<'a> {
+    let object = self.use_mangable_plain_object(AstKind2::JSXOpeningElement(node));
 
-    for attr in node.iter() {
+    for attr in &node.attributes {
       let dep_id = AstKind2::JSXAttributeItem(attr);
       match attr {
         JSXAttributeItem::Attribute(node) => {
@@ -73,7 +72,7 @@ impl<'a> Transformer<'a> {
           if let Some(value) = self.transform_jsx_attribute_value_as_item(value, is_referred) {
             transformed.push(self.ast_builder.jsx_attribute_item_jsx_attribute(
               *span,
-              self.clone_node(name),
+              self.transform_jsx_attribute_name_need_val(name),
               Some(value),
             ));
           }
