@@ -25,7 +25,7 @@ pub fn tree_shake(source_text: String, preset: String, minify: bool) -> TreeShak
         "disabled" => tree_shake::TreeShakeConfig::disabled(),
         _ => panic!("Invalid tree shake option {}", preset),
       },
-      minify_options: minify.then(MinifierOptions::default),
+      minify_options: minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),
       codegen_options: CodegenOptions { minify, ..Default::default() },
     },
   );
