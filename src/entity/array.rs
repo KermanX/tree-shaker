@@ -42,13 +42,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
     self.deps.take().consume_all(analyzer);
 
-    for element in self.elements.borrow().iter() {
-      element.consume(analyzer);
-    }
-
-    for rest in self.rest.borrow().iter() {
-      rest.consume(analyzer);
-    }
+    analyzer.consume(self.elements.take());
+    analyzer.consume(self.rest.take());
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
@@ -331,6 +326,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::iterate(analyzer, dep);
     }
+
+    analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
     if !self.deps.borrow().is_empty() {
       return (vec![], Some(analyzer.factory.unknown()), box_consumable((rc, dep)));
