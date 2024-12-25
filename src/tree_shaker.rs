@@ -50,8 +50,7 @@ impl<'a> TreeShaker<'a> {
   }
 
   pub fn tree_shake(self, source_text: String) -> TreeShakeReturn {
-    let TreeShakerInner { allocator, config, minify_options, codegen_options, .. } =
-      self.0.as_ref();
+    let TreeShakerInner { allocator, config, minify_options, codegen_options, .. } = &*self.0;
 
     let parser = Parser::new(
       allocator,
@@ -80,10 +79,9 @@ impl<'a> TreeShaker<'a> {
     });
 
     // Step 4: Generate output
-    let mut codegen = CodeGenerator::new().with_options(codegen_options.clone());
-    if let Some(minifier_return) = minifier_return {
-      codegen = codegen.with_mangler(minifier_return.mangler);
-    }
+    let codegen = CodeGenerator::new()
+      .with_options(codegen_options.clone())
+      .with_mangler(minifier_return.and_then(|r| r.mangler));
     let codegen_return = codegen.build(ast);
 
     TreeShakeReturn { codegen_return, diagnostics: self.0.diagnostics.take() }
