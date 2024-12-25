@@ -39,12 +39,9 @@ impl MangleConstraint {
       _ => unreachable!(),
     }
   }
-}
 
-impl<'a> ConsumableTrait<'a> for &'a MangleConstraint {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    let mangler = &mut analyzer.mangler;
-    match *self {
+  pub fn add_to_mangler(&self, mangler: &mut Mangler) {
+    match self {
       MangleConstraint::NonMangable(a) => {
         mangler.non_mangable.insert(*a);
       }
@@ -62,10 +59,16 @@ impl<'a> ConsumableTrait<'a> for &'a MangleConstraint {
       }
       MangleConstraint::Multiple(cs) => {
         for constraint in cs {
-          constraint.consume(analyzer);
+          constraint.add_to_mangler(mangler);
         }
       }
     }
+  }
+}
+
+impl<'a> ConsumableTrait<'a> for &'a MangleConstraint {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    self.add_to_mangler(&mut analyzer.mangler);
   }
 
   fn cloned(&self) -> Consumable<'a> {

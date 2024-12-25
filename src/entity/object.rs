@@ -264,8 +264,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
               }
             } else {
               check_rest = true;
-              if let Some(property) = self.prototype.get_string_keyed(key_str) {
-                values.push(property);
+              if let Some(val) = self.prototype.get_string_keyed(key_str) {
+                values.push(if mangable { analyzer.factory.computed(val, key_atom) } else { val });
               } else {
                 may_add_undefined = true;
               }
@@ -279,6 +279,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       check_rest |= !non_existent.is_empty();
       may_add_undefined |= !non_existent.is_empty();
     } else {
+      self.disable_mangling(analyzer);
+
       for property in self.string_keyed.borrow_mut().values_mut() {
         property.get(analyzer, &mut values, &mut getters, &mut non_existent);
       }

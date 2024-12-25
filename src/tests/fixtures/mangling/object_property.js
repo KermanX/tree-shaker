@@ -40,3 +40,21 @@ export function dynamic_destructuring(unknown, aaa, bbb) {
   };
   console.log(value);
 }
+
+export function multi_call(aaa, bbb) {
+  function f(o) {
+    console.log(o.foo)
+  }
+  f({ foo: aaa });
+  f({ foo: bbb });
+}
+
+export function accessing_prototype(aaa) {
+  return {}.toString.call(aaa);
+}
+
+export function object_assign(aaa, bbb) {
+  const obj = Object.assign({}, { foo: aaa }, { bar: bbb });
+  console.log(obj.foo);
+  console.log(obj.bar);
+}
