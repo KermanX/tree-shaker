@@ -208,18 +208,11 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    // if self.consumed.get() {
-    //   return consumed_object::unknown_mutate(analyzer, dep);
-    // }
+    if self.consumed.get() {
+      return consumed_object::unknown_mutate(analyzer, dep);
+    }
 
-    // let (has_exhaustive, _, exec_deps) = analyzer.pre_must_mutate(self.cf_scope, self.object_id);
-
-    // if has_exhaustive {
-    //   self.consume(analyzer);
-    //   return consumed_object::unknown_mutate(analyzer, dep);
-    // }
-
-    // self.deps.borrow_mut().push(box_consumable((exec_deps, dep)));
+    self.unknown_keyed.borrow_mut().non_existent.push(dep);
   }
 
   fn get_property(
