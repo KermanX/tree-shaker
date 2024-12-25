@@ -71,6 +71,9 @@ impl<'a> Analyzer<'a> {
     // Patch default case
     if let Some(default_case) = default_case {
       test_results[default_case] = maybe_default_case;
+      if maybe_default_case != Some(false) {
+        data.need_test.insert(default_case);
+      }
     }
 
     // 3. consequent
@@ -159,7 +162,7 @@ impl<'a> Transformer<'a> {
           transformed_cases.push((*span, Some(test), consequent));
         }
         None => {
-          if consequent.len() > 0 {
+          if need_test {
             transformed_cases.push((*span, None, consequent));
           }
         }
