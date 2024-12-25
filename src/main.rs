@@ -1,5 +1,8 @@
 use clap::Parser;
-use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
+use oxc::{
+  codegen::CodegenOptions,
+  minifier::{MangleOptions, MinifierOptions},
+};
 use std::{fs::File, io::Write, path::PathBuf};
 use tree_shake::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
@@ -33,7 +36,7 @@ struct Args {
 fn main() {
   let args = Args::parse();
 
-  let content = match std::fs::read_to_string(&args.path) {
+  let source = match std::fs::read_to_string(&args.path) {
     Err(why) => {
       eprintln!("Couldn't read {}: {}", args.path, why);
       std::process::exit(1);
@@ -43,8 +46,13 @@ fn main() {
 
   let start_time = std::time::Instant::now();
 
+  let minify_options = MinifierOptions {
+    mangle: Some(MangleOptions { top_level: true, ..Default::default() }),
+    ..Default::default()
+  };
+
   let copied = tree_shake(
-    content.clone(),
+    source.clone(),
     TreeShakeOptions {
       config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
       minify_options: None,
@@ -52,15 +60,15 @@ fn main() {
     },
   );
   let minified = tree_shake(
-    content.clone(),
+    source.clone(),
     TreeShakeOptions {
       config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
-      minify_options: Some(MinifierOptions::default()),
+      minify_options: Some(minify_options),
       codegen_options: CodegenOptions { minify: true, comments: false, ..Default::default() },
     },
   );
   let shaken = tree_shake(
-    content.clone(),
+    source.clone(),
     TreeShakeOptions {
       config: match args.preset.as_str() {
         "safest" => TreeShakeConfig::safest(),
@@ -82,7 +90,7 @@ fn main() {
     shaken.codegen_return.code.clone(),
     TreeShakeOptions {
       config: TreeShakeConfig::disabled().with_react_jsx(args.jsx),
-      minify_options: Some(MinifierOptions::default()),
+      minify_options: Some(minify_options),
       codegen_options: CodegenOptions { minify: true, comments: false, ..Default::default() },
     },
   );

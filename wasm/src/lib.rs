@@ -1,6 +1,9 @@
 extern crate console_error_panic_hook;
 
-use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
+use oxc::{
+  codegen::CodegenOptions,
+  minifier::{MangleOptions, MinifierOptions},
+};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(getter_with_clone)]
@@ -30,7 +33,12 @@ pub fn tree_shake(
       }
       .with_react_jsx(true)
       .with_always_inline_literal(always_inline_literal),
-      minify_options: do_minify.then(|| MinifierOptions::default()),
+      minify_options: do_minify.then_some({
+        MinifierOptions {
+          mangle: Some(MangleOptions { top_level: true, ..Default::default() }),
+          ..Default::default()
+        }
+      }),
       codegen_options: CodegenOptions {
         minify: do_minify,
         comments: !do_minify,
