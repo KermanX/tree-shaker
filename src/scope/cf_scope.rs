@@ -4,7 +4,6 @@ use crate::{
     box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait, ConsumableVec,
   },
   entity::LabelEntity,
-  utils::{DebuggerEvent, Logger},
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
@@ -83,8 +82,6 @@ impl<'a> CfScope<'a> {
 
   pub fn update_exited(
     &mut self,
-    id: ScopeId,
-    logger: &Option<&Logger>,
     exited: Option<bool>,
     get_dep: impl FnOnce() -> Option<Consumable<'a>>,
   ) {
@@ -92,10 +89,6 @@ impl<'a> CfScope<'a> {
       self.exited = exited;
       if let Some(dep) = get_dep() {
         self.push_dep(dep);
-      }
-
-      if let Some(logger) = logger {
-        logger.push_event(DebuggerEvent::UpdateCfScopeExited(id, exited));
       }
     }
   }
@@ -206,8 +199,8 @@ impl<'a> Analyzer<'a> {
     target_depth: usize,
     from_depth: usize,
     mut must_exit: bool,
-    mut acc_dep: Option<ConsumableNode<'a, Consumable<'a>>>,
-  ) -> Option<Option<ConsumableNode<'a, Consumable<'a>>>> {
+    mut acc_dep: Option<ConsumableNode<'a>>,
+  ) -> Option<Option<ConsumableNode<'a>>> {
     for depth in (target_depth..from_depth).rev() {
       let id = self.scope_context.cf.stack[depth];
       let cf_scope = self.scope_context.cf.get_mut(id);
@@ -217,7 +210,7 @@ impl<'a> Analyzer<'a> {
       // Update exited state
       if must_exit {
         let is_indeterminate = cf_scope.is_indeterminate();
-        cf_scope.update_exited(id, &self.logger, Some(true), get_dep);
+        cf_scope.update_exited(Some(true), get_dep);
 
         // Stop exiting outer scopes if one inner scope is indeterminate.
         if is_indeterminate {
@@ -231,7 +224,7 @@ impl<'a> Analyzer<'a> {
           }
         }
       } else {
-        cf_scope.update_exited(id, &self.logger, None, get_dep);
+        cf_scope.update_exited(None, get_dep);
       }
 
       // Accumulate the dependencies
@@ -318,21 +311,19 @@ impl<'a> Analyzer<'a> {
       match scope.referred_state {
         ReferredState::Never => {
           scope.referred_state = ReferredState::ReferredClean;
-          let mut deps = mem::take(&mut scope.deps);
-          deps.consume_all(self);
+          mem::take(&mut scope.deps).consume_all(self);
         }
         ReferredState::ReferredClean => break,
         ReferredState::ReferredDirty => {
           scope.referred_state = ReferredState::ReferredClean;
-          let mut deps = mem::take(&mut scope.deps);
-          deps.consume_all(self);
+          mem::take(&mut scope.deps).consume_all(self);
           for depth in (0..depth).rev() {
             let scope = self.scope_context.cf.get_mut_from_depth(depth);
             match scope.referred_state {
-              ReferredState::Never => unreachable!(),
+              ReferredState::Never => unreachable!("Logic error in refer_to_global"),
               ReferredState::ReferredClean => break,
               ReferredState::ReferredDirty => {
-                scope.deps.force_clean();
+                scope.deps.force_clear();
                 scope.referred_state = ReferredState::ReferredClean;
               }
             }
@@ -341,5 +332,7 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
+
+    self.call_exhaustive_callbacks();
   }
 }

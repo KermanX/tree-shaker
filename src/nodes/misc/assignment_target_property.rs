@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
         key
       }
       AssignmentTargetProperty::AssignmentTargetPropertyProperty(node) => {
-        self.push_dependent_cf_scope(value.clone());
+        self.push_dependent_cf_scope(value);
         let key = self.exec_property_key(&node.name);
         self.pop_cf_scope();
 
@@ -67,7 +67,7 @@ impl<'a> Transformer<'a> {
         let data =
           self.get_data::<IdentifierData>(AstKind2::AssignmentTargetPropertyIdentifier(node));
 
-        let AssignmentTargetPropertyIdentifier { span, binding, init, .. } = node.as_ref();
+        let AssignmentTargetPropertyIdentifier { span, binding, init } = node.as_ref();
 
         let binding_span = binding.span();
         let binding_name = binding.name.as_str();
@@ -90,15 +90,16 @@ impl<'a> Transformer<'a> {
                 init,
               )
             } else {
-              self.ast_builder.assignment_target_maybe_default_assignment_target(
-                self.build_unused_assignment_target(SPAN),
-              )
+              self.build_unused_assignment_target(SPAN).into()
             },
           ))
         } else if binding.is_some() || init.is_some() {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_identifier(
             *span,
-            binding.unwrap_or(self.build_unused_identifier_reference_write(binding_span)),
+            binding.map_or_else(
+              || self.build_unused_identifier_reference_write(binding_span),
+              |binding| binding.unbox(),
+            ),
             init,
           ))
         } else {
@@ -106,7 +107,7 @@ impl<'a> Transformer<'a> {
         }
       }
       AssignmentTargetProperty::AssignmentTargetPropertyProperty(node) => {
-        let AssignmentTargetPropertyProperty { span, name, binding, .. } = node.as_ref();
+        let AssignmentTargetPropertyProperty { span, name, binding } = node.as_ref();
 
         let name_span = name.span();
         let binding = self.transform_assignment_target_maybe_default(binding, need_binding);
@@ -117,16 +118,14 @@ impl<'a> Transformer<'a> {
               .ast_builder
               .assignment_target_property_assignment_target_property_property(*span, name, binding),
           )
-        } else if let Some(name) = self.transform_property_key(name, false) {
-          Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
-            *span,
-            name,
-            self.ast_builder.assignment_target_maybe_default_assignment_target(
-              self.build_unused_assignment_target(name_span),
-            ),
-          ))
         } else {
-          None
+          self.transform_property_key(name, false).map(|name| {
+            self.ast_builder.assignment_target_property_assignment_target_property_property(
+              *span,
+              name,
+              self.build_unused_assignment_target(name_span).into(),
+            )
+          })
         }
       }
     }

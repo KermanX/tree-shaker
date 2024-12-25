@@ -20,7 +20,6 @@ impl<'a> Transformer<'a> {
       r#override,
       optional,
       accessibility,
-      ..
     } = node;
 
     let key = self.transform_property_key(key, true).unwrap();
@@ -31,8 +30,8 @@ impl<'a> Transformer<'a> {
     }
 
     Some(self.ast_builder.class_element_method_definition(
-      *r#type,
       *span,
+      *r#type,
       self.clone_node(decorators),
       key,
       transformed_value,

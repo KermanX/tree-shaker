@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer, ast::AstKind2, build_effect, scope::CfScopeKind, transformer::Transformer,
 };
 use oxc::{
-  ast::ast::{DoWhileStatement, Statement},
+  ast::ast::{DoWhileStatement, NumberBase, Statement},
   span::GetSpan,
 };
 
@@ -60,7 +60,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Statement<'a>> {
     let data = self.get_data::<Data>(AstKind2::DoWhileStatement(node));
 
-    let DoWhileStatement { span, test, body, .. } = node;
+    let DoWhileStatement { span, test, body } = node;
     let body_span = body.span();
     let test_span = test.span();
 
@@ -82,13 +82,20 @@ impl<'a> Transformer<'a> {
       //   (Some(body), None) => Some(body),
       //   (None, None) => None,
       // }
-      let test = self.transform_expression(test, false);
+      let test = data.need_test.then(|| self.transform_expression(test, false)).flatten();
       test.map(|test| self.ast_builder.statement_expression(*span, test))
     } else {
       Some(self.ast_builder.statement_do_while(
         *span,
         body.unwrap_or_else(|| self.ast_builder.statement_empty(body_span)),
-        if data.need_loop {
+        if !data.need_test {
+          self.ast_builder.expression_numeric_literal(
+            test.span(),
+            0.0,
+            Some("0".into()),
+            NumberBase::Decimal,
+          )
+        } else if data.need_loop {
           self.transform_expression(test, true).unwrap()
         } else {
           build_effect!(

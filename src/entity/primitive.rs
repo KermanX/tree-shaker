@@ -34,7 +34,8 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if *self == PrimitiveEntity::Mixed {
+    // TODO: PrimitiveEntity::String
+    if *self == PrimitiveEntity::Mixed || *self == PrimitiveEntity::String {
       analyzer.factory.computed_unknown((rc, dep, key))
     } else {
       let prototype = self.get_prototype(analyzer);
@@ -62,10 +63,10 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     if *self == PrimitiveEntity::String {
       (
         vec![(false, analyzer.factory.unknown_string, analyzer.factory.unknown_string)],
-        box_consumable((rc.clone(), dep)),
+        box_consumable((rc, dep)),
       )
     } else {
-      (vec![], box_consumable((rc.clone(), dep)))
+      (vec![], box_consumable((rc, dep)))
     }
   }
 
@@ -186,14 +187,14 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
 }
 
 impl<'a> PrimitiveEntity {
-  fn get_prototype<'b>(&self, analyzer: &mut Analyzer<'a>) -> &'a Prototype<'a> {
+  fn get_prototype(&self, analyzer: &mut Analyzer<'a>) -> &'a Prototype<'a> {
     match self {
       PrimitiveEntity::String => &analyzer.builtins.prototypes.string,
       PrimitiveEntity::Number => &analyzer.builtins.prototypes.number,
       PrimitiveEntity::BigInt => &analyzer.builtins.prototypes.bigint,
       PrimitiveEntity::Boolean => &analyzer.builtins.prototypes.boolean,
       PrimitiveEntity::Symbol => &analyzer.builtins.prototypes.symbol,
-      PrimitiveEntity::Mixed => unreachable!(),
+      PrimitiveEntity::Mixed => unreachable!("Cannot get prototype of mixed primitive"),
     }
   }
 }

@@ -3,8 +3,8 @@ use crate::{
   ast::{AstKind2, DeclarationKind},
   consumable::Consumable,
   entity::Entity,
-  scope::call_scope::CalleeNode,
   transformer::Transformer,
+  utils::{CalleeInfo, CalleeNode},
 };
 use oxc::{
   ast::{
@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_arrow_function_expression(
     &mut self,
-    callee: (CalleeNode<'a>, usize),
+    callee: CalleeInfo<'a>,
     call_dep: Consumable<'a>,
     node: &'a ArrowFunctionExpression<'a>,
     variable_scopes: Rc<Vec<ScopeId>>,

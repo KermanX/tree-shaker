@@ -59,7 +59,7 @@ impl<'a> Transformer<'a> {
 
     match (block, finalizer) {
       (None, None) => None,
-      (None, Some(finalizer)) => Some(self.ast_builder.statement_from_block(finalizer)),
+      (None, Some(finalizer)) => Some(Statement::BlockStatement(finalizer)),
       (Some(block), finalizer) => Some(self.ast_builder.statement_try(
         *span,
         block,

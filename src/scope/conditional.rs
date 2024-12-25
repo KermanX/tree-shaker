@@ -62,6 +62,7 @@ impl<'a> ConsumableTrait<'a> for &'a ConditionalBranchConsumable<'a> {
 }
 
 impl<'a> Analyzer<'a> {
+  #[allow(clippy::too_many_arguments)]
   pub fn push_if_like_branch_cf_scope(
     &mut self,
     dep_id: impl Into<DepId>,
@@ -90,6 +91,7 @@ impl<'a> Analyzer<'a> {
     maybe_left: bool,
     maybe_right: bool,
   ) -> Entity<'a> {
+    debug_assert!(maybe_left);
     let dep = self.register_conditional_data(dep_id, left, maybe_left, maybe_right, true, true);
     self.factory.computed(left, dep)
   }
@@ -101,6 +103,7 @@ impl<'a> Analyzer<'a> {
     maybe_left: bool,
     maybe_right: bool,
   ) -> impl ConsumableTrait<'a> + 'a {
+    debug_assert!(maybe_right);
     self.push_conditional_cf_scope(
       dep_id,
       CfScopeKind::LogicalRight,
@@ -112,6 +115,7 @@ impl<'a> Analyzer<'a> {
     )
   }
 
+  #[allow(clippy::too_many_arguments)]
   fn push_conditional_cf_scope(
     &mut self,
     dep_id: impl Into<DepId>,
@@ -219,10 +223,19 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn get_conditional_result(&self, dep_id: impl Into<DepId>) -> (bool, bool, bool) {
-    let data = self.conditional_data.node_to_data.get(&dep_id.into()).unwrap();
+    let data = &self.conditional_data.node_to_data[&dep_id.into()];
     if data.maybe_true && data.maybe_false {
       assert!(data.tests_to_consume.is_empty());
     }
     (data.maybe_true && data.maybe_false, data.maybe_true, data.maybe_false)
+  }
+
+  pub fn get_chain_result(&self, dep_id: impl Into<DepId>, optional: bool) -> (bool, bool) {
+    if optional {
+      let (need_optional, _, may_not_short_circuit) = self.get_conditional_result(dep_id);
+      (need_optional, !may_not_short_circuit)
+    } else {
+      (false, false)
+    }
   }
 }

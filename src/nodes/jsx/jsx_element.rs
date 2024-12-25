@@ -1,21 +1,21 @@
 use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
-use oxc::ast::{
-  ast::{Expression, JSXClosingElement, JSXElement, JSXOpeningElement, PropertyKind},
-  NONE,
+use oxc::{
+  allocator,
+  ast::{
+    ast::{Expression, JSXClosingElement, JSXElement, JSXOpeningElement, PropertyKind},
+    NONE,
+  },
 };
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_element(&mut self, node: &'a JSXElement<'a>) -> Entity<'a> {
     let tag = self.exec_jsx_element_name(&node.opening_element.name);
-    let attributes = self.exec_jsx_attributes(&node.opening_element.attributes);
+    let attributes = self.exec_jsx_attributes(&node.opening_element);
     let children = self.exec_jsx_children(&node.children);
-    attributes.init_property(
-      self,
-      PropertyKind::Init,
-      self.factory.string("children"),
-      children,
-      true,
-    );
+    let key_children = *self.builtins.react_data.key_children.get_or_insert_with(|| {
+      self.factory.mangable_string("children", self.mangler.new_constant_atom("children"))
+    });
+    attributes.init_property(self, PropertyKind::Init, key_children, children, true);
     self.factory.react_element(tag, self.factory.entity(attributes))
   }
 }
@@ -27,7 +27,7 @@ impl<'a> Transformer<'a> {
     need_val: bool,
   ) -> Option<Expression<'a>> {
     if need_val {
-      Some(self.ast_builder.expression_from_jsx_element(self.transform_jsx_element_need_val(node)))
+      Some(Expression::JSXElement(self.transform_jsx_element_need_val(node)))
     } else {
       self.transform_jsx_element_effect_only(node)
     }
@@ -48,7 +48,10 @@ impl<'a> Transformer<'a> {
     )
   }
 
-  pub fn transform_jsx_element_need_val(&self, node: &'a JSXElement<'a>) -> JSXElement<'a> {
+  pub fn transform_jsx_element_need_val(
+    &self,
+    node: &'a JSXElement<'a>,
+  ) -> allocator::Box<'a, JSXElement<'a>> {
     let JSXElement { span, opening_element, closing_element, children } = node;
 
     let name = self.transform_jsx_element_name_need_val(&opening_element.name);
@@ -59,7 +62,7 @@ impl<'a> Transformer<'a> {
       self.ast_builder.jsx_closing_element(*span, self.clone_node(&name))
     });
 
-    self.ast_builder.jsx_element(
+    self.ast_builder.alloc_jsx_element(
       *span,
       {
         let JSXOpeningElement { span, self_closing, attributes, .. } = opening_element.as_ref();

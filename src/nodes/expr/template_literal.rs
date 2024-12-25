@@ -25,7 +25,7 @@ impl<'a> Transformer<'a> {
     node: &'a TemplateLiteral<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let TemplateLiteral { span, expressions, quasis, .. } = node;
+    let TemplateLiteral { span, expressions, quasis } = node;
     if need_val {
       let mut quasis_iter = quasis.into_iter();
       let mut transformed_exprs = self.ast_builder.vec();
@@ -47,7 +47,7 @@ impl<'a> Transformer<'a> {
               &self.ast_builder,
               expr_span,
               mem::take(&mut pending_effects);
-              literal.build_expr(&self.ast_builder, SPAN)
+              literal.build_expr(self, SPAN, None)
             ));
             transformed_quasis.push(quasi_str);
           } else {
@@ -71,7 +71,7 @@ impl<'a> Transformer<'a> {
           &self.ast_builder,
           *span,
           pending_effects;
-          self.ast_builder.expression_string_literal(*span, transformed_quasis.first().unwrap().clone())
+          self.ast_builder.expression_string_literal(*span, transformed_quasis.first().unwrap().clone(), None)
         ))
       } else {
         assert!(pending_effects.is_empty());
@@ -84,7 +84,7 @@ impl<'a> Transformer<'a> {
             index == quasis_len - 1,
             TemplateElementValue {
               // FIXME: escape
-              raw: str.as_str().into(),
+              raw: self.escape_template_element_value(str.as_str()).into(),
               cooked: Some(str.as_str().into()),
             },
           ));

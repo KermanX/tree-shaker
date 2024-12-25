@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
       self.push_if_like_branch_cf_scope(
         AstKind2::IfStatement(node),
         CfScopeKind::IfBranch,
-        test.clone(),
+        test,
         maybe_consequent,
         maybe_alternate,
         true,
@@ -90,7 +90,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_if_statement(&self, node: &'a IfStatement<'a>) -> Option<Statement<'a>> {
-    let IfStatement { span, test, consequent, alternate, .. } = node;
+    let IfStatement { span, test, consequent, alternate } = node;
 
     let (need_test_val, maybe_consequent, maybe_alternate) =
       self.get_conditional_result(AstKind2::IfStatement(node));

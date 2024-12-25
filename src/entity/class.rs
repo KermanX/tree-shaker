@@ -16,7 +16,7 @@ pub struct ClassEntity<'a> {
   consumed: Rc<Cell<bool>>,
   pub node: &'a Class<'a>,
   pub keys: Vec<Option<Entity<'a>>>,
-  statics: Entity<'a>,
+  statics: Box<ObjectEntity<'a>>,
   pub super_class: Option<Entity<'a>>,
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
 }
@@ -44,27 +44,27 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_property(rc, analyzer, dep, key);
     }
-    if analyzer.entity_op.strict_eq(
-      analyzer,
-      key.get_to_property_key(analyzer),
-      analyzer.factory.string("prototype"),
-    ) != Some(false)
+    if analyzer
+      .entity_op
+      .strict_eq(analyzer, key.get_to_property_key(analyzer), analyzer.factory.string("prototype"))
+      .0
+      != Some(false)
     {
       self.consume(analyzer);
       return consumed_object::get_property(rc, analyzer, dep, key);
     }
-    self.statics.get_property(analyzer, dep, key)
+    self.statics.get_property(rc, analyzer, dep, key)
   }
 
   fn set_property(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.statics.set_property(analyzer, dep, key, value)
+    self.statics.set_property(rc, analyzer, dep, key, value)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
@@ -73,11 +73,11 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
 
   fn enumerate_properties(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
-    self.statics.enumerate_properties(analyzer, dep)
+    self.statics.enumerate_properties(rc, analyzer, dep)
   }
 
   fn call(
@@ -192,7 +192,7 @@ impl<'a> EntityFactory<'a> {
       consumed: Rc::new(Cell::new(false)),
       node,
       keys,
-      statics: self.entity(statics),
+      statics: Box::new(statics),
       variable_scope_stack: Rc::new(variable_scope_stack),
       super_class,
     })

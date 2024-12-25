@@ -10,9 +10,9 @@ macro_rules! insert_prototype_property {
 
 #[macro_export]
 macro_rules! init_prototype {
-  ($p:expr, { $($k:expr => $v:expr,)* }) => {
+  ($name:expr, $p:expr, { $($k:expr => $v:expr,)* }) => {
     {
-      let mut prototype = $p;
+      let mut prototype = $p.with_name($name);
       $($crate::insert_prototype_property!(prototype, $k, $v);)*
       prototype
     }

@@ -9,10 +9,9 @@ fn tree_shake(input: String) -> String {
   let result = crate::tree_shake(
     input,
     TreeShakeOptions {
-      config: TreeShakeConfig::default().with_react_jsx(react_jsx),
-      minify_options: do_minify.then(|| MinifierOptions::default()),
+      config: TreeShakeConfig::recommended().with_react_jsx(react_jsx),
+      minify_options: do_minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),
       codegen_options: CodegenOptions::default(),
-      logging: false,
     },
   );
   result.codegen_return.code

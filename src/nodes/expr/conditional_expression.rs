@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
       let conditional_dep = analyzer.push_if_like_branch_cf_scope(
         AstKind2::ConditionalExpression(node),
         CfScopeKind::ConditionalExprBranch,
-        test.clone(),
+        test,
         maybe_true,
         maybe_false,
         true,
@@ -33,7 +33,7 @@ impl<'a> Analyzer<'a> {
       let conditional_dep = analyzer.push_if_like_branch_cf_scope(
         AstKind2::ConditionalExpression(node),
         CfScopeKind::ConditionalExprBranch,
-        test.clone(),
+        test,
         maybe_true,
         maybe_false,
         false,
@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
         let v2 = exec_alternate(self);
         self.factory.union((v1, v2))
       }
-      _ => unreachable!(),
+      _ => unreachable!("Conditional expression should have at least one possible branch"),
     }
   }
 }
@@ -63,7 +63,7 @@ impl<'a> Transformer<'a> {
     node: &'a ConditionalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let ConditionalExpression { span, test, consequent, alternate, .. } = node;
+    let ConditionalExpression { span, test, consequent, alternate } = node;
 
     let (need_test_val, maybe_true, maybe_false) =
       self.get_conditional_result(AstKind2::ConditionalExpression(node));

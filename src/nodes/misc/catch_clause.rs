@@ -24,7 +24,7 @@ impl<'a> Transformer<'a> {
     let CatchClause { span, param, body, .. } = node;
 
     let param = param.as_ref().and_then(|param| {
-      let CatchParameter { span, pattern, .. } = param;
+      let CatchParameter { span, pattern } = param;
       self
         .transform_binding_pattern(pattern, false)
         .map(|pattern| self.ast_builder.catch_parameter(*span, pattern))
@@ -36,7 +36,7 @@ impl<'a> Transformer<'a> {
     self.ast_builder.catch_clause(
       *span,
       param,
-      body.unwrap_or(self.ast_builder.block_statement(body_span, self.ast_builder.vec())),
+      body.unwrap_or(self.ast_builder.alloc_block_statement(body_span, self.ast_builder.vec())),
     )
   }
 }

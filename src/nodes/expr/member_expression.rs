@@ -7,14 +7,8 @@ use oxc::{
     ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
     StaticMemberExpression,
   },
-  span::{GetSpan, SPAN},
+  span::GetSpan,
 };
-
-#[derive(Debug, Default)]
-struct DataRead {
-  need_access: bool,
-  need_optional: bool,
-}
 
 impl<'a> Analyzer<'a> {
   /// Returns (short-circuit, value, cache)
@@ -22,63 +16,59 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a MemberExpression<'a>,
     will_write: bool,
-  ) -> (Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
-    let (short_circuit, value, cache) = self.exec_member_expression_read_in_chain(node, will_write);
-    debug_assert_eq!(short_circuit, Some(false));
+  ) -> (Entity<'a>, (Entity<'a>, Entity<'a>)) {
+    let (scope_count, value, undefined, cache) =
+      self.exec_member_expression_read_in_chain(node, will_write).unwrap();
+
+    assert_eq!(scope_count, 0);
+    assert!(undefined.is_none());
+
     (value, cache)
   }
 
-  /// Returns (short-circuit, value, cache)
+  /// Returns (scope_count, value, forwarded_undefined, cache)
   pub fn exec_member_expression_read_in_chain(
     &mut self,
     node: &'a MemberExpression<'a>,
     will_write: bool,
-  ) -> (Option<bool>, Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
-    let (short_circuit, object) = self.exec_expression_in_chain(node.object());
+  ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>, (Entity<'a>, Entity<'a>)), Entity<'a>> {
+    let (mut scope_count, object, mut undefined) = self.exec_expression_in_chain(node.object())?;
 
-    let object_indeterminate = match short_circuit {
-      Some(true) => return (Some(true), self.factory.undefined, None),
-      Some(false) => false,
-      None => true,
-    };
+    let dep_id = AstKind2::MemberExpression(node);
 
-    let self_indeterminate = if node.optional() {
-      match object.test_nullish() {
-        Some(true) => return (Some(true), self.factory.undefined, None),
+    if node.optional() {
+      let maybe_left = match object.test_nullish() {
+        Some(true) => {
+          self.pop_multiple_cf_scopes(scope_count);
+          return Err(self.forward_logical_left_val(dep_id, self.factory.undefined, true, false));
+        }
         Some(false) => false,
-        None => true,
-      }
-    } else {
-      false
-    };
+        None => {
+          undefined = Some(self.forward_logical_left_val(
+            dep_id,
+            undefined.unwrap_or(self.factory.undefined),
+            true,
+            false,
+          ));
+          true
+        }
+      };
 
-    let data = self.load_data::<DataRead>(AstKind2::MemberExpressionRead(node));
-    data.need_access = true;
-    data.need_optional |= self_indeterminate;
-
-    let indeterminate = object_indeterminate || self_indeterminate;
-
-    if indeterminate {
-      self.push_indeterminate_cf_scope();
+      self.push_logical_right_cf_scope(dep_id, object, maybe_left, true);
+      scope_count += 1;
     }
 
     if will_write {
-      self.push_dependent_cf_scope(object.clone());
+      self.push_dependent_cf_scope(object);
     }
     let key = self.exec_key(node);
     if will_write {
       self.pop_cf_scope();
     }
 
-    let value = object.get_property(self, box_consumable(AstKind2::MemberExpression(node)), key);
-    let cache = Some((object, key));
+    let value = object.get_property(self, box_consumable(dep_id), key);
 
-    if indeterminate {
-      self.pop_cf_scope();
-      (None, self.factory.union((value, self.factory.undefined)), cache)
-    } else {
-      (Some(false), value, cache)
-    }
+    Ok((scope_count, value, undefined, (object, key)))
   }
 
   pub fn exec_member_expression_write(
@@ -90,7 +80,7 @@ impl<'a> Analyzer<'a> {
     let (object, key) = cache.unwrap_or_else(|| {
       let object = self.exec_expression(node.object());
 
-      self.push_dependent_cf_scope(object.clone());
+      self.push_dependent_cf_scope(object);
       let key = self.exec_key(node);
       self.pop_cf_scope();
 
@@ -103,12 +93,8 @@ impl<'a> Analyzer<'a> {
   fn exec_key(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {
     match node {
       MemberExpression::ComputedMemberExpression(node) => self.exec_expression(&node.expression),
-      MemberExpression::StaticMemberExpression(node) => {
-        self.factory.string(node.property.name.as_str())
-      }
-      MemberExpression::PrivateFieldExpression(node) => {
-        self.factory.string(self.escape_private_identifier_name(node.field.name.as_str()))
-      }
+      MemberExpression::StaticMemberExpression(node) => self.exec_identifier_name(&node.property),
+      MemberExpression::PrivateFieldExpression(node) => self.exec_private_identifier(&node.field),
     }
   }
 }
@@ -119,43 +105,56 @@ impl<'a> Transformer<'a> {
     node: &'a MemberExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<DataRead>(AstKind2::MemberExpressionRead(node));
+    self.transform_member_expression_read_in_chain(node, need_val).unwrap()
+  }
 
-    if !data.need_access {
-      return if need_val {
-        Some(build_effect!(
-          &self.ast_builder,
-          node.span(),
-          self.transform_expression(node.object(), false);
-          self.build_undefined(SPAN)
-        ))
-      } else {
-        build_effect!(
-          &self.ast_builder,
-          node.span(),
-          self.transform_expression(node.object(), false)
-        )
-      };
+  pub fn transform_member_expression_read_in_chain(
+    &self,
+    node: &'a MemberExpression<'a>,
+    need_val: bool,
+  ) -> Result<Option<Expression<'a>>, Option<Expression<'a>>> {
+    let dep_id = AstKind2::MemberExpression(node);
+
+    let (need_optional, must_short_circuit) = self.get_chain_result(dep_id, node.optional());
+
+    if must_short_circuit {
+      let object = self.transform_expression_in_chain(node.object(), false)?;
+      return Err(object);
     }
 
-    let need_read = need_val || self.is_referred(AstKind2::MemberExpression(node));
+    let need_read = need_val || self.is_referred(dep_id);
 
-    match node {
+    if !need_read {
+      let object = self.transform_expression_in_chain(node.object(), need_optional)?;
+      let key_effect = match node {
+        MemberExpression::ComputedMemberExpression(node) => {
+          self.transform_expression(&node.expression, false)
+        }
+        _ => None,
+      };
+
+      return Ok(if need_optional {
+        Some(self.build_chain_expression_mock(node.span(), object.unwrap(), key_effect.unwrap()))
+      } else {
+        build_effect!(&self.ast_builder, node.span(), object, key_effect)
+      });
+    }
+
+    Ok(match node {
       MemberExpression::ComputedMemberExpression(node) => {
         let ComputedMemberExpression { span, object, expression, .. } = node.as_ref();
 
+        let object = self.transform_expression_in_chain(object, need_read)?.unwrap();
+        let key = self.transform_expression(expression, need_read);
+
         if need_read {
-          let object = self.transform_expression(object, true).unwrap();
-          let key = self.transform_expression(expression, true).unwrap();
-          Some(self.ast_builder.expression_member(self.ast_builder.member_expression_computed(
+          Some(Expression::from(self.ast_builder.member_expression_computed(
             *span,
             object,
-            key,
-            data.need_optional,
+            key.unwrap(),
+            need_optional,
           )))
         } else {
-          let object = self.transform_expression(object, false);
-          let key = self.transform_expression(expression, false);
           build_effect!(&self.ast_builder, *span, object, key)
         }
       }
@@ -163,12 +162,13 @@ impl<'a> Transformer<'a> {
         let StaticMemberExpression { span, object, property, .. } = node.as_ref();
 
         let object = self.transform_expression(object, need_read);
+
         if need_read {
-          Some(self.ast_builder.expression_member(self.ast_builder.member_expression_static(
+          Some(Expression::from(self.ast_builder.member_expression_static(
             *span,
             object.unwrap(),
-            property.clone(),
-            data.need_optional,
+            self.transform_identifier_name(property),
+            need_optional,
           )))
         } else {
           object
@@ -180,19 +180,22 @@ impl<'a> Transformer<'a> {
         let object = self.transform_expression(object, need_read);
 
         if need_read {
-          Some(self.ast_builder.expression_member(
-            self.ast_builder.member_expression_private_field_expression(
-              *span,
-              object.unwrap(),
-              field.clone(),
-              data.need_optional,
-            ),
-          ))
+          Some(
+            self
+              .ast_builder
+              .member_expression_private_field_expression(
+                *span,
+                object.unwrap(),
+                self.transform_private_identifier(field),
+                need_optional,
+              )
+              .into(),
+          )
         } else {
           object
         }
       }
-    }
+    })
   }
 
   pub fn transform_member_expression_write(
@@ -232,18 +235,20 @@ impl<'a> Transformer<'a> {
         let StaticMemberExpression { span, object, property, .. } = node.as_ref();
 
         let transformed_object = self.transform_expression(object, need_write);
+        let property = self.transform_identifier_name(property);
+
         if need_write {
           Some(self.ast_builder.member_expression_static(
             *span,
             transformed_object.unwrap(),
-            property.clone(),
+            property,
             false,
           ))
         } else if transformed_object.is_some() {
           Some(self.ast_builder.member_expression_static(
             *span,
             self.transform_expression(object, true).unwrap(),
-            property.clone(),
+            property,
             false,
           ))
         } else {
@@ -254,19 +259,20 @@ impl<'a> Transformer<'a> {
         let PrivateFieldExpression { span, object, field, .. } = node.as_ref();
 
         let transformed_object = self.transform_expression(object, need_write);
+        let field = self.transform_private_identifier(field);
 
         if need_write {
           Some(self.ast_builder.member_expression_private_field_expression(
             *span,
             transformed_object.unwrap(),
-            field.clone(),
+            field,
             false,
           ))
         } else if transformed_object.is_some() {
           Some(self.ast_builder.member_expression_private_field_expression(
             *span,
             self.transform_expression(object, true).unwrap(),
-            field.clone(),
+            field,
             false,
           ))
         } else {

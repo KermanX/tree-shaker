@@ -15,35 +15,27 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a TaggedTemplateExpression<'a>,
   ) -> Entity<'a> {
-    if let Some((indeterminate, tag, this)) = self.exec_callee(&node.tag) {
-      if indeterminate {
-        self.push_indeterminate_cf_scope();
-      }
+    let (_, tag, _, this) = match self.exec_callee(&node.tag) {
+      Ok(v) => v,
+      Err(v) => return v,
+    };
 
-      let mut arguments = vec![(false, self.factory.unknown())];
+    let mut arguments = vec![(false, self.factory.unknown())];
 
-      for expr in &node.quasi.expressions {
-        let value = self.exec_expression(expr);
-        let dep = DepId::from(AstKind2::ExpressionInTaggedTemplate(expr));
-        arguments.push((false, self.factory.computed(value, dep)));
-      }
-
-      let value = tag.call(
-        self,
-        box_consumable(AstKind2::TaggedTemplateExpression(node)),
-        this,
-        self.factory.arguments(arguments),
-      );
-
-      if indeterminate {
-        self.pop_cf_scope();
-        self.factory.union((value, self.factory.undefined))
-      } else {
-        value
-      }
-    } else {
-      self.factory.undefined
+    for expr in &node.quasi.expressions {
+      let value = self.exec_expression(expr);
+      let dep = DepId::from(AstKind2::ExpressionInTaggedTemplate(expr));
+      arguments.push((false, self.factory.computed(value, dep)));
     }
+
+    let value = tag.call(
+      self,
+      box_consumable(AstKind2::TaggedTemplateExpression(node)),
+      this,
+      self.factory.arguments(arguments),
+    );
+
+    value
   }
 }
 
@@ -57,12 +49,12 @@ impl<'a> Transformer<'a> {
 
     let need_call = need_val || self.is_referred(AstKind2::TaggedTemplateExpression(node));
 
-    if need_call {
-      let tag = self.transform_callee(tag, true).unwrap();
+    let tag = self.transform_callee(tag, need_call).unwrap();
 
+    if need_call {
       Some(self.ast_builder.expression_tagged_template(
         *span,
-        tag,
+        tag.unwrap(),
         self.transform_quasi(quasi),
         NONE,
       ))
@@ -70,7 +62,7 @@ impl<'a> Transformer<'a> {
       build_effect!(
         &self.ast_builder,
         *span,
-        self.transform_callee(tag, false),
+        tag,
         quasi.expressions.iter().map(|x| self.transform_expression(x, false)).collect::<Vec<_>>()
       )
     }

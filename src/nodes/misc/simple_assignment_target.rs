@@ -11,7 +11,8 @@ impl<'a> Analyzer<'a> {
   ) -> (Entity<'a>, Option<(Entity<'a>, Entity<'a>)>) {
     match node {
       match_member_expression!(SimpleAssignmentTarget) => {
-        self.exec_member_expression_read(node.to_member_expression(), true)
+        let (value, cache) = self.exec_member_expression_read(node.to_member_expression(), true);
+        (value, Some(cache))
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
         (self.exec_identifier_reference_read(node), None)
@@ -49,8 +50,7 @@ impl<'a> Transformer<'a> {
         self.transform_member_expression_read(node.to_member_expression(), need_val)
       }
       SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
-        let inner = self.transform_identifier_reference_read(node, need_val);
-        inner.map(|inner| self.ast_builder.expression_from_identifier_reference(inner))
+        self.transform_identifier_reference_read(node, need_val).map(Expression::Identifier)
       }
       _ => unreachable!(),
     }
@@ -63,12 +63,10 @@ impl<'a> Transformer<'a> {
     match node {
       match_member_expression!(SimpleAssignmentTarget) => self
         .transform_member_expression_write(node.to_member_expression())
-        .map(|node| self.ast_builder.simple_assignment_target_member_expression(node)),
-      SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => {
-        let inner = self.transform_identifier_reference_write(node);
-        inner
-          .map(|inner| self.ast_builder.simple_assignment_target_from_identifier_reference(inner))
-      }
+        .map(SimpleAssignmentTarget::from),
+      SimpleAssignmentTarget::AssignmentTargetIdentifier(node) => self
+        .transform_identifier_reference_write(node)
+        .map(SimpleAssignmentTarget::AssignmentTargetIdentifier),
       _ => unreachable!(),
     }
   }

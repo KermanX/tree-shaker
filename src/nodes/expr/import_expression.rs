@@ -26,7 +26,7 @@ impl<'a> Transformer<'a> {
     node: &'a ImportExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let ImportExpression { span, source, arguments, .. } = node;
+    let ImportExpression { span, source, arguments, phase } = node;
 
     // FIXME: side effects
     let need_import = need_val;
@@ -38,7 +38,12 @@ impl<'a> Transformer<'a> {
       for argument in arguments {
         transformed_arguments.push(self.transform_expression(argument, true).unwrap());
       }
-      Some(self.ast_builder.expression_import(*span, source.unwrap(), transformed_arguments))
+      Some(self.ast_builder.expression_import(
+        *span,
+        source.unwrap(),
+        transformed_arguments,
+        *phase,
+      ))
     } else {
       let mut effects = vec![source];
       for argument in arguments {

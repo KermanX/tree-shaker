@@ -4,3 +4,4 @@ node_modules
 /test/*.txt
 node_modules
 dist
+flamescope.json

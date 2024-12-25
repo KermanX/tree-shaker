@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
 
     // 1. discriminant
     let discriminant = self.exec_expression(&node.discriminant);
-    self.push_dependent_cf_scope(discriminant.clone());
+    self.push_dependent_cf_scope(discriminant);
 
     // 2. tests
     let mut default_case = None;
@@ -32,7 +32,8 @@ impl<'a> Analyzer<'a> {
       if let Some(test) = &case.test {
         let test_val = self.exec_expression(test);
 
-        let test_result = self.entity_op.strict_eq(self, discriminant, test_val);
+        // TODO: Support mangling
+        let (test_result, m) = self.entity_op.strict_eq(self, discriminant, test_val);
         test_results.push(test_result);
 
         if test_result != Some(false) {
@@ -46,8 +47,10 @@ impl<'a> Analyzer<'a> {
           }
           Some(false) => {}
           None => {
-            discriminant.consume(self);
-            test_val.consume(self);
+            self.consume((discriminant, test_val));
+            if let Some(m) = m {
+              m.add_to_mangler(&mut self.mangler);
+            }
             // data.need_test.insert(index);
             maybe_default_case = None;
             if !indeterminate {
@@ -68,6 +71,9 @@ impl<'a> Analyzer<'a> {
     // Patch default case
     if let Some(default_case) = default_case {
       test_results[default_case] = maybe_default_case;
+      if maybe_default_case != Some(false) {
+        data.need_test.insert(default_case);
+      }
     }
 
     // 3. consequent
@@ -93,11 +99,11 @@ impl<'a> Analyzer<'a> {
 
         let data = self.load_data::<StatementVecData>(AstKind2::SwitchCase(case));
 
-        if entered == None {
+        if entered.is_none() {
           self.push_indeterminate_cf_scope();
         }
         self.exec_statement_vec(data, &case.consequent);
-        if entered == None {
+        if entered.is_none() {
           self.pop_cf_scope();
         }
       }
@@ -156,7 +162,7 @@ impl<'a> Transformer<'a> {
           transformed_cases.push((*span, Some(test), consequent));
         }
         None => {
-          if consequent.len() > 0 {
+          if need_test {
             transformed_cases.push((*span, None, consequent));
           }
         }

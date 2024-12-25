@@ -14,7 +14,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Box<T> {
     self.as_ref().consume(analyzer)
   }
   fn cloned(&self) -> Consumable<'a> {
-    Box::new(self.as_ref().cloned())
+    self.as_ref().cloned()
   }
 }
 
@@ -54,7 +54,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Vec<T> {
     }
   }
   fn cloned(&self) -> Consumable<'a> {
-    unreachable!()
+    unreachable!("Should not clone Consumable Vec")
   }
 }
 

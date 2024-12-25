@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/throw_catch.js
 ---
@@ -8,7 +7,7 @@ export function f1(a) {
 	effect1();
 	throw effect2(), a;
 }
-export function f2(__unused_1A99) {
+export function f2() {
 	effect1();
 	try {
 		throw effect2();
@@ -18,7 +17,7 @@ export function f2(__unused_1A99) {
 		effect4();
 	}
 }
-export function f3(__unused_C18D) {
+export function f3() {
 	{
 		effect2();
 	}

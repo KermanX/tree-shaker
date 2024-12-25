@@ -1,6 +1,5 @@
 ---
 source: src/tests/mod.rs
-assertion_line: 32
 expression: tree_shake(input)
 input_file: src/tests/fixtures/update_expression.js
 ---
@@ -14,13 +13,13 @@ export function f1() {
 	effect(a);
 }
 export function f2() {
-	let b = { value: 1 };
-	b.value++;
-	effect(2, (b.value++, 2), (++b.value, 4));
-	b.value++;
+	let b = { a: 1 };
+	b.a++;
+	effect(2, (b.a++, 2), (++b.a, 4));
+	b.a++;
 	effect(5);
-	if (unknown) b.value++;
-	effect(b.value);
+	if (unknown) b.a++;
+	effect(b.a);
 }
 export function f3() {
 	let c = { value: 1 };

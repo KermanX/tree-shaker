@@ -45,7 +45,7 @@ impl<'a> Analyzer<'a> {
 
         let mut enumerated = vec![];
         for property in &node.properties {
-          enumerated.push(self.exec_assignment_target_property(property, value.clone()));
+          enumerated.push(self.exec_assignment_target_property(property, value));
         }
         if let Some(rest) = &node.rest {
           let dep = AstKind2::ObjectAssignmentTarget(node);
@@ -66,7 +66,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<AssignmentTargetPattern<'a>> {
     match node {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
-        let ArrayAssignmentTarget { span, elements, rest, trailing_comma, .. } = node.as_ref();
+        let ArrayAssignmentTarget { span, elements, rest, trailing_comma } = node.as_ref();
 
         let is_referred = self.is_referred(AstKind2::ArrayAssignmentTarget(node));
 
@@ -103,7 +103,7 @@ impl<'a> Transformer<'a> {
         }
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
-        let ObjectAssignmentTarget { span, properties, rest, .. } = node.as_ref();
+        let ObjectAssignmentTarget { span, properties, rest } = node.as_ref();
 
         let is_referred = self.is_referred(AstKind2::ObjectAssignmentTarget(node));
 

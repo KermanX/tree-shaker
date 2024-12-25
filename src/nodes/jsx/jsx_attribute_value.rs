@@ -11,12 +11,12 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     if let Some(node) = node {
       match node {
-        JSXAttributeValue::StringLiteral(node) => self.exec_string_literal(&node),
+        JSXAttributeValue::StringLiteral(node) => self.exec_string_literal(node),
         JSXAttributeValue::ExpressionContainer(node) => {
-          self.exec_jsx_expression_container_as_attribute_value(&node)
+          self.exec_jsx_expression_container_as_attribute_value(node)
         }
-        JSXAttributeValue::Element(node) => self.exec_jsx_element(&node),
-        JSXAttributeValue::Fragment(node) => self.exec_jsx_fragment(&node),
+        JSXAttributeValue::Element(node) => self.exec_jsx_element(node),
+        JSXAttributeValue::Fragment(node) => self.exec_jsx_fragment(node),
       }
     } else {
       self.factory.r#true
@@ -33,10 +33,10 @@ impl<'a> Transformer<'a> {
       match node {
         JSXAttributeValue::StringLiteral(_node) => None,
         JSXAttributeValue::ExpressionContainer(node) => {
-          self.transform_jsx_expression_container_effect_only(&node)
+          self.transform_jsx_expression_container_effect_only(node)
         }
-        JSXAttributeValue::Element(node) => self.transform_jsx_element_effect_only(&node),
-        JSXAttributeValue::Fragment(node) => self.transform_jsx_fragment_effect_only(&node),
+        JSXAttributeValue::Element(node) => self.transform_jsx_element_effect_only(node),
+        JSXAttributeValue::Fragment(node) => self.transform_jsx_fragment_effect_only(node),
       }
     } else {
       None
@@ -49,42 +49,35 @@ impl<'a> Transformer<'a> {
     need_val: bool,
   ) -> Option<JSXAttributeValue<'a>> {
     node.as_ref().and_then(|node| match node {
-      JSXAttributeValue::StringLiteral(node) => need_val
-        .then(|| self.ast_builder.jsx_attribute_value_from_string_literal(self.clone_node(node))),
+      JSXAttributeValue::StringLiteral(node) => {
+        need_val.then(|| JSXAttributeValue::StringLiteral(self.clone_node(node)))
+      }
       JSXAttributeValue::ExpressionContainer(node) => {
         if need_val {
-          Some(self.ast_builder.jsx_attribute_value_from_jsx_expression_container(
-            self.transform_jsx_expression_container_need_val(&node),
+          Some(JSXAttributeValue::ExpressionContainer(
+            self.transform_jsx_expression_container_need_val(node),
           ))
         } else {
           self
-            .transform_jsx_expression_container_effect_only(&node)
+            .transform_jsx_expression_container_effect_only(node)
             .map(|effect| self.build_jsx_expression_container_from_expression(node.span, effect))
         }
       }
       JSXAttributeValue::Element(node) => {
         if need_val {
-          Some(
-            self
-              .ast_builder
-              .jsx_attribute_value_from_jsx_element(self.transform_jsx_element_need_val(&node)),
-          )
+          Some(JSXAttributeValue::Element(self.transform_jsx_element_need_val(node)))
         } else {
           self
-            .transform_jsx_element_effect_only(&node)
+            .transform_jsx_element_effect_only(node)
             .map(|effect| self.build_jsx_expression_container_from_expression(node.span, effect))
         }
       }
       JSXAttributeValue::Fragment(node) => {
         if need_val {
-          Some(
-            self
-              .ast_builder
-              .jsx_attribute_value_from_jsx_fragment(self.transform_jsx_fragment_need_val(&node)),
-          )
+          Some(JSXAttributeValue::Fragment(self.transform_jsx_fragment_need_val(node)))
         } else {
           self
-            .transform_jsx_fragment_effect_only(&node)
+            .transform_jsx_fragment_effect_only(node)
             .map(|effect| self.build_jsx_expression_container_from_expression(node.span, effect))
         }
       }
@@ -96,9 +89,6 @@ impl<'a> Transformer<'a> {
     span: Span,
     expression: Expression<'a>,
   ) -> JSXAttributeValue<'a> {
-    self.ast_builder.jsx_attribute_value_jsx_expression_container(
-      span,
-      self.ast_builder.jsx_expression_expression(expression),
-    )
+    self.ast_builder.jsx_attribute_value_jsx_expression_container(span, expression.into())
   }
 }

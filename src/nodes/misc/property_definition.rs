@@ -15,8 +15,8 @@ impl<'a> Transformer<'a> {
     let value = value.as_ref().map(|node| self.transform_expression(node, true).unwrap());
 
     Some(self.ast_builder.class_element_property_definition(
-      *r#type,
       *span,
+      *r#type,
       self.clone_node(decorators),
       key,
       value,

@@ -38,3 +38,22 @@ export function case_not_provided() {
     );
   }
 }
+
+export function case_consumed() {
+  const MyContext = React.createContext("default");
+
+  function Inner() {
+    const value = React.useContext(MyContext);
+    return <div>{value}</div>;
+  }
+
+  lostTrack(Inner);
+
+  return function main() {
+    return (
+      <MyContext.Provider value="hello">
+        <UnknownComponent />
+      </MyContext.Provider>
+    );
+  }
+}

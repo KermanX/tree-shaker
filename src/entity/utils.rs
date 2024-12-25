@@ -1,29 +1,12 @@
-use super::Entity;
-use crate::{analyzer::Analyzer, consumable::ConsumableTrait};
 use core::slice;
 use std::{array, iter::Copied};
-
-pub fn boolean_from_test_result<'a>(
-  analyzer: &Analyzer<'a>,
-  result: Option<bool>,
-  dep: impl ConsumableTrait<'a> + 'a,
-) -> Entity<'a> {
-  analyzer.factory.computed(
-    match result {
-      Some(value) => analyzer.factory.boolean(value),
-      None => analyzer.factory.unknown_boolean,
-    },
-    dep,
-  )
-}
 
 #[macro_export]
 macro_rules! use_consumed_flag {
   ($self: expr) => {
-    if $self.consumed.get() {
+    if $self.consumed.replace(true) {
       return;
     }
-    $self.consumed.set(true);
   };
 }
 

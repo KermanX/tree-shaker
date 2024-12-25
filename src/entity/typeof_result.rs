@@ -18,8 +18,8 @@ bitflags! {
 }
 
 impl TypeofResult {
-  pub fn to_string(&self) -> Option<&'static str> {
-    Some(match *self {
+  pub fn to_string(self) -> Option<&'static str> {
+    Some(match self {
       TypeofResult::String => "string",
       TypeofResult::Number => "number",
       TypeofResult::BigInt => "bigint",

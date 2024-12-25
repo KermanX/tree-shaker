@@ -34,16 +34,19 @@ impl<'a> Analyzer<'a> {
       )
     };
 
-    let conditional_dep = self.push_logical_right_cf_scope(
-      AstKind2::LogicalExpressionLeft(node),
-      left.clone(),
-      maybe_left,
-      maybe_right,
-    );
-
     let exec_right = |analyzer: &mut Analyzer<'a>| {
-      let val = analyzer.exec_expression(&node.right);
-      analyzer.factory.computed(val, conditional_dep)
+      let conditional_dep = analyzer.push_logical_right_cf_scope(
+        AstKind2::LogicalExpressionLeft(node),
+        left,
+        maybe_left,
+        maybe_right,
+      );
+
+      let val = analyzer.factory.computed(analyzer.exec_expression(&node.right), conditional_dep);
+
+      analyzer.pop_cf_scope();
+
+      val
     };
 
     let value = match (maybe_left, maybe_right) {
@@ -54,10 +57,8 @@ impl<'a> Analyzer<'a> {
         let right = exec_right(self);
         self.factory.logical_result(left, right, node.operator)
       }
-      (false, false) => unreachable!(),
+      (false, false) => unreachable!("Logical expression should have at least one possible branch"),
     };
-
-    self.pop_cf_scope();
 
     value
   }
@@ -69,7 +70,7 @@ impl<'a> Transformer<'a> {
     node: &'a LogicalExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let LogicalExpression { span, left, operator, right, .. } = node;
+    let LogicalExpression { span, left, operator, right } = node;
 
     let (need_left_test_val, maybe_left, maybe_right) =
       self.get_conditional_result(AstKind2::LogicalExpressionLeft(node));

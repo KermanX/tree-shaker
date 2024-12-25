@@ -23,9 +23,9 @@ impl<'a> Transformer<'a> {
     need_val: bool,
   ) -> Option<Expression<'a>> {
     match node {
-      JSXMemberExpressionObject::IdentifierReference(node) => self
-        .transform_identifier_reference_read(node, need_val)
-        .map(|id| self.ast_builder.expression_from_identifier_reference(id)),
+      JSXMemberExpressionObject::IdentifierReference(node) => {
+        self.transform_identifier_reference_read(node, need_val).map(Expression::Identifier)
+      }
       JSXMemberExpressionObject::MemberExpression(node) => {
         self.transform_jsx_member_expression_effect_only(node, need_val)
       }
@@ -41,18 +41,16 @@ impl<'a> Transformer<'a> {
   ) -> JSXMemberExpressionObject<'a> {
     match node {
       JSXMemberExpressionObject::IdentifierReference(node) => {
-        self.ast_builder.jsx_member_expression_object_from_identifier_reference(
+        JSXMemberExpressionObject::IdentifierReference(
           self.transform_identifier_reference_read(node, true).unwrap(),
         )
       }
       JSXMemberExpressionObject::MemberExpression(node) => {
-        self.ast_builder.jsx_member_expression_object_from_jsx_member_expression(
+        JSXMemberExpressionObject::MemberExpression(
           self.transform_jsx_member_expression_need_val(node),
         )
       }
-      JSXMemberExpressionObject::ThisExpression(node) => {
-        self.ast_builder.jsx_member_expression_object_from_this_expression(self.clone_node(node))
-      }
+      JSXMemberExpressionObject::ThisExpression(_) => self.clone_node(node),
     }
   }
 }

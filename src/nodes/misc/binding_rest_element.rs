@@ -22,7 +22,7 @@ impl<'a> Transformer<'a> {
     node: &'a BindingRestElement<'a>,
     need_binding: bool,
   ) -> Option<BindingRestElement<'a>> {
-    let BindingRestElement { span, argument, .. } = node;
+    let BindingRestElement { span, argument } = node;
 
     let argument = self.transform_binding_pattern(argument, need_binding);
 

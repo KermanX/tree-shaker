@@ -9,27 +9,27 @@ use std::{
 };
 
 #[derive(Clone)]
-pub struct TrackerRunner<'a> {
-  pub runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
+pub struct ExhaustiveCallback<'a> {
+  pub handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
   pub once: bool,
 }
-impl<'a> PartialEq for TrackerRunner<'a> {
+impl<'a> PartialEq for ExhaustiveCallback<'a> {
   fn eq(&self, other: &Self) -> bool {
-    self.once == other.once && Rc::ptr_eq(&self.runner, &other.runner)
+    self.once == other.once && Rc::ptr_eq(&self.handler, &other.handler)
   }
 }
-impl<'a> Eq for TrackerRunner<'a> {}
-impl Hash for TrackerRunner<'_> {
+impl<'a> Eq for ExhaustiveCallback<'a> {}
+impl Hash for ExhaustiveCallback<'_> {
   fn hash<H: Hasher>(&self, state: &mut H) {
-    Rc::as_ptr(&self.runner).hash(state);
+    Rc::as_ptr(&self.handler).hash(state);
   }
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
+  pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
     let runner = Rc::new(runner);
 
-    self.exec_exhaustively(runner.clone(), false);
+    self.exec_exhaustively("loop", runner.clone(), false);
 
     let cf_scope = self.cf_scope();
     if cf_scope.referred_state != ReferredState::ReferredClean && cf_scope.deps.may_not_referred() {
@@ -39,8 +39,12 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn exec_consumed_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a) {
-    let runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a> = Rc::new(move |analyzer| {
+  pub fn exec_consumed_fn(
+    &mut self,
+    kind: &str,
+    runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a,
+  ) {
+    let runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a> = Rc::new(move |analyzer| {
       analyzer.push_indeterminate_cf_scope();
       analyzer.push_try_scope();
       let ret_val = runner(analyzer);
@@ -51,24 +55,32 @@ impl<'a> Analyzer<'a> {
       }
       analyzer.pop_cf_scope();
     });
-    let deps = self.exec_exhaustively(runner.clone(), false);
-    self.track_dep_after_finished(false, runner, deps);
+    let deps = self.exec_exhaustively(kind, runner.clone(), false);
+    self.register_exhaustive_callbacks(false, runner, deps);
   }
 
-  pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) -> () + 'a) {
+  pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
     let runner = Rc::new(runner);
-    let deps = self.exec_exhaustively(runner.clone(), true);
-    self.track_dep_after_finished(true, runner, deps);
+    let deps = self.exec_exhaustively("async/generator", runner.clone(), true);
+    self.register_exhaustive_callbacks(true, runner, deps);
   }
 
   fn exec_exhaustively(
     &mut self,
-    runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
+    kind: &str,
+    runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     once: bool,
   ) -> FxHashSet<(ScopeId, SymbolId)> {
     self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
     let mut round_counter = 0;
     while self.cf_scope_mut().iterate_exhaustively() {
+      #[cfg(feature = "flame")]
+      let _scope_guard = flame::start_guard(format!(
+        "!{kind}@{:06X} x{}",
+        (Rc::as_ptr(&runner) as *const () as usize) & 0xFFFFFF,
+        round_counter
+      ));
+
       runner(self);
       round_counter += 1;
       if once {
@@ -83,10 +95,10 @@ impl<'a> Analyzer<'a> {
     mem::take(&mut exhaustive_data.deps)
   }
 
-  fn track_dep_after_finished(
+  fn register_exhaustive_callbacks(
     &mut self,
     once: bool,
-    runner: Rc<dyn Fn(&mut Analyzer<'a>) -> () + 'a>,
+    handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     deps: FxHashSet<(ScopeId, SymbolId)>,
   ) {
     for (scope, symbol) in deps {
@@ -94,10 +106,10 @@ impl<'a> Analyzer<'a> {
         .scope_context
         .variable
         .get_mut(scope)
-        .exhaustive_deps
+        .exhaustive_callbacks
         .entry(symbol)
-        .or_insert_with(Default::default)
-        .insert(TrackerRunner { runner: runner.clone(), once });
+        .or_default()
+        .insert(ExhaustiveCallback { handler: handler.clone(), once });
     }
   }
 
@@ -116,25 +128,53 @@ impl<'a> Analyzer<'a> {
     let mut indeterminate = false;
     for depth in target..self.scope_context.cf.stack.len() {
       let scope = self.scope_context.cf.get_mut_from_depth(depth);
-      should_consume |= scope.mark_exhaustive_write(variable);
+      if !should_consume {
+        should_consume |= scope.mark_exhaustive_write(variable);
+      }
       indeterminate |= scope.is_indeterminate();
     }
     (should_consume, indeterminate)
   }
 
-  pub fn exec_exhaustive_deps(
+  pub fn add_exhaustive_callbacks(
     &mut self,
     should_consume: bool,
     (scope, symbol): (ScopeId, SymbolId),
-  ) {
+  ) -> bool {
     if let Some(runners) =
-      self.scope_context.variable.get_mut(scope).exhaustive_deps.get_mut(&symbol)
+      self.scope_context.variable.get_mut(scope).exhaustive_callbacks.get_mut(&symbol)
     {
-      let runners = if should_consume { mem::take(runners) } else { runners.clone() };
+      if runners.is_empty() {
+        false
+      } else {
+        if should_consume {
+          self.pending_deps.extend(runners.drain());
+        } else {
+          self.pending_deps.extend(runners.iter().cloned());
+        }
+        true
+      }
+    } else {
+      false
+    }
+  }
+
+  pub fn call_exhaustive_callbacks(&mut self) -> bool {
+    if self.pending_deps.is_empty() {
+      return false;
+    }
+    loop {
+      let runners = mem::take(&mut self.pending_deps);
       for runner in runners {
-        let TrackerRunner { runner, once } = runner.clone();
-        let deps = self.exec_exhaustively(runner.clone(), once);
-        self.track_dep_after_finished(once, runner, deps);
+        // let old_count = self.referred_deps.debug_count();
+        let ExhaustiveCallback { handler: runner, once } = runner;
+        let deps = self.exec_exhaustively("dep", runner.clone(), once);
+        self.register_exhaustive_callbacks(once, runner, deps);
+        // let new_count = self.referred_deps.debug_count();
+        // self.debug += 1;
+      }
+      if self.pending_deps.is_empty() {
+        return true;
       }
     }
   }

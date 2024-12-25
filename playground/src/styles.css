@@ -1,6 +1,7 @@
 :root {
   background-color: rgb(24, 24, 24);
   color: white;
+  color-scheme: dark;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -26,5 +27,13 @@
 }
 
 .active-call-scope {
-  box-shadow: -4px 0px 0px 0px #92400eDD;
+  box-shadow: -4px 0px 0px 0px #92400edd;
+}
+
+select {
+  outline: none !important;
+}
+
+select option {
+  @apply bg-gray-900;
 }

@@ -7,7 +7,7 @@ impl<'a> Builtins<'a> {
     prototypes: &'a BuiltinPrototypes<'a>,
   ) -> Entity<'a> {
     let object = ObjectEntity::new_builtin(IMPORT_META_OBJECT_ID, &prototypes.null, true);
-    object.rest.borrow_mut().values.push(ObjectPropertyValue::Property(
+    object.init_rest(ObjectPropertyValue::Property(
       Some(factory.immutable_unknown),
       Some(factory.immutable_unknown),
     ));
@@ -17,10 +17,14 @@ impl<'a> Builtins<'a> {
       "url",
       ObjectProperty {
         definite: true,
-        values: vec![ObjectPropertyValue::Property(
-          Some(factory.implemented_builtin_fn(|analyzer, _, _, _| analyzer.factory.unknown_string)),
+        possible_values: vec![ObjectPropertyValue::Property(
+          Some(factory.implemented_builtin_fn("import.meta.url", |analyzer, _, _, _| {
+            analyzer.factory.unknown_string
+          })),
           None,
         )],
+        non_existent: Default::default(),
+        mangling: None,
       },
     );
 

@@ -15,6 +15,11 @@ pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable
 
 pub trait EntityTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
+  /// Returns true if the entity is completely consumed
+  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
+    self.consume(analyzer);
+    true
+  }
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>);
 
   fn get_property(
@@ -121,6 +126,10 @@ impl<'a> Entity<'a> {
 
   pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.0.consume(analyzer)
+  }
+
+  pub fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
+    self.0.consume_mangable(analyzer)
   }
 
   pub fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
@@ -260,7 +269,7 @@ impl<'a> Entity<'a> {
     let deps = box_consumable(ConsumableNode::new(deps));
     let mut result_elements = Vec::new();
     for i in 0..length.min(elements.len()) {
-      result_elements.push(analyzer.factory.computed(elements[i].clone(), deps.cloned()));
+      result_elements.push(analyzer.factory.computed(elements[i], deps.cloned()));
     }
     for _ in 0..length.saturating_sub(elements.len()) {
       if let Some(rest) = rest {
@@ -274,7 +283,7 @@ impl<'a> Entity<'a> {
     let mut rest_arr_is_empty = true;
     if length < elements.len() {
       for element in &elements[length..elements.len()] {
-        rest_arr.push_element(element.clone());
+        rest_arr.push_element(*element);
         rest_arr_is_empty = false;
       }
     }
@@ -305,8 +314,27 @@ impl<'a> Entity<'a> {
     }
   }
 
+  pub fn call_as_getter(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    this: Entity<'a>,
+  ) -> Entity<'a> {
+    self.call(analyzer, dep, this, analyzer.factory.empty_arguments)
+  }
+
+  pub fn call_as_setter(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    this: Entity<'a>,
+    value: Entity<'a>,
+  ) -> Entity<'a> {
+    self.call(analyzer, dep, this, analyzer.factory.arguments(vec![(false, value)]))
+  }
+
   pub fn to_consumable(&self) -> Consumable<'a> {
-    box_consumable(self.clone())
+    box_consumable(*self)
   }
 }
 

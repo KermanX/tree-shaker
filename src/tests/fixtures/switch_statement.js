@@ -36,4 +36,10 @@ export function main() {
     case 1:
       1;2;3;
   }
+
+  switch(unknown) {
+    default:
+    case 'a': console.log('a');
+    case 'b': console.log('b');
+  }
 }

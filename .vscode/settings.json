@@ -1,5 +1,6 @@
-{  
+{
   "rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] },
+  "rust-analyzer.cargo.features": ["flame"],
 
   "[rust]": {
     "editor.formatOnSave": true,
@@ -78,5 +79,11 @@
   ],
   "files.exclude": {
     "/test/test262": true
-  }
+  },
+  "workbench.editorAssociations": {
+    "*.copilotmd": "vscode.markdown.preview.editor",
+    "{hexdiff}:/**/*.*": "hexEditor.hexedit",
+    "flamescope*.json": "speedscope-vscode.speedscope"
+  },
+  "rust-analyzer.check.command": "clippy"
 }

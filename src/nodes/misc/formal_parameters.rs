@@ -46,7 +46,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a FormalParameters<'a>,
   ) -> FormalParameters<'a> {
-    let FormalParameters { span, items, rest, kind, .. } = node;
+    let FormalParameters { span, items, rest, kind } = node;
 
     let mut transformed_items = self.ast_builder.vec();
 

@@ -8,12 +8,19 @@ edition = "2021"
 
 [lib]
 
+[features]
+flame = ["dep:flame", "dep:flamescope"]
+
 [dependencies]
 bitflags = "2.6.0"
 clap = { version = "4.5.20", features = ["derive"] }
 dashmap = "6.0.1"
+flame = { version = "0.2.2", optional = true }
+flamescope = { version = "0.1.3", optional = true }
 insta = { version = "1.39.0", features = ["glob"] }
-oxc = { version = "0.34.0", features = ["codegen", "semantic", "minifier"] }
+line-index = "0.1.2"
+oxc = { version = "0.43.0", features = ["codegen", "semantic", "minifier"] }
+oxc_index = "2.0.0"
 regex = "1.10.6"
 rustc-hash = "2.0.0"
 
@@ -34,3 +41,14 @@ codegen-units = 1
 strip = "symbols" # Set to `false` for debug information
 debug = false     # Set to `true` for debug information
 panic = "abort"   # Let it crash and force ourselves to write safe Rust
+
+[lints.clippy]
+dbg_macro = "deny"
+empty_drop = "deny"
+filetype_is_file = "deny"
+get_unwrap = "deny"
+rest_pat_in_fully_bound_structs = "deny"
+unnecessary_safety_comment = "deny"
+
+missing_transmute_annotations = "allow"
+too_many_arguments = "allow"

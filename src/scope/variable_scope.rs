@@ -1,13 +1,13 @@
-use super::exhaustive::TrackerRunner;
+use super::exhaustive::ExhaustiveCallback;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
   consumable::{box_consumable, Consumable, LazyConsumable},
-  entity::{Entity, UNDEFINED_ENTITY},
+  entity::Entity,
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::{cell::RefCell, fmt, mem};
+use std::{cell::RefCell, fmt};
 
 #[derive(Debug)]
 pub struct Variable<'a> {
@@ -24,7 +24,7 @@ pub struct VariableScope<'a> {
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
   pub super_class: Option<Entity<'a>>,
-  pub exhaustive_deps: FxHashMap<SymbolId, FxHashSet<TrackerRunner<'a>>>,
+  pub exhaustive_callbacks: FxHashMap<SymbolId, FxHashSet<ExhaustiveCallback<'a>>>,
 }
 
 impl fmt::Debug for VariableScope<'_> {
@@ -59,7 +59,9 @@ impl<'a> Analyzer<'a> {
 
       if old_kind.is_untracked() {
         self.consume(decl_dep);
-        fn_value.map(|val| val.consume(self));
+        if let Some(val) = fn_value {
+          val.consume(self)
+        }
         return;
       }
 
@@ -93,7 +95,7 @@ impl<'a> Analyzer<'a> {
       }));
       self.scope_context.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
-        self.exec_exhaustive_deps(false, (id, symbol));
+        self.add_exhaustive_callbacks(false, (id, symbol));
       }
     }
   }
@@ -121,7 +123,7 @@ impl<'a> Analyzer<'a> {
       drop(variable_ref);
       variable.borrow_mut().value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_dep));
-      self.exec_exhaustive_deps(false, (id, symbol));
+      self.add_exhaustive_callbacks(false, (id, symbol));
     }
   }
 
@@ -131,7 +133,7 @@ impl<'a> Analyzer<'a> {
   fn read_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> Option<Option<Entity<'a>>> {
     self.scope_context.variable.get(id).variables.get(&symbol).copied().map(|variable| {
       let variable_ref = variable.borrow();
-      let value = variable_ref.value.clone().or_else(|| {
+      let value = variable_ref.value.or_else(|| {
         variable_ref
           .kind
           .is_var()
@@ -204,9 +206,7 @@ impl<'a> Analyzer<'a> {
           } else {
             variable_ref.value = Some(self.factory.computed(
               if indeterminate {
-                self
-                  .factory
-                  .union((old_val.unwrap_or(unsafe { mem::transmute(UNDEFINED_ENTITY) }), new_val))
+                self.factory.union((old_val.unwrap_or(self.factory.undefined), new_val))
               } else {
                 new_val
               },
@@ -215,7 +215,7 @@ impl<'a> Analyzer<'a> {
           };
           drop(variable_ref);
 
-          self.exec_exhaustive_deps(should_consume, (id, symbol));
+          self.add_exhaustive_callbacks(should_consume, (id, symbol));
         }
       }
       true

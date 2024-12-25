@@ -27,7 +27,7 @@ use oxc::{
 
 impl<'a> Analyzer<'a> {
   pub fn declare_statement(&mut self, node: &'a Statement) {
-    self.push_stmt_span(node, true);
+    self.push_span(node);
     match node {
       match_declaration!(Statement) => {
         let node = node.to_declaration();
@@ -40,11 +40,11 @@ impl<'a> Analyzer<'a> {
       Statement::LabeledStatement(node) => self.declare_labeled_statement(node),
       _ => {}
     }
-    self.pop_stmt_span(true);
+    self.pop_span();
   }
 
   pub fn init_statement(&mut self, node: &'a Statement) {
-    self.push_stmt_span(node, false);
+    self.push_span(node);
     if !matches!(
       node,
       Statement::BlockStatement(_)
@@ -88,9 +88,9 @@ impl<'a> Analyzer<'a> {
       Statement::ThrowStatement(node) => self.exec_throw_statement(node),
       Statement::EmptyStatement(_) => {}
       Statement::DebuggerStatement(_node) => {}
-      Statement::WithStatement(_node) => unreachable!(),
+      Statement::WithStatement(_node) => unimplemented!("with statement"),
     }
-    self.pop_stmt_span(false);
+    self.pop_span();
   }
 
   pub fn exec_statement(&mut self, node: &'a Statement) {
@@ -103,12 +103,12 @@ impl<'a> Transformer<'a> {
   pub fn transform_statement(&self, node: &'a Statement<'a>) -> Option<Statement<'a>> {
     let span = node.span();
     match node {
-      match_declaration!(Statement) => self
-        .transform_declaration(node.to_declaration())
-        .map(|decl| self.ast_builder.statement_declaration(decl)),
-      match_module_declaration!(Statement) => self
-        .transform_module_declaration(node.to_module_declaration())
-        .map(|decl| self.ast_builder.statement_module_declaration(decl)),
+      match_declaration!(Statement) => {
+        self.transform_declaration(node.to_declaration()).map(Statement::from)
+      }
+      match_module_declaration!(Statement) => {
+        self.transform_module_declaration(node.to_module_declaration()).map(Statement::from)
+      }
       Statement::ExpressionStatement(node) => {
         let ExpressionStatement { expression, .. } = node.as_ref();
         self
@@ -116,7 +116,7 @@ impl<'a> Transformer<'a> {
           .map(|expr| self.ast_builder.statement_expression(span, expr))
       }
       Statement::BlockStatement(node) => {
-        self.transform_block_statement(node).map(|stmt| self.ast_builder.statement_from_block(stmt))
+        self.transform_block_statement(node).map(Statement::BlockStatement)
       }
       Statement::IfStatement(node) => self.transform_if_statement(node),
       Statement::WhileStatement(node) => self.transform_while_statement(node),

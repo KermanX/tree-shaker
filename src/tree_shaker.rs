@@ -1,11 +1,11 @@
 use crate::{
-  analyzer::Analyzer, entity::EntityFactory, transformer::Transformer, utils::Logger,
+  analyzer::Analyzer, entity::EntityFactory, transformer::Transformer, utils::Diagnostics,
   TreeShakeConfig,
 };
 use oxc::{
   allocator::Allocator,
   codegen::{CodeGenerator, CodegenOptions, CodegenReturn},
-  minifier::{Minifier, MinifierOptions, MinifierReturn},
+  minifier::{Minifier, MinifierOptions},
   parser::Parser,
   semantic::SemanticBuilder,
   span::SourceType,
@@ -16,14 +16,17 @@ pub struct TreeShakeOptions {
   pub config: TreeShakeConfig,
   pub minify_options: Option<MinifierOptions>,
   pub codegen_options: CodegenOptions,
-  pub logging: bool,
+}
+
+pub struct TreeShakeReturn {
+  pub codegen_return: CodegenReturn,
+  pub diagnostics: Diagnostics,
 }
 
 pub struct TreeShakerInner<'a> {
   pub allocator: &'a Allocator,
   pub config: &'a TreeShakeConfig,
   pub factory: &'a EntityFactory<'a>,
-  pub logger: Option<&'a Logger>,
   pub minify_options: Option<MinifierOptions>,
   pub codegen_options: CodegenOptions,
   pub diagnostics: RefCell<BTreeSet<String>>,
@@ -34,22 +37,20 @@ pub struct TreeShaker<'a>(pub Rc<TreeShakerInner<'a>>);
 
 impl<'a> TreeShaker<'a> {
   pub fn new(allocator: &'a Allocator, options: TreeShakeOptions) -> Self {
-    let TreeShakeOptions { config, minify_options, codegen_options, logging, .. } = options;
+    let TreeShakeOptions { config, minify_options, codegen_options } = options;
 
     Self(Rc::new(TreeShakerInner {
       allocator,
       config: allocator.alloc(config),
       minify_options,
       codegen_options,
-      logger: logging.then(|| &*allocator.alloc(Logger::new())),
       factory: allocator.alloc(EntityFactory::new(allocator)),
       diagnostics: Default::default(),
     }))
   }
 
-  pub fn tree_shake(&self, source_text: String) -> (Option<MinifierReturn>, CodegenReturn) {
-    let TreeShakerInner { allocator, config, minify_options, codegen_options, logger, .. } =
-      self.0.as_ref();
+  pub fn tree_shake(self, source_text: String) -> TreeShakeReturn {
+    let TreeShakerInner { allocator, config, minify_options, codegen_options, .. } = &*self.0;
 
     let parser = Parser::new(
       allocator,
@@ -74,15 +75,15 @@ impl<'a> TreeShaker<'a> {
     // Step 3: Minify
     let minifier_return = minify_options.map(|options| {
       let minifier = Minifier::new(options);
-      minifier.build(&allocator, ast)
+      minifier.build(allocator, ast)
     });
 
     // Step 4: Generate output
-    let codegen = CodeGenerator::new().with_options(codegen_options.clone());
+    let codegen = CodeGenerator::new()
+      .with_options(codegen_options.clone())
+      .with_mangler(minifier_return.and_then(|r| r.mangler));
     let codegen_return = codegen.build(ast);
 
-    logger.map(|l| l.print_fn_calls());
-
-    (minifier_return, codegen_return)
+    TreeShakeReturn { codegen_return, diagnostics: self.0.diagnostics.take() }
   }
 }

@@ -7,6 +7,7 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable, ConsumableTrait},
+  scope::CfScopeKind,
   use_consumed_flag,
 };
 use rustc_hash::FxHashSet;
@@ -29,6 +30,19 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     }
   }
 
+  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
+    if !self.consumed.get() {
+      let mut consumed = true;
+      for value in self.values.iter() {
+        consumed &= value.consume_mangable(analyzer);
+      }
+      self.consumed.set(consumed);
+      consumed
+    } else {
+      true
+    }
+  }
+
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     for value in self.values.iter() {
       value.unknown_mutate(analyzer, dep.cloned());
@@ -42,8 +56,8 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    let values = self.values.map(|v| {
-      analyzer.exec_indeterminately(|analyzer| v.get_property(analyzer, dep.cloned(), key))
+    let values = analyzer.exec_indeterminately(|analyzer| {
+      self.values.map(|v| v.get_property(analyzer, dep.cloned(), key))
     });
     analyzer.factory.union(values)
   }
@@ -56,11 +70,11 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    for entity in self.values.iter() {
-      analyzer.exec_indeterminately(|analyzer| {
-        entity.set_property(analyzer, dep.cloned(), key, value.clone())
-      });
-    }
+    analyzer.exec_indeterminately(|analyzer| {
+      for entity in self.values.iter() {
+        entity.set_property(analyzer, dep.cloned(), key, value)
+      }
+    });
   }
 
   fn enumerate_properties(
@@ -70,16 +84,15 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
     // FIXME:
-    if analyzer.config.unknown_property_read_side_effects {
-      self.consume(analyzer);
-    }
     consumed_object::enumerate_properties(rc, analyzer, dep)
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-    for entity in self.values.iter() {
-      analyzer.exec_indeterminately(|analyzer| entity.delete_property(analyzer, dep.cloned(), key));
-    }
+    analyzer.exec_indeterminately(|analyzer| {
+      for entity in self.values.iter() {
+        entity.delete_property(analyzer, dep.cloned(), key);
+      }
+    })
   }
 
   fn call(
@@ -90,10 +103,8 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.push_dependent_cf_scope(rc);
-    let values = self.values.map(|v| {
-      analyzer.exec_indeterminately(|analyzer| v.call(analyzer, dep.cloned(), this, args))
-    });
+    analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, None, vec![box_consumable(rc)], None);
+    let values = self.values.map(|v| v.call(analyzer, dep.cloned(), this, args));
     analyzer.pop_cf_scope();
     analyzer.factory.union(values)
   }
@@ -105,15 +116,15 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    let values = self.values.map(|v| {
-      analyzer.exec_indeterminately(|analyzer| v.construct(analyzer, dep.cloned(), args.clone()))
+    let values = analyzer.exec_indeterminately(|analyzer| {
+      self.values.map(|v| v.construct(analyzer, dep.cloned(), args))
     });
     analyzer.factory.union(values)
   }
 
   fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     let values =
-      self.values.map(|v| analyzer.exec_indeterminately(|analyzer| v.jsx(analyzer, props.clone())));
+      analyzer.exec_indeterminately(|analyzer| self.values.map(|v| v.jsx(analyzer, props)));
     analyzer.factory.union(values)
   }
 
@@ -123,9 +134,8 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
-    let values = self
-      .values
-      .map(|v| analyzer.exec_indeterminately(|analyzer| v.r#await(analyzer, dep.cloned())));
+    let values = analyzer
+      .exec_indeterminately(|analyzer| self.values.map(|v| v.r#await(analyzer, dep.cloned())));
     analyzer.factory.union(values)
   }
 
@@ -137,15 +147,15 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
   ) -> IteratedElements<'a> {
     let mut results = Vec::new();
     let mut has_undefined = false;
+    analyzer.push_indeterminate_cf_scope();
     for entity in self.values.iter() {
-      if let Some(result) = analyzer
-        .exec_indeterminately(|analyzer| entity.iterate_result_union(analyzer, dep.cloned()))
-      {
+      if let Some(result) = entity.iterate_result_union(analyzer, dep.cloned()) {
         results.push(result);
       } else {
         has_undefined = true;
       }
     }
+    analyzer.pop_cf_scope();
     if has_undefined {
       results.push(analyzer.factory.undefined);
     }
@@ -242,23 +252,27 @@ impl<'a> EntityFactory<'a> {
     &self,
     values: V,
   ) -> Option<Entity<'a>> {
-    if values.len() == 0 {
-      None
-    } else {
-      Some(if values.len() == 1 {
-        values.iter().next().unwrap()
-      } else {
-        self.entity(UnionEntity {
-          values,
-          consumed: Cell::new(false),
-          phantom: std::marker::PhantomData,
-        })
-      })
+    match values.len() {
+      0 => None,
+      1 => Some(values.iter().next().unwrap()),
+      _ => Some(self.entity(UnionEntity {
+        values,
+        consumed: Cell::new(false),
+        phantom: std::marker::PhantomData,
+      })),
     }
   }
 
   pub fn union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(&self, values: V) -> Entity<'a> {
     self.try_union(values).unwrap()
+  }
+
+  pub fn optional_union(&self, a: Entity<'a>, b: Option<Entity<'a>>) -> Entity<'a> {
+    if let Some(b) = b {
+      self.union((a, b))
+    } else {
+      a
+    }
   }
 
   pub fn computed_union<T: ConsumableTrait<'a> + 'a>(

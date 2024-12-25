@@ -1,13 +1,13 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityTrait, TypeofResult,
+  Entity, EntityTrait, ObjectEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
   consumable::{box_consumable, Consumable},
-  scope::call_scope::CalleeNode,
   use_consumed_flag,
+  utils::{CalleeInfo, CalleeNode},
 };
 use oxc::{semantic::ScopeId, span::GetSpan};
 use std::{cell::Cell, rc::Rc};
@@ -16,9 +16,10 @@ use std::{cell::Cell, rc::Rc};
 pub struct FunctionEntity<'a> {
   consumed: Rc<Cell<bool>>,
   body_consumed: Rc<Cell<bool>>,
-  pub callee: (CalleeNode<'a>, usize),
+  pub callee: CalleeInfo<'a>,
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
   pub finite_recursion: bool,
+  pub object: &'a ObjectEntity<'a>,
 }
 
 impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
@@ -26,6 +27,8 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     use_consumed_flag!(self);
 
     self.consume_body(analyzer);
+
+    self.object.consume(analyzer);
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
@@ -40,27 +43,22 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if self.consumed.get() {
-      return consumed_object::get_property(rc, analyzer, dep, key);
-    }
-    analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
+    self.object.get_property(rc, analyzer, self.forward_dep(dep), key)
   }
 
   fn set_property(
     &self,
-    _rc: Entity<'a>,
+    rc: Entity<'a>,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.consume(analyzer);
-    consumed_object::set_property(analyzer, dep, key, value)
+    self.object.set_property(rc, analyzer, self.forward_dep(dep), key, value);
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-    self.consume(analyzer);
-    consumed_object::delete_property(analyzer, dep, key)
+    self.object.delete_property(analyzer, self.forward_dep(dep), key);
   }
 
   fn enumerate_properties(
@@ -88,7 +86,11 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     }
 
     let maybe_infinite_recursion = !self.finite_recursion
-      && analyzer.scope_context.call.iter().any(|scope| scope.callee.1 == self.callee.1);
+      && analyzer
+        .scope_context
+        .call
+        .iter()
+        .any(|scope| scope.callee.instance_id == self.callee.instance_id);
     if maybe_infinite_recursion {
       self.consume_body(analyzer);
       return consumed_object::call(rc, analyzer, dep, this, args);
@@ -201,21 +203,17 @@ impl<'a> FunctionEntity<'a> {
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    if let Some(logger) = analyzer.logger {
-      logger.push_fn_call(self.callee.0.span(), self.callee.0.name());
-    }
-
-    let call_dep = box_consumable((self.callee.0.into_dep_id(), dep));
+    let call_dep = box_consumable((self.callee.into_dep_id(), dep));
     let variable_scopes = self.variable_scope_stack.clone();
-    let ret_val = match self.callee.0 {
+    let ret_val = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(
         rc,
         self.callee,
         call_dep.cloned(),
         node,
         variable_scopes,
-        this.clone(),
-        args.clone(),
+        this,
+        args,
         consume,
       ),
       CalleeNode::ArrowFunctionExpression(node) => analyzer.call_arrow_function_expression(
@@ -223,7 +221,7 @@ impl<'a> FunctionEntity<'a> {
         call_dep.cloned(),
         node,
         variable_scopes,
-        args.clone(),
+        args,
         consume,
       ),
       _ => unreachable!(),
@@ -232,16 +230,15 @@ impl<'a> FunctionEntity<'a> {
   }
 
   pub fn consume_body(&self, analyzer: &mut Analyzer<'a>) {
-    if self.body_consumed.get() {
+    if self.body_consumed.replace(true) {
       return;
     }
-    self.body_consumed.set(true);
 
-    analyzer.consume(self.callee.0.into_dep_id());
+    analyzer.consume(self.callee.into_dep_id());
     analyzer.consume_arguments(Some(self.callee));
 
     let self_cloned = self.clone();
-    analyzer.exec_consumed_fn(move |analyzer| {
+    analyzer.exec_consumed_fn("consume_fn", move |analyzer| {
       self_cloned.call_impl(
         analyzer.factory.unknown(),
         analyzer,
@@ -252,6 +249,10 @@ impl<'a> FunctionEntity<'a> {
       )
     });
   }
+
+  fn forward_dep(&self, dep: Consumable<'a>) -> Consumable<'a> {
+    box_consumable((dep, self.callee.into_dep_id()))
+  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -259,14 +260,15 @@ impl<'a> Analyzer<'a> {
     let function = FunctionEntity {
       consumed: Rc::new(Cell::new(false)),
       body_consumed: Rc::new(Cell::new(false)),
-      callee: (node, self.factory.alloc_instance_id()),
+      callee: self.new_callee_info(node),
       variable_scope_stack: Rc::new(self.scope_context.variable.stack.clone()),
       finite_recursion: self.has_finite_recursion_notation(node.span()),
+      object: self.new_function_object(),
     };
 
     let mut created_in_self = false;
     for scope in self.scope_context.call.iter().rev() {
-      if scope.callee.0 == node {
+      if scope.callee.node == node {
         created_in_self = true;
         break;
       }

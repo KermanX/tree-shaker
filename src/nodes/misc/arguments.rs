@@ -42,7 +42,7 @@ impl<'a> Transformer<'a> {
     node: &'a Argument<'a>,
     preserve_args_num: bool,
   ) -> Option<Argument<'a>> {
-    let is_referred = self.is_referred(AstKind2::Argument(&node));
+    let is_referred = self.is_referred(AstKind2::Argument(node));
     let span = node.span();
     match node {
       Argument::SpreadElement(node) => {
@@ -53,7 +53,7 @@ impl<'a> Transformer<'a> {
       _ => self
         .transform_expression(node.to_expression(), is_referred)
         .or_else(|| preserve_args_num.then(|| self.build_unused_expression(span)))
-        .map(|expr| self.ast_builder.argument_expression(expr)),
+        .map(Argument::from),
     }
   }
 

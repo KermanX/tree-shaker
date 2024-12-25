@@ -1,3 +1,5 @@
+use std::fmt::{self, Debug};
+
 use oxc::{
   allocator::Vec,
   ast::ast::*,
@@ -7,7 +9,7 @@ use oxc::{
 pub type Arguments<'a> = Vec<'a, Argument<'a>>;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum AstKind2<'a> {
   // Special
   Environment,
@@ -117,7 +119,6 @@ pub enum AstKind2<'a> {
 
   // extras
   Expression(&'a Expression<'a>),
-  MemberExpressionRead(&'a MemberExpression<'a>),
   AssignmentTargetProperty(&'a AssignmentTargetProperty<'a>),
   AssignmentTargetPropertyIdentifier(&'a AssignmentTargetPropertyIdentifier<'a>),
   AssignmentTargetRest(&'a AssignmentTargetRest<'a>),
@@ -126,6 +127,8 @@ pub enum AstKind2<'a> {
   ExpressionInTaggedTemplate(&'a Expression<'a>),
   LogicalExpressionLeft(&'a LogicalExpression<'a>),
   LogicalAssignmentExpressionLeft(&'a AssignmentExpression<'a>),
+  JSXOpeningElement(&'a JSXOpeningElement<'a>),
+  JSXAttributeName(&'a JSXAttributeName<'a>),
 }
 
 impl<'a> GetSpan for AstKind2<'a> {
@@ -234,7 +237,6 @@ impl<'a> GetSpan for AstKind2<'a> {
       AstKind2::JSXMemberExpression(node) => node.span(),
       AstKind2::JsxExpressionContainer(node) => node.span(),
       AstKind2::Expression(node) => node.span(),
-      AstKind2::MemberExpressionRead(node) => node.span(),
       AstKind2::AssignmentTargetProperty(node) => node.span(),
       AstKind2::AssignmentTargetPropertyIdentifier(node) => node.span(),
       AstKind2::AssignmentTargetRest(node) => node.span(),
@@ -243,7 +245,15 @@ impl<'a> GetSpan for AstKind2<'a> {
       AstKind2::ExpressionInTaggedTemplate(node) => node.span(),
       AstKind2::LogicalExpressionLeft(node) => node.span(),
       AstKind2::LogicalAssignmentExpressionLeft(node) => node.span(),
+      AstKind2::JSXOpeningElement(node) => node.span(),
+      AstKind2::JSXAttributeName(node) => node.span(),
     }
+  }
+}
+
+impl<'a> fmt::Debug for AstKind2<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    self.span().fmt(f)
   }
 }
 

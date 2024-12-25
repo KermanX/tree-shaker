@@ -10,19 +10,16 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableTrait, ConsumableVec},
+  consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait, ConsumableVec},
   dep::DepId,
   entity::{Entity, EntityFactory, LabelEntity},
-  utils::DebuggerEvent,
+  utils::{CalleeInfo, CalleeNode},
 };
-use call_scope::{CallScope, CalleeNode};
+use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
-use oxc::{
-  index::Idx,
-  semantic::{ScopeId, SymbolId},
-  span::GetSpan,
-};
+use oxc::semantic::{ScopeId, SymbolId};
+use oxc_index::Idx;
 use scope_tree::ScopeTree;
 use std::rc::Rc;
 use try_scope::TryScope;
@@ -52,7 +49,12 @@ impl<'a> ScopeContext<'a> {
     ScopeContext {
       call: vec![CallScope::new(
         DepId::from_counter(),
-        (CalleeNode::Module, factory.alloc_instance_id()),
+        CalleeInfo {
+          node: CalleeNode::Module,
+          instance_id: factory.alloc_instance_id(),
+          #[cfg(feature = "flame")]
+          debug_name: "<Module>",
+        },
         vec![],
         0,
         body_variable_scope,
@@ -68,11 +70,20 @@ impl<'a> ScopeContext<'a> {
     }
   }
 
-  pub fn assert_final_state(&self) {
+  pub fn assert_final_state(&mut self) {
     debug_assert_eq!(self.call.len(), 1);
     debug_assert_eq!(self.variable.current_depth(), 0);
     debug_assert_eq!(self.cf.current_depth(), 0);
     debug_assert_eq!(self.pure, 0);
+
+    for scope in self.cf.iter_all() {
+      if let Some(data) = &scope.exhaustive_data {
+        debug_assert!(!data.dirty);
+      }
+    }
+
+    #[cfg(feature = "flame")]
+    self.call.pop().unwrap().scope_guard.end();
   }
 
   pub fn alloc_object_id(&mut self) -> SymbolId {
@@ -125,16 +136,12 @@ impl<'a> Analyzer<'a> {
   }
 
   fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId> {
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::ReplaceVarScopeStack(new_stack.clone()));
-    }
-
     self.scope_context.variable.replace_stack(new_stack)
   }
 
   pub fn push_call_scope(
     &mut self,
-    callee: (CalleeNode<'a>, usize),
+    callee: CalleeInfo<'a>,
     call_dep: Consumable<'a>,
     variable_scope_stack: Vec<ScopeId>,
     is_async: bool,
@@ -155,15 +162,6 @@ impl<'a> Analyzer<'a> {
       Some(false),
     );
 
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PushCallScope(
-        callee.0.span(),
-        old_variable_scope_stack.clone(),
-        cf_scope_depth,
-        body_variable_scope,
-      ));
-    }
-
     self.scope_context.call.push(CallScope::new(
       dep_id,
       callee,
@@ -177,11 +175,6 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_call_scope(&mut self) -> Entity<'a> {
     let scope = self.scope_context.call.pop().unwrap();
-
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PopCallScope);
-    }
-
     let (old_variable_scope_stack, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
     self.pop_variable_scope();
@@ -190,20 +183,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_variable_scope(&mut self) -> ScopeId {
-    let id = self.scope_context.variable.push(VariableScope::new());
-
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PushVarScope(id, self.scope_context.cf.current_id()));
-    }
-
-    id
+    self.scope_context.variable.push(VariableScope::new())
   }
 
   pub fn pop_variable_scope(&mut self) -> ScopeId {
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PopVarScope);
-    }
-
     self.scope_context.variable.pop()
   }
 
@@ -224,15 +207,6 @@ impl<'a> Analyzer<'a> {
     exited: Option<bool>,
   ) -> usize {
     self.scope_context.cf.push(CfScope::new(kind, labels, deps, exited));
-
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PushCfScope(
-        self.scope_context.cf.current_id(),
-        kind,
-        exited,
-      ));
-    }
-
     self.scope_context.cf.current_depth()
   }
 
@@ -250,11 +224,25 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn pop_cf_scope(&mut self) -> ScopeId {
-    if let Some(logger) = self.logger {
-      logger.push_event(DebuggerEvent::PopCfScope);
-    }
-
     self.scope_context.cf.pop()
+  }
+
+  pub fn pop_multiple_cf_scopes(
+    &mut self,
+    count: usize,
+  ) -> Option<ConsumableNode<'a, Vec<ConsumableNode<'a>>>> {
+    let mut exec_deps = vec![];
+    for _ in 0..count {
+      let id = self.scope_context.cf.stack.pop().unwrap();
+      if let Some(dep) = self.scope_context.cf.get_mut(id).deps.try_collect() {
+        exec_deps.push(dep);
+      }
+    }
+    if exec_deps.is_empty() {
+      None
+    } else {
+      Some(ConsumableNode::new(exec_deps))
+    }
   }
 
   pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {

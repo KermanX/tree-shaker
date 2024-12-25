@@ -3,11 +3,12 @@ use crate::{
   entity::{ArrayEntity, EntityFactory},
   init_prototype,
 };
-use oxc::{index::Idx, semantic::SymbolId};
+use oxc::semantic::SymbolId;
+use oxc_index::Idx;
 
 pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
-  init_prototype!(create_object_prototype(factory), {
-    "apply" => factory.implemented_builtin_fn(|analyzer, dep, this, args| {
+  init_prototype!("Function", create_object_prototype(factory), {
+    "apply" => factory.implemented_builtin_fn("Function::apply", |analyzer, dep, this, args| {
       let mut args = args.destruct_as_array(analyzer, dep.cloned(), 2).0;
       let args_arg = {
         let arg = args.pop().unwrap();
@@ -26,7 +27,7 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
       let this_arg = args.pop().unwrap();
       this.call(analyzer, dep, this_arg, args_arg)
     }),
-    "call" => factory.implemented_builtin_fn(|analyzer, dep, this, args| {
+    "call" => factory.implemented_builtin_fn("Function::call", |analyzer, dep, this, args| {
       let (this_arg, args_arg, _deps) = args.destruct_as_array(analyzer, dep.cloned(), 1);
       this.call(analyzer, dep, this_arg[0], args_arg)
     }),

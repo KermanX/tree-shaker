@@ -45,7 +45,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_while_statement(&self, node: &'a WhileStatement<'a>) -> Option<Statement<'a>> {
-    let WhileStatement { span, test, body, .. } = node;
+    let WhileStatement { span, test, body } = node;
     let body_span = body.span();
 
     let need_loop = self.is_referred(AstKind2::WhileStatement(node));

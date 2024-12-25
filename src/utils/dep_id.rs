@@ -18,13 +18,13 @@ impl Debug for DepId {
 
 impl<'a> From<AstKind2<'a>> for DepId {
   fn from(node: AstKind2<'a>) -> Self {
-    DepId(unsafe { std::mem::transmute(node) })
+    DepId(unsafe { std::mem::transmute::<AstKind2<'_>, (usize, usize)>(node) })
   }
 }
 
-impl<'a> Into<AstKind2<'a>> for DepId {
-  fn into(self) -> AstKind2<'a> {
-    unsafe { std::mem::transmute(self.0) }
+impl<'a> From<DepId> for AstKind2<'a> {
+  fn from(val: DepId) -> Self {
+    unsafe { std::mem::transmute(val.0) }
   }
 }
 

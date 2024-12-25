@@ -25,6 +25,17 @@ impl<'a, T: ConsumableTrait<'a> + 'a> EntityTrait<'a> for ComputedEntity<'a, T> 
     self.dep.consume(analyzer);
   }
 
+  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
+    if !self.consumed.get() {
+      self.dep.consume(analyzer);
+      let consumed = self.val.consume_mangable(analyzer);
+      self.consumed.set(consumed);
+      consumed
+    } else {
+      true
+    }
+  }
+
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     self.val.unknown_mutate(analyzer, self.forward_dep(dep));
   }
@@ -172,5 +183,16 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ComputedEntity<'a, T> {
 impl<'a> EntityFactory<'a> {
   pub fn computed<T: ConsumableTrait<'a> + 'a>(&self, val: Entity<'a>, dep: T) -> Entity<'a> {
     self.entity(ComputedEntity { val, dep, consumed: Cell::new(false) })
+  }
+
+  pub fn optional_computed<T: ConsumableTrait<'a> + 'a>(
+    &self,
+    val: Entity<'a>,
+    dep: Option<T>,
+  ) -> Entity<'a> {
+    match dep {
+      Some(dep) => self.computed(val, dep),
+      None => val,
+    }
   }
 }

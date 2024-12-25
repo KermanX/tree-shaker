@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_assignment_expression(&mut self, node: &'a AssignmentExpression<'a>) -> Entity<'a> {
     if node.operator == AssignmentOperator::Assign {
       let rhs = self.exec_expression(&node.right);
-      self.exec_assignment_target_write(&node.left, rhs.clone(), None);
+      self.exec_assignment_target_write(&node.left, rhs, None);
       rhs
     } else if node.operator.is_logical() {
       let (left, cache) = self.exec_assignment_target_read(&node.left);
@@ -41,17 +41,19 @@ impl<'a> Analyzer<'a> {
           maybe_right,
         )
       };
-
-      let conditional_dep = self.push_logical_right_cf_scope(
-        AstKind2::LogicalAssignmentExpressionLeft(node),
-        left.clone(),
-        maybe_left,
-        maybe_right,
-      );
-
       let exec_right = |analyzer: &mut Analyzer<'a>| {
-        let val = analyzer.exec_expression(&node.right);
-        analyzer.factory.computed(val, conditional_dep)
+        let conditional_dep = analyzer.push_logical_right_cf_scope(
+          AstKind2::LogicalAssignmentExpressionLeft(node),
+          left,
+          maybe_left,
+          maybe_right,
+        );
+
+        let val = analyzer.factory.computed(analyzer.exec_expression(&node.right), conditional_dep);
+
+        analyzer.pop_cf_scope();
+
+        val
       };
 
       let value = match (maybe_left, maybe_right) {
@@ -62,13 +64,13 @@ impl<'a> Analyzer<'a> {
           let right = exec_right(self);
           self.factory.logical_result(left, right, to_logical_operator(node.operator))
         }
-        (false, false) => unreachable!(),
+        (false, false) => {
+          unreachable!("Logical assignment expression should have at least one side")
+        }
       };
 
-      self.pop_cf_scope();
-
       if maybe_right {
-        self.exec_assignment_target_write(&node.left, value.clone(), cache);
+        self.exec_assignment_target_write(&node.left, value, cache);
       }
 
       value
@@ -76,7 +78,7 @@ impl<'a> Analyzer<'a> {
       let (lhs, cache) = self.exec_assignment_target_read(&node.left);
       let rhs = self.exec_expression(&node.right);
       let value = self.entity_op.binary_op(self, to_binary_operator(node.operator), lhs, rhs);
-      self.exec_assignment_target_write(&node.left, value.clone(), cache);
+      self.exec_assignment_target_write(&node.left, value, cache);
       value
     }
   }

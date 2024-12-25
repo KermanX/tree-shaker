@@ -3,11 +3,8 @@ use oxc::ast::ast::ForStatementLeft;
 
 impl<'a> Analyzer<'a> {
   pub fn declare_for_statement_left(&mut self, node: &'a ForStatementLeft<'a>) {
-    match node {
-      ForStatementLeft::VariableDeclaration(node) => {
-        self.declare_variable_declaration(node, false);
-      }
-      _ => {}
+    if let ForStatementLeft::VariableDeclaration(node) = node {
+      self.declare_variable_declaration(node, false);
     }
   }
 
@@ -27,13 +24,13 @@ impl<'a> Transformer<'a> {
     node: &'a ForStatementLeft<'a>,
   ) -> Option<ForStatementLeft<'a>> {
     match node {
-      ForStatementLeft::VariableDeclaration(node) => self
-        .transform_variable_declaration(node)
-        .map(|decl| self.ast_builder.for_statement_left_from_variable_declaration(decl)),
+      ForStatementLeft::VariableDeclaration(node) => {
+        self.transform_variable_declaration(node).map(ForStatementLeft::VariableDeclaration)
+      }
       _ => self
         .transform_assignment_target_write(node.to_assignment_target(), false, false)
         .1
-        .map(|target| self.ast_builder.for_statement_left_assignment_target(target)),
+        .map(ForStatementLeft::from),
     }
   }
 }

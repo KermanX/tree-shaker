@@ -1,9 +1,6 @@
+use oxc::semantic::ScopeId;
+use oxc_index::{Idx, IndexVec};
 use std::ops::RangeFrom;
-
-use oxc::{
-  index::{Idx, IndexVec},
-  semantic::ScopeId,
-};
 
 struct NodeInfo<T> {
   data: T,
@@ -14,6 +11,12 @@ struct NodeInfo<T> {
 pub struct ScopeTree<T> {
   nodes: IndexVec<ScopeId, NodeInfo<T>>,
   pub stack: Vec<ScopeId>,
+}
+
+impl<T> Default for ScopeTree<T> {
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl<T> ScopeTree<T> {
@@ -55,17 +58,19 @@ impl<T> ScopeTree<T> {
     self.get_mut(*self.stack.last().unwrap())
   }
 
-  pub fn iter_stack(
-    &self,
-  ) -> impl Iterator<Item = &T> + DoubleEndedIterator<Item = &T> + ExactSizeIterator<Item = &T> {
+  pub fn iter_stack(&self) -> impl DoubleEndedIterator<Item = &T> + ExactSizeIterator<Item = &T> {
     self.stack.iter().map(move |id| self.get(*id))
   }
 
   pub fn iter_stack_range(
     &self,
     range: RangeFrom<usize>,
-  ) -> impl Iterator<Item = &T> + DoubleEndedIterator<Item = &T> + ExactSizeIterator<Item = &T> {
+  ) -> impl DoubleEndedIterator<Item = &T> + ExactSizeIterator<Item = &T> {
     self.stack[range].iter().map(move |id| self.get(*id))
+  }
+
+  pub fn iter_all(&self) -> impl Iterator<Item = &T> {
+    self.nodes.iter().map(|node| &node.data)
   }
 
   fn get_parent(&self, id: ScopeId) -> Option<ScopeId> {

@@ -38,7 +38,7 @@ impl<'a> Transformer<'a> {
     let symbol = node.symbol_id.get().unwrap();
     self.update_var_decl_state(symbol, true);
 
-    let referred = self.is_referred(AstKind2::BindingIdentifier(&node));
+    let referred = self.is_referred(AstKind2::BindingIdentifier(node));
     referred.then(|| self.clone_node(node))
   }
 }

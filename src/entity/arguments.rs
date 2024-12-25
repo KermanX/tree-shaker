@@ -6,7 +6,7 @@ use super::{
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use std::cell::Cell;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ArgumentsEntity<'a> {
   consumed: Cell<bool>,
   pub arguments: Vec<(bool, Entity<'a>)>,
@@ -116,12 +116,10 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
             rest = Some(vec![iterated]);
           }
         }
+      } else if let Some(rest) = &mut rest {
+        rest.push(*entity);
       } else {
-        if let Some(rest) = &mut rest {
-          rest.push(entity.clone());
-        } else {
-          elements.push(entity.clone());
-        }
+        elements.push(*entity);
       }
     }
     (elements, rest.map(|val| analyzer.factory.union(val)), dep)

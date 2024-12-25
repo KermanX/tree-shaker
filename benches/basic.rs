@@ -11,14 +11,13 @@ fn run_tree_shaker(source_text: String) -> String {
       config: TreeShakeConfig::recommended(),
       minify_options: None,
       codegen_options: Default::default(),
-      logging: false,
     },
   );
 
   result.codegen_return.code
 }
 
-const FIXTURES: &[&str] = &["vue", "vuetify"];
+const FIXTURES: &[&str] = &["vue", "vuetify", "react"];
 
 pub fn criterion_benchmark(c: &mut Criterion) {
   let mut group = c.benchmark_group("fixtures");
@@ -26,7 +25,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   for fixture in FIXTURES {
     let input_path = format!("./test/e2e/{fixture}/dist/bundled.js");
     let input_path = Path::new(&input_path);
-    let source_text = read_to_string(&input_path).unwrap();
+    let source_text = read_to_string(input_path).unwrap();
 
     group.bench_with_input(BenchmarkId::from_parameter(fixture), &source_text, |b, source_text| {
       b.iter(|| run_tree_shaker(black_box(source_text.clone())))

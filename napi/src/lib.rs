@@ -1,8 +1,6 @@
 #![deny(clippy::all)]
 
-use oxc::{
-  allocator::Allocator, codegen::CodegenOptions, minifier::MinifierOptions, span::SourceType,
-};
+use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
 
 #[macro_use]
 extern crate napi_derive;
@@ -27,9 +25,8 @@ pub fn tree_shake(source_text: String, preset: String, minify: bool) -> TreeShak
         "disabled" => tree_shake::TreeShakeConfig::disabled(),
         _ => panic!("Invalid tree shake option {}", preset),
       },
-      minify_options: minify.then(MinifierOptions::default),
+      minify_options: minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),
       codegen_options: CodegenOptions { minify, ..Default::default() },
-      logging: false,
     },
   );
   TreeShakeResultBinding {

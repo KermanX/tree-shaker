@@ -1,4 +1,5 @@
-use oxc::{index::Idx, semantic::SymbolId};
+use oxc::semantic::SymbolId;
+use oxc_index::Idx;
 use rustc_hash::FxHashMap;
 use std::sync::{
   atomic::{AtomicUsize, Ordering},

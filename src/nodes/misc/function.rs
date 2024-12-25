@@ -3,10 +3,11 @@ use crate::{
   ast::{AstKind2, DeclarationKind},
   consumable::{box_consumable, Consumable},
   entity::Entity,
-  scope::call_scope::CalleeNode,
   transformer::Transformer,
+  utils::{CalleeInfo, CalleeNode},
 };
 use oxc::{
+  allocator,
   ast::ast::{
     Function, FunctionType, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration,
   },
@@ -24,13 +25,13 @@ impl<'a> Analyzer<'a> {
     let entity = self.exec_function(node);
 
     let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
-    self.declare_symbol(symbol, dep, exporting, DeclarationKind::Function, Some(entity.clone()));
+    self.declare_symbol(symbol, dep, exporting, DeclarationKind::Function, Some(entity));
   }
 
   pub fn call_function(
     &mut self,
     fn_entity: Entity<'a>,
-    callee: (CalleeNode<'a>, usize),
+    callee: CalleeInfo<'a>,
     call_dep: Consumable<'a>,
     node: &'a Function<'a>,
     variable_scopes: Rc<Vec<ScopeId>>,
@@ -51,26 +52,21 @@ impl<'a> Analyzer<'a> {
 
         let variable_scope = analyzer.variable_scope_mut();
         variable_scope.this = Some(this);
-        variable_scope.arguments =
-          Some((args.clone(), vec![ /* later filled by formal parameters */]));
+        variable_scope.arguments = Some((args, vec![ /* later filled by formal parameters */]));
 
         let declare_in_body = node.r#type == FunctionType::FunctionExpression && node.id.is_some();
         if declare_in_body {
           let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
           analyzer.declare_symbol(
             symbol,
-            box_consumable(callee.0.into_dep_id()),
+            box_consumable(callee.into_dep_id()),
             false,
             DeclarationKind::NamedFunctionInBody,
-            Some(fn_entity.clone()),
+            Some(fn_entity),
           );
         }
 
-        analyzer.exec_formal_parameters(
-          &node.params,
-          args.clone(),
-          DeclarationKind::FunctionParameter,
-        );
+        analyzer.exec_formal_parameters(&node.params, args, DeclarationKind::FunctionParameter);
         analyzer.exec_function_body(node.body.as_ref().unwrap());
 
         if consume {
@@ -93,9 +89,15 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn transform_function(&self, node: &'a Function<'a>, need_val: bool) -> Option<Function<'a>> {
-    if need_val || self.is_referred(AstKind2::Function(&node)) {
+  pub fn transform_function(
+    &self,
+    node: &'a Function<'a>,
+    need_val: bool,
+  ) -> Option<allocator::Box<'a, Function<'a>>> {
+    if need_val || self.is_referred(AstKind2::Function(node)) {
       let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
+
+      let old_declaration_only = self.declaration_only.replace(false);
 
       let params = self.transform_formal_parameters(params);
 
@@ -107,9 +109,11 @@ impl<'a> Transformer<'a> {
         self.update_var_decl_state(symbol, true);
       }
 
-      Some(self.ast_builder.function(
-        *r#type,
+      self.declaration_only.set(old_declaration_only);
+
+      Some(self.ast_builder.alloc_function(
         *span,
+        *r#type,
         id.clone(),
         *generator,
         *r#async,
