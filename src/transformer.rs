@@ -384,9 +384,4 @@ impl<'a> Transformer<'a> {
       None => self.allocator.alloc(D::default()),
     }
   }
-
-  pub fn force_get_data<D: 'a>(&self, key: impl Into<DepId>) -> &'a D {
-    let boxed = &self.data[&key.into()];
-    unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) }
-  }
 }

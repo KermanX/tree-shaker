@@ -546,7 +546,7 @@ impl<'a> LiteralEntity<'a> {
   ) -> Entity<'a> {
     match self {
       LiteralEntity::String(value, None) => {
-        let atom = existing_atom.get_or_insert_with(|| MangleAtom::new(value));
+        let atom = existing_atom.get_or_insert_with(|| analyzer.mangler.new_atom());
         analyzer.factory.entity(LiteralEntity::String(value, Some(*atom)))
       }
       LiteralEntity::String(_, Some(atom)) => {

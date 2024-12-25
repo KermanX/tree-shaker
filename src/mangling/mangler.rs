@@ -1,9 +1,7 @@
-use std::mem;
-
 use super::{utils::get_mangled_name, MangleAtom};
 use oxc::allocator::Allocator;
 use oxc_index::IndexVec;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 
 oxc_index::define_index_type! {
   pub struct IdentityGroupId = u32;
@@ -15,22 +13,24 @@ oxc_index::define_index_type! {
   DISABLE_MAX_INDEX_CHECK = cfg!(not(debug_assertions));
 }
 
-pub type MangleAtomGroups = (Option<IdentityGroupId>, FxHashSet<UniquenessGroupId>);
+#[derive(Debug)]
+pub enum AtomState<'a> {
+  Constrained(Option<IdentityGroupId>, FxHashSet<UniquenessGroupId>),
+  Constant(&'a str),
+  NonMangable,
+}
 
 pub struct Mangler<'a> {
   pub enabled: bool,
 
   pub allocator: &'a Allocator,
 
-  pub non_mangable: FxHashSet<MangleAtom>,
+  pub atoms: IndexVec<MangleAtom, AtomState<'a>>,
 
   /// (atoms, resolved_name)[]
   pub identity_groups: IndexVec<IdentityGroupId, (Vec<MangleAtom>, Option<&'a str>)>,
   /// (atoms, used_names)[]
   pub uniqueness_groups: IndexVec<UniquenessGroupId, (Vec<MangleAtom>, usize)>,
-
-  /// atom -> (identity_group_index, uniqueness_group_index)
-  pub atoms: FxHashMap<MangleAtom, MangleAtomGroups>,
 }
 
 impl<'a> Mangler<'a> {
@@ -38,48 +38,31 @@ impl<'a> Mangler<'a> {
     Self {
       enabled,
       allocator,
-      non_mangable: FxHashSet::default(),
+      atoms: IndexVec::new(),
       identity_groups: IndexVec::new(),
       uniqueness_groups: IndexVec::new(),
-      atoms: FxHashMap::default(),
     }
   }
 
-  pub fn mark_atom_non_mangable(&mut self, atom: MangleAtom) {
-    if self.non_mangable.insert(atom) {
-      if let Some((identity_group, uniqueness_groups)) = self.atoms.remove(&atom) {
-        if let Some(index) = identity_group {
-          for atom in mem::take(&mut self.identity_groups[index].0) {
-            self.mark_atom_non_mangable(atom);
-          }
-        }
-        for index in uniqueness_groups {
-          for atom in mem::take(&mut self.uniqueness_groups[index].0) {
-            self.mark_atom_non_mangable(atom);
-          }
-        }
-      }
-    }
+  pub fn new_atom(&mut self) -> MangleAtom {
+    self.atoms.push(AtomState::Constrained(None, FxHashSet::default()))
   }
 
-  pub fn mark_uniqueness_group_non_mangable(&mut self, group: UniquenessGroupId) {
-    for atom in mem::take(&mut self.uniqueness_groups[group].0) {
-      self.mark_atom_non_mangable(atom);
-    }
-  }
-
-  pub fn add_to_uniqueness_group(&mut self, group: UniquenessGroupId, atom: MangleAtom) {
-    self.atoms.entry(atom).or_default().1.insert(group);
-    self.uniqueness_groups[group].0.push(atom);
+  pub fn new_constant_atom(&mut self, str: &'a str) -> MangleAtom {
+    self.atoms.push(AtomState::Constant(str))
   }
 
   pub fn resolve(&mut self, atom: MangleAtom) -> Option<&'a str> {
-    if !self.enabled || self.non_mangable.contains(&atom) {
-      None
-    } else {
-      Some(if let Some((identity_group, uniqueness_groups)) = self.atoms.get(&atom) {
-        if let Some(eq_group) = identity_group {
-          self.resolve_identity_group(*eq_group)
+    if !self.enabled {
+      return None;
+    }
+    match &self.atoms[atom] {
+      AtomState::Constrained(identity_group, uniqueness_groups) => {
+        let resolved = if let Some(identity_group) = identity_group {
+          self.resolve_identity_group(*identity_group)
+        } else if uniqueness_groups.is_empty() {
+          // This is quite weird, isn't it?
+          "a"
         } else {
           let mut n =
             uniqueness_groups.iter().map(|&index| self.uniqueness_groups[index].1).max().unwrap();
@@ -88,12 +71,12 @@ impl<'a> Mangler<'a> {
             self.uniqueness_groups[index].1 = n;
           }
           self.allocator.alloc(name)
-        }
-      } else {
-        // No constraints
-        // This is quite weird, isn't it?
-        "a"
-      })
+        };
+        self.atoms[atom] = AtomState::Constant(resolved);
+        Some(resolved)
+      }
+      AtomState::Constant(name) => Some(*name),
+      AtomState::NonMangable => None,
     }
   }
 
@@ -104,10 +87,15 @@ impl<'a> Mangler<'a> {
       let mut n = 0;
       let mut related_uniq_groups = vec![];
       for atom in atoms {
-        let (_, uniq_groups) = constraints.get(atom).unwrap();
-        for index in uniq_groups {
-          related_uniq_groups.push(*index);
-          n = n.max(uniqueness_groups[*index].1);
+        match &constraints[*atom] {
+          AtomState::Constrained(_, uniq_groups) => {
+            for index in uniq_groups {
+              related_uniq_groups.push(*index);
+              n = n.max(uniqueness_groups[*index].1);
+            }
+          }
+          AtomState::Constant(s) => return *s,
+          AtomState::NonMangable => unreachable!(),
         }
       }
       let name = get_mangled_name(&mut n);
