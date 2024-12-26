@@ -4,6 +4,7 @@ use oxc::{
   allocator::Allocator,
   ast::ast::{BinaryOperator, UpdateOperator},
 };
+use oxc_ecmascript::ToInt32;
 
 pub struct EntityOpHost<'a> {
   allocator: &'a Allocator,
@@ -250,18 +251,20 @@ impl<'a> EntityOpHost<'a> {
     }
   }
 
-  fn number_only_op(
+  fn numeric_op(
     &self,
     analyzer: &Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
-    calc: fn(f64, f64) -> f64,
+    calc: impl FnOnce(f64, f64) -> Entity<'a>,
   ) -> Entity<'a> {
     analyzer.factory.computed(
-      if let (Some(LiteralEntity::Number(lhs, _)), Some(LiteralEntity::Number(rhs, _))) =
-        (lhs.get_literal(analyzer), rhs.get_literal(analyzer))
-      {
-        analyzer.factory.number(calc(lhs.0, rhs.0), None)
+      if let (Some(l), Some(r)) = (lhs.get_literal(analyzer), rhs.get_literal(analyzer)) {
+        match (l, r) {
+          (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) => calc(l.0, r.0),
+          (LiteralEntity::NaN, _) | (_, LiteralEntity::NaN) => analyzer.factory.nan,
+          _ => analyzer.factory.unknown_primitive,
+        }
       } else {
         analyzer.factory.unknown_primitive
       },
@@ -317,16 +320,17 @@ impl<'a> EntityOpHost<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> Entity<'a> {
-    let to_result = |result: Option<bool>| {
-      analyzer.factory.computed(analyzer.factory.boolean_maybe_unknown(result), (lhs, rhs))
-    };
+    let factory = analyzer.factory;
+
+    let to_result =
+      |result: Option<bool>| factory.computed(factory.boolean_maybe_unknown(result), (lhs, rhs));
 
     let to_eq_result = |(equality, mangle_constraint): (Option<bool>, Option<MangleConstraint>)| {
       if let Some(mangle_constraint) = mangle_constraint {
-        analyzer.factory.mangable(
-          analyzer.factory.boolean_maybe_unknown(equality),
+        factory.mangable(
+          factory.boolean_maybe_unknown(equality),
           (lhs, rhs),
-          analyzer.factory.alloc(mangle_constraint),
+          factory.alloc(mangle_constraint),
         )
       } else {
         to_result(equality)
@@ -343,30 +347,73 @@ impl<'a> EntityOpHost<'a> {
       BinaryOperator::GreaterThan => to_result(self.gt(analyzer, lhs, rhs, false)),
       BinaryOperator::GreaterEqualThan => to_result(self.gt(analyzer, lhs, rhs, true)),
       BinaryOperator::Addition => self.add(analyzer, lhs, rhs),
-      BinaryOperator::Subtraction => self.number_only_op(analyzer, lhs, rhs, |l, r| l - r),
-      BinaryOperator::Multiplication => self.number_only_op(analyzer, lhs, rhs, |l, r| l * r),
-      BinaryOperator::ShiftLeft => {
-        self.number_only_op(analyzer, lhs, rhs, |l, r| l.floor() * 2f64.powf(r))
+
+      BinaryOperator::Subtraction
+      | BinaryOperator::Multiplication
+      | BinaryOperator::Division
+      | BinaryOperator::Remainder
+      | BinaryOperator::Exponential => self.numeric_op(analyzer, lhs, rhs, |l, r| {
+        let value = match operator {
+          BinaryOperator::Subtraction => l - r,
+          BinaryOperator::Multiplication => l * r,
+          BinaryOperator::Division => l / r,
+          BinaryOperator::Remainder => {
+            if r == 0.0 {
+              f64::NAN
+            } else {
+              l % r
+            }
+          }
+          BinaryOperator::Exponential => l.powf(r),
+          _ => unreachable!(),
+        };
+        if value.is_nan() {
+          factory.nan
+        } else {
+          factory.number(value, None)
+        }
+      }),
+
+      BinaryOperator::ShiftLeft
+      | BinaryOperator::ShiftRight
+      | BinaryOperator::ShiftRightZeroFill => {
+        self.numeric_op(analyzer, lhs, rhs, |l, r| {
+          // https://github.com/oxc-project/oxc/blob/main/crates/oxc_ecmascript/src/constant_evaluation/mod.rs
+          if l.fract() != 0.0 || r.fract() != 0.0 || !(0.0..32.0).contains(&r) {
+            return factory.unknown_number;
+          }
+          let right_val_int = l as u32;
+          let bits = r.to_int_32();
+          let value = match operator {
+            BinaryOperator::ShiftLeft => f64::from(bits.wrapping_shl(right_val_int)),
+            BinaryOperator::ShiftRight => f64::from(bits.wrapping_shr(right_val_int)),
+            BinaryOperator::ShiftRightZeroFill => {
+              // JavaScript always treats the result of >>> as unsigned.
+              // We must force Rust to do the same here.
+              let bits = bits as u32;
+              let res = bits.wrapping_shr(right_val_int);
+              f64::from(res)
+            }
+            _ => unreachable!(),
+          };
+          factory.number(value, None)
+        })
       }
-      BinaryOperator::ShiftRight => {
-        self.number_only_op(analyzer, lhs, rhs, |l, r| l.floor() / 2f64.powf(r))
-      }
-      BinaryOperator::ShiftRightZeroFill => {
-        self.number_only_op(analyzer, lhs, rhs, |l, r| l.floor() / 2f64.powf(r))
-      }
-      BinaryOperator::Division => self.number_only_op(analyzer, lhs, rhs, |l, r| l / r),
-      BinaryOperator::Remainder => self.number_only_op(analyzer, lhs, rhs, |l, r| l % r),
-      BinaryOperator::BitwiseOR => {
-        self.number_only_op(analyzer, lhs, rhs, |l, r| (l as i64 | r as i64) as f64)
-      }
-      BinaryOperator::BitwiseXOR => {
-        self.number_only_op(analyzer, lhs, rhs, |l, r| (l as i64 ^ r as i64) as f64)
-      }
-      BinaryOperator::BitwiseAnd => {
-        self.number_only_op(analyzer, lhs, rhs, |l, r| (l as i64 & r as i64) as f64)
-      }
-      BinaryOperator::Exponential => self.number_only_op(analyzer, lhs, rhs, |l, r| l.powf(r)),
-      BinaryOperator::In => analyzer.factory.computed_unknown_boolean((lhs, rhs)),
+
+      BinaryOperator::BitwiseOR | BinaryOperator::BitwiseXOR | BinaryOperator::BitwiseAnd => self
+        .numeric_op(analyzer, lhs, rhs, |l, r| {
+          let l = l.to_int_32();
+          let r = r.to_int_32();
+          let value = match operator {
+            BinaryOperator::BitwiseOR => l | r,
+            BinaryOperator::BitwiseXOR => l ^ r,
+            BinaryOperator::BitwiseAnd => l & r,
+            _ => unreachable!(),
+          };
+          factory.number(f64::from(value), None)
+        }),
+
+      BinaryOperator::In => factory.computed_unknown_boolean((lhs, rhs)),
       BinaryOperator::Instanceof => to_result(self.instanceof(lhs, rhs)),
     }
   }
