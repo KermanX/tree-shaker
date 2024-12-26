@@ -17,10 +17,11 @@ use oxc::{
   semantic::SymbolId,
   span::{Atom, Span, SPAN},
 };
+use oxc_ecmascript::StringToNumber;
+use oxc_syntax::number::ToJsString;
 use rustc_hash::FxHashSet;
-use std::hash::{Hash, Hasher};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum LiteralEntity<'a> {
   String(&'a str, Option<MangleAtom>),
   Number(F64WithEq, Option<&'a str>),
@@ -224,15 +225,11 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
         }
       }
       LiteralEntity::String(str, atom) => {
-        let str = str.trim();
-        let val = if str.is_empty() {
-          analyzer.factory.number(0.0, Some("0"))
-        } else if let Ok(value) = str.parse::<f64>() {
-          analyzer.factory.number(value, Some(str))
-        } else {
-          analyzer.factory.nan
-        };
-        analyzer.factory.computed(val, *atom)
+        let val = str.string_to_number();
+        analyzer.factory.computed(
+          if val.is_nan() { analyzer.factory.nan } else { analyzer.factory.number(val, None) },
+          *atom,
+        )
       }
       LiteralEntity::Null => analyzer.factory.number(0.0, Some("0")),
       LiteralEntity::Symbol(_, _) => {
@@ -307,46 +304,6 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     Some(matches!(self, LiteralEntity::Null | LiteralEntity::Undefined))
-  }
-}
-
-impl<'a> Hash for LiteralEntity<'a> {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    match self {
-      LiteralEntity::String(value, _) => {
-        state.write_u8(0);
-        value.hash(state);
-      }
-      LiteralEntity::Number(_, raw) => {
-        state.write_u8(1);
-        raw.hash(state);
-      }
-      LiteralEntity::BigInt(value) => {
-        state.write_u8(2);
-        value.hash(state);
-      }
-      LiteralEntity::Boolean(value) => {
-        state.write_u8(3);
-        value.hash(state);
-      }
-      LiteralEntity::Symbol(value, _) => {
-        state.write_u8(4);
-        value.hash(state);
-      }
-      LiteralEntity::Infinity(positive) => {
-        state.write_u8(5);
-        positive.hash(state);
-      }
-      LiteralEntity::NaN => {
-        state.write_u8(6);
-      }
-      LiteralEntity::Null => {
-        state.write_u8(7);
-      }
-      LiteralEntity::Undefined => {
-        state.write_u8(8);
-      }
-    }
   }
 }
 
@@ -427,7 +384,7 @@ impl<'a> LiteralEntity<'a> {
     match self {
       LiteralEntity::String(value, _) => value,
       LiteralEntity::Number(value, str_rep) => {
-        str_rep.unwrap_or_else(|| allocator.alloc(value.0.to_string()))
+        str_rep.unwrap_or_else(|| allocator.alloc(value.0.to_js_string()))
       }
       LiteralEntity::BigInt(value) => value,
       LiteralEntity::Boolean(value) => {

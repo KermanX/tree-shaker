@@ -10,6 +10,7 @@ use oxc::{
   ast::ast::{Expression, UnaryExpression, UnaryOperator},
   span::SPAN,
 };
+use oxc_ecmascript::ToInt32;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_unary_expression(&mut self, node: &'a UnaryExpression) -> Entity<'a> {
@@ -71,14 +72,26 @@ impl<'a> Analyzer<'a> {
         },
         argument,
       ),
-      UnaryOperator::BitwiseNot => {
-        if let Some(LiteralEntity::Number(num, _)) = argument.get_literal(self) {
-          let num = !(num.0 as i32) as f64;
-          self.factory.number(num, None)
+      UnaryOperator::BitwiseNot => self.factory.computed(
+        if let Some(literals) = argument.get_to_numeric(self).get_to_literals(self) {
+          self.factory.union(
+            literals
+              .into_iter()
+              .map(|lit| match lit {
+                LiteralEntity::Number(num, _) => {
+                  let num = !num.0.to_int_32();
+                  self.factory.number(num as f64, None)
+                }
+                LiteralEntity::NaN => self.factory.number(-1f64, None),
+                _ => self.factory.unknown_primitive,
+              })
+              .collect::<Vec<_>>(),
+          )
         } else {
           self.factory.computed_unknown_primitive(argument)
-        }
-      }
+        },
+        argument,
+      ),
       UnaryOperator::Typeof => argument.get_typeof(self),
       UnaryOperator::Void => self.factory.undefined,
       UnaryOperator::Delete => unreachable!(),

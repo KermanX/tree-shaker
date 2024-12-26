@@ -23,7 +23,6 @@ pub struct VariableScope<'a> {
   pub variables: FxHashMap<SymbolId, &'a RefCell<Variable<'a>>>,
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
-  pub super_class: Option<Entity<'a>>,
   pub exhaustive_callbacks: FxHashMap<SymbolId, FxHashSet<ExhaustiveCallback<'a>>>,
 }
 
@@ -358,15 +357,5 @@ impl<'a> Analyzer<'a> {
       }
     }
     unreachable!()
-  }
-
-  pub fn get_super(&self) -> Entity<'a> {
-    for depth in (0..self.scope_context.variable.stack.len()).rev() {
-      let scope = self.scope_context.variable.get_from_depth(depth);
-      if let Some(super_class) = scope.super_class {
-        return super_class;
-      }
-    }
-    self.factory.unknown()
   }
 }

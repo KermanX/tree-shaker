@@ -1519,7 +1519,9 @@ dependencies = [
  "insta",
  "line-index",
  "oxc",
+ "oxc_ecmascript",
  "oxc_index",
+ "oxc_syntax",
  "regex",
  "rustc-hash",
 ]
