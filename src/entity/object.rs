@@ -364,6 +364,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     }
 
     let key = key.get_to_property_key(analyzer);
+
+    let value = analyzer.factory.computed(value, (exec_deps, dep.cloned()));
+    let non_mangable_value = analyzer.factory.computed(value, key);
+
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut string_keyed = self.string_keyed.borrow_mut();
       let mut rest = self.rest.borrow_mut();
@@ -372,10 +376,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
       let mangable = self.check_mangable(analyzer, &key_literals);
       let value = if mangable {
-        analyzer.factory.computed(value, (exec_deps, dep.cloned()))
+        value
       } else {
         self.disable_mangling(analyzer);
-        analyzer.factory.computed(value, (exec_deps, dep.cloned(), key))
+        non_mangable_value
       };
 
       for key_literal in key_literals {
@@ -420,15 +424,15 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       indeterminate = true;
 
       let mut unknown_keyed = self.unknown_keyed.borrow_mut();
-      unknown_keyed.possible_values.push(ObjectPropertyValue::Field(value, false));
+      unknown_keyed.possible_values.push(ObjectPropertyValue::Field(non_mangable_value, false));
 
       let mut string_keyed = self.string_keyed.borrow_mut();
       for property in string_keyed.values_mut() {
-        property.set(true, value, &mut setters);
+        property.set(true, non_mangable_value, &mut setters);
       }
 
       if let Some(rest) = &mut *self.rest.borrow_mut() {
-        rest.set(true, value, &mut setters);
+        rest.set(true, non_mangable_value, &mut setters);
       }
     }
 
@@ -441,7 +445,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
         if indeterminate { None } else { Some(false) },
       );
       for (_, call_dep, setter) in setters {
-        setter.call_as_setter(analyzer, box_consumable(call_dep), rc, value);
+        setter.call_as_setter(analyzer, box_consumable(call_dep), rc, non_mangable_value);
       }
       analyzer.pop_cf_scope();
     }
