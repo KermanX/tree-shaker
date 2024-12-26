@@ -28,7 +28,6 @@ impl<'a> Analyzer<'a> {
     }
 
     self.push_variable_scope();
-    self.variable_scope_mut().super_class = super_class;
 
     let statics = self.new_empty_object(&self.builtins.prototypes.function, None);
     for (index, element) in node.body.body.iter().enumerate() {
@@ -69,7 +68,6 @@ impl<'a> Analyzer<'a> {
 
     let variable_scope = self.variable_scope_mut();
     variable_scope.this = Some(class);
-    variable_scope.super_class = super_class;
 
     if let Some(id) = &node.id {
       self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
@@ -159,11 +157,9 @@ impl<'a> Analyzer<'a> {
 
       let this = analyzer.factory.unknown();
       let arguments = analyzer.factory.immutable_unknown;
-      let super_class = analyzer.factory.unknown();
       let variable_scope = analyzer.variable_scope_mut();
       variable_scope.this = Some(this);
       variable_scope.arguments = Some((arguments, vec![]));
-      variable_scope.super_class = Some(super_class);
 
       for element in &node.body.body {
         if let ClassElement::PropertyDefinition(node) = element {
