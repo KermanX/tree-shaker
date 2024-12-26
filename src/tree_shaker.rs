@@ -4,11 +4,10 @@ use crate::{
 };
 use oxc::{
   allocator::Allocator,
+  ast::ast::Program,
   codegen::{CodeGenerator, CodegenOptions, CodegenReturn},
   minifier::{Minifier, MinifierOptions},
-  parser::Parser,
   semantic::SemanticBuilder,
-  span::SourceType,
 };
 use std::{cell::RefCell, collections::BTreeSet, rc::Rc};
 
@@ -52,17 +51,10 @@ impl<'a> TreeShaker<'a> {
     }))
   }
 
-  pub fn tree_shake(self, source_text: String) -> TreeShakeReturn {
+  pub fn tree_shake(self, ast: &'a mut Program<'a>) -> TreeShakeReturn {
     let TreeShakerInner { allocator, config, minify_options, codegen_options, .. } = &*self.0;
 
-    let parser = Parser::new(
-      allocator,
-      allocator.alloc(source_text),
-      SourceType::mjs().with_jsx(config.jsx.is_enabled()),
-    );
-    let mut ast = allocator.alloc(parser.parse().program);
-
-    if config.enabled {
+    let ast = if config.enabled {
       let semantic_builder = SemanticBuilder::new();
       let semantic = semantic_builder.build(ast).semantic;
 
@@ -72,8 +64,10 @@ impl<'a> TreeShaker<'a> {
 
       // Step 2: Remove dead code (transform)
       let transformer = Transformer::new(analyzer);
-      ast = allocator.alloc(transformer.transform_program(ast));
-    }
+      allocator.alloc(transformer.transform_program(ast))
+    } else {
+      ast
+    };
 
     // Step 3: Minify
     let minifier_return = minify_options.map(|options| {
