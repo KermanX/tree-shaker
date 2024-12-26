@@ -28,8 +28,8 @@ pub fn tree_shake(source_text: String, options: TreeShakeOptions) -> TreeShakeRe
   let allocator = Allocator::default();
   let tree_shaker = TreeShaker::new(&allocator, options);
 
-  let parser = Parser::new(&allocator, allocator.alloc(source_text), source_type);
-  let parsed = allocator.alloc(parser.parse());
+  let parser = Parser::new(&allocator, &source_text, source_type);
+  let mut parsed = parser.parse();
   let errors = parsed.errors.iter().map(|e| format!("{}", e)).collect::<Vec<_>>();
 
   let mut result = tree_shaker.tree_shake(&mut parsed.program);
