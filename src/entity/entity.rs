@@ -292,7 +292,7 @@ impl<'a> Entity<'a> {
       rest_arr_is_empty = false;
     }
     if rest_arr_is_empty {
-      rest_arr.deps.borrow_mut().push(self.to_consumable());
+      rest_arr.deps.borrow_mut().push(self.cloned());
     }
     (result_elements, analyzer.factory.entity(rest_arr), deps)
   }
@@ -332,14 +332,4 @@ impl<'a> Entity<'a> {
   ) -> Entity<'a> {
     self.call(analyzer, dep, this, analyzer.factory.arguments(vec![(false, value)]))
   }
-
-  pub fn to_consumable(&self) -> Consumable<'a> {
-    box_consumable(*self)
-  }
 }
-
-// impl<'a, T: EntityTrait<'a> + 'a> From<T> for Entity<'a> {
-//   fn from(entity: T) -> Self {
-//     Self::new(entity)
-//   }
-// }

@@ -1,9 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  consumable::box_consumable,
-  dep::DepId,
-  entity::{Entity, EntityTrait},
-};
+use crate::{analyzer::Analyzer, consumable::box_consumable, dep::DepId, entity::Entity};
 
 impl<'a> Analyzer<'a> {
   /// const { enumerated_1, enumerated_2, ...rest } = object;

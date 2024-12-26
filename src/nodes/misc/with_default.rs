@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
   ) -> (bool, Entity<'a>) {
     let is_undefined = value.test_is_undefined();
 
-    self.push_dependent_cf_scope(value.to_consumable());
+    self.push_dependent_cf_scope(value);
     let binding_val = match is_undefined {
       Some(true) => {
         let default_val = self.exec_expression(default);
