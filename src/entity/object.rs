@@ -185,6 +185,10 @@ impl<'a> ObjectProperty<'a> {
     }
 
     self.non_existent.consume_all(analyzer);
+
+    if let Some((key, _)) = self.mangling {
+      analyzer.consume(key);
+    }
   }
 }
 
