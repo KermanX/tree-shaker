@@ -3,6 +3,7 @@ use crate::{entity::EntityFactory, init_prototype};
 
 pub fn create_array_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
   init_prototype!("Array", create_object_prototype(factory), {
+    "at" => factory.immutable_unknown,
     "concat" => factory.immutable_unknown /*pure_fn_returns_array*/,
     "copyWithin" => factory.pure_fn_returns_unknown /* mutates_self */,
     "entries" => factory.immutable_unknown /*pure_fn_returns_array*/,
@@ -32,7 +33,11 @@ pub fn create_array_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> 
     "some" => factory.pure_fn_returns_boolean,
     "sort" => factory.pure_fn_returns_unknown /* mutates_self */,
     "splice" => factory.immutable_unknown /*pure_fn_returns_array*/ /* mutates_self */,
+    "toReversed" => factory.immutable_unknown /*pure_fn_returns_array*/,
+    "toSorted" => factory.immutable_unknown /*pure_fn_returns_array*/,
+    "toSpliced" => factory.immutable_unknown /*pure_fn_returns_array*/,
     "unshift" => factory.pure_fn_returns_number /* mutates_self */,
     "values" => factory.pure_fn_returns_unknown,
+    "with" => factory.immutable_unknown,
   })
 }
