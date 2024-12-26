@@ -83,7 +83,6 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut result = vec![];
       let mut rest_added = false;
-      let mut undefined_added = false;
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key, _) => {
@@ -93,10 +92,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               } else if !rest_added {
                 rest_added = true;
                 result.extend(self.rest.borrow().iter().copied());
-                if !undefined_added {
-                  undefined_added = true;
-                  result.push(analyzer.factory.undefined);
-                }
+                result.push(analyzer.factory.undefined);
               }
             } else if key == "length" {
               result.push(self.get_length().map_or_else(
@@ -109,9 +105,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
             } else if let Some(property) = analyzer.builtins.prototypes.array.get_string_keyed(key)
             {
               result.push(property);
-            } else if !undefined_added {
-              undefined_added = true;
-              result.push(analyzer.factory.undefined);
+            } else {
+              result.push(analyzer.factory.unmatched_prototype_property);
             }
           }
           LiteralEntity::Symbol(key, _) => todo!(),

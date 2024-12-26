@@ -1,3 +1,5 @@
+use crate::TreeShakeConfig;
+
 use super::{
   arguments::ArgumentsEntity, Entity, LiteralEntity, PrimitiveEntity, PureBuiltinFnEntity,
   UnknownEntity,
@@ -34,10 +36,11 @@ pub struct EntityFactory<'a> {
   pub pure_fn_returns_undefined: Entity<'a>,
 
   pub empty_arguments: Entity<'a>,
+  pub unmatched_prototype_property: Entity<'a>,
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn new(allocator: &Allocator) -> EntityFactory {
+  pub fn new(allocator: &'a Allocator, config: &TreeShakeConfig) -> EntityFactory<'a> {
     let r#true = Entity::new_in(LiteralEntity::Boolean(true), allocator);
     let r#false = Entity::new_in(LiteralEntity::Boolean(false), allocator);
     let nan = Entity::new_in(LiteralEntity::NaN, allocator);
@@ -70,6 +73,8 @@ impl<'a> EntityFactory<'a> {
       Entity::new_in(PureBuiltinFnEntity::new(|f| f.undefined), allocator);
 
     let empty_arguments = Entity::new_in(ArgumentsEntity::default(), allocator);
+    let unmatched_prototype_property =
+      if config.unmatched_prototype_property_as_undefined { undefined } else { immutable_unknown };
 
     EntityFactory {
       allocator,
@@ -100,6 +105,7 @@ impl<'a> EntityFactory<'a> {
       pure_fn_returns_undefined,
 
       empty_arguments,
+      unmatched_prototype_property,
     }
   }
 

@@ -39,12 +39,15 @@ impl<'a> TreeShaker<'a> {
   pub fn new(allocator: &'a Allocator, options: TreeShakeOptions) -> Self {
     let TreeShakeOptions { config, minify_options, codegen_options } = options;
 
+    let config = allocator.alloc(config);
+    let factory = allocator.alloc(EntityFactory::new(allocator, config));
+
     Self(Rc::new(TreeShakerInner {
       allocator,
-      config: allocator.alloc(config),
+      config,
       minify_options,
       codegen_options,
-      factory: allocator.alloc(EntityFactory::new(allocator)),
+      factory,
       diagnostics: Default::default(),
     }))
   }
