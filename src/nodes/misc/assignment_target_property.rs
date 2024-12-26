@@ -92,6 +92,7 @@ impl<'a> Transformer<'a> {
             } else {
               self.build_unused_assignment_target(SPAN).into()
             },
+            false,
           ))
         } else if binding.is_some() || init.is_some() {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_identifier(
@@ -107,23 +108,22 @@ impl<'a> Transformer<'a> {
         }
       }
       AssignmentTargetProperty::AssignmentTargetPropertyProperty(node) => {
-        let AssignmentTargetPropertyProperty { span, name, binding } = node.as_ref();
+        let AssignmentTargetPropertyProperty { span, name, binding, computed } = node.as_ref();
 
         let name_span = name.span();
         let binding = self.transform_assignment_target_maybe_default(binding, need_binding);
         if let Some(binding) = binding {
           let name = self.transform_property_key(name, true).unwrap();
-          Some(
-            self
-              .ast_builder
-              .assignment_target_property_assignment_target_property_property(*span, name, binding),
-          )
+          Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
+            *span, name, binding, *computed,
+          ))
         } else {
           self.transform_property_key(name, false).map(|name| {
             self.ast_builder.assignment_target_property_assignment_target_property_property(
               *span,
               name,
               self.build_unused_assignment_target(name_span).into(),
+              *computed,
             )
           })
         }

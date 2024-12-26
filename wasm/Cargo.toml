@@ -9,5 +9,5 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 console_error_panic_hook = "0.1.7"
 tree-shake = { path = "../" }
-oxc = { version = "0.43.0", features = ["codegen", "semantic", "minifier"] }
+oxc = { version = "0.44.0", features = ["codegen", "semantic", "minifier"] }
 wasm-bindgen = "0.2.93"
