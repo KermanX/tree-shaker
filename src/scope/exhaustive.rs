@@ -84,6 +84,7 @@ impl<'a> Analyzer<'a> {
       runner(self);
       round_counter += 1;
       if once {
+        self.cf_scope_mut().exhaustive_data.as_mut().unwrap().dirty = false;
         break;
       }
       if round_counter > 1000 {
