@@ -218,7 +218,7 @@ impl<'a> Analyzer<'a> {
           if cf_scope.is_if_branch() {
             // For the `if` statement, do not mark the outer scopes as indeterminate here.
             // Instead, let the `if` statement handle it.
-            debug_assert!(cf_scope.blocked_exit.is_none());
+            assert!(cf_scope.blocked_exit.is_none());
             cf_scope.blocked_exit = Some(target_depth);
             return None;
           }

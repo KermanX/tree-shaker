@@ -71,14 +71,14 @@ impl<'a> ScopeContext<'a> {
   }
 
   pub fn assert_final_state(&mut self) {
-    debug_assert_eq!(self.call.len(), 1);
-    debug_assert_eq!(self.variable.current_depth(), 0);
-    debug_assert_eq!(self.cf.current_depth(), 0);
-    debug_assert_eq!(self.pure, 0);
+    assert_eq!(self.call.len(), 1);
+    assert_eq!(self.variable.current_depth(), 0);
+    assert_eq!(self.cf.current_depth(), 0);
+    assert_eq!(self.pure, 0);
 
     for scope in self.cf.iter_all() {
       if let Some(data) = &scope.exhaustive_data {
-        debug_assert!(!data.dirty);
+        assert!(!data.dirty);
       }
     }
 

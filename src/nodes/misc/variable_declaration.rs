@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
     init: Option<Entity<'a>>,
   ) {
     if init.is_some() {
-      debug_assert_eq!(node.declarations.len(), 1);
+      assert_eq!(node.declarations.len(), 1);
     }
 
     for declarator in &node.declarations {

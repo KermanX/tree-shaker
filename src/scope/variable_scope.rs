@@ -256,7 +256,7 @@ impl<'a> Analyzer<'a> {
       decl_dep: box_consumable(()),
     }));
     let old = self.variable_scope_mut().variables.insert(symbol, variable);
-    debug_assert!(old.is_none());
+    assert!(old.is_none());
   }
 
   pub fn consume_arguments_on_scope(&mut self, id: ScopeId) -> bool {

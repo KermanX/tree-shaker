@@ -114,7 +114,7 @@ impl<T> ScopeTree<T> {
       another = self.get_parent(another).unwrap();
     }
 
-    debug_assert_eq!(self.stack[current_idx], another);
+    assert_eq!(self.stack[current_idx], another);
     (current_idx, another)
   }
 

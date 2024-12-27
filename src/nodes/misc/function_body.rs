@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_function_expression_body(&mut self, node: &'a FunctionBody<'a>) {
-    debug_assert!(node.statements.len() == 1);
+    assert!(node.statements.len() == 1);
     if let Some(Statement::ExpressionStatement(expr)) = node.statements.first() {
       let dep = box_consumable(AstKind2::FunctionBody(node));
       let value = self.exec_expression(&expr.expression);

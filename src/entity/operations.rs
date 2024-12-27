@@ -152,7 +152,7 @@ impl<'a> EntityOpHost<'a> {
           }
         }
       }
-      debug_assert!(result.is_some());
+      assert!(result.is_some());
       result
     } else {
       None

@@ -108,7 +108,7 @@ impl<'a> ObjectEntity<'a> {
   }
 
   pub fn init_rest(&self, property: ObjectPropertyValue<'a>) {
-    debug_assert_eq!(self.mangling_group, None);
+    assert_eq!(self.mangling_group, None);
     let mut rest = self.rest.borrow_mut();
     if let Some(rest) = &mut *rest {
       rest.possible_values.push(property);

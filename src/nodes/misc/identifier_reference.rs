@@ -58,7 +58,7 @@ impl<'a> Analyzer<'a> {
     let value = self.factory.computed(value, dep);
 
     let reference = self.semantic.symbols().get_reference(node.reference_id());
-    debug_assert!(reference.is_write());
+    assert!(reference.is_write());
     let symbol = reference.symbol_id();
 
     if let Some(symbol) = symbol {

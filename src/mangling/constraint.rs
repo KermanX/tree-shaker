@@ -82,7 +82,7 @@ impl<'a> Mangler<'a> {
     let Mangler { atoms, identity_groups, uniqueness_groups, .. } = self;
 
     match get_two_mut_from_vec(atoms, a, b) {
-      (AtomState::Constant(a), AtomState::Constant(b)) => debug_assert_eq!(a, b),
+      (AtomState::Constant(a), AtomState::Constant(b)) => assert_eq!(a, b),
       (AtomState::Constant(a), _) => {
         let s = *a;
         self.mark_atom_constant(b, s);
