@@ -85,15 +85,17 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       return consumed_object::call(rc, analyzer, dep, this, args);
     }
 
-    let maybe_infinite_recursion = !self.finite_recursion
-      && analyzer
-        .scope_context
-        .call
-        .iter()
-        .any(|scope| scope.callee.instance_id == self.callee.instance_id);
-    if maybe_infinite_recursion {
-      self.consume_body(analyzer);
-      return consumed_object::call(rc, analyzer, dep, this, args);
+    if !self.finite_recursion {
+      let mut recursion_depth = 0usize;
+      for scope in analyzer.scope_context.call.iter().rev() {
+        if scope.callee.node == self.callee.node {
+          recursion_depth += 1;
+          if recursion_depth >= analyzer.config.max_recursion_depth {
+            self.consume_body(analyzer);
+            return consumed_object::call(rc, analyzer, dep, this, args);
+          }
+        }
+      }
     }
 
     self.call_impl(rc, analyzer, dep, this, args, false)

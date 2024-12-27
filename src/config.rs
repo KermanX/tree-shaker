@@ -15,6 +15,8 @@ pub struct TreeShakeConfig {
   pub enabled: bool,
   pub jsx: TreeShakeJsxPreset,
 
+  pub max_recursion_depth: usize,
+
   pub mangling: bool,
   pub unknown_global_side_effects: bool,
   pub preserve_function_name: bool,
@@ -39,6 +41,8 @@ impl TreeShakeConfig {
     Self {
       enabled: true,
       jsx: TreeShakeJsxPreset::None,
+
+      max_recursion_depth: 2,
 
       mangling: false,
       unknown_global_side_effects: true,
