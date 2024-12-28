@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
 
     // In case of `function(x=arguments, y)`, `y` should also be consumed
     if self.call_scope_mut().need_consume_arguments {
-      let arguments_consumed = self.consume_arguments(None);
+      let arguments_consumed = self.consume_arguments();
       assert!(arguments_consumed);
     }
 

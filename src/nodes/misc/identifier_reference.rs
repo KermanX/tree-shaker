@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
       }
     } else if node.name == "arguments" {
       // The `arguments` object
-      let arguments_consumed = self.consume_arguments(None);
+      let arguments_consumed = self.consume_arguments();
       self.call_scope_mut().need_consume_arguments = !arguments_consumed;
       self.factory.unknown()
     } else if let Some(global) = self.builtins.globals.get(node.name.as_str()) {

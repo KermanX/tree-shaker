@@ -237,7 +237,6 @@ impl<'a> FunctionEntity<'a> {
     }
 
     analyzer.consume(self.callee.into_dep_id());
-    analyzer.consume_arguments(Some(self.callee));
 
     let self_cloned = self.clone();
     analyzer.exec_consumed_fn("consume_fn", move |analyzer| {

@@ -108,23 +108,9 @@ impl<'a> Analyzer<'a> {
     self.exit_to(target_depth);
   }
 
-  pub fn consume_arguments(&mut self, search: Option<CalleeInfo<'a>>) -> bool {
-    let call_scope = if let Some(callee) = search {
-      if let Some(call_scope) = self
-        .scope_context
-        .call
-        .iter()
-        .rev()
-        .find(|scope| scope.callee.instance_id == callee.instance_id)
-      {
-        call_scope
-      } else {
-        return false;
-      }
-    } else {
-      self.call_scope()
-    };
-    self.consume_arguments_on_scope(call_scope.body_variable_scope)
+  pub fn consume_arguments(&mut self) -> bool {
+    let scope = self.call_scope().body_variable_scope;
+    self.consume_arguments_on_scope(scope)
   }
 
   pub fn consume_return_values(&mut self) {
