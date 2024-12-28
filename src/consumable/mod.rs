@@ -6,7 +6,7 @@ pub use collector::*;
 pub use lazy::*;
 
 use crate::{analyzer::Analyzer, entity::EntityFactory};
-use std::fmt::Debug;
+use std::{cell::Cell, fmt::Debug};
 
 pub trait ConsumableTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
@@ -19,7 +19,7 @@ pub type ConsumableVec<'a> = Vec<Consumable<'a>>;
 
 impl<'a> EntityFactory<'a> {
   pub fn consumable(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {
-    Consumable(self.alloc(dep))
+    Consumable(self.alloc(Cell::new(Some(&*self.alloc(dep)))))
   }
 }
 
