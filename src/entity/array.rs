@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableCollector, ConsumableTrait},
+  consumable::{Consumable, ConsumableCollector},
   use_consumed_flag,
 };
 use oxc::semantic::{ScopeId, SymbolId};

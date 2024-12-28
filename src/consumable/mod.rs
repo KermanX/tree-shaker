@@ -1,12 +1,13 @@
 mod collector;
 mod impls;
 mod lazy;
-
-pub use collector::*;
-pub use lazy::*;
+mod once;
 
 use crate::{analyzer::Analyzer, entity::EntityFactory};
-use std::{cell::Cell, fmt::Debug};
+pub use collector::*;
+pub use lazy::*;
+use once::OnceConsumable;
+use std::fmt::Debug;
 
 pub trait ConsumableTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
@@ -19,7 +20,7 @@ pub type ConsumableVec<'a> = Vec<Consumable<'a>>;
 
 impl<'a> EntityFactory<'a> {
   pub fn consumable(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {
-    Consumable(self.alloc(Cell::new(Some(&*self.alloc(dep)))))
+    Consumable(self.alloc(OnceConsumable::new(dep)))
   }
 }
 

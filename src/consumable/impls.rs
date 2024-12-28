@@ -1,9 +1,6 @@
 use super::{Consumable, ConsumableTrait};
 use crate::{analyzer::Analyzer, ast::AstKind2, dep::DepId, entity::Entity};
-use std::{
-  cell::{Cell, RefCell},
-  rc::Rc,
-};
+use std::{cell::RefCell, rc::Rc};
 
 impl<'a> ConsumableTrait<'a> for () {
   fn consume(&self, _: &mut Analyzer<'a>) {}
@@ -26,12 +23,6 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Option<T> {
     if let Some(value) = self {
       value.consume(analyzer)
     }
-  }
-}
-
-impl<'a, T: Default + Copy + ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Cell<T> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    self.take().consume(analyzer)
   }
 }
 

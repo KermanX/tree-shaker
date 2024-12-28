@@ -2,10 +2,7 @@ use super::{
   entity::{EnumeratedProperties, IteratedElements},
   Entity,
 };
-use crate::{
-  analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
-};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 
 pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
   analyzer.refer_to_global();
