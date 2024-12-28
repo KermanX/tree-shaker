@@ -1,6 +1,6 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::TypeofResult,
-  scope::CfScopeKind, transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, entity::TypeofResult, scope::CfScopeKind,
+  transformer::Transformer,
 };
 use oxc::{
   ast::ast::{ForInStatement, Statement},
@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
 
     self.declare_for_statement_left(&node.left);
 
-    let dep = box_consumable((AstKind2::ForInStatement(node), right));
+    let dep = self.consumable((AstKind2::ForInStatement(node), right));
 
     self.push_cf_scope_with_deps(
       CfScopeKind::BreakableWithoutLabel,

@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  consumable::{ConsumableNode, ConsumableTrait},
-};
+use crate::{analyzer::Analyzer, consumable::ConsumableVec};
 use oxc::semantic::{ScopeId, SymbolId};
 use std::mem;
 
@@ -15,7 +12,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     cf_scope: ScopeId,
     object_id: SymbolId,
-  ) -> (bool, bool, ConsumableNode<'a, impl ConsumableTrait<'a> + 'a>) {
+  ) -> (bool, bool, ConsumableVec<'a>) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
 
     let mut has_exhaustive = false;
@@ -28,14 +25,14 @@ impl<'a> Analyzer<'a> {
           scope.mark_exhaustive_write((self.scope_context.object_scope_id, object_id));
       }
       indeterminate |= scope.is_indeterminate();
-      if let Some(dep) = scope.deps.try_collect() {
+      if let Some(dep) = scope.deps.collect(self.factory) {
         exec_deps.push(dep);
       }
     }
 
     self.add_exhaustive_callbacks(true, (self.scope_context.object_scope_id, object_id));
 
-    (has_exhaustive, indeterminate, ConsumableNode::new(exec_deps))
+    (has_exhaustive, indeterminate, exec_deps)
   }
 
   pub fn mark_object_property_exhaustive_read(&mut self, cf_scope: ScopeId, object_id: SymbolId) {

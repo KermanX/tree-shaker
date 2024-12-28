@@ -1,7 +1,6 @@
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  consumable::box_consumable,
   entity::Entity,
   transformer::Transformer,
 };
@@ -15,7 +14,7 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
   ) {
     let symbol = node.symbol_id.get().unwrap();
-    let dep = box_consumable(AstKind2::BindingIdentifier(node));
+    let dep = self.consumable(AstKind2::BindingIdentifier(node));
     self.declare_symbol(symbol, dep, exporting, kind, None);
   }
 
@@ -25,7 +24,7 @@ impl<'a> Analyzer<'a> {
     init: Option<Entity<'a>>,
   ) {
     let symbol = node.symbol_id.get().unwrap();
-    let dep = box_consumable(AstKind2::BindingIdentifier(node));
+    let dep = self.consumable(AstKind2::BindingIdentifier(node));
     self.init_symbol(symbol, init, dep);
   }
 }

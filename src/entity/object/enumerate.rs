@@ -3,7 +3,7 @@ use std::mem;
 use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableNode},
+  consumable::Consumable,
   entity::{consumed_object, entity::EnumeratedProperties, Entity},
 };
 
@@ -37,7 +37,7 @@ impl<'a> ObjectEntity<'a> {
       }
 
       for getter in getters {
-        values.push(getter.call_as_getter(analyzer, dep.cloned(), rc));
+        values.push(getter.call_as_getter(analyzer, dep, rc));
       }
 
       if let Some(value) = analyzer.factory.try_union(values) {
@@ -66,7 +66,7 @@ impl<'a> ObjectEntity<'a> {
         properties.get(analyzer, &mut values, &mut getters, &mut non_existent);
         mem::drop(string_keyed);
         for getter in getters {
-          values.push(getter.call_as_getter(analyzer, dep.cloned(), rc));
+          values.push(getter.call_as_getter(analyzer, dep, rc));
         }
 
         if let Some(value) = analyzer.factory.try_union(values) {
@@ -77,6 +77,6 @@ impl<'a> ObjectEntity<'a> {
 
     analyzer.pop_cf_scope();
 
-    (result, box_consumable(ConsumableNode::new((dep, non_existent))))
+    (result, analyzer.consumable((dep, non_existent)))
   }
 }

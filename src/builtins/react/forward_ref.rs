@@ -1,7 +1,4 @@
-use crate::{
-  consumable::box_consumable,
-  entity::{Entity, EntityFactory},
-};
+use crate::entity::{Entity, EntityFactory};
 
 pub fn create_react_forward_ref_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::forwardRef", |analyzer, dep, _this, args| {
@@ -10,7 +7,7 @@ pub fn create_react_forward_ref_impl<'a>(factory: &'a EntityFactory<'a>) -> Enti
     analyzer.dynamic_implemented_builtin(
       "React::ForwardRefReturn",
       move |analyzer, dep, this, args| {
-        let props = args.destruct_as_array(analyzer, box_consumable(()), 1).0[0];
+        let props = args.destruct_as_array(analyzer, analyzer.consumable(()), 1).0[0];
         let r#ref = analyzer.factory.unknown();
 
         renderer.call(

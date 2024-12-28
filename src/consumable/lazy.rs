@@ -9,10 +9,6 @@ impl<'a> ConsumableTrait<'a> for LazyConsumable<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.0.consume(analyzer);
   }
-
-  fn cloned(&self) -> Consumable<'a> {
-    Box::new(self.clone())
-  }
 }
 
 impl<'a> LazyConsumable<'a> {

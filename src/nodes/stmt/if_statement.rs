@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::ConsumableNode, scope::CfScopeKind,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{IfStatement, Statement},
   span::GetSpan,
@@ -9,6 +6,8 @@ use oxc::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_if_statement(&mut self, node: &'a IfStatement) {
+    let factory = self.factory;
+
     let labels = self.take_labels();
 
     let test = self.exec_expression(&node.test).get_to_boolean(self);
@@ -45,7 +44,7 @@ impl<'a> Analyzer<'a> {
       } else {
         both_exit = false;
       }
-      acc_dep_1 = conditional_scope.deps.try_collect();
+      acc_dep_1 = conditional_scope.deps.collect(factory);
     }
     if maybe_alternate {
       self.push_if_like_branch_cf_scope(
@@ -68,14 +67,14 @@ impl<'a> Analyzer<'a> {
         } else {
           both_exit = false;
         }
-        acc_dep_2 = conditional_scope.deps.try_collect();
+        acc_dep_2 = conditional_scope.deps.collect(factory);
       } else {
         self.pop_cf_scope();
         both_exit = false;
       }
     }
 
-    let acc_dep = Some(ConsumableNode::new_box((acc_dep_1, acc_dep_2)));
+    let acc_dep = Some(self.consumable((acc_dep_1, acc_dep_2)));
     if both_exit {
       if let Some(acc_dep) =
         self.exit_to_impl(exit_target_inner, self.scope_context.cf.stack.len(), true, acc_dep)

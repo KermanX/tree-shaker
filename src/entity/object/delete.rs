@@ -1,7 +1,7 @@
 use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable},
+  consumable::Consumable,
   entity::{consumed_object, Entity, EntityTrait, LiteralEntity},
   mangling::MangleConstraint,
 };
@@ -25,7 +25,7 @@ impl<'a> ObjectEntity<'a> {
     {
       let mut unknown_keyed = self.unknown_keyed.borrow_mut();
       if !unknown_keyed.possible_values.is_empty() {
-        unknown_keyed.delete(true, box_consumable((exec_deps.clone(), dep.cloned(), key)));
+        unknown_keyed.delete(true, analyzer.consumable((exec_deps.clone(), dep, key)));
       }
     }
 
@@ -33,9 +33,9 @@ impl<'a> ObjectEntity<'a> {
       let indeterminate = indeterminate || key_literals.len() > 1;
       let mangable = self.check_mangable(analyzer, &key_literals);
       let dep = if mangable {
-        box_consumable((exec_deps, dep))
+        analyzer.consumable((exec_deps, dep))
       } else {
-        box_consumable((exec_deps, dep, key))
+        analyzer.consumable((exec_deps, dep, key))
       };
 
       let mut string_keyed = self.string_keyed.borrow_mut();
@@ -48,8 +48,8 @@ impl<'a> ObjectEntity<'a> {
                 indeterminate,
                 if mangable {
                   let (prev_key, prev_atom) = property.mangling.unwrap();
-                  box_consumable((
-                    dep.cloned(),
+                  analyzer.consumable((
+                    dep,
                     // This is a hack
                     analyzer.factory.mangable(
                       analyzer.factory.immutable_unknown,
@@ -58,11 +58,11 @@ impl<'a> ObjectEntity<'a> {
                     ),
                   ))
                 } else {
-                  dep.cloned()
+                  dep
                 },
               );
             } else if let Some(rest) = &mut *rest {
-              rest.delete(true, box_consumable((dep.cloned(), key)));
+              rest.delete(true, analyzer.consumable((dep, key)));
             } else if mangable {
               self.add_to_mangling_group(analyzer, key_atom.unwrap());
             }
@@ -74,11 +74,11 @@ impl<'a> ObjectEntity<'a> {
     } else {
       self.disable_mangling(analyzer);
 
-      let dep = box_consumable((exec_deps, dep, key));
+      let dep = analyzer.consumable((exec_deps, dep, key));
 
       let mut string_keyed = self.string_keyed.borrow_mut();
       for property in string_keyed.values_mut() {
-        property.delete(true, dep.cloned());
+        property.delete(true, dep);
       }
     }
   }

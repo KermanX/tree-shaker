@@ -1,5 +1,5 @@
 use super::{Entity, LiteralEntity, TypeofResult};
-use crate::{analyzer::Analyzer, consumable::box_consumable, mangling::MangleConstraint};
+use crate::{analyzer::Analyzer, mangling::MangleConstraint};
 use oxc::{
   allocator::Allocator,
   ast::ast::{BinaryOperator, UpdateOperator},
@@ -242,7 +242,7 @@ impl<'a> EntityOpHost<'a> {
       }
     }
 
-    let dep = box_consumable((lhs, rhs));
+    let dep = analyzer.consumable((lhs, rhs));
     if values.is_empty() {
       // TODO: throw warning
       analyzer.factory.computed_unknown(dep)

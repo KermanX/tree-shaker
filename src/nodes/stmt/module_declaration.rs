@@ -1,4 +1,4 @@
-use crate::{ast::DeclarationKind, consumable::box_consumable, transformer::Transformer, Analyzer};
+use crate::{ast::DeclarationKind, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{
   ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
   ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,
@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
                 ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => known.namespace,
                 ImportDeclarationSpecifier::ImportSpecifier(node) => {
                   let key = self.factory.string(node.imported.name().as_str());
-                  known.namespace.get_property(self, box_consumable(()), key)
+                  known.namespace.get_property(self, self.consumable(()), key)
                 }
               }
             } else {

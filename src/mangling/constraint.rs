@@ -1,10 +1,7 @@
 use super::{AtomState, MangleAtom};
 use super::{Mangler, UniquenessGroupId};
 use crate::utils::get_two_mut_from_vec;
-use crate::{
-  analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
-};
+use crate::{analyzer::Analyzer, consumable::ConsumableTrait};
 use std::mem;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -66,10 +63,6 @@ impl MangleConstraint {
 impl<'a> ConsumableTrait<'a> for &'a MangleConstraint {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.add_to_mangler(&mut analyzer.mangler);
-  }
-
-  fn cloned(&self) -> Consumable<'a> {
-    Box::new(*self)
   }
 }
 

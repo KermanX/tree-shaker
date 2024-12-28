@@ -1,6 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 use oxc::{
   ast::ast::{
@@ -66,7 +65,7 @@ impl<'a> Analyzer<'a> {
       self.pop_cf_scope();
     }
 
-    let value = object.get_property(self, box_consumable(dep_id), key);
+    let value = object.get_property(self, self.consumable(dep_id), key);
 
     Ok((scope_count, value, undefined, (object, key)))
   }
@@ -87,7 +86,7 @@ impl<'a> Analyzer<'a> {
       (object, key)
     });
 
-    object.set_property(self, box_consumable(AstKind2::MemberExpression(node)), key, value);
+    object.set_property(self, self.consumable(AstKind2::MemberExpression(node)), key, value);
   }
 
   fn exec_key(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {

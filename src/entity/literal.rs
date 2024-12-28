@@ -6,7 +6,7 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   builtins::Prototype,
-  consumable::{box_consumable, Consumable},
+  consumable::Consumable,
   mangling::{MangleAtom, MangleConstraint},
   transformer::Transformer,
   utils::F64WithEq,
@@ -63,7 +63,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     } else {
       let prototype = self.get_prototype(analyzer);
       let key = key.get_to_property_key(analyzer);
-      let dep = box_consumable((dep, rc, key));
+      let dep = analyzer.consumable((dep, rc, key));
       if let Some(key_literals) = key.get_to_literals(analyzer) {
         let mut values = vec![];
         for key_literal in key_literals {
@@ -105,7 +105,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
     if let LiteralEntity::String(value, atom) = self {
-      let dep = box_consumable((dep, *atom));
+      let dep = analyzer.consumable((dep, *atom));
       if value.len() <= analyzer.config.max_simple_string_length {
         (
           value
@@ -184,7 +184,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::String(value, atom) => (
         vec![],
         (!value.is_empty()).then_some(analyzer.factory.unknown_string),
-        box_consumable((rc, dep, *atom)),
+        analyzer.consumable((rc, dep, *atom)),
       ),
       _ => {
         self.consume(analyzer);
@@ -194,7 +194,12 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    _analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
     dep
   }
 

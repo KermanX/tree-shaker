@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode},
+  consumable::{Consumable, ConsumableCollector},
   entity::Entity,
 };
 use oxc::span::Span;
@@ -26,6 +26,7 @@ pub fn check_dependencies<'a>(
   dep: Consumable<'a>,
   current: Entity<'a>,
 ) -> (bool, Consumable<'a>) {
+  let factory = analyzer.factory;
   let (elements, rest, iterate_dep) = current.iterate(analyzer, dep);
 
   let span = analyzer.current_span();
@@ -73,15 +74,15 @@ pub fn check_dependencies<'a>(
     }
 
     if changed.is_empty() {
-      if let Some(rest) = rest_collector.try_collect() {
-        (true, box_consumable((rest, extra_collector.try_collect())))
+      if let Some(rest) = rest_collector.collect(factory) {
+        (true, analyzer.consumable((rest, extra_collector.collect(factory))))
       } else {
-        (false, box_consumable(extra_collector.try_collect()))
+        (false, analyzer.consumable(extra_collector.collect(factory)))
       }
     } else {
       let mut deps = vec![];
       for index in &changed {
-        deps.push(collectors[*index].try_collect().unwrap());
+        deps.push(collectors[*index].collect(factory).unwrap());
         if let Some(previous) = previous.get_mut(*index) {
           *previous = None;
         }
@@ -92,11 +93,11 @@ pub fn check_dependencies<'a>(
       }
       (
         true,
-        box_consumable(ConsumableNode::new((
+        analyzer.consumable((
           deps,
-          rest_collector.try_collect(),
-          extra_collector.try_collect(),
-        ))),
+          rest_collector.collect(factory),
+          extra_collector.collect(factory),
+        )),
       )
     }
   } else {
@@ -108,7 +109,7 @@ pub fn check_dependencies<'a>(
       rest_collector.push(rest);
     }
     *previous = Some(elements.into_iter().map(Option::Some).collect());
-    (true, box_consumable((rest, extra_collector.try_collect())))
+    (true, analyzer.consumable((rest, extra_collector.collect(factory))))
   };
 
   if require_rerun {

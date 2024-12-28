@@ -1,7 +1,7 @@
 use super::{EntityFactory, LiteralEntity, TypeofResult};
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableNode, ConsumableTrait},
+  consumable::{Consumable, ConsumableTrait},
 };
 use oxc::allocator::Allocator;
 use rustc_hash::FxHashSet;
@@ -69,7 +69,12 @@ pub trait EntityTrait<'a>: Debug {
     dep: Consumable<'a>,
   ) -> IteratedElements<'a>;
 
-  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a>;
+  fn get_destructable(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a>;
   fn get_typeof(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
@@ -207,8 +212,12 @@ impl<'a> Entity<'a> {
     self.0.iterate(*self, analyzer, dep.into())
   }
 
-  pub fn get_destructable(&self, dep: impl Into<Consumable<'a>>) -> Consumable<'a> {
-    self.0.get_destructable(*self, dep.into())
+  pub fn get_destructable(
+    &self,
+    analyzer: &Analyzer<'a>,
+    dep: impl Into<Consumable<'a>>,
+  ) -> Consumable<'a> {
+    self.0.get_destructable(*self, analyzer, dep.into())
   }
 
   pub fn get_typeof(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -266,20 +275,19 @@ impl<'a> Entity<'a> {
     length: usize,
   ) -> (Vec<Entity<'a>>, Entity<'a>, Consumable<'a>) {
     let (elements, rest, deps) = self.iterate(analyzer, dep);
-    let deps = box_consumable(ConsumableNode::new(deps));
     let mut result_elements = Vec::new();
     for i in 0..length.min(elements.len()) {
-      result_elements.push(analyzer.factory.computed(elements[i], deps.cloned()));
+      result_elements.push(analyzer.factory.computed(elements[i], deps));
     }
     for _ in 0..length.saturating_sub(elements.len()) {
       if let Some(rest) = rest {
-        result_elements.push(analyzer.factory.computed(rest, deps.cloned()));
+        result_elements.push(analyzer.factory.computed(rest, deps));
       } else {
-        result_elements.push(analyzer.factory.computed(analyzer.factory.undefined, deps.cloned()));
+        result_elements.push(analyzer.factory.computed(analyzer.factory.undefined, deps));
       }
     }
     let rest_arr = analyzer.new_empty_array();
-    rest_arr.deps.borrow_mut().push(deps.cloned());
+    rest_arr.deps.borrow_mut().push(deps);
     let mut rest_arr_is_empty = true;
     if length < elements.len() {
       for element in &elements[length..elements.len()] {
@@ -292,7 +300,7 @@ impl<'a> Entity<'a> {
       rest_arr_is_empty = false;
     }
     if rest_arr_is_empty {
-      rest_arr.deps.borrow_mut().push(self.cloned());
+      rest_arr.deps.borrow_mut().push(analyzer.consumable(*self));
     }
     (result_elements, analyzer.factory.entity(rest_arr), deps)
   }

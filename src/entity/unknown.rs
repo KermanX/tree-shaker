@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableTrait},
+  consumable::{Consumable, ConsumableTrait},
 };
 use std::marker::PhantomData;
 
@@ -103,8 +103,13 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    box_consumable((rc, dep))
+  fn get_destructable(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
+    analyzer.consumable((rc, dep))
   }
 
   fn get_typeof(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

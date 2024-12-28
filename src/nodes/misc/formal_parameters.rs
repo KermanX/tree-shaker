@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::DeclarationKind, consumable::box_consumable, entity::Entity,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{BindingPatternKind, FormalParameter, FormalParameters},
@@ -18,7 +15,7 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
   ) {
     let (elements_init, rest_init, _deps) =
-      args.destruct_as_array(self, box_consumable(()), node.items.len());
+      args.destruct_as_array(self, self.consumable(()), node.items.len());
 
     for param in &node.items {
       self.declare_binding_pattern(&param.pattern, false, kind);

@@ -1,8 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::{
-    box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait, ConsumableVec,
-  },
+  consumable::{Consumable, ConsumableCollector, ConsumableVec},
   entity::LabelEntity,
 };
 use oxc::semantic::{ScopeId, SymbolId};
@@ -80,14 +78,10 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn update_exited(
-    &mut self,
-    exited: Option<bool>,
-    get_dep: impl FnOnce() -> Option<Consumable<'a>>,
-  ) {
+  pub fn update_exited(&mut self, exited: Option<bool>, dep: Option<Consumable<'a>>) {
     if self.exited != Some(true) {
       self.exited = exited;
-      if let Some(dep) = get_dep() {
+      if let Some(dep) = dep {
         self.push_dep(dep);
       }
     }
@@ -170,18 +164,15 @@ impl<'a> Analyzer<'a> {
     result
   }
 
-  pub fn get_exec_dep(
-    &mut self,
-    target_depth: usize,
-  ) -> ConsumableNode<'a, impl ConsumableTrait<'a> + 'a> {
+  pub fn get_exec_dep(&mut self, target_depth: usize) -> Consumable<'a> {
     let mut deps = vec![];
     for id in target_depth..self.scope_context.cf.stack.len() {
       let scope = self.scope_context.cf.get_mut_from_depth(id);
-      if let Some(dep) = scope.deps.try_collect() {
+      if let Some(dep) = scope.deps.collect(self.factory) {
         deps.push(dep);
       }
     }
-    ConsumableNode::new(deps)
+    self.consumable(deps)
   }
 
   pub fn exit_to(&mut self, target_depth: usize) {
@@ -199,18 +190,17 @@ impl<'a> Analyzer<'a> {
     target_depth: usize,
     from_depth: usize,
     mut must_exit: bool,
-    mut acc_dep: Option<ConsumableNode<'a>>,
-  ) -> Option<Option<ConsumableNode<'a>>> {
+    mut acc_dep: Option<Consumable<'a>>,
+  ) -> Option<Option<Consumable<'a>>> {
     for depth in (target_depth..from_depth).rev() {
       let id = self.scope_context.cf.stack[depth];
       let cf_scope = self.scope_context.cf.get_mut(id);
-      let this_dep = cf_scope.deps.try_collect();
-      let get_dep = || acc_dep.clone().map(box_consumable);
+      let this_dep = cf_scope.deps.collect(self.factory);
 
       // Update exited state
       if must_exit {
         let is_indeterminate = cf_scope.is_indeterminate();
-        cf_scope.update_exited(Some(true), get_dep);
+        cf_scope.update_exited(Some(true), acc_dep);
 
         // Stop exiting outer scopes if one inner scope is indeterminate.
         if is_indeterminate {
@@ -224,13 +214,13 @@ impl<'a> Analyzer<'a> {
           }
         }
       } else {
-        cf_scope.update_exited(None, get_dep);
+        cf_scope.update_exited(None, acc_dep);
       }
 
       // Accumulate the dependencies
-      if let Some(this_dep) = this_dep.clone() {
+      if let Some(this_dep) = this_dep {
         acc_dep = if let Some(acc_dep) = acc_dep {
-          Some(ConsumableNode::new_box((this_dep, acc_dep)))
+          Some(self.consumable((this_dep, acc_dep)))
         } else {
           Some(this_dep)
         };

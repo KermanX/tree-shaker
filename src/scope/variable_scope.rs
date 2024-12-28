@@ -2,7 +2,7 @@ use super::exhaustive::ExhaustiveCallback;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
-  consumable::{box_consumable, Consumable, LazyConsumable},
+  consumable::{Consumable, LazyConsumable},
   entity::Entity,
 };
 use oxc::semantic::{ScopeId, SymbolId};
@@ -71,7 +71,7 @@ impl<'a> Analyzer<'a> {
         let mut variable = variable.borrow_mut();
         variable.kind = kind;
         // TODO: Sometimes this is not necessary
-        variable.decl_dep = box_consumable((variable.decl_dep.cloned(), decl_dep));
+        variable.decl_dep = self.consumable((variable.decl_dep, decl_dep));
         drop(variable);
         if let Some(new_val) = fn_value {
           self.write_on_scope(id, symbol, new_val);
@@ -117,7 +117,7 @@ impl<'a> Analyzer<'a> {
         // Do nothing
       }
     } else if let Some(deps) = variable_ref.exhausted.clone() {
-      deps.push(self, box_consumable((init_dep, value)));
+      deps.push(self, self.consumable((init_dep, value)));
     } else {
       drop(variable_ref);
       variable.borrow_mut().value =
@@ -136,7 +136,7 @@ impl<'a> Analyzer<'a> {
         variable_ref
           .kind
           .is_var()
-          .then(|| self.factory.computed(self.factory.undefined, variable_ref.decl_dep.cloned()))
+          .then(|| self.factory.computed(self.factory.undefined, variable_ref.decl_dep))
       });
 
       let value = if let Some(dep) = variable_ref.exhausted.clone() {
@@ -157,7 +157,7 @@ impl<'a> Analyzer<'a> {
       if value.is_none() {
         // TDZ
         let variable_ref = variable.borrow();
-        self.consume(variable_ref.decl_dep.cloned());
+        self.consume(variable_ref.decl_dep);
         let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
         self.handle_tdz(target_cf_scope);
       }
@@ -173,15 +173,15 @@ impl<'a> Analyzer<'a> {
         self.consume(new_val);
       } else if kind.is_const() {
         self.thrown_builtin_error("Cannot assign to const variable");
-        self.consume(variable.borrow().decl_dep.cloned());
+        self.consume(variable.borrow().decl_dep);
         new_val.consume(self);
       } else {
         let variable_ref = variable.borrow();
         let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
-        let dep = (self.get_exec_dep(target_cf_scope), variable_ref.decl_dep.cloned());
+        let dep = (self.get_exec_dep(target_cf_scope), variable_ref.decl_dep);
 
         if let Some(deps) = variable_ref.exhausted.clone() {
-          deps.push(self, box_consumable((dep, new_val)));
+          deps.push(self, self.consumable((dep, new_val)));
         } else {
           let old_val = variable_ref.value;
           let (should_consume, indeterminate) = if old_val.is_some() {
@@ -200,7 +200,7 @@ impl<'a> Analyzer<'a> {
           let mut variable_ref = variable.borrow_mut();
           if should_consume {
             variable_ref.exhausted =
-              Some(LazyConsumable::new(box_consumable((dep, new_val, old_val))));
+              Some(LazyConsumable::new(self.consumable((dep, new_val, old_val))));
             variable_ref.value = Some(self.factory.unknown());
           } else {
             variable_ref.value = Some(self.factory.computed(
@@ -209,7 +209,7 @@ impl<'a> Analyzer<'a> {
               } else {
                 new_val
               },
-              box_consumable(dep),
+              self.consumable(dep),
             ));
           };
           drop(variable_ref);
@@ -230,7 +230,7 @@ impl<'a> Analyzer<'a> {
         drop(variable_ref);
         self.consume(dep);
       } else {
-        variable_ref.decl_dep.consume(self);
+        self.consume(variable_ref.decl_dep);
         if let Some(value) = &variable_ref.value {
           value.consume(self);
         }
@@ -253,7 +253,7 @@ impl<'a> Analyzer<'a> {
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scope_context.cf.stack[cf_scope_depth],
       value: Some(self.factory.unknown()),
-      decl_dep: box_consumable(()),
+      decl_dep: self.consumable(()),
     }));
     let old = self.variable_scope_mut().variables.insert(symbol, variable);
     assert!(old.is_none());

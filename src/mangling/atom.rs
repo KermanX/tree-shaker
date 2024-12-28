@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
-};
+use crate::{analyzer::Analyzer, consumable::ConsumableTrait};
 use oxc_index::define_index_type;
 
 define_index_type! {
@@ -12,9 +9,5 @@ define_index_type! {
 impl<'a> ConsumableTrait<'a> for MangleAtom {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.mangler.mark_atom_non_mangable(*self);
-  }
-
-  fn cloned(&self) -> Consumable<'a> {
-    Box::new(*self)
   }
 }

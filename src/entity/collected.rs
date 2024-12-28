@@ -2,11 +2,7 @@ use super::{
   entity::{EnumeratedProperties, IteratedElements},
   Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
-use crate::{
-  analyzer::Analyzer,
-  consumable::{box_consumable, Consumable},
-  use_consumed_flag,
-};
+use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use rustc_hash::FxHashSet;
 use std::{
   cell::{Cell, RefCell},
@@ -117,11 +113,16 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
     dep: Consumable<'a>,
   ) -> IteratedElements<'a> {
     let (elements, rest, deps) = self.val.iterate(analyzer, dep);
-    (elements, rest, box_consumable((deps, self.deps.clone())))
+    (elements, rest, analyzer.consumable((deps, self.deps.clone())))
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    box_consumable((self.deps.clone(), dep))
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
+    analyzer.consumable((self.deps.clone(), dep))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

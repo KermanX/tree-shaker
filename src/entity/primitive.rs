@@ -6,7 +6,7 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   builtins::Prototype,
-  consumable::{box_consumable, Consumable, ConsumableTrait},
+  consumable::{Consumable, ConsumableTrait},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -63,10 +63,10 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     if *self == PrimitiveEntity::String {
       (
         vec![(false, analyzer.factory.unknown_string, analyzer.factory.unknown_string)],
-        box_consumable((rc, dep)),
+        analyzer.consumable((rc, dep)),
       )
     } else {
-      (vec![], box_consumable((rc, dep)))
+      (vec![], analyzer.consumable((rc, dep)))
     }
   }
 
@@ -117,15 +117,20 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     dep: Consumable<'a>,
   ) -> IteratedElements<'a> {
     if *self == PrimitiveEntity::String {
-      return (vec![], Some(analyzer.factory.unknown()), box_consumable((rc, dep)));
+      return (vec![], Some(analyzer.factory.unknown()), analyzer.consumable((rc, dep)));
     }
     analyzer.thrown_builtin_error("Cannot iterate non-object");
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    box_consumable((rc, dep))
+  fn get_destructable(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
+    analyzer.consumable((rc, dep))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

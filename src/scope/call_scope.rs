@@ -1,10 +1,6 @@
 use super::try_scope::TryScope;
 use crate::{
-  analyzer::Analyzer,
-  consumable::{box_consumable, ConsumableNode, ConsumableTrait},
-  dep::DepId,
-  entity::Entity,
-  utils::CalleeInfo,
+  analyzer::Analyzer, consumable::ConsumableTrait, dep::DepId, entity::Entity, utils::CalleeInfo,
 };
 use oxc::semantic::ScopeId;
 use std::mem;
@@ -82,11 +78,8 @@ impl<'a> CallScope<'a> {
       analyzer.factory.union(self.returned_values)
     };
 
-    let value = if self.is_async {
-      analyzer.factory.computed_unknown(ConsumableNode::new((value, promise_error)))
-    } else {
-      value
-    };
+    let value =
+      if self.is_async { analyzer.factory.computed_unknown((value, promise_error)) } else { value };
 
     #[cfg(feature = "flame")]
     self.scope_guard.end();
@@ -98,8 +91,8 @@ impl<'a> CallScope<'a> {
 impl<'a> Analyzer<'a> {
   pub fn return_value(&mut self, value: Entity<'a>, dep: impl ConsumableTrait<'a> + 'a) {
     let call_scope = self.call_scope();
-    let dep = box_consumable((self.get_exec_dep(call_scope.cf_scope_depth), dep));
-    let value = self.factory.computed(value, dep);
+    let exec_dep = self.get_exec_dep(call_scope.cf_scope_depth);
+    let value = self.factory.computed(value, (exec_dep, dep));
 
     let call_scope = self.call_scope_mut();
     call_scope.returned_values.push(value);

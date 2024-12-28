@@ -1,6 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 use oxc::ast::ast::{Expression, NewExpression, TSTypeParameterInstantiation};
 
@@ -15,7 +14,7 @@ impl<'a> Analyzer<'a> {
     let arguments = self.exec_arguments(&node.arguments);
 
     self.scope_context.pure += pure;
-    let value = callee.construct(self, box_consumable(AstKind2::NewExpression(node)), arguments);
+    let value = callee.construct(self, self.consumable(AstKind2::NewExpression(node)), arguments);
     self.scope_context.pure -= pure;
 
     value

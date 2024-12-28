@@ -3,10 +3,7 @@ use super::{
   entity::{EnumeratedProperties, IteratedElements},
   Entity, EntityFactory, EntityTrait, ObjectEntity, TypeofResult,
 };
-use crate::{
-  analyzer::Analyzer,
-  consumable::{box_consumable, Consumable},
-};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
 
 pub trait BuiltinFnEntity<'a>: Debug {
@@ -111,7 +108,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     self.call_impl(
       analyzer,
-      box_consumable(()),
+      analyzer.consumable(()),
       analyzer.factory.immutable_unknown,
       analyzer.factory.arguments(vec![(false, props)]),
     )
@@ -136,8 +133,13 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    box_consumable((rc, dep))
+  fn get_destructable(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
+    analyzer.consumable((rc, dep))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -270,9 +272,9 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
     args: Entity<'a>,
   ) -> Entity<'a> {
     let ret_val = (self.return_value)(analyzer.factory);
-    let dep = box_consumable((dep, this, args));
-    this.unknown_mutate(analyzer, dep.cloned());
-    args.unknown_mutate(analyzer, dep.cloned());
+    let dep = analyzer.consumable((dep, this, args));
+    this.unknown_mutate(analyzer, dep);
+    args.unknown_mutate(analyzer, dep);
     analyzer.factory.computed(ret_val, dep)
   }
 }

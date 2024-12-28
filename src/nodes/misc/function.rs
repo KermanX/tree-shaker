@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  consumable::{box_consumable, Consumable},
+  consumable::Consumable,
   entity::Entity,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
-    let dep = box_consumable(AstKind2::Function(node));
+    let dep = self.consumable(AstKind2::Function(node));
     let entity = self.exec_function(node);
 
     let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
       Box::new(move |analyzer: &mut Analyzer<'a>| {
         analyzer.push_call_scope(
           callee,
-          call_dep.cloned(),
+          call_dep,
           variable_scopes.as_ref().clone(),
           node.r#async,
           node.generator,
@@ -59,7 +59,7 @@ impl<'a> Analyzer<'a> {
           let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
           analyzer.declare_symbol(
             symbol,
-            box_consumable(callee.into_dep_id()),
+            analyzer.consumable(callee.into_dep_id()),
             false,
             DeclarationKind::NamedFunctionInBody,
             Some(fn_entity),

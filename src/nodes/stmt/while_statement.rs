@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, scope::CfScopeKind,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{Statement, WhileStatement},
   span::GetSpan,
@@ -20,7 +17,7 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    let dep = box_consumable((AstKind2::WhileStatement(node), test));
+    let dep = self.consumable((AstKind2::WhileStatement(node), test));
 
     self.push_cf_scope_with_deps(
       CfScopeKind::BreakableWithoutLabel,
@@ -37,7 +34,8 @@ impl<'a> Analyzer<'a> {
       analyzer.pop_cf_scope();
 
       let test = analyzer.exec_expression(&node.test);
-      analyzer.cf_scope_mut().push_dep(box_consumable(test));
+      let test = analyzer.consumable(test);
+      analyzer.cf_scope_mut().push_dep(test);
     });
     self.pop_cf_scope();
   }

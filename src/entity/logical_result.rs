@@ -99,8 +99,13 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.iterate(analyzer, dep)
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    self.value.get_destructable(dep)
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
+    self.value.get_destructable(analyzer, dep)
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

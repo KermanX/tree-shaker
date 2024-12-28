@@ -2,7 +2,6 @@ use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
   build_effect,
-  consumable::box_consumable,
   entity::{Entity, EntityTrait},
   transformer::Transformer,
 };
@@ -37,7 +36,7 @@ impl<'a> Analyzer<'a> {
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(self, box_consumable(AstKind2::SpreadElement(node)), argument);
+          object.init_spread(self, self.consumable(AstKind2::SpreadElement(node)), argument);
         }
       }
     }

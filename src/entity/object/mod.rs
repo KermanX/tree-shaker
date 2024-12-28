@@ -155,7 +155,12 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    _analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
     dep
   }
 

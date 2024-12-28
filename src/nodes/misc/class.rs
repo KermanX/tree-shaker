@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  consumable::{box_consumable, ConsumableTrait},
+  consumable::ConsumableTrait,
   entity::{ClassEntity, Entity},
   transformer::Transformer,
   utils::CalleeNode,
@@ -59,7 +59,7 @@ impl<'a> Analyzer<'a> {
     let variable_scope_stack = self.scope_context.variable.stack.clone();
     self.push_call_scope(
       self.new_callee_info(CalleeNode::ClassStatics(node)),
-      box_consumable(()),
+      self.consumable(()),
       variable_scope_stack,
       false,
       false,
@@ -84,7 +84,7 @@ impl<'a> Analyzer<'a> {
             let value = self.exec_expression(value);
             class.set_property(
               self,
-              box_consumable(AstKind2::PropertyDefinition(node)),
+              self.consumable(AstKind2::PropertyDefinition(node)),
               key,
               value,
             );
@@ -148,7 +148,7 @@ impl<'a> Analyzer<'a> {
     self.exec_consumed_fn("class_property", move |analyzer| {
       analyzer.push_call_scope(
         analyzer.new_callee_info(CalleeNode::ClassConstructor(node)),
-        box_consumable(()),
+        analyzer.consumable(()),
         variable_scope_stack.as_ref().clone(),
         false,
         false,
