@@ -108,7 +108,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     self.call_impl(
       analyzer,
-      analyzer.consumable(()),
+      analyzer.factory.empty_consumable,
       analyzer.factory.immutable_unknown,
       analyzer.factory.arguments(vec![(false, props)]),
     )

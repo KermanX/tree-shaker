@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
     self.refer_to_global();
 
     let value = self.exec_expression(&node.argument);
-    value.r#await(self, self.consumable(()))
+    value.r#await(self, self.factory.empty_consumable)
   }
 }
 

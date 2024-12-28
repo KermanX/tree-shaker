@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
     let rest = self.new_empty_object(&self.builtins.prototypes.object, None);
     rest.init_spread(self, self.consumable(dep.into()), object);
     for key in enumerated {
-      rest.delete_property(self, self.consumable(()), key);
+      rest.delete_property(self, self.factory.empty_consumable, key);
     }
 
     self.factory.entity(rest)

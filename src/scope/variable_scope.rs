@@ -253,7 +253,7 @@ impl<'a> Analyzer<'a> {
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scope_context.cf.stack[cf_scope_depth],
       value: Some(self.factory.unknown()),
-      decl_dep: self.consumable(()),
+      decl_dep: self.factory.empty_consumable,
     }));
     let old = self.variable_scope_mut().variables.insert(symbol, variable);
     assert!(old.is_none());

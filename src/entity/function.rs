@@ -115,7 +115,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     self.call(
       rc,
       analyzer,
-      analyzer.consumable(()),
+      analyzer.factory.empty_consumable,
       analyzer.factory.immutable_unknown,
       analyzer.factory.arguments(vec![(false, props)]),
     )
@@ -248,7 +248,7 @@ impl<'a> FunctionEntity<'a> {
       self_cloned.call_impl(
         analyzer.factory.unknown(),
         analyzer,
-        analyzer.consumable(()),
+        analyzer.factory.empty_consumable,
         analyzer.factory.unknown(),
         analyzer.factory.unknown(),
         true,

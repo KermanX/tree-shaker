@@ -1,4 +1,4 @@
-use crate::TreeShakeConfig;
+use crate::{consumable::Consumable, TreeShakeConfig};
 
 use super::{
   arguments::ArgumentsEntity, Entity, LiteralEntity, PrimitiveEntity, PureBuiltinFnEntity,
@@ -37,6 +37,8 @@ pub struct EntityFactory<'a> {
 
   pub empty_arguments: Entity<'a>,
   pub unmatched_prototype_property: Entity<'a>,
+
+  pub empty_consumable: Consumable<'a>,
 }
 
 impl<'a> EntityFactory<'a> {
@@ -76,6 +78,8 @@ impl<'a> EntityFactory<'a> {
     let unmatched_prototype_property =
       if config.unmatched_prototype_property_as_undefined { undefined } else { immutable_unknown };
 
+    let empty_consumable = Consumable(allocator.alloc(()));
+
     EntityFactory {
       allocator,
       instance_id_counter: Cell::new(0),
@@ -106,6 +110,8 @@ impl<'a> EntityFactory<'a> {
 
       empty_arguments,
       unmatched_prototype_property,
+
+      empty_consumable,
     }
   }
 

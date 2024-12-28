@@ -51,7 +51,7 @@ impl<'a> ObjectProperty<'a> {
     if let Some(dep) = self.non_existent.collect(analyzer.factory) {
       non_existent.push(dep);
     } else if !self.definite && non_existent.is_empty() {
-      non_existent.push(analyzer.consumable(()));
+      non_existent.push(analyzer.factory.empty_consumable);
     }
   }
 
@@ -83,7 +83,7 @@ impl<'a> ObjectProperty<'a> {
     if let Some(dep) = self.non_existent.collect(analyzer.factory) {
       non_existent.push(dep);
     } else if !self.definite && non_existent.is_empty() {
-      non_existent.push(analyzer.consumable(()));
+      non_existent.push(analyzer.factory.empty_consumable);
     }
   }
 

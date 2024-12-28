@@ -162,7 +162,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     if has_undefined {
       results.push(analyzer.factory.undefined);
     }
-    (vec![], analyzer.factory.try_union(results), analyzer.consumable(()))
+    (vec![], analyzer.factory.try_union(results), analyzer.factory.empty_consumable)
   }
 
   fn get_destructable(

@@ -56,7 +56,7 @@ pub fn enumerate_properties<'a>(
     analyzer.refer_to_global();
     (
       vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
-      analyzer.consumable(()),
+      analyzer.factory.empty_consumable,
     )
   } else {
     (
@@ -126,7 +126,7 @@ pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Iterated
     analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_to_global();
-    (vec![], Some(analyzer.factory.unknown()), analyzer.consumable(()))
+    (vec![], Some(analyzer.factory.unknown()), analyzer.factory.empty_consumable)
   } else {
     (vec![], Some(analyzer.factory.unknown()), analyzer.consumable(dep))
   }

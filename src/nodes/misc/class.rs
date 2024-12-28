@@ -59,7 +59,7 @@ impl<'a> Analyzer<'a> {
     let variable_scope_stack = self.scope_context.variable.stack.clone();
     self.push_call_scope(
       self.new_callee_info(CalleeNode::ClassStatics(node)),
-      self.consumable(()),
+      self.factory.empty_consumable,
       variable_scope_stack,
       false,
       false,
@@ -148,7 +148,7 @@ impl<'a> Analyzer<'a> {
     self.exec_consumed_fn("class_property", move |analyzer| {
       analyzer.push_call_scope(
         analyzer.new_callee_info(CalleeNode::ClassConstructor(node)),
-        analyzer.consumable(()),
+        analyzer.factory.empty_consumable,
         variable_scope_stack.as_ref().clone(),
         false,
         false,

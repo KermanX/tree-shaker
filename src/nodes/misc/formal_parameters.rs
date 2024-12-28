@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
   ) {
     let (elements_init, rest_init, _deps) =
-      args.destruct_as_array(self, self.consumable(()), node.items.len());
+      args.destruct_as_array(self, self.factory.empty_consumable, node.items.len());
 
     for param in &node.items {
       self.declare_binding_pattern(&param.pattern, false, kind);

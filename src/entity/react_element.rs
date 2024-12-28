@@ -27,7 +27,7 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
     analyzer.exec_consumed_fn("React_blackbox", move |analyzer| {
       let copied_props =
         analyzer.new_empty_object(&analyzer.builtins.prototypes.object, Some(group_id));
-      copied_props.init_spread(analyzer, analyzer.consumable(()), props);
+      copied_props.init_spread(analyzer, analyzer.factory.empty_consumable, props);
       tag.jsx(analyzer, analyzer.factory.entity(copied_props))
     });
   }
