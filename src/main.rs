@@ -31,6 +31,9 @@ struct Args {
 
   #[arg(long, default_value_t = false)]
   no_mangle: bool,
+
+  #[arg(short, long, default_value_t = 2)]
+  recursion_depth: usize,
 }
 
 fn main() {
@@ -81,7 +84,8 @@ fn main() {
       }
       .with_react_jsx(args.jsx)
       .with_always_inline_literal(args.always_inline_literal)
-      .with_mangling(!args.no_mangle),
+      .with_mangling(!args.no_mangle)
+      .with_max_recursion_depth(args.recursion_depth),
       minify_options: None,
       codegen_options: CodegenOptions::default(),
     },

@@ -104,4 +104,9 @@ impl TreeShakeConfig {
     self.mangling = yes;
     self
   }
+
+  pub fn with_max_recursion_depth(mut self, depth: usize) -> Self {
+    self.max_recursion_depth = depth;
+    self
+  }
 }
