@@ -2,12 +2,7 @@
 
 \[WIP\] This is an experimental tree shaker for JS based on [Oxc](https://oxc.rs).
 
-- **Try it online**: https://kermanx.github.io/tree-shaker/
-- **Test262 Result**: Goto [commits](https://github.com/KermanX/tree-shaker/commits/main/) and view the latest comment
-
-> [!NOTE]
-> 
-> I am currently busy with my schoolwork, so the development of this project will be slow in few months. I promise this project won't be abandoned.
+[**Try online**](https://kermanx.github.io/tree-shaker/)
 
 ## Features
 
@@ -15,11 +10,15 @@
 - Single AST pass - Analyzer as much information as possible.
 - As accurate as possible. [test262](https://github.com/tc39/test262) is used for testing.
 - May not be the fastest. (But I will try my best)
-- Will have the ability to **tree-shake React components props** soon
 
-## Demo
+## Examples
 
-Tree shake the following code (this already works!):
+### Constant Folding
+
+> This is a simple example, but it's a good start.
+
+<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<td valign="top">
 
 ```js
 export function f() {
@@ -32,7 +31,7 @@ export function f() {
 }
 ```
 
-To:
+</td><td valign="top">
 
 ```js
 export function f() {
@@ -40,13 +39,168 @@ export function f() {
 }
 ```
 
-Although the code above is very simple to analyze, but achieving this effect correctly for every codebase requires a lot of work - JS is too dynamic.
+</td></tr></tbody></table>
+
+### Dead Code Elimination
+
+<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<td valign="top">
+
+```js
+function f(value) {
+  if (value) console.log(`${value} is truthy`);
+}
+f(1);
+f(0);
+
+function g(t1, t2) {
+  if (t1 && t2) console.log(2);
+  else if (t1 || t2) console.log(1);
+  else console.log(0);
+}
+g(true, true);
+g(false, false);
+```
+
+</td><td valign="top">
+
+```js
+function f() {
+  {
+    console.log("1 is truthy");
+  }
+}
+f();
+
+function g(t1) {
+  if (t1 && true) console.log(2);
+  else {
+    console.log(0);
+  }
+}
+g(true);
+g(false);
+```
+
+</td></tr></tbody></table>
+
+### Object Property Mangling
+
+> This is beyond the scope of tree-shaking, we need a new name for this project 😇.
+
+<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<td valign="top">
+
+```js
+export function main() {
+  const obj = {
+    foo: v1,
+    [t1 ? "bar" : "baz"]: v2,
+  };
+  const key = t2 ? "foo" : "bar";
+  console.log(obj[key]);
+}
+```
+
+</td><td valign="top">
+
+```js
+export function main() {
+  const obj = {
+    a: v1,
+    [t1 ? "b" : "c"]: v2,
+  };
+  const key = t2 ? "a" : "b";
+  console.log(obj[key]);
+}
+```
+
+</td></tr></tbody></table>
+
+### JSX
+
+> `createElement` also works, if it is directly imported from `react`.
+
+<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<td valign="top">
+
+```jsx
+function Name({ name, info }) {
+  return (
+    <span>
+      {name}
+      {info && <sub> Lots of things never rendered </sub>}
+    </span>
+  );
+}
+export function Main() {
+  return <Name name={"world"} />;
+}
+```
+
+</td><td valign="top">
+
+```jsx
+function Name() {
+  return (
+    <span>
+      {"world"}
+      {}
+    </span>
+  );
+}
+export function Main() {
+  return <Name />;
+}
+```
+
+</td></tr></tbody></table>
+
+### React.js
+
+<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<td valign="top">
+
+```jsx
+import React from "react";
+const MyContext = React.createContext("default");
+function Inner() {
+  const value = React.useContext(MyContext);
+  return <div>{value}</div>;
+}
+export function main() {
+  return (
+    <MyContext.Provider value="hello">
+      <Inner />
+    </MyContext.Provider>
+  );
+}
+```
+
+</td><td valign="top">
+
+```jsx
+import React from "react";
+const MyContext = React.createContext();
+function Inner() {
+  return <div>{"hello"}</div>;
+}
+export function main() {
+  return (
+    <MyContext.Provider>
+      <Inner />
+    </MyContext.Provider>
+  );
+}
+```
+
+</td></tr></tbody></table>
 
 ## Comparison
 
-- **Rollup**: Rollup is great but somehow I couldn't understand its codebase. I hope this project can be more readable and maintainable. Currently, for the same code, this project can produce code roughly 2% smaller than Rollup (both after minification via `uglify-js`) for a Vue starter app.
+- **Rollup**: Rollup tree-shakes the code in a multi-module context, while this project is focused on a single module. For some cases, this project can remove 10% more code than Rollup.
 - **Closure Compiler**: Closure Compiler can be considered as a tree shaker + minifier, while this project is only a tree shaker (for the minifier, we have `oxc_minifier`). Theoretically, we can shake more than Closure Compiler, but we cannot compare them directly because we don't have a equivalent minifier. Also, it's written in Java, which is hard to be integrated into the JS ecosystem.
-- **swc**: swc can also be considered as a tree shaker + minifier. TBH, currently swc is much faster than this project and more complete. But it's rule-based, which is a different approach from this project. It's also not compatible with the Oxc project, thus a new tree shaker is needed.
+- **swc**: swc can also be considered as a tree shaker + minifier. TBH, currently swc is much faster and more complete. It is rule-based, which is a different approach from this project. It's also not compatible with the Oxc project, thus a new tree shaker is needed.
 
 ## Todo
 
@@ -56,7 +210,7 @@ Although the code above is very simple to analyze, but achieving this effect cor
 - Rollup-like try-scope optimization/de-optimization
 - Reuse code with oxc_minifier for JS computation logics
 - Type narrowing
-- Multiple-module support
+- Pure annotation
 
 ## Basic Approach
 
