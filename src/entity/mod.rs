@@ -12,7 +12,6 @@ mod function;
 mod label;
 mod literal;
 mod logical_result;
-mod mangable;
 mod object;
 mod operations;
 mod primitive;

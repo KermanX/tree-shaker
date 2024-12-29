@@ -36,8 +36,8 @@ impl<'a> ObjectEntity<'a> {
         }
       }
 
-      for (call_dep, getter) in getters {
-        values.push(getter.call_as_getter(analyzer, call_dep, self));
+      for getter in getters {
+        values.push(getter.call_as_getter(analyzer, analyzer.factory.empty_consumable, self));
       }
 
       if let Some(value) = analyzer.factory.try_union(values) {
@@ -65,8 +65,8 @@ impl<'a> ObjectEntity<'a> {
         let mut getters = vec![];
         properties.get(analyzer, &mut values, &mut getters, &mut non_existent);
         mem::drop(string_keyed);
-        for (call_dep, getter) in getters {
-          values.push(getter.call_as_getter(analyzer, call_dep, self));
+        for getter in getters {
+          values.push(getter.call_as_getter(analyzer, analyzer.factory.empty_consumable, self));
         }
 
         if let Some(value) = analyzer.factory.try_union(values) {

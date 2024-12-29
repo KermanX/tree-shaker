@@ -98,12 +98,11 @@ impl<'a> ObjectEntity<'a> {
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
         None,
-        vec![analyzer.consumable((dep, key))],
+        vec![if mangable { dep } else { analyzer.consumable((dep, key)) }],
         if indeterminate_getter { None } else { Some(false) },
       );
-      for (call_dep, getter) in getters {
-        // TODO: Support mangling
-        values.push(getter.call_as_getter(analyzer, call_dep, self));
+      for getter in getters {
+        values.push(getter.call_as_getter(analyzer, analyzer.factory.empty_consumable, self));
       }
       analyzer.pop_cf_scope();
     }

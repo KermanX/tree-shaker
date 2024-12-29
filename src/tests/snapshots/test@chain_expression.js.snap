@@ -5,6 +5,6 @@ input_file: src/tests/fixtures/chain_expression.js
 ---
 export function main(unknown) {
 	g?.h.i?.j?.(o?.p)?.q.r;
-	let a = { b: unknown };
-	effect(a.b?.c, void 0, NaN);
+	let a = { a: unknown };
+	effect(a.a?.c, void 0, NaN);
 }
