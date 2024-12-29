@@ -1522,6 +1522,7 @@ dependencies = [
  "oxc_ecmascript",
  "oxc_index",
  "oxc_syntax",
+ "oxc_traverse",
  "regex",
  "rustc-hash",
 ]
