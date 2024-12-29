@@ -27,7 +27,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableCollector<'a, T> {
     self.current.push(value);
   }
 
-  pub fn collect(&mut self, factory: &EntityFactory<'a>) -> Option<Consumable<'a>> {
+  pub fn try_collect(&mut self, factory: &EntityFactory<'a>) -> Option<Consumable<'a>> {
     if self.current.is_empty() {
       self.node
     } else {
@@ -40,6 +40,10 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableCollector<'a, T> {
       self.node = node;
       node
     }
+  }
+
+  pub fn collect(&mut self, factory: &EntityFactory<'a>) -> Consumable<'a> {
+    self.try_collect(factory).unwrap_or(factory.empty_consumable)
   }
 
   pub fn consume_all(self, analyzer: &mut Analyzer<'a>) {

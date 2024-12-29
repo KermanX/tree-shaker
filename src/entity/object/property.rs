@@ -48,7 +48,7 @@ impl<'a> ObjectProperty<'a> {
       }
     }
 
-    if let Some(dep) = self.non_existent.collect(analyzer.factory) {
+    if let Some(dep) = self.non_existent.try_collect(analyzer.factory) {
       non_existent.push(dep);
     } else if !self.definite && non_existent.is_empty() {
       non_existent.push(analyzer.factory.empty_consumable);
@@ -80,7 +80,7 @@ impl<'a> ObjectProperty<'a> {
       }
     }
 
-    if let Some(dep) = self.non_existent.collect(analyzer.factory) {
+    if let Some(dep) = self.non_existent.try_collect(analyzer.factory) {
       non_existent.push(dep);
     } else if !self.definite && non_existent.is_empty() {
       non_existent.push(analyzer.factory.empty_consumable);
@@ -92,7 +92,7 @@ impl<'a> ObjectProperty<'a> {
     analyzer: &Analyzer<'a>,
     indeterminate: bool,
     value: Entity<'a>,
-    setters: &mut Vec<(bool, Option<Consumable<'a>>, Entity<'a>)>,
+    setters: &mut Vec<(bool, Consumable<'a>, Entity<'a>)>,
   ) {
     let mut writable = false;
     let call_setter_indeterminately = indeterminate || self.possible_values.len() > 1;

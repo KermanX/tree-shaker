@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
           scope.mark_exhaustive_write((self.scope_context.object_scope_id, object_id));
       }
       indeterminate |= scope.is_indeterminate();
-      if let Some(dep) = scope.deps.collect(self.factory) {
+      if let Some(dep) = scope.deps.try_collect(self.factory) {
         exec_deps.push(dep);
       }
     }

@@ -74,7 +74,7 @@ pub fn check_dependencies<'a>(
     }
 
     if changed.is_empty() {
-      if let Some(rest) = rest_collector.collect(factory) {
+      if let Some(rest) = rest_collector.try_collect(factory) {
         (true, analyzer.consumable((rest, extra_collector.collect(factory))))
       } else {
         (false, analyzer.consumable(extra_collector.collect(factory)))
@@ -82,7 +82,7 @@ pub fn check_dependencies<'a>(
     } else {
       let mut deps = vec![];
       for index in &changed {
-        deps.push(collectors[*index].collect(factory).unwrap());
+        deps.push(collectors[*index].collect(factory));
         if let Some(previous) = previous.get_mut(*index) {
           *previous = None;
         }

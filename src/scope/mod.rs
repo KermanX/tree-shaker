@@ -231,7 +231,7 @@ impl<'a> Analyzer<'a> {
     let mut exec_deps = vec![];
     for _ in 0..count {
       let id = self.scope_context.cf.stack.pop().unwrap();
-      if let Some(dep) = self.scope_context.cf.get_mut(id).deps.collect(self.factory) {
+      if let Some(dep) = self.scope_context.cf.get_mut(id).deps.try_collect(self.factory) {
         exec_deps.push(dep);
       }
     }

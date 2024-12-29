@@ -168,7 +168,7 @@ impl<'a> Analyzer<'a> {
     let mut deps = vec![];
     for id in target_depth..self.scope_context.cf.stack.len() {
       let scope = self.scope_context.cf.get_mut_from_depth(id);
-      if let Some(dep) = scope.deps.collect(self.factory) {
+      if let Some(dep) = scope.deps.try_collect(self.factory) {
         deps.push(dep);
       }
     }
@@ -195,7 +195,7 @@ impl<'a> Analyzer<'a> {
     for depth in (target_depth..from_depth).rev() {
       let id = self.scope_context.cf.stack[depth];
       let cf_scope = self.scope_context.cf.get_mut(id);
-      let this_dep = cf_scope.deps.collect(self.factory);
+      let this_dep = cf_scope.deps.try_collect(self.factory);
 
       // Update exited state
       if must_exit {

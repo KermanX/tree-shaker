@@ -35,7 +35,7 @@ impl<'a> ObjectEntity<'a> {
       for possible_value in &unknown_keyed.possible_values {
         if let ObjectPropertyValue::Property(_, setter) = possible_value {
           if let Some(setter) = setter {
-            setters.push((true, None, *setter));
+            setters.push((true, analyzer.factory.empty_consumable, *setter));
           }
           indeterminate = true;
         }
@@ -124,7 +124,7 @@ impl<'a> ObjectEntity<'a> {
         if indeterminate { None } else { Some(false) },
       );
       for (_, call_dep, setter) in setters {
-        setter.call_as_setter(analyzer, analyzer.consumable(call_dep), rc, non_mangable_value);
+        setter.call_as_setter(analyzer, call_dep, rc, non_mangable_value);
       }
       analyzer.pop_cf_scope();
     }

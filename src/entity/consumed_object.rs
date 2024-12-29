@@ -125,7 +125,7 @@ pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Iterated
     analyzer.refer_to_global();
     (vec![], Some(analyzer.factory.unknown()), analyzer.factory.empty_consumable)
   } else {
-    (vec![], Some(analyzer.factory.unknown()), analyzer.consumable(dep))
+    (vec![], Some(analyzer.factory.unknown()), dep)
   }
 }
 
