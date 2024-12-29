@@ -64,7 +64,7 @@ impl<'a> TreeShaker<'a> {
 
       // Step 2: Remove dead code (transform)
       let transformer = Transformer::new(analyzer);
-      allocator.alloc(transformer.transform_program(ast))
+      transformer.transform_program(ast)
     } else {
       ast
     };
