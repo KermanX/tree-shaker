@@ -208,7 +208,7 @@ macro_rules! unknown_entity_ctors {
   ($($name:ident -> $var:ident,)*) => {
     $(
       #[allow(unused)]
-      pub fn $name<T: ConsumableTrait<'a> + 'a>(&self, dep: T) -> Entity<'a> {
+      pub fn $name<T: ConsumableTrait<'a> + Copy + 'a>(&self, dep: T) -> Entity<'a> {
         self.computed(self.$var, dep)
       }
     )*

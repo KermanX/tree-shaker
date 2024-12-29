@@ -4,15 +4,12 @@ use super::{
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use rustc_hash::FxHashSet;
-use std::{
-  cell::{Cell, RefCell},
-  rc::Rc,
-};
+use std::cell::{Cell, RefCell};
 
 #[derive(Debug)]
 pub struct CollectedEntity<'a> {
   val: Entity<'a>,
-  deps: Rc<RefCell<Vec<Entity<'a>>>>,
+  deps: &'a RefCell<Vec<Entity<'a>>>,
   consumed: Cell<bool>,
 }
 
@@ -94,7 +91,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
   }
 
   fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    analyzer.factory.computed(self.val.jsx(analyzer, props), self.deps.clone())
+    analyzer.factory.computed(self.val.jsx(analyzer, props), self.deps)
   }
 
   fn r#await(
@@ -176,7 +173,7 @@ impl<'a> CollectedEntity<'a> {
     if self.consumed.get() || self.deps.borrow().is_empty() {
       val
     } else {
-      analyzer.factory.collected(val, self.deps.clone())
+      analyzer.factory.collected(val, self.deps)
     }
   }
 
@@ -188,11 +185,7 @@ impl<'a> CollectedEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn collected(
-    &self,
-    val: Entity<'a>,
-    collected: impl Into<Rc<RefCell<Vec<Entity<'a>>>>>,
-  ) -> Entity<'a> {
-    self.entity(CollectedEntity { val, deps: collected.into(), consumed: Cell::new(false) })
+  pub fn collected(&self, val: Entity<'a>, collected: &'a RefCell<Vec<Entity<'a>>>) -> Entity<'a> {
+    self.entity(CollectedEntity { val, deps: collected, consumed: Cell::new(false) })
   }
 }

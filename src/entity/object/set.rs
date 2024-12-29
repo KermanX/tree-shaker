@@ -44,7 +44,7 @@ impl<'a> ObjectEntity<'a> {
 
     let key = key.get_to_property_key(analyzer);
 
-    let value = analyzer.factory.computed(value, (exec_deps, dep));
+    let value = analyzer.factory.computed(value, analyzer.consumable((exec_deps, dep)));
     let non_mangable_value = analyzer.factory.computed(value, key);
 
     if let Some(key_literals) = key.get_to_literals(analyzer) {

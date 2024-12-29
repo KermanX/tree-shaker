@@ -283,7 +283,7 @@ impl<'a> EntityFactory<'a> {
     }
   }
 
-  pub fn computed_union<T: ConsumableTrait<'a> + 'a>(
+  pub fn computed_union<T: ConsumableTrait<'a> + Copy + 'a>(
     &self,
     values: Vec<Entity<'a>>,
     dep: T,

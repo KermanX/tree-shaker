@@ -11,13 +11,13 @@ use rustc_hash::FxHashSet;
 use std::cell::Cell;
 
 #[derive(Debug)]
-pub struct ComputedEntity<'a> {
+pub struct ComputedEntity<'a, T: ConsumableTrait<'a> + Copy + 'a> {
   val: Entity<'a>,
-  dep: Consumable<'a>,
+  dep: T,
   consumed: Cell<bool>,
 }
 
-impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
+impl<'a, T: ConsumableTrait<'a> + Copy + 'a> EntityTrait<'a> for ComputedEntity<'a, T> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
@@ -171,12 +171,12 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
   }
 }
 
-impl<'a> ComputedEntity<'a> {
+impl<'a, T: ConsumableTrait<'a> + Copy + 'a> ComputedEntity<'a, T> {
   fn forward_dep(&self, dep: Consumable<'a>, analyzer: &Analyzer<'a>) -> Consumable<'a> {
     if self.consumed.get() {
       dep
     } else {
-      analyzer.consumable((self.dep, dep))
+      analyzer.factory.consumable_no_once((self.dep, dep))
     }
   }
 
@@ -190,14 +190,18 @@ impl<'a> ComputedEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn computed(&self, val: Entity<'a>, dep: impl ConsumableTrait<'a> + 'a) -> Entity<'a> {
-    self.entity(ComputedEntity { val, dep: self.consumable(dep), consumed: Cell::new(false) })
+  pub fn computed<T: ConsumableTrait<'a> + Copy + 'a>(
+    &self,
+    val: Entity<'a>,
+    dep: T,
+  ) -> Entity<'a> {
+    self.entity(ComputedEntity { val, dep, consumed: Cell::new(false) })
   }
 
   pub fn optional_computed(
     &self,
     val: Entity<'a>,
-    dep: Option<impl ConsumableTrait<'a> + 'a>,
+    dep: Option<impl ConsumableTrait<'a> + Copy + 'a>,
   ) -> Entity<'a> {
     match dep {
       Some(dep) => self.computed(val, dep),

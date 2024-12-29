@@ -98,7 +98,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               result.push(self.get_length().map_or_else(
                 || {
                   let dep = self.rest.borrow().clone();
-                  analyzer.factory.computed_unknown_number(dep)
+                  analyzer.factory.computed_unknown_number(analyzer.consumable(dep))
                 },
                 |length| analyzer.factory.number(length as f64, None),
               ));
@@ -115,10 +115,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       }
       analyzer.factory.computed_union(result, dep)
     } else {
-      analyzer.factory.computed_unknown((
+      analyzer.factory.computed_unknown(analyzer.consumable((
         self.elements.borrow().iter().chain(self.rest.borrow().iter()).cloned().collect::<Vec<_>>(),
         dep,
-      ))
+      )))
     }
   }
 

@@ -163,7 +163,7 @@ impl<'a> EntityFactory<'a> {
     self.immutable_unknown
   }
 
-  pub fn computed_unknown(&self, dep: impl ConsumableTrait<'a> + 'a) -> Entity<'a> {
+  pub fn computed_unknown(&self, dep: impl ConsumableTrait<'a> + Copy + 'a) -> Entity<'a> {
     self.computed(self.immutable_unknown, dep)
   }
 }

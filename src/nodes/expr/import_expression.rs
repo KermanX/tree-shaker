@@ -13,7 +13,7 @@ impl<'a> Analyzer<'a> {
 
     // FIXME: if have side effects, then consume all deps
 
-    self.factory.computed_unknown(deps)
+    self.factory.computed_unknown(self.consumable(deps))
   }
 }
 

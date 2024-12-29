@@ -109,9 +109,9 @@ impl<'a> ObjectEntity<'a> {
 
     let value = analyzer.factory.try_union(values).unwrap_or(analyzer.factory.undefined);
     if mangable {
-      analyzer.factory.computed(value, (non_existent, dep))
+      analyzer.factory.computed(value, analyzer.consumable((non_existent, dep)))
     } else {
-      analyzer.factory.computed(value, (non_existent, dep, key))
+      analyzer.factory.computed(value, analyzer.consumable((non_existent, dep, key)))
     }
   }
 }

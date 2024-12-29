@@ -1,7 +1,7 @@
 use super::{Entity, LiteralEntity};
 use crate::{analyzer::Analyzer, mangling::MangleAtom, transformer::Transformer};
 use oxc::{ast::ast::Expression, span::Span};
-use std::{cell::RefCell, mem, rc::Rc};
+use std::{cell::RefCell, mem};
 
 #[derive(Debug, Default)]
 pub struct LiteralCollector<'a> {
@@ -46,8 +46,9 @@ impl<'a> LiteralCollector<'a> {
     if self.collected.is_empty() {
       entity
     } else {
-      let val =
-        analyzer.factory.collected(entity, Rc::new(RefCell::new(mem::take(&mut self.collected))));
+      let val = analyzer
+        .factory
+        .collected(entity, analyzer.factory.alloc(RefCell::new(mem::take(&mut self.collected))));
       // if let Some(mangle_atom) = mem::take(&mut self.mangle_atom) {
       //   analyzer.factory.computed(val, mangle_atom)
       // } else {

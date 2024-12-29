@@ -1,6 +1,9 @@
 use super::CfScopeKind;
 use crate::{
-  analyzer::Analyzer, consumable::ConsumableTrait, dep::DepId, entity::Entity,
+  analyzer::Analyzer,
+  consumable::{Consumable, ConsumableTrait},
+  dep::DepId,
+  entity::Entity,
   transformer::Transformer,
 };
 use rustc_hash::FxHashMap;
@@ -66,8 +69,8 @@ impl<'a> Analyzer<'a> {
     maybe_alternate: bool,
     is_consequent: bool,
     has_contra: bool,
-  ) -> impl ConsumableTrait<'a> + 'a {
-    self.push_conditional_cf_scope(
+  ) -> Consumable<'a> {
+    let dep = self.push_conditional_cf_scope(
       dep_id,
       kind,
       test,
@@ -75,7 +78,8 @@ impl<'a> Analyzer<'a> {
       maybe_alternate,
       is_consequent,
       has_contra,
-    )
+    );
+    self.consumable(dep)
   }
 
   pub fn forward_logical_left_val(
@@ -96,9 +100,9 @@ impl<'a> Analyzer<'a> {
     left: Entity<'a>,
     maybe_left: bool,
     maybe_right: bool,
-  ) -> impl ConsumableTrait<'a> + 'a {
+  ) -> Consumable<'a> {
     assert!(maybe_right);
-    self.push_conditional_cf_scope(
+    let dep = self.push_conditional_cf_scope(
       dep_id,
       CfScopeKind::LogicalRight,
       left,
@@ -106,7 +110,8 @@ impl<'a> Analyzer<'a> {
       maybe_right,
       false,
       false,
-    )
+    );
+    self.consumable(dep)
   }
 
   #[allow(clippy::too_many_arguments)]
