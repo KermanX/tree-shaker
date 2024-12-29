@@ -19,8 +19,8 @@ pub struct CollectedEntity<'a> {
 impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
-    self.val.consume(analyzer);
     self.consume_deps(analyzer);
+    self.val.consume(analyzer);
   }
 
   fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
@@ -173,7 +173,11 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
 impl<'a> CollectedEntity<'a> {
   fn forward(&self, val: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.collected(val, self.deps.clone())
+    if self.consumed.get() || self.deps.borrow().is_empty() {
+      val
+    } else {
+      analyzer.factory.collected(val, self.deps.clone())
+    }
   }
 
   fn consume_deps(&self, analyzer: &mut Analyzer<'a>) {
