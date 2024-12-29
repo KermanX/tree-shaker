@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, build_effect, consumable::ConsumableNode, entity::Entity,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{Expression, ImportExpression};
 
 impl<'a> Analyzer<'a> {
@@ -16,7 +13,7 @@ impl<'a> Analyzer<'a> {
 
     // FIXME: if have side effects, then consume all deps
 
-    self.factory.computed_unknown(ConsumableNode::new(deps))
+    self.factory.computed_unknown(self.consumable(deps))
   }
 }
 

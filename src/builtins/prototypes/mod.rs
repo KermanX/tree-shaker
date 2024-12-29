@@ -15,7 +15,7 @@ use std::fmt;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable},
+  consumable::Consumable,
   entity::{Entity, EntityFactory, LiteralEntity},
 };
 use oxc::semantic::SymbolId;
@@ -74,7 +74,7 @@ impl<'a> Prototype<'a> {
     dep: Consumable<'a>,
   ) -> Entity<'a> {
     let key = key.get_to_property_key(analyzer);
-    let dep = box_consumable((dep, rc, key));
+    let dep = analyzer.consumable((dep, rc, key));
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut values = vec![];
       for key_literal in key_literals {

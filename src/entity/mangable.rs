@@ -3,10 +3,7 @@ use super::{
   Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
-  analyzer::Analyzer,
-  consumable::{box_consumable, Consumable},
-  mangling::MangleConstraint,
-  use_consumed_flag,
+  analyzer::Analyzer, consumable::Consumable, mangling::MangleConstraint, use_consumed_flag,
 };
 use rustc_hash::FxHashSet;
 use std::cell::Cell;
@@ -30,7 +27,7 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
   }
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    self.val.unknown_mutate(analyzer, self.forward_dep(dep));
+    self.val.unknown_mutate(analyzer, self.forward_dep(dep, analyzer));
   }
 
   fn get_property(
@@ -40,7 +37,7 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    self.val.get_property(analyzer, self.forward_dep(dep), key)
+    self.val.get_property(analyzer, self.forward_dep(dep, analyzer), key)
   }
 
   fn set_property(
@@ -51,7 +48,7 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.val.set_property(analyzer, self.forward_dep(dep), key, value);
+    self.val.set_property(analyzer, self.forward_dep(dep, analyzer), key, value);
   }
 
   fn enumerate_properties(
@@ -60,11 +57,11 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
-    self.val.enumerate_properties(analyzer, self.forward_dep(dep))
+    self.val.enumerate_properties(analyzer, self.forward_dep(dep, analyzer))
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-    self.val.delete_property(analyzer, self.forward_dep(dep), key)
+    self.val.delete_property(analyzer, self.forward_dep(dep, analyzer), key)
   }
 
   fn call(
@@ -75,7 +72,7 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    self.val.call(analyzer, self.forward_dep(dep), this, args)
+    self.val.call(analyzer, self.forward_dep(dep, analyzer), this, args)
   }
 
   fn construct(
@@ -85,7 +82,7 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    self.val.construct(analyzer, self.forward_dep(dep), args)
+    self.val.construct(analyzer, self.forward_dep(dep, analyzer), args)
   }
 
   fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
@@ -98,7 +95,7 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
-    self.val.r#await(analyzer, self.forward_dep(dep))
+    self.val.r#await(analyzer, self.forward_dep(dep, analyzer))
   }
 
   fn iterate(
@@ -107,11 +104,16 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> IteratedElements<'a> {
-    self.val.iterate(analyzer, self.forward_dep(dep))
+    self.val.iterate(analyzer, self.forward_dep(dep, analyzer))
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    self.val.get_destructable(self.forward_dep(dep))
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
+    self.val.get_destructable(analyzer, self.forward_dep(dep, analyzer))
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -160,11 +162,11 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
 }
 
 impl<'a> MangableEntity<'a> {
-  pub fn forward_dep(&self, dep: Consumable<'a>) -> Consumable<'a> {
+  pub fn forward_dep(&self, dep: Consumable<'a>, analyzer: &Analyzer<'a>) -> Consumable<'a> {
     if self.consumed.get() {
       dep
     } else {
-      box_consumable((self.deps, self.constraint, dep))
+      analyzer.consumable((self.deps, self.constraint, dep))
     }
   }
 

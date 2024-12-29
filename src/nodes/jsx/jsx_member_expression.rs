@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::Entity,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::ast::{Expression, JSXMemberExpression},
@@ -11,7 +8,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_jsx_member_expression(&mut self, node: &'a JSXMemberExpression<'a>) -> Entity<'a> {
     let object = self.exec_jsx_member_expression_object(&node.object);
     let key = self.factory.string(&node.property.name);
-    object.get_property(self, box_consumable(AstKind2::JSXMemberExpression(node)), key)
+    object.get_property(self, self.consumable(AstKind2::JSXMemberExpression(node)), key)
   }
 }
 

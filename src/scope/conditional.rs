@@ -1,7 +1,7 @@
 use super::CfScopeKind;
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableTrait},
+  consumable::{Consumable, ConsumableTrait},
   dep::DepId,
   entity::Entity,
   transformer::Transformer,
@@ -20,12 +20,12 @@ struct ConditionalData<'a> {
 
 #[derive(Debug, Default)]
 pub struct ConditionalDataMap<'a> {
-  call_to_deps: FxHashMap<DepId, Vec<&'a ConditionalBranchConsumable<'a>>>,
+  call_to_branches: FxHashMap<DepId, Vec<&'a ConditionalBranch<'a>>>,
   node_to_data: FxHashMap<DepId, ConditionalData<'a>>,
 }
 
 #[derive(Debug, Clone)]
-struct ConditionalBranchConsumable<'a> {
+struct ConditionalBranch<'a> {
   dep_id: DepId,
   is_true_branch: bool,
   maybe_true: bool,
@@ -34,7 +34,7 @@ struct ConditionalBranchConsumable<'a> {
   referred: &'a Cell<bool>,
 }
 
-impl<'a> ConditionalBranchConsumable<'a> {
+impl<'a> ConditionalBranch<'a> {
   fn refer_with_data(&self, data: &mut ConditionalData<'a>) {
     if !self.referred.get() {
       self.referred.set(true);
@@ -51,13 +51,10 @@ impl<'a> ConditionalBranchConsumable<'a> {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for &'a ConditionalBranchConsumable<'a> {
+impl<'a> ConsumableTrait<'a> for &'a ConditionalBranch<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let data = analyzer.get_conditional_data_mut(self.dep_id);
     self.refer_with_data(data);
-  }
-  fn cloned(&self) -> Consumable<'a> {
-    Box::new(*self)
   }
 }
 
@@ -72,8 +69,8 @@ impl<'a> Analyzer<'a> {
     maybe_alternate: bool,
     is_consequent: bool,
     has_contra: bool,
-  ) -> impl ConsumableTrait<'a> + 'a {
-    self.push_conditional_cf_scope(
+  ) -> Consumable<'a> {
+    let dep = self.push_conditional_cf_scope(
       dep_id,
       kind,
       test,
@@ -81,7 +78,8 @@ impl<'a> Analyzer<'a> {
       maybe_alternate,
       is_consequent,
       has_contra,
-    )
+    );
+    self.consumable(dep)
   }
 
   pub fn forward_logical_left_val(
@@ -102,9 +100,9 @@ impl<'a> Analyzer<'a> {
     left: Entity<'a>,
     maybe_left: bool,
     maybe_right: bool,
-  ) -> impl ConsumableTrait<'a> + 'a {
+  ) -> Consumable<'a> {
     assert!(maybe_right);
-    self.push_conditional_cf_scope(
+    let dep = self.push_conditional_cf_scope(
       dep_id,
       CfScopeKind::LogicalRight,
       left,
@@ -112,7 +110,8 @@ impl<'a> Analyzer<'a> {
       maybe_right,
       false,
       false,
-    )
+    );
+    self.consumable(dep)
   }
 
   #[allow(clippy::too_many_arguments)]
@@ -132,7 +131,7 @@ impl<'a> Analyzer<'a> {
     self.push_cf_scope_with_deps(
       kind,
       None,
-      vec![box_consumable(dep)],
+      vec![self.consumable(dep)],
       if maybe_true && maybe_false { None } else { Some(false) },
     );
 
@@ -147,41 +146,40 @@ impl<'a> Analyzer<'a> {
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
-  ) -> &'a ConditionalBranchConsumable<'a> {
+  ) -> &'a ConditionalBranch<'a> {
     let dep_id = dep_id.into();
     let call_id = self.call_scope().call_id;
 
-    let ConditionalDataMap { call_to_deps, node_to_data } = &mut self.conditional_data;
+    let branch = self.allocator.alloc(ConditionalBranch {
+      dep_id,
+      is_true_branch: is_true,
+      maybe_true,
+      maybe_false,
+      test,
+      referred: self.allocator.alloc(Cell::new(false)),
+    });
 
-    let dep: &'a ConditionalBranchConsumable<'a> =
-      self.allocator.alloc(ConditionalBranchConsumable {
-        dep_id,
-        is_true_branch: is_true,
-        maybe_true,
-        maybe_false,
-        test,
-        referred: self.allocator.alloc(Cell::new(false)),
-      });
+    let ConditionalDataMap { call_to_branches, node_to_data } = &mut self.conditional_data;
 
     if has_contra {
-      call_to_deps.entry(call_id).or_insert_with(Default::default).push(dep);
+      call_to_branches.entry(call_id).or_insert_with(Default::default).push(branch);
     }
 
     node_to_data.entry(dep_id).or_insert_with(ConditionalData::default);
 
-    dep
+    branch
   }
 
   fn is_contra_branch_impure(
     &mut self,
-    branch: &'a ConditionalBranchConsumable<'a>,
+    branch: &'a ConditionalBranch<'a>,
   ) -> Option<&mut ConditionalData<'a>> {
     let data = self.get_conditional_data_mut(branch.dep_id);
     if branch.is_true_branch { data.impure_false } else { data.impure_true }.then_some(data)
   }
 
   pub fn post_analyze_handle_conditional(&mut self) -> bool {
-    for (call_id, branches) in mem::take(&mut self.conditional_data.call_to_deps) {
+    for (call_id, branches) in mem::take(&mut self.conditional_data.call_to_branches) {
       if self.is_referred(call_id) {
         let mut remaining_branches = vec![];
         for branch in branches {
@@ -192,10 +190,10 @@ impl<'a> Analyzer<'a> {
           }
         }
         if !remaining_branches.is_empty() {
-          self.conditional_data.call_to_deps.insert(call_id, remaining_branches);
+          self.conditional_data.call_to_branches.insert(call_id, remaining_branches);
         }
       } else {
-        self.conditional_data.call_to_deps.insert(call_id, branches);
+        self.conditional_data.call_to_branches.insert(call_id, branches);
       }
     }
 

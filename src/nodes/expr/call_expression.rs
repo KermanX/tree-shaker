@@ -1,6 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, entity::Entity,
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 use oxc::{
   ast::{
@@ -53,7 +52,7 @@ impl<'a> Analyzer<'a> {
 
     let args = self.exec_arguments(&node.arguments);
 
-    let ret_val = callee.call(self, box_consumable(dep_id), this, args);
+    let ret_val = callee.call(self, self.consumable(dep_id), this, args);
 
     Ok((scope_count, ret_val, undefined))
   }

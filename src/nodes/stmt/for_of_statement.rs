@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, scope::CfScopeKind,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{ForOfStatement, Statement},
   span::GetSpan,
@@ -23,12 +20,12 @@ impl<'a> Analyzer<'a> {
     self.declare_for_statement_left(&node.left);
 
     let Some(iterated) =
-      right.iterate_result_union(self, box_consumable(AstKind2::ForOfStatement(node)))
+      right.iterate_result_union(self, self.consumable(AstKind2::ForOfStatement(node)))
     else {
       return;
     };
 
-    let dep = box_consumable((AstKind2::ForOfStatement(node), right));
+    let dep = self.consumable((AstKind2::ForOfStatement(node), right));
 
     self.push_cf_scope_with_deps(
       CfScopeKind::BreakableWithoutLabel,

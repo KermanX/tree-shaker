@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, scope::CfScopeKind,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{ForStatement, ForStatementInit, Statement},
   span::GetSpan,
@@ -28,9 +25,9 @@ impl<'a> Analyzer<'a> {
       if test.test_truthy() == Some(false) {
         return;
       }
-      box_consumable((AstKind2::ForStatement(node), test))
+      self.consumable((AstKind2::ForStatement(node), test))
     } else {
-      box_consumable(AstKind2::ForStatement(node))
+      self.consumable(AstKind2::ForStatement(node))
     };
 
     self.push_cf_scope_with_deps(
@@ -53,7 +50,8 @@ impl<'a> Analyzer<'a> {
 
       if let Some(test) = &node.test {
         let test = analyzer.exec_expression(test);
-        analyzer.cf_scope_mut().push_dep(box_consumable(test));
+        let test = analyzer.consumable(test);
+        analyzer.cf_scope_mut().push_dep(test);
       }
     });
     self.pop_cf_scope();

@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::ObjectEntity,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::ObjectEntity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::ast::{
@@ -23,7 +20,7 @@ impl<'a> Analyzer<'a> {
         }
         JSXAttributeItem::SpreadAttribute(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(self, box_consumable(dep_id), argument);
+          object.init_spread(self, self.consumable(dep_id), argument);
         }
       }
     }

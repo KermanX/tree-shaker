@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableCollector, ConsumableNode},
+  consumable::{Consumable, ConsumableCollector, ConsumableVec},
   entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
 };
@@ -38,7 +38,7 @@ impl<'a> ObjectProperty<'a> {
     analyzer: &Analyzer<'a>,
     values: &mut Vec<Entity<'a>>,
     getters: &mut Vec<Entity<'a>>,
-    non_existent: &mut Vec<ConsumableNode<'a>>,
+    non_existent: &mut ConsumableVec<'a>,
   ) {
     for possible_value in &self.possible_values {
       match possible_value {
@@ -48,10 +48,10 @@ impl<'a> ObjectProperty<'a> {
       }
     }
 
-    if let Some(dep) = self.non_existent.try_collect() {
+    if let Some(dep) = self.non_existent.try_collect(analyzer.factory) {
       non_existent.push(dep);
     } else if !self.definite && non_existent.is_empty() {
-      non_existent.push(ConsumableNode::new_box(()));
+      non_existent.push(analyzer.factory.empty_consumable);
     }
   }
 
@@ -60,7 +60,7 @@ impl<'a> ObjectProperty<'a> {
     analyzer: &Analyzer<'a>,
     values: &mut Vec<Entity<'a>>,
     getters: &mut Vec<Entity<'a>>,
-    non_existent: &mut Vec<ConsumableNode<'a>>,
+    non_existent: &mut ConsumableVec<'a>,
     key: Entity<'a>,
     key_atom: MangleAtom,
   ) {
@@ -80,27 +80,30 @@ impl<'a> ObjectProperty<'a> {
       }
     }
 
-    if let Some(dep) = self.non_existent.try_collect() {
+    if let Some(dep) = self.non_existent.try_collect(analyzer.factory) {
       non_existent.push(dep);
     } else if !self.definite && non_existent.is_empty() {
-      non_existent.push(ConsumableNode::new_box(()));
+      non_existent.push(analyzer.factory.empty_consumable);
     }
   }
 
   pub fn set(
     &mut self,
+    analyzer: &Analyzer<'a>,
     indeterminate: bool,
     value: Entity<'a>,
-    setters: &mut Vec<(bool, Option<ConsumableNode<'a>>, Entity<'a>)>,
+    setters: &mut Vec<(bool, Consumable<'a>, Entity<'a>)>,
   ) {
     let mut writable = false;
     let call_setter_indeterminately = indeterminate || self.possible_values.len() > 1;
     for possible_value in &self.possible_values {
       match *possible_value {
         ObjectPropertyValue::Field(_, false) => writable = true,
-        ObjectPropertyValue::Property(_, Some(setter)) => {
-          setters.push((call_setter_indeterminately, self.non_existent.try_collect(), setter))
-        }
+        ObjectPropertyValue::Property(_, Some(setter)) => setters.push((
+          call_setter_indeterminately,
+          self.non_existent.collect(analyzer.factory),
+          setter,
+        )),
         _ => {}
       }
     }

@@ -27,7 +27,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     }
 
     for (_, entity) in &self.arguments {
-      entity.unknown_mutate(analyzer, dep.cloned());
+      entity.unknown_mutate(analyzer, dep);
     }
   }
 
@@ -109,7 +109,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     let mut rest: Option<Vec<Entity<'a>>> = None;
     for (spread, entity) in &self.arguments {
       if *spread {
-        if let Some(iterated) = entity.iterate_result_union(analyzer, dep.cloned()) {
+        if let Some(iterated) = entity.iterate_result_union(analyzer, dep) {
           if let Some(rest) = &mut rest {
             rest.push(iterated);
           } else {
@@ -125,7 +125,12 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     (elements, rest.map(|val| analyzer.factory.union(val)), dep)
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, _dep: Consumable<'a>) -> Consumable<'a> {
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    _analyzer: &Analyzer<'a>,
+    _dep: Consumable<'a>,
+  ) -> Consumable<'a> {
     unreachable!()
   }
 

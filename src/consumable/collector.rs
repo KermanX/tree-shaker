@@ -1,11 +1,11 @@
-use super::{Consumable, ConsumableNode, ConsumableTrait};
-use crate::analyzer::Analyzer;
+use super::{Consumable, ConsumableTrait};
+use crate::{analyzer::Analyzer, entity::EntityFactory};
 use std::mem;
 
 #[derive(Debug)]
 pub struct ConsumableCollector<'a, T: ConsumableTrait<'a> + 'a = Consumable<'a>> {
   pub current: Vec<T>,
-  pub node: Option<ConsumableNode<'a>>,
+  pub node: Option<Consumable<'a>>,
 }
 
 impl<'a, T: ConsumableTrait<'a> + 'a> Default for ConsumableCollector<'a, T> {
@@ -27,23 +27,23 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableCollector<'a, T> {
     self.current.push(value);
   }
 
-  pub fn try_collect(&mut self) -> Option<ConsumableNode<'a>> {
+  pub fn try_collect(&mut self, factory: &EntityFactory<'a>) -> Option<Consumable<'a>> {
     if self.current.is_empty() {
-      self.node.clone()
+      self.node
     } else {
       let current = mem::take(&mut self.current);
-      let node = Some(if let Some(node) = self.node.take() {
-        ConsumableNode::new_box((current, node))
+      let node = Some(if let Some(node) = self.node {
+        factory.consumable((current, node))
       } else {
-        ConsumableNode::new_box(current)
+        factory.consumable(current)
       });
-      self.node = node.clone();
+      self.node = node;
       node
     }
   }
 
-  pub fn collect(&mut self) -> ConsumableNode<'a> {
-    self.try_collect().unwrap_or_else(|| ConsumableNode::new_box(()))
+  pub fn collect(&mut self, factory: &EntityFactory<'a>) -> Consumable<'a> {
+    self.try_collect(factory).unwrap_or(factory.empty_consumable)
   }
 
   pub fn consume_all(self, analyzer: &mut Analyzer<'a>) {
@@ -62,13 +62,6 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableCollector<'a, T> {
   }
 
   pub fn may_not_referred(&self) -> bool {
-    if !self.current.is_empty() {
-      return true;
-    }
-    if let Some(node) = &self.node {
-      node.may_not_referred()
-    } else {
-      false
-    }
+    !self.current.is_empty() || self.node.is_some()
   }
 }

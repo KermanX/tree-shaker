@@ -1,11 +1,14 @@
-use crate::TreeShakeConfig;
+use crate::{
+  consumable::{Consumable, LazyConsumable},
+  TreeShakeConfig,
+};
 
 use super::{
   arguments::ArgumentsEntity, Entity, LiteralEntity, PrimitiveEntity, PureBuiltinFnEntity,
   UnknownEntity,
 };
 use oxc::allocator::Allocator;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 
 pub struct EntityFactory<'a> {
   pub allocator: &'a Allocator,
@@ -37,6 +40,9 @@ pub struct EntityFactory<'a> {
 
   pub empty_arguments: Entity<'a>,
   pub unmatched_prototype_property: Entity<'a>,
+
+  pub empty_consumable: Consumable<'a>,
+  pub consumed_lazy_consumable: LazyConsumable<'a>,
 }
 
 impl<'a> EntityFactory<'a> {
@@ -76,6 +82,9 @@ impl<'a> EntityFactory<'a> {
     let unmatched_prototype_property =
       if config.unmatched_prototype_property_as_undefined { undefined } else { immutable_unknown };
 
+    let empty_consumable = Consumable(allocator.alloc(()));
+    let consumed_lazy_consumable = LazyConsumable(allocator.alloc(RefCell::new(None)));
+
     EntityFactory {
       allocator,
       instance_id_counter: Cell::new(0),
@@ -106,6 +115,9 @@ impl<'a> EntityFactory<'a> {
 
       empty_arguments,
       unmatched_prototype_property,
+
+      empty_consumable,
+      consumed_lazy_consumable,
     }
   }
 

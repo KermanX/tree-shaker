@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableCollector, ConsumableNode, ConsumableTrait},
+  consumable::{Consumable, ConsumableCollector},
   use_consumed_flag,
 };
 use oxc::semantic::{ScopeId, SymbolId};
@@ -58,7 +58,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
 
-    self.deps.borrow_mut().push(box_consumable((exec_deps, dep)));
+    self.deps.borrow_mut().push(analyzer.consumable((exec_deps, dep)));
   }
 
   fn get_property(
@@ -78,7 +78,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       return analyzer.factory.computed_unknown((rc, dep, key));
     }
 
-    let dep = ConsumableNode::new((self.deps.borrow_mut().collect(), dep, key));
+    let dep = analyzer.consumable((self.deps.borrow_mut().collect(analyzer.factory), dep, key));
     let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut result = vec![];
@@ -97,8 +97,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
             } else if key == "length" {
               result.push(self.get_length().map_or_else(
                 || {
-                  let dep = ConsumableNode::new(self.rest.borrow().clone());
-                  analyzer.factory.computed_unknown_number(dep)
+                  let dep = self.rest.borrow().clone();
+                  analyzer.factory.computed_unknown_number(analyzer.consumable(dep))
                 },
                 |length| analyzer.factory.number(length as f64, None),
               ));
@@ -115,18 +115,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       }
       analyzer.factory.computed_union(result, dep)
     } else {
-      analyzer.factory.computed_unknown((
-        ConsumableNode::new(
-          self
-            .elements
-            .borrow()
-            .iter()
-            .chain(self.rest.borrow().iter())
-            .cloned()
-            .collect::<Vec<_>>(),
-        ),
+      analyzer.factory.computed_unknown(analyzer.consumable((
+        self.elements.borrow().iter().chain(self.rest.borrow().iter()).cloned().collect::<Vec<_>>(),
         dep,
-      ))
+      )))
     }
   }
 
@@ -208,7 +200,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         }
       }
       if has_effect {
-        self.add_assignment_dep(exec_deps, dep);
+        let mut deps = self.deps.borrow_mut();
+        deps.push(analyzer.consumable((exec_deps, dep)));
       }
       return;
     }
@@ -216,7 +209,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     // Unknown
     let mut deps = self.deps.borrow_mut();
     deps.push(dep);
-    deps.push(box_consumable((exec_deps, key.get_to_property_key(analyzer), value)));
+    deps.push(analyzer.consumable((exec_deps, key.get_to_property_key(analyzer), value)));
   }
 
   fn enumerate_properties(
@@ -234,7 +227,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if !self.deps.borrow().is_empty() {
       return (
         vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
-        box_consumable((rc, dep)),
+        analyzer.consumable((rc, dep)),
       );
     }
 
@@ -255,7 +248,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       ));
     }
 
-    (entries, box_consumable((self.deps.borrow_mut().collect(), dep.cloned())))
+    (entries, analyzer.consumable((self.deps.borrow_mut().collect(analyzer.factory), dep)))
   }
 
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
@@ -272,7 +265,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
     let mut deps = self.deps.borrow_mut();
     deps.push(dep);
-    deps.push(box_consumable((exec_deps, key.get_to_property_key(analyzer))));
+    deps.push(analyzer.consumable((exec_deps, key.get_to_property_key(analyzer))));
   }
 
   fn call(
@@ -325,17 +318,22 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
     if !self.deps.borrow().is_empty() {
-      return (vec![], Some(analyzer.factory.unknown()), box_consumable((rc, dep)));
+      return (vec![], Some(analyzer.factory.unknown()), analyzer.consumable((rc, dep)));
     }
 
     (
       self.elements.borrow().clone(),
       analyzer.factory.try_union(self.rest.borrow().clone()),
-      box_consumable((dep, self.deps.borrow_mut().collect())),
+      analyzer.consumable((dep, self.deps.borrow_mut().collect(analyzer.factory))),
     )
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    _analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
     dep
   }
 
@@ -412,15 +410,6 @@ impl<'a> ArrayEntity<'a> {
     } else {
       None
     }
-  }
-
-  fn add_assignment_dep<T: ConsumableTrait<'a> + 'a>(
-    &self,
-    exec_deps: ConsumableNode<'a, T>,
-    dep: impl ConsumableTrait<'a> + 'a,
-  ) {
-    let mut deps = self.deps.borrow_mut();
-    deps.push(box_consumable((exec_deps, dep)));
   }
 }
 

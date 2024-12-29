@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::box_consumable, entity::Entity,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{ArrayExpression, ArrayExpressionElement, Expression, SpreadElement},
   span::GetSpan,
@@ -28,7 +25,7 @@ impl<'a> Analyzer<'a> {
           }
         }
         _ => {
-          let dep = box_consumable(AstKind2::ArrayExpressionElement(element));
+          let dep = self.consumable(AstKind2::ArrayExpressionElement(element));
           let value = self.exec_expression(element.to_expression());
           let element = self.factory.computed(value, dep);
           if rest.is_empty() {

@@ -1,7 +1,7 @@
 use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableNode},
+  consumable::Consumable,
   entity::{consumed_object, Entity, LiteralEntity},
 };
 
@@ -100,7 +100,7 @@ impl<'a> ObjectEntity<'a> {
       }
       for getter in getters {
         // TODO: Support mangling
-        values.push(getter.call_as_getter(analyzer, box_consumable((dep.cloned(), key)), rc));
+        values.push(getter.call_as_getter(analyzer, analyzer.consumable((dep, key)), rc));
       }
       if indeterminate_getter {
         analyzer.pop_cf_scope();
@@ -109,9 +109,9 @@ impl<'a> ObjectEntity<'a> {
 
     let value = analyzer.factory.try_union(values).unwrap_or(analyzer.factory.undefined);
     if mangable {
-      analyzer.factory.computed(value, ConsumableNode::new((non_existent, dep)))
+      analyzer.factory.computed(value, analyzer.consumable((non_existent, dep)))
     } else {
-      analyzer.factory.computed(value, ConsumableNode::new((non_existent, dep, key)))
+      analyzer.factory.computed(value, analyzer.consumable((non_existent, dep, key)))
     }
   }
 }

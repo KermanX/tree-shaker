@@ -2,10 +2,7 @@ use super::{
   entity::{EnumeratedProperties, IteratedElements},
   Entity,
 };
-use crate::{
-  analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableTrait},
-};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 
 pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
   analyzer.refer_to_global();
@@ -18,17 +15,17 @@ pub fn get_property<'a>(
   dep: Consumable<'a>,
   key: Entity<'a>,
 ) -> Entity<'a> {
-  let dep = (rc, dep, key);
   if analyzer.is_inside_pure() {
-    rc.unknown_mutate(analyzer, dep.cloned());
+    let dep = analyzer.consumable((rc, dep, key));
+    rc.unknown_mutate(analyzer, dep);
     analyzer.factory.computed_unknown(dep)
   } else if analyzer.config.unknown_property_read_side_effects {
     analyzer.may_throw();
-    analyzer.consume(dep);
+    analyzer.consume((rc, dep, key));
     analyzer.refer_to_global();
     analyzer.factory.unknown()
   } else {
-    analyzer.factory.computed_unknown((rc, dep))
+    analyzer.factory.computed_unknown((rc, dep, key))
   }
 }
 
@@ -56,12 +53,12 @@ pub fn enumerate_properties<'a>(
     analyzer.refer_to_global();
     (
       vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
-      box_consumable(()),
+      analyzer.factory.empty_consumable,
     )
   } else {
     (
       vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
-      box_consumable((rc, dep)),
+      analyzer.consumable((rc, dep)),
     )
   }
 }
@@ -79,13 +76,13 @@ pub fn call<'a>(
   this: Entity<'a>,
   args: Entity<'a>,
 ) -> Entity<'a> {
-  let dep = (rc, dep, this, args);
   if analyzer.is_inside_pure() {
-    this.unknown_mutate(analyzer, dep.cloned());
-    args.unknown_mutate(analyzer, dep.cloned());
+    let dep = analyzer.consumable((rc, dep, this, args));
+    this.unknown_mutate(analyzer, dep);
+    args.unknown_mutate(analyzer, dep);
     analyzer.factory.computed_unknown(dep)
   } else {
-    analyzer.consume(dep);
+    analyzer.consume((rc, dep, this, args));
     analyzer.may_throw();
     analyzer.refer_to_global();
     analyzer.factory.unknown()
@@ -98,12 +95,11 @@ pub fn construct<'a>(
   dep: Consumable<'a>,
   args: Entity<'a>,
 ) -> Entity<'a> {
-  let dep = (rc, dep, args);
   if analyzer.is_inside_pure() {
-    args.unknown_mutate(analyzer, dep.cloned());
+    args.unknown_mutate(analyzer, analyzer.consumable((rc, dep, args)));
     analyzer.factory.computed_unknown(dep)
   } else {
-    analyzer.consume(dep);
+    analyzer.consume((rc, dep, args));
     analyzer.may_throw();
     analyzer.refer_to_global();
     analyzer.factory.unknown()
@@ -127,9 +123,9 @@ pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Iterated
     analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_to_global();
-    (vec![], Some(analyzer.factory.unknown()), box_consumable(()))
+    (vec![], Some(analyzer.factory.unknown()), analyzer.factory.empty_consumable)
   } else {
-    (vec![], Some(analyzer.factory.unknown()), box_consumable(dep))
+    (vec![], Some(analyzer.factory.unknown()), dep)
   }
 }
 

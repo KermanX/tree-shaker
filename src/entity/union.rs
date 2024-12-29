@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableTrait},
+  consumable::{Consumable, ConsumableTrait},
   scope::CfScopeKind,
   use_consumed_flag,
 };
@@ -45,7 +45,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
 
   fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     for value in self.values.iter() {
-      value.unknown_mutate(analyzer, dep.cloned());
+      value.unknown_mutate(analyzer, dep);
     }
   }
 
@@ -56,9 +56,8 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    let values = analyzer.exec_indeterminately(|analyzer| {
-      self.values.map(|v| v.get_property(analyzer, dep.cloned(), key))
-    });
+    let values = analyzer
+      .exec_indeterminately(|analyzer| self.values.map(|v| v.get_property(analyzer, dep, key)));
     analyzer.factory.union(values)
   }
 
@@ -72,7 +71,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
   ) {
     analyzer.exec_indeterminately(|analyzer| {
       for entity in self.values.iter() {
-        entity.set_property(analyzer, dep.cloned(), key, value)
+        entity.set_property(analyzer, dep, key, value)
       }
     });
   }
@@ -90,7 +89,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
   fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     analyzer.exec_indeterminately(|analyzer| {
       for entity in self.values.iter() {
-        entity.delete_property(analyzer, dep.cloned(), key);
+        entity.delete_property(analyzer, dep, key);
       }
     })
   }
@@ -103,8 +102,13 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, None, vec![box_consumable(rc)], None);
-    let values = self.values.map(|v| v.call(analyzer, dep.cloned(), this, args));
+    analyzer.push_cf_scope_with_deps(
+      CfScopeKind::Dependent,
+      None,
+      vec![analyzer.consumable(rc)],
+      None,
+    );
+    let values = self.values.map(|v| v.call(analyzer, dep, this, args));
     analyzer.pop_cf_scope();
     analyzer.factory.union(values)
   }
@@ -116,9 +120,8 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    let values = analyzer.exec_indeterminately(|analyzer| {
-      self.values.map(|v| v.construct(analyzer, dep.cloned(), args))
-    });
+    let values = analyzer
+      .exec_indeterminately(|analyzer| self.values.map(|v| v.construct(analyzer, dep, args)));
     analyzer.factory.union(values)
   }
 
@@ -134,8 +137,8 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
-    let values = analyzer
-      .exec_indeterminately(|analyzer| self.values.map(|v| v.r#await(analyzer, dep.cloned())));
+    let values =
+      analyzer.exec_indeterminately(|analyzer| self.values.map(|v| v.r#await(analyzer, dep)));
     analyzer.factory.union(values)
   }
 
@@ -149,7 +152,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     let mut has_undefined = false;
     analyzer.push_indeterminate_cf_scope();
     for entity in self.values.iter() {
-      if let Some(result) = entity.iterate_result_union(analyzer, dep.cloned()) {
+      if let Some(result) = entity.iterate_result_union(analyzer, dep) {
         results.push(result);
       } else {
         has_undefined = true;
@@ -159,15 +162,20 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     if has_undefined {
       results.push(analyzer.factory.undefined);
     }
-    (vec![], analyzer.factory.try_union(results), box_consumable(()))
+    (vec![], analyzer.factory.try_union(results), analyzer.factory.empty_consumable)
   }
 
-  fn get_destructable(&self, _rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+  fn get_destructable(
+    &self,
+    _rc: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
     let mut values = Vec::new();
     for entity in self.values.iter() {
-      values.push(entity.get_destructable(dep.cloned()));
+      values.push(entity.get_destructable(analyzer, dep));
     }
-    box_consumable(values)
+    analyzer.consumable(values)
   }
 
   fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -275,7 +283,7 @@ impl<'a> EntityFactory<'a> {
     }
   }
 
-  pub fn computed_union<T: ConsumableTrait<'a> + 'a>(
+  pub fn computed_union<T: ConsumableTrait<'a> + Copy + 'a>(
     &self,
     values: Vec<Entity<'a>>,
     dep: T,

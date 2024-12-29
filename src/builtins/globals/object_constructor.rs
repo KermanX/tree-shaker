@@ -26,7 +26,7 @@ impl<'a> Builtins<'a> {
 
   fn create_object_assign_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.assign", |analyzer, dep, _, args| {
-      let (known, rest, deps) = args.iterate(analyzer, dep.cloned());
+      let (known, rest, deps) = args.iterate(analyzer, dep);
 
       if known.len() < 2 {
         return analyzer.factory.computed_unknown((dep, args));
@@ -35,12 +35,12 @@ impl<'a> Builtins<'a> {
       let target = known[0];
 
       let mut assign = |source: Entity<'a>, indeterminate: bool| {
-        let (properties, deps) = source.enumerate_properties(analyzer, dep.cloned());
+        let (properties, deps) = source.enumerate_properties(analyzer, dep);
         for (definite, key, value) in properties {
           if indeterminate || !definite {
             analyzer.push_indeterminate_cf_scope();
           }
-          target.set_property(analyzer, deps.cloned(), key, value);
+          target.set_property(analyzer, deps, key, value);
           if indeterminate || !definite {
             analyzer.pop_cf_scope();
           }
@@ -60,7 +60,7 @@ impl<'a> Builtins<'a> {
 
   fn create_object_keys_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.keys", |analyzer, dep, _, args| {
-      let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
+      let object = args.destruct_as_array(analyzer, dep, 1).0[0];
       let (properties, deps) = object.enumerate_properties(analyzer, dep);
 
       let array = analyzer.new_empty_array();
@@ -77,7 +77,7 @@ impl<'a> Builtins<'a> {
 
   fn create_object_values_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.values", |analyzer, dep, _, args| {
-      let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
+      let object = args.destruct_as_array(analyzer, dep, 1).0[0];
       let (properties, deps) = object.enumerate_properties(analyzer, dep);
 
       let array = analyzer.new_empty_array();
@@ -92,7 +92,7 @@ impl<'a> Builtins<'a> {
 
   fn create_object_entries_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.entries", |analyzer, dep, _, args| {
-      let object = args.destruct_as_array(analyzer, dep.cloned(), 1).0[0];
+      let object = args.destruct_as_array(analyzer, dep, 1).0[0];
       let (properties, deps) = object.enumerate_properties(analyzer, dep);
 
       let array = analyzer.new_empty_array();

@@ -3,11 +3,7 @@ use super::{
   entity::{EnumeratedProperties, IteratedElements},
   Entity, EntityFactory, EntityTrait, TypeofResult,
 };
-use crate::{
-  analyzer::Analyzer,
-  consumable::{box_consumable, Consumable},
-  use_consumed_flag,
-};
+use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use std::cell::{Cell, RefCell};
 
 #[derive(Debug)]
@@ -31,7 +27,7 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
     analyzer.exec_consumed_fn("React_blackbox", move |analyzer| {
       let copied_props =
         analyzer.new_empty_object(&analyzer.builtins.prototypes.object, Some(group_id));
-      copied_props.init_spread(analyzer, box_consumable(()), props);
+      copied_props.init_spread(analyzer, analyzer.factory.empty_consumable, props);
       tag.jsx(analyzer, analyzer.factory.entity(copied_props))
     });
   }
@@ -131,8 +127,13 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(&self, rc: Entity<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    box_consumable((rc, dep))
+  fn get_destructable(
+    &self,
+    rc: Entity<'a>,
+    analyzer: &Analyzer<'a>,
+    dep: Consumable<'a>,
+  ) -> Consumable<'a> {
+    analyzer.consumable((rc, dep))
   }
 
   fn get_typeof(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {

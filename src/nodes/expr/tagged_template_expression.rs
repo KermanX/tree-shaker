@@ -1,6 +1,6 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, consumable::box_consumable, dep::DepId,
-  entity::Entity, transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, dep::DepId, entity::Entity,
+  transformer::Transformer,
 };
 use oxc::{
   ast::{
@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
 
     let value = tag.call(
       self,
-      box_consumable(AstKind2::TaggedTemplateExpression(node)),
+      self.consumable(AstKind2::TaggedTemplateExpression(node)),
       this,
       self.factory.arguments(arguments),
     );

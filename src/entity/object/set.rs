@@ -1,7 +1,7 @@
 use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
 use crate::{
   analyzer::Analyzer,
-  consumable::{box_consumable, Consumable, ConsumableCollector},
+  consumable::{Consumable, ConsumableCollector},
   entity::{consumed_object, Entity, EntityTrait, LiteralEntity},
   mangling::MangleConstraint,
   scope::CfScopeKind,
@@ -35,7 +35,7 @@ impl<'a> ObjectEntity<'a> {
       for possible_value in &unknown_keyed.possible_values {
         if let ObjectPropertyValue::Property(_, setter) = possible_value {
           if let Some(setter) = setter {
-            setters.push((true, None, *setter));
+            setters.push((true, analyzer.factory.empty_consumable, *setter));
           }
           indeterminate = true;
         }
@@ -44,7 +44,7 @@ impl<'a> ObjectEntity<'a> {
 
     let key = key.get_to_property_key(analyzer);
 
-    let value = analyzer.factory.computed(value, (exec_deps, dep.cloned()));
+    let value = analyzer.factory.computed(value, analyzer.consumable((exec_deps, dep)));
     let non_mangable_value = analyzer.factory.computed(value, key);
 
     if let Some(key_literals) = key.get_to_literals(analyzer) {
@@ -75,9 +75,9 @@ impl<'a> ObjectEntity<'a> {
               } else {
                 value
               };
-              property.set(indeterminate, value, &mut setters);
+              property.set(analyzer, indeterminate, value, &mut setters);
             } else if let Some(rest) = &mut *rest {
-              rest.set(true, value, &mut setters);
+              rest.set(analyzer, true, value, &mut setters);
             } else {
               if mangable {
                 self.add_to_mangling_group(analyzer, key_atom.unwrap());
@@ -107,11 +107,11 @@ impl<'a> ObjectEntity<'a> {
 
       let mut string_keyed = self.string_keyed.borrow_mut();
       for property in string_keyed.values_mut() {
-        property.set(true, non_mangable_value, &mut setters);
+        property.set(analyzer, true, non_mangable_value, &mut setters);
       }
 
       if let Some(rest) = &mut *self.rest.borrow_mut() {
-        rest.set(true, non_mangable_value, &mut setters);
+        rest.set(analyzer, true, non_mangable_value, &mut setters);
       }
     }
 
@@ -120,11 +120,11 @@ impl<'a> ObjectEntity<'a> {
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
         None,
-        vec![box_consumable((dep, key))],
+        vec![analyzer.consumable((dep, key))],
         if indeterminate { None } else { Some(false) },
       );
       for (_, call_dep, setter) in setters {
-        setter.call_as_setter(analyzer, box_consumable(call_dep), rc, non_mangable_value);
+        setter.call_as_setter(analyzer, call_dep, rc, non_mangable_value);
       }
       analyzer.pop_cf_scope();
     }
