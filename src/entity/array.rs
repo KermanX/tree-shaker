@@ -1,7 +1,7 @@
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityTrait, LiteralEntity, TypeofResult,
+  Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -35,7 +35,7 @@ impl<'a> fmt::Debug for ArrayEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     analyzer.mark_object_consumed(self.cf_scope, self.object_id);
@@ -46,7 +46,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     analyzer.consume(self.rest.take());
   }
 
-  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
@@ -62,20 +62,19 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   }
 
   fn get_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_property(rc, analyzer, dep, key);
+      return consumed_object::get_property(self, analyzer, dep, key);
     }
 
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
     if !self.deps.borrow().is_empty() {
-      return analyzer.factory.computed_unknown((rc, dep, key));
+      return analyzer.factory.computed_unknown((self, dep, key));
     }
 
     let dep = analyzer.consumable((self.deps.borrow_mut().collect(analyzer.factory), dep, key));
@@ -123,8 +122,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   }
 
   fn set_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
@@ -213,13 +211,12 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   }
 
   fn enumerate_properties(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
     if self.consumed.get() {
-      return consumed_object::enumerate_properties(rc, analyzer, dep);
+      return consumed_object::enumerate_properties(self, analyzer, dep);
     }
 
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
@@ -227,7 +224,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if !self.deps.borrow().is_empty() {
       return (
         vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
-        analyzer.consumable((rc, dep)),
+        analyzer.consumable((self, dep)),
       );
     }
 
@@ -251,7 +248,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     (entries, analyzer.consumable((self.deps.borrow_mut().collect(analyzer.factory), dep)))
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     if self.consumed.get() {
       return consumed_object::delete_property(analyzer, dep, key);
     }
@@ -269,48 +266,36 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   }
 
   fn call(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    consumed_object::call(rc, analyzer, dep, this, args)
+    consumed_object::call(self, analyzer, dep, this, args)
   }
 
   fn construct(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    consumed_object::construct(rc, analyzer, dep, args)
+    consumed_object::construct(self, analyzer, dep, args)
   }
 
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    consumed_object::jsx(rc, analyzer, props)
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    consumed_object::jsx(self, analyzer, props)
   }
 
-  fn r#await(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer, dep);
     }
-    analyzer.factory.computed(rc, dep)
+    analyzer.factory.computed(self, dep)
   }
 
-  fn iterate(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     if self.consumed.get() {
       return consumed_object::iterate(analyzer, dep);
     }
@@ -318,7 +303,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
     if !self.deps.borrow().is_empty() {
-      return (vec![], Some(analyzer.factory.unknown()), analyzer.consumable((rc, dep)));
+      return (vec![], Some(analyzer.factory.unknown()), analyzer.consumable((self, dep)));
     }
 
     (
@@ -328,43 +313,38 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     )
   }
 
-  fn get_destructable(
-    &self,
-    _rc: Entity<'a>,
-    _analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a> {
+  fn get_destructable(&'a self, _analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
     dep
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("object")
   }
 
-  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
-    analyzer.factory.computed_unknown_string(rc)
+    analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
-    analyzer.factory.computed_unknown(rc)
+    analyzer.factory.computed_unknown(self)
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(true)
   }
 
-  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.get_to_string(rc, analyzer)
+  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.get_to_string(analyzer)
   }
 
-  fn get_to_jsx_child(&self, rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    rc
+  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -381,17 +361,6 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 }
 
 impl<'a> ArrayEntity<'a> {
-  pub fn new(cf_scope: ScopeId, object_id: SymbolId) -> Self {
-    ArrayEntity {
-      consumed: Cell::new(false),
-      deps: Default::default(),
-      cf_scope,
-      object_id,
-      elements: RefCell::new(Vec::new()),
-      rest: RefCell::new(Vec::new()),
-    }
-  }
-
   pub fn push_element(&self, element: Entity<'a>) {
     if self.rest.borrow().is_empty() {
       self.elements.borrow_mut().push(element);
@@ -413,8 +382,21 @@ impl<'a> ArrayEntity<'a> {
   }
 }
 
+impl<'a> EntityFactory<'a> {
+  pub fn array(&self, cf_scope: ScopeId, object_id: SymbolId) -> &'a mut ArrayEntity<'a> {
+    self.alloc(ArrayEntity {
+      consumed: Cell::new(false),
+      deps: Default::default(),
+      cf_scope,
+      object_id,
+      elements: RefCell::new(Vec::new()),
+      rest: RefCell::new(Vec::new()),
+    })
+  }
+}
+
 impl<'a> Analyzer<'a> {
-  pub fn new_empty_array(&mut self) -> ArrayEntity<'a> {
-    ArrayEntity::new(self.scope_context.cf.current_id(), self.scope_context.alloc_object_id())
+  pub fn new_empty_array(&mut self) -> &'a mut ArrayEntity<'a> {
+    self.factory.array(self.scope_context.cf.current_id(), self.scope_context.alloc_object_id())
   }
 }

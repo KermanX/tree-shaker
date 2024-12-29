@@ -8,7 +8,7 @@ mod set;
 use super::{
   consumed_object,
   entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityTrait, LiteralEntity, TypeofResult,
+  Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -49,7 +49,7 @@ pub struct ObjectEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     if !self.consumable {
       return;
     }
@@ -68,7 +68,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     analyzer.mark_object_consumed(self.cf_scope, self.object_id);
   }
 
-  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
@@ -77,123 +77,103 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   }
 
   fn get_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    self.get_property(rc, analyzer, dep, key)
+    self.get_property(analyzer, dep, key)
   }
 
   fn set_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.set_property(rc, analyzer, dep, key, value);
+    self.set_property(analyzer, dep, key, value);
   }
 
   fn enumerate_properties(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
-    self.enumerate_properties(rc, analyzer, dep)
+    self.enumerate_properties(analyzer, dep)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     self.delete_property(analyzer, dep, key);
   }
 
   fn call(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    consumed_object::call(rc, analyzer, dep, this, args)
+    consumed_object::call(self, analyzer, dep, this, args)
   }
 
   fn construct(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    consumed_object::construct(rc, analyzer, dep, args)
+    consumed_object::construct(self, analyzer, dep, args)
   }
 
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    consumed_object::jsx(rc, analyzer, props)
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    consumed_object::jsx(self, analyzer, props)
   }
 
-  fn r#await(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
     self.consume(analyzer);
     consumed_object::r#await(analyzer, dep)
   }
 
-  fn iterate(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(
-    &self,
-    _rc: Entity<'a>,
-    _analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a> {
+  fn get_destructable(&'a self, _analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
     dep
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("object")
   }
 
-  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
-    analyzer.factory.computed_unknown_string(rc)
+    analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
-    analyzer.factory.computed_unknown(rc)
+    analyzer.factory.computed_unknown(self)
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(true)
   }
 
-  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.get_to_string(rc, analyzer)
+  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.get_to_string(analyzer)
   }
 
-  fn get_to_jsx_child(&self, rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    rc
+  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -210,21 +190,6 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 }
 
 impl<'a> ObjectEntity<'a> {
-  pub fn new_builtin(object_id: SymbolId, prototype: &'a Prototype<'a>, consumable: bool) -> Self {
-    ObjectEntity {
-      consumable,
-      consumed: Cell::new(false),
-      // deps: Default::default(),
-      cf_scope: ScopeId::new(0),
-      object_id,
-      string_keyed: Default::default(),
-      unknown_keyed: Default::default(),
-      rest: Default::default(),
-      prototype,
-      mangling_group: None,
-    }
-  }
-
   fn is_mangable(&self) -> bool {
     self.mangling_group.is_some_and(|group| group.get().is_some())
   }
@@ -264,8 +229,8 @@ impl<'a> Analyzer<'a> {
     &mut self,
     prototype: &'a Prototype<'a>,
     mangling_group: Option<ObjectManglingGroupId<'a>>,
-  ) -> ObjectEntity<'a> {
-    ObjectEntity {
+  ) -> &'a mut ObjectEntity<'a> {
+    self.allocator.alloc(ObjectEntity {
       consumable: true,
       consumed: Cell::new(false),
       // deps: Default::default(),
@@ -276,7 +241,7 @@ impl<'a> Analyzer<'a> {
       rest: RefCell::new(None),
       prototype,
       mangling_group,
-    }
+    })
   }
 
   pub fn new_function_object(&mut self) -> &'a ObjectEntity<'a> {
@@ -286,7 +251,7 @@ impl<'a> Analyzer<'a> {
       ObjectProperty {
         definite: true,
         possible_values: vec![ObjectPropertyValue::Field(
-          self.factory.entity(self.new_empty_object(&self.builtins.prototypes.object, None)),
+          self.new_empty_object(&self.builtins.prototypes.object, None),
           false,
         )],
         non_existent: Default::default(),
@@ -300,10 +265,35 @@ impl<'a> Analyzer<'a> {
     self.allocator.alloc(Cell::new(Some(self.mangler.uniqueness_groups.push(Default::default()))))
   }
 
-  pub fn use_mangable_plain_object(&mut self, dep_id: impl Into<DepId>) -> ObjectEntity<'a> {
+  pub fn use_mangable_plain_object(
+    &mut self,
+    dep_id: impl Into<DepId>,
+  ) -> &'a mut ObjectEntity<'a> {
     let mangling_group = self
       .load_data::<Option<ObjectManglingGroupId>>(dep_id)
       .get_or_insert_with(|| self.new_object_mangling_group());
     self.new_empty_object(&self.builtins.prototypes.object, Some(*mangling_group))
+  }
+}
+
+impl<'a> EntityFactory<'a> {
+  pub fn builtin_object(
+    &self,
+    object_id: SymbolId,
+    prototype: &'a Prototype<'a>,
+    consumable: bool,
+  ) -> &'a mut ObjectEntity<'a> {
+    self.alloc(ObjectEntity {
+      consumable,
+      consumed: Cell::new(false),
+      // deps: Default::default(),
+      cf_scope: ScopeId::new(0),
+      object_id,
+      string_keyed: Default::default(),
+      unknown_keyed: Default::default(),
+      rest: Default::default(),
+      prototype,
+      mangling_group: None,
+    })
   }
 }

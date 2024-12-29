@@ -4,18 +4,17 @@ use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
   consumable::Consumable,
-  entity::{consumed_object, entity::EnumeratedProperties, Entity},
+  entity::{consumed_object, entity::EnumeratedProperties},
 };
 
 impl<'a> ObjectEntity<'a> {
   pub fn enumerate_properties(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
     if self.consumed.get() {
-      return consumed_object::enumerate_properties(rc, analyzer, dep);
+      return consumed_object::enumerate_properties(self, analyzer, dep);
     }
 
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
@@ -37,7 +36,7 @@ impl<'a> ObjectEntity<'a> {
       }
 
       for getter in getters {
-        values.push(getter.call_as_getter(analyzer, dep, rc));
+        values.push(getter.call_as_getter(analyzer, dep, self));
       }
 
       if let Some(value) = analyzer.factory.try_union(values) {
@@ -66,7 +65,7 @@ impl<'a> ObjectEntity<'a> {
         properties.get(analyzer, &mut values, &mut getters, &mut non_existent);
         mem::drop(string_keyed);
         for getter in getters {
-          values.push(getter.call_as_getter(analyzer, dep, rc));
+          values.push(getter.call_as_getter(analyzer, dep, self));
         }
 
         if let Some(value) = analyzer.factory.try_union(values) {

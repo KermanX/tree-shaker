@@ -17,7 +17,7 @@ pub struct MangableEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for MangableEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     analyzer.consume(self.val);
@@ -26,13 +26,12 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
     analyzer.consume(self.constraint);
   }
 
-  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     self.val.unknown_mutate(analyzer, self.forward_dep(dep, analyzer));
   }
 
   fn get_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
@@ -41,8 +40,7 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
   }
 
   fn set_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
@@ -52,21 +50,19 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
   }
 
   fn enumerate_properties(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
     self.val.enumerate_properties(analyzer, self.forward_dep(dep, analyzer))
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     self.val.delete_property(analyzer, self.forward_dep(dep, analyzer), key)
   }
 
   fn call(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
@@ -76,8 +72,7 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
   }
 
   fn construct(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
@@ -85,66 +80,47 @@ impl<'a> EntityTrait<'a> for MangableEntity<'a> {
     self.val.construct(analyzer, self.forward_dep(dep, analyzer), args)
   }
 
-  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     self.forward_value(self.val.jsx(analyzer, props), analyzer)
   }
 
-  fn r#await(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
     self.val.r#await(analyzer, self.forward_dep(dep, analyzer))
   }
 
-  fn iterate(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     self.val.iterate(analyzer, self.forward_dep(dep, analyzer))
   }
 
-  fn get_destructable(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a> {
+  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
     self.val.get_destructable(analyzer, self.forward_dep(dep, analyzer))
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.val.get_typeof(analyzer), analyzer)
   }
 
-  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.val.get_to_string(analyzer), analyzer)
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.val.get_to_numeric(analyzer), analyzer)
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.val.get_to_boolean(analyzer), analyzer)
   }
 
-  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.val.get_to_property_key(analyzer), analyzer)
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.val.get_to_jsx_child(analyzer), analyzer)
   }
 
-  fn get_to_literals(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-  ) -> Option<FxHashSet<LiteralEntity<'a>>> {
+  fn get_to_literals(&'a self, analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralEntity<'a>>> {
     self.val.get_to_literals(analyzer)
   }
 
@@ -181,7 +157,7 @@ impl<'a> EntityFactory<'a> {
     val: Entity<'a>,
     deps: (Entity<'a>, Entity<'a>),
     constraint: &'a MangleConstraint,
-  ) -> Entity<'a> {
-    self.entity(MangableEntity { val, deps, constraint, consumed: Cell::new(false) })
+  ) -> &'a mut MangableEntity<'a> {
+    self.alloc(MangableEntity { val, deps, constraint, consumed: Cell::new(false) })
   }
 }

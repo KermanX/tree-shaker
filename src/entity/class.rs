@@ -9,36 +9,35 @@ use std::{cell::Cell, rc::Rc};
 
 #[derive(Debug)]
 pub struct ClassEntity<'a> {
-  consumed: Rc<Cell<bool>>,
+  consumed: Cell<bool>,
   pub node: &'a Class<'a>,
   pub keys: Vec<Option<Entity<'a>>>,
-  statics: Box<ObjectEntity<'a>>,
+  statics: &'a ObjectEntity<'a>,
   pub super_class: Option<Entity<'a>>,
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
 }
 
 impl<'a> EntityTrait<'a> for ClassEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     self.statics.consume(analyzer);
     analyzer.construct_class(self);
   }
 
-  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     self.consume(analyzer);
     consumed_object::unknown_mutate(analyzer, dep);
   }
 
   fn get_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_property(rc, analyzer, dep, key);
+      return consumed_object::get_property(self, analyzer, dep, key);
     }
     if analyzer
       .entity_op
@@ -47,118 +46,99 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
       != Some(false)
     {
       self.consume(analyzer);
-      return consumed_object::get_property(rc, analyzer, dep, key);
+      return consumed_object::get_property(self, analyzer, dep, key);
     }
-    self.statics.get_property(rc, analyzer, dep, key)
+    self.statics.get_property(analyzer, dep, key)
   }
 
   fn set_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.statics.set_property(rc, analyzer, dep, key, value)
+    self.statics.set_property(analyzer, dep, key, value)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     self.statics.delete_property(analyzer, dep, key)
   }
 
   fn enumerate_properties(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
-    self.statics.enumerate_properties(rc, analyzer, dep)
+    self.statics.enumerate_properties(analyzer, dep)
   }
 
   fn call(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error("Class constructor A cannot be invoked without 'new'");
-    consumed_object::call(rc, analyzer, dep, this, args)
+    consumed_object::call(self, analyzer, dep, this, args)
   }
 
   fn construct(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    consumed_object::construct(rc, analyzer, dep, args)
+    consumed_object::construct(self, analyzer, dep, args)
   }
 
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    consumed_object::jsx(rc, analyzer, props)
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    consumed_object::jsx(self, analyzer, props)
   }
 
-  fn r#await(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
     // In case of `class A { static then() {} }`
     self.consume(analyzer);
     consumed_object::r#await(analyzer, dep)
   }
 
-  fn iterate(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a> {
-    analyzer.consumable((rc, dep))
+  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    analyzer.consumable((self, dep))
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("function")
   }
 
-  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
-    analyzer.factory.computed_unknown_string(rc)
+    analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
     analyzer.factory.nan
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(true)
   }
 
-  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.get_to_string(rc, analyzer)
+  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.get_to_string(analyzer)
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       analyzer.factory.immutable_unknown
     } else {
@@ -187,13 +167,13 @@ impl<'a> EntityFactory<'a> {
     keys: Vec<Option<Entity<'a>>>,
     variable_scope_stack: Vec<ScopeId>,
     super_class: Option<Entity<'a>>,
-    statics: ObjectEntity<'a>,
+    statics: &'a ObjectEntity<'a>,
   ) -> Entity<'a> {
-    self.entity(ClassEntity {
-      consumed: Rc::new(Cell::new(false)),
+    self.alloc(ClassEntity {
+      consumed: Cell::new(false),
       node,
       keys,
-      statics: Box::new(statics),
+      statics,
       variable_scope_stack: Rc::new(variable_scope_stack),
       super_class,
     })

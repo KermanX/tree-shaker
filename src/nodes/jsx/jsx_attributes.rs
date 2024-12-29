@@ -7,7 +7,10 @@ use oxc::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_jsx_attributes(&mut self, node: &'a JSXOpeningElement<'a>) -> ObjectEntity<'a> {
+  pub fn exec_jsx_attributes(
+    &mut self,
+    node: &'a JSXOpeningElement<'a>,
+  ) -> &'a mut ObjectEntity<'a> {
     let object = self.use_mangable_plain_object(AstKind2::JSXOpeningElement(node));
 
     for attr in &node.attributes {

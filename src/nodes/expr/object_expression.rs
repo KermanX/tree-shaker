@@ -46,7 +46,7 @@ impl<'a> Analyzer<'a> {
       object.consume(self);
     }
 
-    self.factory.entity(object)
+    object
   }
 }
 

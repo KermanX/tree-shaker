@@ -1,6 +1,8 @@
-use super::{EntityFactory, LiteralEntity, TypeofResult};
-use crate::{analyzer::Analyzer, consumable::Consumable};
-use oxc::allocator::Allocator;
+use super::{LiteralEntity, TypeofResult};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{Consumable, ConsumableTrait},
+};
 use rustc_hash::FxHashSet;
 use std::fmt::Debug;
 
@@ -11,82 +13,62 @@ pub type EnumeratedProperties<'a> = (Vec<(bool, Entity<'a>, Entity<'a>)>, Consum
 pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>);
 
 pub trait EntityTrait<'a>: Debug {
-  fn consume(&self, analyzer: &mut Analyzer<'a>);
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>);
   /// Returns true if the entity is completely consumed
-  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
+  fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
     self.consume(analyzer);
     true
   }
-  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>);
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>);
 
   fn get_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a>;
   fn set_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   );
   fn enumerate_properties(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a>;
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>);
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>);
   fn call(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a>;
   fn construct(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a>;
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a>;
-  fn r#await(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>)
-    -> Entity<'a>;
-  fn iterate(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a>;
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a>;
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a>;
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a>;
 
-  fn get_destructable(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a>;
-  fn get_typeof(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_literals(
-    &self,
-    _rc: Entity<'a>,
-    _analyzer: &Analyzer<'a>,
-  ) -> Option<FxHashSet<LiteralEntity<'a>>> {
+  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a>;
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralEntity<'a>>> {
     None
   }
-  fn get_literal(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
-    self.get_to_literals(rc, analyzer).and_then(|set| {
+  fn get_literal(&'a self, analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
+    self.get_to_literals(analyzer).and_then(|set| {
       if set.len() == 1 {
         set.into_iter().next()
       } else {
@@ -106,167 +88,9 @@ pub trait EntityTrait<'a>: Debug {
       (false, false) => Some(false),
     }
   }
-}
 
-#[derive(Debug, Clone, Copy)]
-pub struct Entity<'a>(pub &'a (dyn EntityTrait<'a> + 'a));
-
-impl<'a> EntityFactory<'a> {
-  pub fn entity(&self, entity: impl EntityTrait<'a> + 'a) -> Entity<'a> {
-    Entity::new_in(entity, self.allocator)
-  }
-}
-
-impl<'a> Entity<'a> {
-  pub fn new_in(entity: impl EntityTrait<'a> + 'a, allocator: &'a Allocator) -> Self {
-    Self(allocator.alloc(entity))
-  }
-
-  pub fn ptr_eq(self, other: Self) -> bool {
-    std::ptr::addr_eq(self.0 as *const _, other.0 as *const _)
-  }
-
-  pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    self.0.consume(analyzer)
-  }
-
-  pub fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
-    self.0.consume_mangable(analyzer)
-  }
-
-  pub fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
-    self.0.unknown_mutate(analyzer, dep)
-  }
-
-  pub fn get_property(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    dep: impl Into<Consumable<'a>>,
-    key: Entity<'a>,
-  ) -> Entity<'a> {
-    self.0.get_property(*self, analyzer, dep.into(), key)
-  }
-
-  pub fn set_property(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    dep: impl Into<Consumable<'a>>,
-    key: Entity<'a>,
-    value: Entity<'a>,
-  ) {
-    self.0.set_property(*self, analyzer, dep.into(), key, value)
-  }
-
-  pub fn enumerate_properties(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    dep: impl Into<Consumable<'a>>,
-  ) -> EnumeratedProperties<'a> {
-    self.0.enumerate_properties(*self, analyzer, dep.into())
-  }
-
-  pub fn delete_property(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    dep: impl Into<Consumable<'a>>,
-    key: Entity<'a>,
-  ) {
-    self.0.delete_property(analyzer, dep.into(), key)
-  }
-
-  pub fn call(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    dep: impl Into<Consumable<'a>>,
-    this: Entity<'a>,
-    args: Entity<'a>,
-  ) -> Entity<'a> {
-    self.0.call(*self, analyzer, dep.into(), this, args)
-  }
-
-  pub fn jsx(&self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    self.0.jsx(*self, analyzer, props)
-  }
-
-  pub fn construct(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    dep: impl Into<Consumable<'a>>,
-    args: Entity<'a>,
-  ) -> Entity<'a> {
-    self.0.construct(*self, analyzer, dep.into(), args)
-  }
-
-  pub fn r#await(&self, analyzer: &mut Analyzer<'a>, dep: impl Into<Consumable<'a>>) -> Entity<'a> {
-    self.0.r#await(*self, analyzer, dep.into())
-  }
-
-  pub fn iterate(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    dep: impl Into<Consumable<'a>>,
-  ) -> IteratedElements<'a> {
-    self.0.iterate(*self, analyzer, dep.into())
-  }
-
-  pub fn get_destructable(
-    &self,
-    analyzer: &Analyzer<'a>,
-    dep: impl Into<Consumable<'a>>,
-  ) -> Consumable<'a> {
-    self.0.get_destructable(*self, analyzer, dep.into())
-  }
-
-  pub fn get_typeof(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.0.get_typeof(*self, analyzer)
-  }
-
-  pub fn get_to_string(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.0.get_to_string(*self, analyzer)
-  }
-
-  pub fn get_to_numeric(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.0.get_to_numeric(*self, analyzer)
-  }
-
-  pub fn get_to_boolean(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.0.get_to_boolean(*self, analyzer)
-  }
-
-  pub fn get_to_property_key(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.0.get_to_property_key(*self, analyzer)
-  }
-
-  pub fn get_to_jsx_child(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.0.get_to_jsx_child(*self, analyzer)
-  }
-
-  pub fn get_to_literals(&self, analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralEntity<'a>>> {
-    self.0.get_to_literals(*self, analyzer)
-  }
-
-  pub fn get_literal(&self, analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
-    self.0.get_literal(*self, analyzer)
-  }
-
-  pub fn test_typeof(&self) -> TypeofResult {
-    self.0.test_typeof()
-  }
-
-  pub fn test_truthy(&self) -> Option<bool> {
-    self.0.test_truthy()
-  }
-
-  pub fn test_nullish(&self) -> Option<bool> {
-    self.0.test_nullish()
-  }
-
-  pub fn test_is_undefined(&self) -> Option<bool> {
-    self.0.test_is_undefined()
-  }
-
-  pub fn destruct_as_array(
-    &self,
+  fn destruct_as_array(
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     length: usize,
@@ -297,13 +121,13 @@ impl<'a> Entity<'a> {
       rest_arr_is_empty = false;
     }
     if rest_arr_is_empty {
-      rest_arr.deps.borrow_mut().push(analyzer.consumable(*self));
+      rest_arr.deps.borrow_mut().push(analyzer.consumable(self));
     }
-    (result_elements, analyzer.factory.entity(rest_arr), deps)
+    (result_elements, rest_arr, deps)
   }
 
-  pub fn iterate_result_union(
-    &self,
+  fn iterate_result_union(
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Option<Entity<'a>> {
@@ -319,8 +143,8 @@ impl<'a> Entity<'a> {
     }
   }
 
-  pub fn call_as_getter(
-    &self,
+  fn call_as_getter(
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
@@ -328,13 +152,21 @@ impl<'a> Entity<'a> {
     self.call(analyzer, dep, this, analyzer.factory.empty_arguments)
   }
 
-  pub fn call_as_setter(
-    &self,
+  fn call_as_setter(
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
     self.call(analyzer, dep, this, analyzer.factory.arguments(vec![(false, value)]))
+  }
+}
+
+pub type Entity<'a> = &'a (dyn EntityTrait<'a> + 'a);
+
+impl<'a, T: EntityTrait<'a> + 'a + ?Sized> ConsumableTrait<'a> for &'a T {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    (*self).consume(analyzer)
   }
 }

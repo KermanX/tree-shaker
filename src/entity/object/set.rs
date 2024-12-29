@@ -9,8 +9,7 @@ use crate::{
 
 impl<'a> ObjectEntity<'a> {
   pub fn set_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
@@ -124,7 +123,7 @@ impl<'a> ObjectEntity<'a> {
         if indeterminate { None } else { Some(false) },
       );
       for (_, call_dep, setter) in setters {
-        setter.call_as_setter(analyzer, call_dep, rc, non_mangable_value);
+        setter.call_as_setter(analyzer, call_dep, self, non_mangable_value);
       }
       analyzer.pop_cf_scope();
     }

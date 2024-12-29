@@ -1,4 +1,6 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, consumable::ConsumableTrait, transformer::Transformer,
+};
 use oxc::span::{GetSpan, Span};
 use rustc_hash::FxHashMap;
 use std::{
@@ -13,6 +15,12 @@ pub struct DepId((usize, usize));
 impl Debug for DepId {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     self.span().fmt(f)
+  }
+}
+
+impl<'a> ConsumableTrait<'a> for DepId {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    analyzer.refer_dep(*self);
   }
 }
 

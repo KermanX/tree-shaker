@@ -47,39 +47,32 @@ pub struct EntityFactory<'a> {
 
 impl<'a> EntityFactory<'a> {
   pub fn new(allocator: &'a Allocator, config: &TreeShakeConfig) -> EntityFactory<'a> {
-    let r#true = Entity::new_in(LiteralEntity::Boolean(true), allocator);
-    let r#false = Entity::new_in(LiteralEntity::Boolean(false), allocator);
-    let nan = Entity::new_in(LiteralEntity::NaN, allocator);
-    let null = Entity::new_in(LiteralEntity::Null, allocator);
-    let undefined = Entity::new_in(LiteralEntity::Undefined, allocator);
+    let r#true = allocator.alloc(LiteralEntity::Boolean(true));
+    let r#false = allocator.alloc(LiteralEntity::Boolean(false));
+    let nan = allocator.alloc(LiteralEntity::NaN);
+    let null = allocator.alloc(LiteralEntity::Null);
+    let undefined = allocator.alloc(LiteralEntity::Undefined);
 
-    let immutable_unknown = Entity::new_in(UnknownEntity::new(), allocator);
-    let unknown_primitive = Entity::new_in(PrimitiveEntity::Mixed, allocator);
-    let unknown_string = Entity::new_in(PrimitiveEntity::String, allocator);
-    let unknown_number = Entity::new_in(PrimitiveEntity::Number, allocator);
-    let unknown_bigint = Entity::new_in(PrimitiveEntity::BigInt, allocator);
-    let unknown_boolean = Entity::new_in(PrimitiveEntity::Boolean, allocator);
-    let unknown_symbol = Entity::new_in(PrimitiveEntity::Symbol, allocator);
+    let immutable_unknown = allocator.alloc(UnknownEntity::new());
+    let unknown_primitive = allocator.alloc(PrimitiveEntity::Mixed);
+    let unknown_string = allocator.alloc(PrimitiveEntity::String);
+    let unknown_number = allocator.alloc(PrimitiveEntity::Number);
+    let unknown_bigint = allocator.alloc(PrimitiveEntity::BigInt);
+    let unknown_boolean = allocator.alloc(PrimitiveEntity::Boolean);
+    let unknown_symbol = allocator.alloc(PrimitiveEntity::Symbol);
 
-    let pure_fn_returns_unknown =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown()), allocator);
+    let pure_fn_returns_unknown = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown()));
 
-    let pure_fn_returns_string =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown_string), allocator);
-    let pure_fn_returns_number =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown_number), allocator);
-    let pure_fn_returns_bigint =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown_bigint), allocator);
-    let pure_fn_returns_boolean =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown_boolean), allocator);
-    let pure_fn_returns_symbol =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.unknown_symbol), allocator);
-    let pure_fn_returns_null = Entity::new_in(PureBuiltinFnEntity::new(|f| f.null), allocator);
-    let pure_fn_returns_undefined =
-      Entity::new_in(PureBuiltinFnEntity::new(|f| f.undefined), allocator);
+    let pure_fn_returns_string = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_string));
+    let pure_fn_returns_number = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_number));
+    let pure_fn_returns_bigint = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_bigint));
+    let pure_fn_returns_boolean = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_boolean));
+    let pure_fn_returns_symbol = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_symbol));
+    let pure_fn_returns_null = allocator.alloc(PureBuiltinFnEntity::new(|f| f.null));
+    let pure_fn_returns_undefined = allocator.alloc(PureBuiltinFnEntity::new(|f| f.undefined));
 
-    let empty_arguments = Entity::new_in(ArgumentsEntity::default(), allocator);
-    let unmatched_prototype_property =
+    let empty_arguments = allocator.alloc(ArgumentsEntity::default());
+    let unmatched_prototype_property: Entity<'a> =
       if config.unmatched_prototype_property_as_undefined { undefined } else { immutable_unknown };
 
     let empty_consumable = Consumable(allocator.alloc(()));

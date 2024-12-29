@@ -7,14 +7,13 @@ use crate::{
 
 impl<'a> ObjectEntity<'a> {
   pub fn get_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_property(rc, analyzer, dep, key);
+      return consumed_object::get_property(self, analyzer, dep, key);
     }
 
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
@@ -100,7 +99,7 @@ impl<'a> ObjectEntity<'a> {
       }
       for getter in getters {
         // TODO: Support mangling
-        values.push(getter.call_as_getter(analyzer, analyzer.consumable((dep, key)), rc));
+        values.push(getter.call_as_getter(analyzer, analyzer.consumable((dep, key)), self));
       }
       if indeterminate_getter {
         analyzer.pop_cf_scope();
