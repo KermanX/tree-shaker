@@ -170,7 +170,7 @@ impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
 
 impl<'a> CollectedEntity<'a> {
   fn forward(&self, val: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    if self.consumed.get() || self.deps.borrow().is_empty() {
+    if self.consumed.get() {
       val
     } else {
       analyzer.factory.collected(val, self.deps)
