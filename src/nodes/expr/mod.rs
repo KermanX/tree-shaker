@@ -35,6 +35,7 @@ use oxc::{
   ast::{ast::Expression, match_member_expression},
   span::GetSpan,
 };
+use oxc_syntax::operator::{AssignmentOperator, UnaryOperator};
 
 #[derive(Debug, Default)]
 struct Data<'a> {
@@ -172,7 +173,29 @@ impl<'a> Transformer<'a> {
     };
 
     if let Some(literal) = literal {
-      Some(build_effect!(&self.ast_builder, span, inner; literal))
+      if let Some(inner) = inner {
+        // Avoid `(a = 1, 1)`
+        if let Expression::AssignmentExpression(node) = &inner {
+          if node.operator == AssignmentOperator::Assign && node.right.is_literal() {
+            return Some(inner);
+          }
+        }
+
+        // Avoid `(void effect(), void 0)`
+        if let Expression::UnaryExpression(node) = &inner {
+          if node.operator == UnaryOperator::Void {
+            if let Expression::UnaryExpression(literal) = &literal {
+              if literal.operator == UnaryOperator::Void {
+                return Some(inner);
+              }
+            }
+          }
+        }
+
+        Some(build_effect!(&self.ast_builder, span, inner; literal))
+      } else {
+        Some(literal)
+      }
     } else {
       inner
     }

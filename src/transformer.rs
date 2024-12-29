@@ -86,7 +86,7 @@ impl<'a> Transformer<'a> {
     }
   }
 
-  pub fn transform_program(&self, node: &'a Program<'a>) -> &'a mut Program<'a> {
+  pub fn transform_program(&self, node: &'a Program<'a>) -> Program<'a> {
     let Program { span, source_type, source_text, comments, hashbang, directives, body, .. } = node;
 
     let data = self.get_data::<StatementVecData>(AstKind2::Program(node));
@@ -101,7 +101,7 @@ impl<'a> Transformer<'a> {
       body.push(self.build_non_nullish_helper_definition());
     }
 
-    let program = self.allocator.alloc(self.ast_builder.program(
+    self.ast_builder.program(
       *span,
       *source_type,
       *source_text,
@@ -109,11 +109,7 @@ impl<'a> Transformer<'a> {
       self.clone_node(hashbang),
       self.clone_node(directives),
       body,
-    ));
-
-    self.patch_ast(program);
-
-    program
+    )
   }
 
   pub fn update_var_decl_state(&self, symbol: SymbolId, is_declaration: bool) {
