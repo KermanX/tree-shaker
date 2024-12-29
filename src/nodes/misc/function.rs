@@ -21,11 +21,16 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
-    let dep = self.consumable(AstKind2::Function(node));
     let entity = self.exec_function(node);
 
     let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
-    self.declare_symbol(symbol, dep, exporting, DeclarationKind::Function, Some(entity));
+    self.declare_symbol(
+      symbol,
+      AstKind2::Function(node),
+      exporting,
+      DeclarationKind::Function,
+      Some(entity),
+    );
   }
 
   pub fn call_function(
@@ -59,7 +64,7 @@ impl<'a> Analyzer<'a> {
           let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
           analyzer.declare_symbol(
             symbol,
-            analyzer.consumable(callee.into_dep_id()),
+            callee.into_node(),
             false,
             DeclarationKind::NamedFunctionInBody,
             Some(fn_entity),

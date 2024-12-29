@@ -188,7 +188,7 @@ impl<'a> FunctionEntity<'a> {
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    let call_dep = analyzer.consumable((self.callee.into_dep_id(), dep));
+    let call_dep = analyzer.consumable((self.callee.into_node(), dep));
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(
@@ -219,7 +219,7 @@ impl<'a> FunctionEntity<'a> {
       return;
     }
 
-    analyzer.consume(self.callee.into_dep_id());
+    analyzer.consume(self.callee.into_node());
 
     analyzer.exec_consumed_fn("consume_fn", move |analyzer| {
       self.call_impl(
@@ -233,7 +233,7 @@ impl<'a> FunctionEntity<'a> {
   }
 
   fn forward_dep(&self, dep: Consumable<'a>, analyzer: &Analyzer<'a>) -> Consumable<'a> {
-    analyzer.consumable((dep, self.callee.into_dep_id()))
+    analyzer.consumable((dep, self.callee.into_node()))
   }
 }
 

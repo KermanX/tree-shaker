@@ -14,8 +14,7 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
   ) {
     let symbol = node.symbol_id.get().unwrap();
-    let dep = self.consumable(AstKind2::BindingIdentifier(node));
-    self.declare_symbol(symbol, dep, exporting, kind, None);
+    self.declare_symbol(symbol, AstKind2::BindingIdentifier(node), exporting, kind, None);
   }
 
   pub fn init_binding_identifier(
@@ -24,8 +23,7 @@ impl<'a> Analyzer<'a> {
     init: Option<Entity<'a>>,
   ) {
     let symbol = node.symbol_id.get().unwrap();
-    let dep = self.consumable(AstKind2::BindingIdentifier(node));
-    self.init_symbol(symbol, init, dep);
+    self.init_symbol(symbol, init, AstKind2::BindingIdentifier(node));
   }
 }
 

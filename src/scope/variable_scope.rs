@@ -1,9 +1,7 @@
 use super::exhaustive::ExhaustiveCallback;
 use crate::{
-  analyzer::Analyzer,
-  ast::DeclarationKind,
-  consumable::{Consumable, LazyConsumable},
-  entity::Entity,
+  analyzer::Analyzer, ast::DeclarationKind, consumable::LazyConsumable, entity::Entity,
+  utils::ast::AstKind2,
 };
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -15,7 +13,7 @@ pub struct Variable<'a> {
   pub cf_scope: ScopeId,
   pub exhausted: Option<LazyConsumable<'a>>,
   pub value: Option<Entity<'a>>,
-  pub decl_dep: Consumable<'a>,
+  pub decl_node: AstKind2<'a>,
 }
 
 #[derive(Default)]
@@ -49,7 +47,7 @@ impl<'a> Analyzer<'a> {
     id: ScopeId,
     kind: DeclarationKind,
     symbol: SymbolId,
-    decl_dep: Consumable<'a>,
+    decl_node: AstKind2<'a>,
     fn_value: Option<Entity<'a>>,
   ) {
     if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol) {
@@ -57,7 +55,7 @@ impl<'a> Analyzer<'a> {
       let old_kind = variable.borrow().kind;
 
       if old_kind.is_untracked() {
-        self.consume(decl_dep);
+        self.consume(decl_node);
         if let Some(val) = fn_value {
           val.consume(self)
         }
@@ -70,8 +68,8 @@ impl<'a> Analyzer<'a> {
         // function f(x) { var x }
         let mut variable = variable.borrow_mut();
         variable.kind = kind;
-        // TODO: Sometimes this is not necessary
-        variable.decl_dep = self.consumable((variable.decl_dep, decl_dep));
+        // FIXME: Not sure if this is correct - how to handle the first declaration?
+        variable.decl_node = decl_node;
         drop(variable);
         if let Some(new_val) = fn_value {
           self.write_on_scope(id, symbol, new_val);
@@ -90,7 +88,7 @@ impl<'a> Analyzer<'a> {
         },
         exhausted: None,
         value: fn_value,
-        decl_dep,
+        decl_node,
       }));
       self.scope_context.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
@@ -104,7 +102,7 @@ impl<'a> Analyzer<'a> {
     id: ScopeId,
     symbol: SymbolId,
     value: Option<Entity<'a>>,
-    init_dep: Consumable<'a>,
+    init_node: AstKind2<'a>,
   ) {
     let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
 
@@ -112,16 +110,16 @@ impl<'a> Analyzer<'a> {
     if variable_ref.kind.is_redeclarable() {
       if let Some(value) = value {
         drop(variable_ref);
-        self.write_on_scope(id, symbol, self.factory.computed(value, init_dep));
+        self.write_on_scope(id, symbol, self.factory.computed(value, init_node));
       } else {
         // Do nothing
       }
     } else if let Some(deps) = variable_ref.exhausted {
-      deps.push(self, self.consumable((init_dep, value)));
+      deps.push(self, self.consumable((init_node, value)));
     } else {
       drop(variable_ref);
       variable.borrow_mut().value =
-        Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_dep));
+        Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_node));
       self.add_exhaustive_callbacks(false, (id, symbol));
     }
   }
@@ -136,7 +134,7 @@ impl<'a> Analyzer<'a> {
         variable_ref
           .kind
           .is_var()
-          .then(|| self.factory.computed(self.factory.undefined, variable_ref.decl_dep))
+          .then(|| self.factory.computed(self.factory.undefined, variable_ref.decl_node))
       });
 
       let value = if let Some(dep) = variable_ref.exhausted {
@@ -157,7 +155,7 @@ impl<'a> Analyzer<'a> {
       if value.is_none() {
         // TDZ
         let variable_ref = variable.borrow();
-        self.consume(variable_ref.decl_dep);
+        self.consume(variable_ref.decl_node);
         let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
         self.handle_tdz(target_cf_scope);
       }
@@ -173,12 +171,12 @@ impl<'a> Analyzer<'a> {
         self.consume(new_val);
       } else if kind.is_const() {
         self.thrown_builtin_error("Cannot assign to const variable");
-        self.consume(variable.borrow().decl_dep);
+        self.consume(variable.borrow().decl_node);
         new_val.consume(self);
       } else {
         let variable_ref = variable.borrow();
         let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
-        let dep = (self.get_exec_dep(target_cf_scope), variable_ref.decl_dep);
+        let dep = (self.get_exec_dep(target_cf_scope), variable_ref.decl_node);
 
         if let Some(deps) = variable_ref.exhausted {
           deps.push(self, self.consumable((dep, new_val)));
@@ -230,7 +228,7 @@ impl<'a> Analyzer<'a> {
         drop(variable_ref);
         self.consume(dep);
       } else {
-        self.consume(variable_ref.decl_dep);
+        self.consume(variable_ref.decl_node);
         if let Some(value) = &variable_ref.value {
           value.consume(self);
         }
@@ -253,7 +251,7 @@ impl<'a> Analyzer<'a> {
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scope_context.cf.stack[cf_scope_depth],
       value: Some(self.factory.unknown()),
-      decl_dep: self.factory.empty_consumable,
+      decl_node: AstKind2::Environment,
     }));
     let old = self.variable_scope_mut().variables.insert(symbol, variable);
     assert!(old.is_none());
@@ -281,7 +279,7 @@ impl<'a> Analyzer<'a> {
   pub fn declare_symbol(
     &mut self,
     symbol: SymbolId,
-    decl_dep: Consumable<'a>,
+    decl_node: AstKind2<'a>,
     exporting: bool,
     kind: DeclarationKind,
     fn_value: Option<Entity<'a>>,
@@ -296,17 +294,17 @@ impl<'a> Analyzer<'a> {
     }
 
     let variable_scope = self.scope_context.variable.current_id();
-    self.declare_on_scope(variable_scope, kind, symbol, decl_dep, fn_value);
+    self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
   }
 
   pub fn init_symbol(
     &mut self,
     symbol: SymbolId,
     value: Option<Entity<'a>>,
-    init_dep: Consumable<'a>,
+    init_node: AstKind2<'a>,
   ) {
     let variable_scope = self.scope_context.variable.current_id();
-    self.init_on_scope(variable_scope, symbol, value, init_dep);
+    self.init_on_scope(variable_scope, symbol, value, init_node);
   }
 
   /// `None` for TDZ

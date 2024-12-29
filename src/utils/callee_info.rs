@@ -1,5 +1,5 @@
 use super::ast::AstKind2;
-use crate::{analyzer::Analyzer, dep::DepId};
+use crate::analyzer::Analyzer;
 use oxc::{
   ast::ast::{ArrowFunctionExpression, Class, Function},
   span::{GetSpan, Span},
@@ -58,7 +58,7 @@ pub struct CalleeInfo<'a> {
 }
 
 impl<'a> CalleeInfo<'a> {
-  pub fn into_dep_id(self) -> DepId {
+  pub fn into_node(self) -> AstKind2<'a> {
     match self.node {
       CalleeNode::Function(node) => AstKind2::Function(node),
       CalleeNode::ArrowFunctionExpression(node) => AstKind2::ArrowFunctionExpression(node),
@@ -66,7 +66,6 @@ impl<'a> CalleeInfo<'a> {
       CalleeNode::ClassConstructor(node) => AstKind2::Class(node),
       CalleeNode::Module => AstKind2::Environment,
     }
-    .into()
   }
 
   pub fn span(&self) -> Span {
