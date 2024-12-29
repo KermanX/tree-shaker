@@ -37,13 +37,15 @@ impl<'a> ObjectProperty<'a> {
     &mut self,
     analyzer: &Analyzer<'a>,
     values: &mut Vec<Entity<'a>>,
-    getters: &mut Vec<Entity<'a>>,
+    getters: &mut Vec<(Consumable<'a>, Entity<'a>)>,
     non_existent: &mut ConsumableVec<'a>,
   ) {
     for possible_value in &self.possible_values {
       match possible_value {
         ObjectPropertyValue::Field(value, _) => values.push(*value),
-        ObjectPropertyValue::Property(Some(getter), _) => getters.push(*getter),
+        ObjectPropertyValue::Property(Some(getter), _) => {
+          getters.push((analyzer.factory.empty_consumable, *getter))
+        }
         ObjectPropertyValue::Property(None, _) => values.push(analyzer.factory.undefined),
       }
     }
@@ -59,19 +61,21 @@ impl<'a> ObjectProperty<'a> {
     &mut self,
     analyzer: &Analyzer<'a>,
     values: &mut Vec<Entity<'a>>,
-    getters: &mut Vec<Entity<'a>>,
+    getters: &mut Vec<(Consumable<'a>, Entity<'a>)>,
     non_existent: &mut ConsumableVec<'a>,
     key: Entity<'a>,
     key_atom: MangleAtom,
   ) {
     let (prev_key, prev_atom) = self.mangling.unwrap();
-    let constraint = analyzer.factory.alloc(MangleConstraint::Eq(prev_atom, key_atom));
+    let constraint = &*analyzer.factory.alloc(MangleConstraint::Eq(prev_atom, key_atom));
     for possible_value in &self.possible_values {
       match possible_value {
         ObjectPropertyValue::Field(value, _) => {
           values.push(analyzer.factory.mangable(*value, (prev_key, key), constraint))
         }
-        ObjectPropertyValue::Property(Some(getter), _) => getters.push(*getter),
+        ObjectPropertyValue::Property(Some(getter), _) => {
+          getters.push((analyzer.consumable(constraint), *getter))
+        }
         ObjectPropertyValue::Property(None, _) => values.push(analyzer.factory.mangable(
           analyzer.factory.undefined,
           (prev_key, key),

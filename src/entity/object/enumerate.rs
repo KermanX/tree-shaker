@@ -5,6 +5,7 @@ use crate::{
   analyzer::Analyzer,
   consumable::Consumable,
   entity::{consumed_object, entity::EnumeratedProperties},
+  scope::CfScopeKind,
 };
 
 impl<'a> ObjectEntity<'a> {
@@ -18,7 +19,7 @@ impl<'a> ObjectEntity<'a> {
     }
 
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
-    analyzer.push_indeterminate_cf_scope();
+    analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, None, vec![dep], None);
 
     let mut result = vec![];
     let mut non_existent = vec![];
@@ -35,8 +36,8 @@ impl<'a> ObjectEntity<'a> {
         }
       }
 
-      for getter in getters {
-        values.push(getter.call_as_getter(analyzer, dep, self));
+      for (call_dep, getter) in getters {
+        values.push(getter.call_as_getter(analyzer, call_dep, self));
       }
 
       if let Some(value) = analyzer.factory.try_union(values) {
@@ -64,8 +65,8 @@ impl<'a> ObjectEntity<'a> {
         let mut getters = vec![];
         properties.get(analyzer, &mut values, &mut getters, &mut non_existent);
         mem::drop(string_keyed);
-        for getter in getters {
-          values.push(getter.call_as_getter(analyzer, dep, self));
+        for (call_dep, getter) in getters {
+          values.push(getter.call_as_getter(analyzer, call_dep, self));
         }
 
         if let Some(value) = analyzer.factory.try_union(values) {

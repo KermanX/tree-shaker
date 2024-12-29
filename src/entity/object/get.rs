@@ -3,6 +3,7 @@ use crate::{
   analyzer::Analyzer,
   consumable::Consumable,
   entity::{consumed_object, Entity, LiteralEntity},
+  scope::CfScopeKind,
 };
 
 impl<'a> ObjectEntity<'a> {
@@ -94,16 +95,17 @@ impl<'a> ObjectEntity<'a> {
     }
 
     if !getters.is_empty() {
-      if indeterminate_getter {
-        analyzer.push_indeterminate_cf_scope();
-      }
-      for getter in getters {
+      analyzer.push_cf_scope_with_deps(
+        CfScopeKind::Dependent,
+        None,
+        vec![analyzer.consumable((dep, key))],
+        if indeterminate_getter { None } else { Some(false) },
+      );
+      for (call_dep, getter) in getters {
         // TODO: Support mangling
-        values.push(getter.call_as_getter(analyzer, analyzer.consumable((dep, key)), self));
+        values.push(getter.call_as_getter(analyzer, call_dep, self));
       }
-      if indeterminate_getter {
-        analyzer.pop_cf_scope();
-      }
+      analyzer.pop_cf_scope();
     }
 
     let value = analyzer.factory.try_union(values).unwrap_or(analyzer.factory.undefined);

@@ -6,7 +6,7 @@ input_file: src/tests/fixtures/object_expression.js
 export function main() {
 	effect(1, 3);
 	let __unused_CE6D = effect();
-	let obj3 = { get a() {
+	let obj3 = { get b() {
 		effect();
 	} };
 	effect(2);
@@ -18,8 +18,8 @@ export function main() {
 	effect(1);
 }
 export function modify_self_in_getter() {
-	const { effect, a: changed } = { get b() {
-		this.a = {};
+	const { effect, changed } = { get effect() {
+		this.changed = {};
 	} };
 	return changed;
 }
