@@ -17,7 +17,7 @@
 
 > This is a simple example, but it's a good start.
 
-<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<table><tbody><tr><td width="500px"> Before </td><td> After </td></tr><tr>
 <td valign="top">
 
 ```js
@@ -43,7 +43,7 @@ export function f() {
 
 ### Dead Code Elimination
 
-<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<table><tbody><tr><td width="500px"> Before </td><td> After </td></tr><tr>
 <td valign="top">
 
 ```js
@@ -88,7 +88,7 @@ g(false);
 
 > This is beyond the scope of tree-shaking, we need a new name for this project 😇.
 
-<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<table><tbody><tr><td width="500px"> Before </td><td> After </td></tr><tr>
 <td valign="top">
 
 ```js
@@ -121,7 +121,7 @@ export function main() {
 
 > `createElement` also works, if it is directly imported from `react`.
 
-<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<table><tbody><tr><td width="500px"> Before </td><td> After </td></tr><tr>
 <td valign="top">
 
 ```jsx
@@ -158,7 +158,7 @@ export function Main() {
 
 ### React.js
 
-<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<table><tbody><tr><td width="500px"> Before </td><td> After </td></tr><tr>
 <td valign="top">
 
 ```jsx
