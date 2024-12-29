@@ -1,12 +1,10 @@
 mod collector;
 mod impls;
 mod lazy;
-mod once;
 
 use crate::{analyzer::Analyzer, entity::EntityFactory};
 pub use collector::*;
 pub use lazy::*;
-use once::OnceConsumable;
 use std::fmt::Debug;
 
 pub trait ConsumableTrait<'a>: Debug {
@@ -20,7 +18,7 @@ pub type ConsumableVec<'a> = Vec<Consumable<'a>>;
 
 impl<'a> EntityFactory<'a> {
   pub fn consumable(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {
-    Consumable(self.alloc(OnceConsumable::new(dep)))
+    Consumable(self.alloc(dep))
   }
 }
 
