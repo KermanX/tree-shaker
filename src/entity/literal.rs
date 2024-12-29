@@ -62,7 +62,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     } else {
       let prototype = self.get_prototype(analyzer);
       let key = key.get_to_property_key(analyzer);
-      let dep = analyzer.consumable((dep, self, key));
+      let dep = analyzer.consumable((self, dep, key));
       if let Some(key_literals) = key.get_to_literals(analyzer) {
         let mut values = vec![];
         for key_literal in key_literals {
