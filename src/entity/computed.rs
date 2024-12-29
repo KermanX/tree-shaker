@@ -172,7 +172,7 @@ impl<'a> EntityTrait<'a> for ComputedEntity<'a> {
 }
 
 impl<'a> ComputedEntity<'a> {
-  pub fn forward_dep(&self, dep: Consumable<'a>, analyzer: &Analyzer<'a>) -> Consumable<'a> {
+  fn forward_dep(&self, dep: Consumable<'a>, analyzer: &Analyzer<'a>) -> Consumable<'a> {
     if self.consumed.get() {
       dep
     } else {
@@ -180,8 +180,12 @@ impl<'a> ComputedEntity<'a> {
     }
   }
 
-  pub fn forward_value(&self, val: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.computed(val, self.dep)
+  fn forward_value(&self, val: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    if self.consumed.get() {
+      val
+    } else {
+      analyzer.factory.computed(val, self.dep)
+    }
   }
 }
 
