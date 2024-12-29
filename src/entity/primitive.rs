@@ -21,31 +21,29 @@ pub enum PrimitiveEntity {
 }
 
 impl<'a> EntityTrait<'a> for PrimitiveEntity {
-  fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
+  fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
     // No effect
   }
 
   fn get_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     // TODO: PrimitiveEntity::String
     if *self == PrimitiveEntity::Mixed || *self == PrimitiveEntity::String {
-      analyzer.factory.computed_unknown((rc, dep, key))
+      analyzer.factory.computed_unknown((self, dep, key))
     } else {
       let prototype = self.get_prototype(analyzer);
-      prototype.get_property(analyzer, rc, key, dep)
+      prototype.get_property(analyzer, self, key, dep)
     }
   }
 
   fn set_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
     _key: Entity<'a>,
@@ -55,85 +53,72 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
   }
 
   fn enumerate_properties(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
     if *self == PrimitiveEntity::String {
       (
         vec![(false, analyzer.factory.unknown_string, analyzer.factory.unknown_string)],
-        analyzer.consumable((rc, dep)),
+        analyzer.consumable((self, dep)),
       )
     } else {
-      (vec![], analyzer.consumable((rc, dep)))
+      (vec![], analyzer.consumable((self, dep)))
     }
   }
 
-  fn delete_property(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>, _key: Entity<'a>) {
+  fn delete_property(
+    &'a self,
+    _analyzer: &mut Analyzer<'a>,
+    _dep: Consumable<'a>,
+    _key: Entity<'a>,
+  ) {
     // No effect
   }
 
   fn call(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error("Cannot call non-object");
-    consumed_object::call(rc, analyzer, dep, this, args)
+    consumed_object::call(self, analyzer, dep, this, args)
   }
 
   fn construct(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error("Cannot construct non-object");
-    consumed_object::construct(rc, analyzer, dep, args)
+    consumed_object::construct(self, analyzer, dep, args)
   }
 
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown((rc, props))
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+    analyzer.factory.computed_unknown((self, props))
   }
 
-  fn r#await(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Entity<'a> {
-    analyzer.factory.computed(rc, dep)
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+    analyzer.factory.computed(self, dep)
   }
 
-  fn iterate(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     if *self == PrimitiveEntity::String {
-      return (vec![], Some(analyzer.factory.unknown()), analyzer.consumable((rc, dep)));
+      return (vec![], Some(analyzer.factory.unknown()), analyzer.consumable((self, dep)));
     }
     analyzer.thrown_builtin_error("Cannot iterate non-object");
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a> {
-    analyzer.consumable((rc, dep))
+  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    analyzer.consumable((self, dep))
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if let Some(str) = self.test_typeof().to_string() {
       analyzer.factory.string(str)
     } else {
@@ -141,26 +126,26 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     }
   }
 
-  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.unknown_string
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.unknown()
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
       Some(val) => analyzer.factory.boolean(val),
       None => analyzer.factory.unknown_boolean,
     }
   }
 
-  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.unknown()
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if matches!(self, PrimitiveEntity::Mixed | PrimitiveEntity::String | PrimitiveEntity::Number) {
       analyzer.factory.unknown_string
     } else {

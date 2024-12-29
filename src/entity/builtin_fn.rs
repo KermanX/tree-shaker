@@ -22,40 +22,38 @@ pub trait BuiltinFnEntity<'a>: Debug {
 }
 
 impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     if let Some(object) = self.object() {
       object.consume(analyzer);
     }
   }
 
-  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
     // No effect
   }
 
   fn get_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     if let Some(object) = self.object() {
-      object.get_property(rc, analyzer, dep, key)
+      object.get_property(analyzer, dep, key)
     } else {
-      analyzer.builtins.prototypes.function.get_property(analyzer, rc, key, dep)
+      analyzer.builtins.prototypes.function.get_property(analyzer, self, key, dep)
     }
   }
 
   fn set_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
     if let Some(object) = self.object() {
-      object.set_property(rc, analyzer, dep, key, value)
+      object.set_property(analyzer, dep, key, value)
     } else {
       analyzer.add_diagnostic(
       "Should not set property of builtin function, it may cause unexpected tree-shaking behavior",
@@ -64,7 +62,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     }
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     if let Some(object) = self.object() {
       object.delete_property(analyzer, dep, key)
     } else {
@@ -74,8 +72,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn enumerate_properties(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     _analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
@@ -83,8 +80,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn call(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
@@ -96,16 +92,15 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn construct(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    consumed_object::construct(rc, analyzer, dep, args)
+    consumed_object::construct(self, analyzer, dep, args)
   }
 
-  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     self.call_impl(
       analyzer,
       analyzer.factory.empty_consumable,
@@ -114,55 +109,40 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     )
   }
 
-  fn r#await(
-    &self,
-    rc: Entity<'a>,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
-  ) -> Entity<'a> {
-    rc
+  fn r#await(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) -> Entity<'a> {
+    self
   }
 
-  fn iterate(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     analyzer.thrown_builtin_error("Cannot iterate over function");
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a> {
-    analyzer.consumable((rc, dep))
+  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    analyzer.consumable((self, dep))
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("function")
   }
 
-  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown_string(rc)
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.nan
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(true)
   }
 
-  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.get_to_string(rc, analyzer)
+  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.get_to_string(analyzer)
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: analyzer.thrown_builtin_error("Functions are not valid JSX children");
     analyzer.factory.string("")
   }
@@ -230,7 +210,7 @@ impl<'a> EntityFactory<'a> {
     name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
-    self.entity(ImplementedBuiltinFnEntity {
+    self.alloc(ImplementedBuiltinFnEntity {
       #[cfg(feature = "flame")]
       name,
       implementation,
@@ -245,7 +225,7 @@ impl<'a> Analyzer<'a> {
     name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
-    self.factory.entity(ImplementedBuiltinFnEntity {
+    self.factory.alloc(ImplementedBuiltinFnEntity {
       #[cfg(feature = "flame")]
       name,
       implementation,

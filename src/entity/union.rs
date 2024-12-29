@@ -22,7 +22,7 @@ pub struct UnionEntity<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> {
 }
 
 impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEntity<'a, V> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     for value in self.values.iter() {
@@ -30,7 +30,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     }
   }
 
-  fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
+  fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
     if !self.consumed.get() {
       let mut consumed = true;
       for value in self.values.iter() {
@@ -43,15 +43,14 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     }
   }
 
-  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     for value in self.values.iter() {
       value.unknown_mutate(analyzer, dep);
     }
   }
 
   fn get_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
@@ -62,8 +61,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
   }
 
   fn set_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
@@ -77,16 +75,15 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
   }
 
   fn enumerate_properties(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
     // FIXME:
-    consumed_object::enumerate_properties(rc, analyzer, dep)
+    consumed_object::enumerate_properties(self, analyzer, dep)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     analyzer.exec_indeterminately(|analyzer| {
       for entity in self.values.iter() {
         entity.delete_property(analyzer, dep, key);
@@ -95,8 +92,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
   }
 
   fn call(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
@@ -105,7 +101,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     analyzer.push_cf_scope_with_deps(
       CfScopeKind::Dependent,
       None,
-      vec![analyzer.consumable(rc)],
+      vec![analyzer.consumable(self)],
       None,
     );
     let values = self.values.map(|v| v.call(analyzer, dep, this, args));
@@ -114,8 +110,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
   }
 
   fn construct(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
@@ -125,29 +120,19 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     analyzer.factory.union(values)
   }
 
-  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     let values =
       analyzer.exec_indeterminately(|analyzer| self.values.map(|v| v.jsx(analyzer, props)));
     analyzer.factory.union(values)
   }
 
-  fn r#await(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
     let values =
       analyzer.exec_indeterminately(|analyzer| self.values.map(|v| v.r#await(analyzer, dep)));
     analyzer.factory.union(values)
   }
 
-  fn iterate(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     let mut results = Vec::new();
     let mut has_undefined = false;
     analyzer.push_indeterminate_cf_scope();
@@ -165,12 +150,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     (vec![], analyzer.factory.try_union(results), analyzer.factory.empty_consumable)
   }
 
-  fn get_destructable(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a> {
+  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
     let mut values = Vec::new();
     for entity in self.values.iter() {
       values.push(entity.get_destructable(analyzer, dep));
@@ -178,44 +158,40 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     analyzer.consumable(values)
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: collect literals
     let values = self.values.map(|v| v.get_typeof(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: dedupe
     let values = self.values.map(|v| v.get_to_string(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: dedupe
     let values = self.values.map(|v| v.get_to_numeric(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     let values = self.values.map(|v| v.get_to_boolean(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     let values = self.values.map(|v| v.get_to_property_key(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     let values = self.values.map(|v| v.get_to_jsx_child(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_literals(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-  ) -> Option<FxHashSet<LiteralEntity<'a>>> {
+  fn get_to_literals(&'a self, analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralEntity<'a>>> {
     let mut iter = self.values.iter();
     let mut result = iter.next().unwrap().get_to_literals(analyzer)?;
     for entity in iter {
@@ -263,7 +239,7 @@ impl<'a> EntityFactory<'a> {
     match values.len() {
       0 => None,
       1 => Some(values.iter().next().unwrap()),
-      _ => Some(self.entity(UnionEntity {
+      _ => Some(self.alloc(UnionEntity {
         values,
         consumed: Cell::new(false),
         phantom: std::marker::PhantomData,

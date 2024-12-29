@@ -1,6 +1,6 @@
 use crate::{
   builtins::{constants::OBJECT_CONSTRUCTOR_OBJECT_ID, Builtins},
-  entity::{Entity, ObjectEntity, ObjectPropertyValue, TypeofResult},
+  entity::{Entity, ObjectPropertyValue, TypeofResult},
   init_namespace,
 };
 use std::borrow::BorrowMut;
@@ -10,7 +10,7 @@ impl<'a> Builtins<'a> {
     let factory = self.factory;
 
     let object =
-      ObjectEntity::new_builtin(OBJECT_CONSTRUCTOR_OBJECT_ID, &self.prototypes.function, false);
+      factory.builtin_object(OBJECT_CONSTRUCTOR_OBJECT_ID, &self.prototypes.function, false);
     object.init_rest(ObjectPropertyValue::Field(factory.immutable_unknown, true));
 
     init_namespace!(object, {
@@ -21,7 +21,7 @@ impl<'a> Builtins<'a> {
       "entries" => self.create_object_entries_impl(),
     });
 
-    self.globals.borrow_mut().insert("Object", factory.entity(object));
+    self.globals.borrow_mut().insert("Object", object);
   }
 
   fn create_object_assign_impl(&self) -> Entity<'a> {
@@ -71,7 +71,7 @@ impl<'a> Builtins<'a> {
         }
       }
 
-      analyzer.factory.computed(analyzer.factory.entity(array), deps)
+      analyzer.factory.computed(array, deps)
     })
   }
 
@@ -86,7 +86,7 @@ impl<'a> Builtins<'a> {
         array.init_rest(value);
       }
 
-      analyzer.factory.computed(analyzer.factory.entity(array), deps)
+      analyzer.factory.computed(array, deps)
     })
   }
 
@@ -101,10 +101,10 @@ impl<'a> Builtins<'a> {
         let entry = analyzer.new_empty_array();
         entry.push_element(key.get_to_string(analyzer));
         entry.push_element(value);
-        array.init_rest(analyzer.factory.entity(entry));
+        array.init_rest(entry);
       }
 
-      analyzer.factory.computed(analyzer.factory.entity(array), deps)
+      analyzer.factory.computed(array, deps)
     })
   }
 }

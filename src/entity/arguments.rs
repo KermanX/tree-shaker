@@ -13,7 +13,7 @@ pub struct ArgumentsEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     for (_, entity) in &self.arguments {
@@ -21,7 +21,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     }
   }
 
-  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
@@ -32,8 +32,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   }
 
   fn get_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
     _key: Entity<'a>,
@@ -42,8 +41,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   }
 
   fn set_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
     _key: Entity<'a>,
@@ -53,21 +51,24 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   }
 
   fn enumerate_properties(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
     unreachable!()
   }
 
-  fn delete_property(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>, _key: Entity<'a>) {
+  fn delete_property(
+    &'a self,
+    _analyzer: &mut Analyzer<'a>,
+    _dep: Consumable<'a>,
+    _key: Entity<'a>,
+  ) {
     unreachable!()
   }
 
   fn call(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
     _this: Entity<'a>,
@@ -77,8 +78,7 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   }
 
   fn construct(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     _analyzer: &mut Analyzer<'a>,
     _dep: Consumable<'a>,
     _args: Entity<'a>,
@@ -86,25 +86,15 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
-  fn jsx(&self, _rc: Entity<'a>, _analyzer: &mut Analyzer<'a>, _props: Entity<'a>) -> Entity<'a> {
+  fn jsx(&'a self, _analyzer: &mut Analyzer<'a>, _props: Entity<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn r#await(
-    &self,
-    _rc: Entity<'a>,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
-  ) -> Entity<'a> {
+  fn r#await(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn iterate(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     let mut elements = Vec::new();
     let mut rest: Option<Vec<Entity<'a>>> = None;
     for (spread, entity) in &self.arguments {
@@ -125,36 +115,31 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
     (elements, rest.map(|val| analyzer.factory.union(val)), dep)
   }
 
-  fn get_destructable(
-    &self,
-    _rc: Entity<'a>,
-    _analyzer: &Analyzer<'a>,
-    _dep: Consumable<'a>,
-  ) -> Consumable<'a> {
+  fn get_destructable(&'a self, _analyzer: &Analyzer<'a>, _dep: Consumable<'a>) -> Consumable<'a> {
     unreachable!()
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_string(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_property_key(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }
 
@@ -173,6 +158,6 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
 impl<'a> EntityFactory<'a> {
   pub fn arguments(&self, arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
-    self.entity(ArgumentsEntity { consumed: Cell::new(false), arguments })
+    self.alloc(ArgumentsEntity { consumed: Cell::new(false), arguments })
   }
 }

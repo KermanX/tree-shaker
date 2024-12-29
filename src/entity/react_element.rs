@@ -15,7 +15,7 @@ pub struct ReactElementEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     analyzer.consume(self.deps.take());
@@ -28,11 +28,11 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
       let copied_props =
         analyzer.new_empty_object(&analyzer.builtins.prototypes.object, Some(group_id));
       copied_props.init_spread(analyzer, analyzer.factory.empty_consumable, props);
-      tag.jsx(analyzer, analyzer.factory.entity(copied_props))
+      tag.jsx(analyzer, copied_props)
     });
   }
 
-  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
@@ -41,18 +41,16 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
   }
 
   fn get_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    consumed_object::get_property(rc, analyzer, dep, key)
+    consumed_object::get_property(self, analyzer, dep, key)
   }
 
   fn set_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
@@ -63,104 +61,86 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
   }
 
   fn enumerate_properties(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
     if analyzer.config.unknown_property_read_side_effects {
       self.consume(analyzer);
     }
-    consumed_object::enumerate_properties(rc, analyzer, dep)
+    consumed_object::enumerate_properties(self, analyzer, dep)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     self.consume(analyzer);
     consumed_object::delete_property(analyzer, dep, key)
   }
 
   fn call(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error("Cannot call a React element");
-    consumed_object::call(rc, analyzer, dep, this, args)
+    consumed_object::call(self, analyzer, dep, this, args)
   }
 
   fn construct(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error("Cannot call a React element");
-    consumed_object::construct(rc, analyzer, dep, args)
+    consumed_object::construct(self, analyzer, dep, args)
   }
 
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     analyzer.thrown_builtin_error("Cannot call a React element");
-    consumed_object::jsx(rc, analyzer, props)
+    consumed_object::jsx(self, analyzer, props)
   }
 
-  fn r#await(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
     self.consume(analyzer);
     consumed_object::r#await(analyzer, dep)
   }
 
-  fn iterate(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a> {
-    analyzer.consumable((rc, dep))
+  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+    analyzer.consumable((self, dep))
   }
 
-  fn get_typeof(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown_string(rc)
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_string(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown_string(rc)
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_numeric(&self, rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    rc
+  fn get_to_numeric(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
       Some(val) => analyzer.factory.boolean(val),
       None => analyzer.factory.unknown_boolean,
     }
   }
 
-  fn get_to_property_key(&self, rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    rc
+  fn get_to_property_key(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self
   }
 
-  fn get_to_jsx_child(&self, rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    rc
+  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -177,8 +157,12 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn react_element(&self, tag: Entity<'a>, props: Entity<'a>) -> Entity<'a> {
-    self.entity(ReactElementEntity {
+  pub fn react_element(
+    &self,
+    tag: Entity<'a>,
+    props: Entity<'a>,
+  ) -> &'a mut ReactElementEntity<'a> {
+    self.alloc(ReactElementEntity {
       consumed: Cell::new(false),
       tag,
       props,

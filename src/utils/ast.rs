@@ -1,10 +1,10 @@
-use std::fmt::{self, Debug};
-
+use crate::{analyzer::Analyzer, consumable::ConsumableTrait};
 use oxc::{
   allocator::Vec,
   ast::ast::*,
   span::{GetSpan, SPAN},
 };
+use std::fmt::{self, Debug};
 
 pub type Arguments<'a> = Vec<'a, Argument<'a>>;
 
@@ -254,6 +254,12 @@ impl<'a> GetSpan for AstKind2<'a> {
 impl<'a> fmt::Debug for AstKind2<'a> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     self.span().fmt(f)
+  }
+}
+
+impl<'a> ConsumableTrait<'a> for AstKind2<'a> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    analyzer.refer_dep(*self);
   }
 }
 

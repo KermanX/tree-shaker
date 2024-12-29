@@ -7,7 +7,12 @@ use crate::{
 };
 
 impl<'a> ObjectEntity<'a> {
-  pub fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  pub fn delete_property(
+    &'a self,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    key: Entity<'a>,
+  ) {
     if self.consumed.get() {
       return consumed_object::delete_property(analyzer, dep, key);
     }
@@ -55,7 +60,7 @@ impl<'a> ObjectEntity<'a> {
                       analyzer.factory.immutable_unknown,
                       (prev_key, key),
                       analyzer.factory.alloc(MangleConstraint::Eq(prev_atom, key_atom.unwrap())),
-                    ),
+                    ) as Entity<'a>,
                   ))
                 } else {
                   dep

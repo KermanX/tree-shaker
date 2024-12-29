@@ -1,15 +1,9 @@
 use super::{Consumable, ConsumableTrait};
-use crate::{analyzer::Analyzer, ast::AstKind2, dep::DepId, entity::Entity};
+use crate::analyzer::Analyzer;
 use std::{cell::RefCell, rc::Rc};
 
 impl<'a> ConsumableTrait<'a> for () {
   fn consume(&self, _: &mut Analyzer<'a>) {}
-}
-
-impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for &'a T {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    (*self).consume(analyzer)
-  }
 }
 
 impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Box<T> {
@@ -26,7 +20,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Option<T> {
   }
 }
 
-impl<'a, T: Default + ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for RefCell<T> {
+impl<'a, T: Default + ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for &'a RefCell<T> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.take().consume(analyzer)
   }
@@ -88,23 +82,5 @@ impl<
     self.1.consume(analyzer);
     self.2.consume(analyzer);
     self.3.consume(analyzer);
-  }
-}
-
-impl<'a> ConsumableTrait<'a> for Entity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    self.consume(analyzer)
-  }
-}
-
-impl<'a> ConsumableTrait<'a> for DepId {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.refer_dep(*self);
-  }
-}
-
-impl<'a> ConsumableTrait<'a> for AstKind2<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.refer_dep(*self);
   }
 }

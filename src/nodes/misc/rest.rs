@@ -14,6 +14,6 @@ impl<'a> Analyzer<'a> {
       rest.delete_property(self, self.factory.empty_consumable, key);
     }
 
-    self.factory.entity(rest)
+    rest
   }
 }

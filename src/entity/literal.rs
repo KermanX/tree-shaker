@@ -35,35 +35,34 @@ pub enum LiteralEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     if let LiteralEntity::String(_, Some(atom)) = self {
       analyzer.consume(*atom);
     }
   }
 
-  fn consume_mangable(&self, _analyzer: &mut Analyzer<'a>) -> bool {
+  fn consume_mangable(&'a self, _analyzer: &mut Analyzer<'a>) -> bool {
     // No effect
     !matches!(self, LiteralEntity::String(_, Some(_)))
   }
 
-  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
     // No effect
   }
 
   fn get_property(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       analyzer.thrown_builtin_error("Cannot get property of null or undefined");
-      consumed_object::get_property(rc, analyzer, dep, key)
+      consumed_object::get_property(self, analyzer, dep, key)
     } else {
       let prototype = self.get_prototype(analyzer);
       let key = key.get_to_property_key(analyzer);
-      let dep = analyzer.consumable((dep, rc, key));
+      let dep = analyzer.consumable((dep, self, key));
       if let Some(key_literals) = key.get_to_literals(analyzer) {
         let mut values = vec![];
         for key_literal in key_literals {
@@ -83,8 +82,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn set_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
@@ -99,8 +97,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn enumerate_properties(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
@@ -121,7 +118,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
           dep,
         )
       } else {
-        analyzer.factory.computed_unknown_string(rc).enumerate_properties(analyzer, dep)
+        analyzer.factory.computed_unknown_string(self).enumerate_properties(analyzer, dep)
       }
     } else {
       // No effect
@@ -129,7 +126,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _key: Entity<'a>) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       analyzer.thrown_builtin_error("Cannot delete property of null or undefined");
       analyzer.consume(dep);
@@ -139,52 +136,40 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn call(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error(format!("Cannot call a non-function object {:?}", self));
-    consumed_object::call(rc, analyzer, dep, this, args)
+    consumed_object::call(self, analyzer, dep, this, args)
   }
 
   fn construct(
-    &self,
-    rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.thrown_builtin_error(format!("Cannot construct a non-constructor object {:?}", self));
-    consumed_object::construct(rc, analyzer, dep, args)
+    consumed_object::construct(self, analyzer, dep, args)
   }
 
-  fn jsx(&self, rc: Entity<'a>, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown((rc, attributes))
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
+    analyzer.factory.computed_unknown((self, attributes))
   }
 
-  fn r#await(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Entity<'a> {
-    analyzer.factory.computed(rc, dep)
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+    analyzer.factory.computed(self, dep)
   }
 
-  fn iterate(
-    &self,
-    rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     match self {
       LiteralEntity::String(value, atom) => (
         vec![],
         (!value.is_empty()).then_some(analyzer.factory.unknown_string),
-        analyzer.consumable((rc, dep, *atom)),
+        analyzer.consumable((self, dep, *atom)),
       ),
       _ => {
         self.consume(analyzer);
@@ -194,32 +179,27 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn get_destructable(
-    &self,
-    _rc: Entity<'a>,
-    _analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a> {
+  fn get_destructable(&'a self, _analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
     dep
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string(self.test_typeof().to_string().unwrap())
   }
 
-  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.entity(LiteralEntity::String(
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.alloc(LiteralEntity::String(
       self.to_string(analyzer.allocator),
       if let LiteralEntity::String(_, Some(atom)) = self { Some(*atom) } else { None },
     ))
   }
 
-  fn get_to_numeric(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self {
       LiteralEntity::Number(_, _)
       | LiteralEntity::BigInt(_)
       | LiteralEntity::NaN
-      | LiteralEntity::Infinity(_) => rc,
+      | LiteralEntity::Infinity(_) => self,
       LiteralEntity::Boolean(value) => {
         if *value {
           analyzer.factory.number(1.0, Some("1"))
@@ -243,39 +223,35 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn get_to_boolean(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
       Some(value) => analyzer.factory.boolean(value),
-      None => analyzer.factory.computed_unknown_boolean(rc),
+      None => analyzer.factory.computed_unknown_boolean(self),
     }
   }
 
-  fn get_to_property_key(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self {
-      LiteralEntity::Symbol(_, _) => rc,
-      _ => self.get_to_string(rc, analyzer),
+      LiteralEntity::Symbol(_, _) => self,
+      _ => self.get_to_string(analyzer),
     }
   }
 
-  fn get_to_jsx_child(&self, rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if (TypeofResult::String | TypeofResult::Number).contains(self.test_typeof()) {
-      self.get_to_string(rc, analyzer)
+      self.get_to_string(analyzer)
     } else {
       analyzer.factory.string("")
     }
   }
 
-  fn get_to_literals(
-    &self,
-    _rc: Entity<'a>,
-    _analyzer: &Analyzer<'a>,
-  ) -> Option<FxHashSet<LiteralEntity<'a>>> {
+  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralEntity<'a>>> {
     let mut result = FxHashSet::default();
     result.insert(*self);
     Some(result)
   }
 
-  fn get_literal(&self, _rc: Entity<'a>, _analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
+  fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<LiteralEntity<'a>> {
     Some(*self)
   }
 
@@ -500,50 +476,50 @@ impl<'a> LiteralEntity<'a> {
   }
 
   pub fn with_mangle_atom(
-    &self,
+    self,
     analyzer: &mut Analyzer<'a>,
     existing_atom: &mut Option<MangleAtom>,
   ) -> Entity<'a> {
+    let val = analyzer.factory.alloc(self);
     match self {
       LiteralEntity::String(value, None) => {
         let atom = existing_atom.get_or_insert_with(|| analyzer.mangler.new_atom());
-        analyzer.factory.entity(LiteralEntity::String(value, Some(*atom)))
+        analyzer.factory.alloc(LiteralEntity::String(value, Some(*atom)))
       }
       LiteralEntity::String(_, Some(atom)) => {
-        let val = analyzer.factory.entity(*self);
         if let Some(existing_atom) = existing_atom {
           analyzer
             .factory
-            .computed(val, &*analyzer.allocator.alloc(MangleConstraint::Eq(*atom, *existing_atom)))
+            .computed(val, &*analyzer.allocator.alloc(MangleConstraint::Eq(atom, *existing_atom)))
         } else {
-          *existing_atom = Some(*atom);
+          *existing_atom = Some(atom);
           val
         }
       }
-      _ => analyzer.factory.entity(*self),
+      _ => val,
     }
   }
 }
 
 impl<'a> EntityFactory<'a> {
   pub fn string(&self, value: &'a str) -> Entity<'a> {
-    self.entity(LiteralEntity::String(value, None))
+    self.alloc(LiteralEntity::String(value, None))
   }
 
   pub fn mangable_string(&self, value: &'a str, atom: MangleAtom) -> Entity<'a> {
-    self.entity(LiteralEntity::String(value, Some(atom)))
+    self.alloc(LiteralEntity::String(value, Some(atom)))
   }
 
   pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {
-    self.entity(LiteralEntity::Number(value.into(), str_rep))
+    self.alloc(LiteralEntity::Number(value.into(), str_rep))
   }
 
   pub fn big_int(&self, value: &'a str) -> Entity<'a> {
-    self.entity(LiteralEntity::BigInt(value))
+    self.alloc(LiteralEntity::BigInt(value))
   }
 
   pub fn boolean(&self, value: bool) -> Entity<'a> {
-    self.entity(LiteralEntity::Boolean(value))
+    self.alloc(LiteralEntity::Boolean(value))
   }
 
   pub fn boolean_maybe_unknown(&self, value: Option<bool>) -> Entity<'a> {
@@ -555,10 +531,10 @@ impl<'a> EntityFactory<'a> {
   }
 
   pub fn infinity(&self, positive: bool) -> Entity<'a> {
-    self.entity(LiteralEntity::Infinity(positive))
+    self.alloc(LiteralEntity::Infinity(positive))
   }
 
   pub fn symbol(&self, id: SymbolId, str_rep: &'a str) -> Entity<'a> {
-    self.entity(LiteralEntity::Symbol(id, str_rep))
+    self.alloc(LiteralEntity::Symbol(id, str_rep))
   }
 }

@@ -14,17 +14,16 @@ pub struct LogicalResultEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     self.value.consume(analyzer);
   }
 
-  fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     self.value.unknown_mutate(analyzer, dep);
   }
 
   fn get_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
@@ -33,8 +32,7 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
   }
 
   fn set_property(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     key: Entity<'a>,
@@ -44,21 +42,19 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
   }
 
   fn enumerate_properties(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> EnumeratedProperties<'a> {
     self.value.enumerate_properties(analyzer, dep)
   }
 
-  fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
     self.value.delete_property(analyzer, dep, key);
   }
 
   fn call(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     this: Entity<'a>,
@@ -68,8 +64,7 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
   }
 
   fn construct(
-    &self,
-    _rc: Entity<'a>,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     args: Entity<'a>,
@@ -77,50 +72,35 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.construct(analyzer, dep, args)
   }
 
-  fn jsx(&self, _rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+  fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     self.value.jsx(analyzer, props)
   }
 
-  fn r#await(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
     self.value.r#await(analyzer, dep)
   }
 
-  fn iterate(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
     self.value.iterate(analyzer, dep)
   }
 
-  fn get_destructable(
-    &self,
-    _rc: Entity<'a>,
-    analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Consumable<'a> {
+  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
     self.value.get_destructable(analyzer, dep)
   }
 
-  fn get_typeof(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.value.get_typeof(analyzer)
   }
 
-  fn get_to_string(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.value.get_to_string(analyzer)
   }
 
-  fn get_to_numeric(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.value.get_to_numeric(analyzer)
   }
 
-  fn get_to_boolean(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     let value = self.value.get_to_boolean(analyzer);
     if self.is_coalesce {
       value
@@ -131,11 +111,11 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     }
   }
 
-  fn get_to_property_key(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.value.get_to_property_key(analyzer)
   }
 
-  fn get_to_jsx_child(&self, _rc: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.value.get_to_jsx_child(analyzer)
   }
 
@@ -167,8 +147,8 @@ impl<'a> EntityFactory<'a> {
     left: Entity<'a>,
     right: Entity<'a>,
     operator: LogicalOperator,
-  ) -> Entity<'a> {
-    self.entity(LogicalResultEntity {
+  ) -> &'a mut LogicalResultEntity<'a> {
+    self.alloc(LogicalResultEntity {
       value: self.union((left, right)),
       is_coalesce: operator == LogicalOperator::Coalesce,
       result: match operator {

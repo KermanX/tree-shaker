@@ -23,7 +23,6 @@ mod union;
 mod unknown;
 mod utils;
 
-pub use array::ArrayEntity;
 pub use builtin_fn::PureBuiltinFnEntity;
 pub use class::ClassEntity;
 pub use collector::LiteralCollector;

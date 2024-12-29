@@ -10,22 +10,22 @@ pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
 }
 
 pub fn get_property<'a>(
-  rc: Entity<'a>,
+  target: Entity<'a>,
   analyzer: &mut Analyzer<'a>,
   dep: Consumable<'a>,
   key: Entity<'a>,
 ) -> Entity<'a> {
   if analyzer.is_inside_pure() {
-    let dep = analyzer.consumable((rc, dep, key));
-    rc.unknown_mutate(analyzer, dep);
+    let dep = analyzer.consumable((target, dep, key));
+    target.unknown_mutate(analyzer, dep);
     analyzer.factory.computed_unknown(dep)
   } else if analyzer.config.unknown_property_read_side_effects {
     analyzer.may_throw();
-    analyzer.consume((rc, dep, key));
+    analyzer.consume((target, dep, key));
     analyzer.refer_to_global();
     analyzer.factory.unknown()
   } else {
-    analyzer.factory.computed_unknown((rc, dep, key))
+    analyzer.factory.computed_unknown((target, dep, key))
   }
 }
 
@@ -43,7 +43,7 @@ pub fn set_property<'a>(
 }
 
 pub fn enumerate_properties<'a>(
-  rc: Entity<'a>,
+  target: Entity<'a>,
   analyzer: &mut Analyzer<'a>,
   dep: Consumable<'a>,
 ) -> EnumeratedProperties<'a> {
@@ -58,7 +58,7 @@ pub fn enumerate_properties<'a>(
   } else {
     (
       vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
-      analyzer.consumable((rc, dep)),
+      analyzer.consumable((target, dep)),
     )
   }
 }
@@ -70,19 +70,19 @@ pub fn delete_property<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key
 }
 
 pub fn call<'a>(
-  rc: Entity<'a>,
+  target: Entity<'a>,
   analyzer: &mut Analyzer<'a>,
   dep: Consumable<'a>,
   this: Entity<'a>,
   args: Entity<'a>,
 ) -> Entity<'a> {
   if analyzer.is_inside_pure() {
-    let dep = analyzer.consumable((rc, dep, this, args));
+    let dep = analyzer.consumable((target, dep, this, args));
     this.unknown_mutate(analyzer, dep);
     args.unknown_mutate(analyzer, dep);
     analyzer.factory.computed_unknown(dep)
   } else {
-    analyzer.consume((rc, dep, this, args));
+    analyzer.consume((target, dep, this, args));
     analyzer.may_throw();
     analyzer.refer_to_global();
     analyzer.factory.unknown()
@@ -90,25 +90,25 @@ pub fn call<'a>(
 }
 
 pub fn construct<'a>(
-  rc: Entity<'a>,
+  target: Entity<'a>,
   analyzer: &mut Analyzer<'a>,
   dep: Consumable<'a>,
   args: Entity<'a>,
 ) -> Entity<'a> {
   if analyzer.is_inside_pure() {
-    args.unknown_mutate(analyzer, analyzer.consumable((rc, dep, args)));
+    args.unknown_mutate(analyzer, analyzer.consumable((target, dep, args)));
     analyzer.factory.computed_unknown(dep)
   } else {
-    analyzer.consume((rc, dep, args));
+    analyzer.consume((target, dep, args));
     analyzer.may_throw();
     analyzer.refer_to_global();
     analyzer.factory.unknown()
   }
 }
 
-pub fn jsx<'a>(rc: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
+pub fn jsx<'a>(target: Entity<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
   // No consume!
-  analyzer.factory.computed_unknown((rc, props))
+  analyzer.factory.computed_unknown((target, props))
 }
 
 pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
