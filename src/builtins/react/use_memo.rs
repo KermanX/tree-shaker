@@ -7,7 +7,7 @@ pub type ReactUseMemos<'a> = FxHashMap<Span, Entity<'a>>;
 
 pub fn create_react_use_memo_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::useMemo", |analyzer, dep, _this, args| {
-    let [calculate, dependencies] = args.destruct_as_array(analyzer, dep, 2).0[..] else {
+    let [calculate, dependencies] = args.destruct_as_array(analyzer, dep, 2, false).0[..] else {
       unreachable!()
     };
 

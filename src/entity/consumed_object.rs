@@ -137,3 +137,14 @@ pub fn get_to_numeric<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
   // Possibly number or bigint
   analyzer.factory.unknown()
 }
+
+pub fn destruct_as_array<'a>(
+  target: Entity<'a>,
+  analyzer: &mut Analyzer<'a>,
+  dep: Consumable<'a>,
+  length: usize,
+  need_rest: bool,
+) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
+  let unknown = analyzer.factory.computed_unknown((target, dep));
+  (vec![unknown; length], need_rest.then_some(unknown), dep)
+}
