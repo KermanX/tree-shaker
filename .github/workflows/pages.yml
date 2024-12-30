@@ -37,6 +37,11 @@ jobs:
       - name: Setup Rust
         uses: Boshen/setup-rust@main
 
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

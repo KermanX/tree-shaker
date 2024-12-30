@@ -14,10 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Rust
+        uses: Boshen/setup-rust@main
+
       - name: Install codspeed
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-codspeed
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
 
       - name: Use Node.js 22
         uses: actions/setup-node@v4
