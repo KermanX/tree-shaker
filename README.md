@@ -1,6 +1,6 @@
 # Experimental Tree Shaker
 
-\[WIP\] This is an experimental tree shaker for JS based on [Oxc](https://oxc.rs).
+\[WIP\] This is an experimental tree shaker (code size optimizer) for JavaScript based on [the Oxc compiler](https://oxc.rs).
 
 [**Try online**](https://kermanx.github.io/tree-shaker/)
 
@@ -17,7 +17,7 @@
 
 > This is a simple example, but it's a good start.
 
-<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<table><tbody><tr><td width="500px"> Input </td><td width="500px"> Output </td></tr><tr>
 <td valign="top">
 
 ```js
@@ -41,9 +41,13 @@ export function f() {
 
 </td></tr></tbody></table>
 
-### Dead Code Elimination
+### Remove Dead Code
 
-<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+> The core of tree-shaking. The execution is simulated to know which code is useless.
+>
+> And don't worry about the `&& true` in the output, minifier will remove it.
+
+<table><tbody><tr><td width="500px"> Input </td><td width="500px"> Output </td></tr><tr>
 <td valign="top">
 
 ```js
@@ -88,7 +92,7 @@ g(false);
 
 > This is beyond the scope of tree-shaking, we need a new name for this project 😇.
 
-<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<table><tbody><tr><td width="500px"> Input </td><td width="500px"> Output </td></tr><tr>
 <td valign="top">
 
 ```js
@@ -121,7 +125,7 @@ export function main() {
 
 > `createElement` also works, if it is directly imported from `react`.
 
-<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+<table><tbody><tr><td width="500px"> Input </td><td width="500px"> Output </td></tr><tr>
 <td valign="top">
 
 ```jsx
@@ -158,7 +162,9 @@ export function Main() {
 
 ### React.js
 
-<table><tbody><tr><td width="500px"> Before </td><td width="500px"> After </td></tr><tr>
+> We also have special handling for some React.js APIs. For example, React Context, `memo`, `forwardRef`, `useMemo`, etc.
+
+<table><tbody><tr><td width="500px"> Input </td><td width="500px"> Output </td></tr><tr>
 <td valign="top">
 
 ```jsx
@@ -205,12 +211,12 @@ export function main() {
 ## Todo
 
 - Performance!
-- JS Builtins metadata
+- Type narrowing
+- Pure annotation
+- Complete JS Builtins metadata
 - Test against fixtures from other tree shakers like Rollup
 - Rollup-like try-scope optimization/de-optimization
 - Reuse code with oxc_minifier for JS computation logics
-- Type narrowing
-- Pure annotation
 
 ## Basic Approach
 
