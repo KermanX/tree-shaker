@@ -382,8 +382,8 @@ impl<'a> EntityOpHost<'a> {
           if l.fract() != 0.0 || r.fract() != 0.0 || !(0.0..32.0).contains(&r) {
             return factory.unknown_number;
           }
-          let right_val_int = l as u32;
-          let bits = r.to_int_32();
+          let bits = l.to_int_32();
+          let right_val_int = r as u32;
           let value = match operator {
             BinaryOperator::ShiftLeft => f64::from(bits.wrapping_shl(right_val_int)),
             BinaryOperator::ShiftRight => f64::from(bits.wrapping_shr(right_val_int)),
