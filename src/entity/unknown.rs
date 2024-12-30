@@ -130,16 +130,6 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   fn test_nullish(&self) -> Option<bool> {
     None
   }
-
-  fn destruct_as_array(
-    &'a self,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-    length: usize,
-    need_rest: bool,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
-    consumed_object::destruct_as_array(self, analyzer, dep, length, need_rest)
-  }
 }
 
 impl<'a> UnknownEntity<'a> {

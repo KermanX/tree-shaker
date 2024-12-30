@@ -4,7 +4,7 @@ use crate::{
   consumable::{Consumable, ConsumableTrait},
 };
 use rustc_hash::FxHashSet;
-use std::fmt::Debug;
+use std::{cmp::Ordering, fmt::Debug};
 
 /// (vec![(definite, key, value)], dep)
 pub type EnumeratedProperties<'a> = (Vec<(bool, Entity<'a>, Entity<'a>)>, Consumable<'a>);
@@ -96,33 +96,34 @@ pub trait EntityTrait<'a>: Debug {
     length: usize,
     need_rest: bool,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
-    let (elements, rest, deps) = self.iterate(analyzer, dep);
-    let mut result_elements = Vec::new();
-    for element in elements.iter().take(length) {
-      result_elements.push(analyzer.factory.computed(*element, deps));
-    }
-    if length > elements.len() {
-      let element = analyzer.factory.computed(rest.unwrap_or(analyzer.factory.undefined), deps);
-      result_elements.resize(length, element);
+    let (mut elements, rest, deps) = self.iterate(analyzer, dep);
+    let extras = match elements.len().cmp(&length) {
+      Ordering::Equal => Vec::new(),
+      Ordering::Greater => elements.split_off(length),
+      Ordering::Less => {
+        elements.resize(length, rest.unwrap_or(analyzer.factory.undefined));
+        Vec::new()
+      }
+    };
+    for element in &mut elements {
+      *element = analyzer.factory.computed(*element, deps);
     }
     let rest_arr = need_rest.then(|| {
       let rest_arr = analyzer.new_empty_array();
-      rest_arr.deps.borrow_mut().push(deps);
-      let mut rest_arr_is_empty = true;
-      for element in elements.iter().skip(length) {
-        rest_arr.push_element(*element);
-        rest_arr_is_empty = false;
+      rest_arr.deps.borrow_mut().push(if extras.is_empty() && rest.is_none() {
+        analyzer.consumable((self, dep))
+      } else {
+        dep
+      });
+      if !extras.is_empty() {
+        rest_arr.elements.replace(extras);
       }
       if let Some(rest) = rest {
         rest_arr.init_rest(rest);
-        rest_arr_is_empty = false;
-      }
-      if rest_arr_is_empty {
-        rest_arr.deps.borrow_mut().push(analyzer.consumable(self));
       }
       rest_arr as Entity<'a>
     });
-    (result_elements, rest_arr, deps)
+    (elements, rest_arr, deps)
   }
 
   fn iterate_result_union(
