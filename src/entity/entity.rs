@@ -94,8 +94,7 @@ pub trait EntityTrait<'a>: Debug {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     length: usize,
-    need_rest: bool,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
+  ) -> (Vec<Entity<'a>>, Entity<'a>, Consumable<'a>) {
     let (mut elements, rest, deps) = self.iterate(analyzer, dep);
     let extras = match elements.len().cmp(&length) {
       Ordering::Equal => Vec::new(),
@@ -108,25 +107,22 @@ pub trait EntityTrait<'a>: Debug {
     for element in &mut elements {
       *element = analyzer.factory.computed(*element, deps);
     }
-    let rest_arr = need_rest.then(|| {
-      let rest_arr = analyzer.new_empty_array();
-      rest_arr.deps.borrow_mut().push(deps);
-      let mut rest_arr_is_empty = true;
-      if length < elements.len() {
-        for element in extras {
-          rest_arr.push_element(element);
-          rest_arr_is_empty = false;
-        }
-      }
-      if let Some(rest) = rest {
-        rest_arr.init_rest(rest);
+    let rest_arr = analyzer.new_empty_array();
+    rest_arr.deps.borrow_mut().push(deps);
+    let mut rest_arr_is_empty = true;
+    if length < elements.len() {
+      for element in extras {
+        rest_arr.push_element(element);
         rest_arr_is_empty = false;
       }
-      if rest_arr_is_empty {
-        rest_arr.deps.borrow_mut().push(analyzer.consumable(self));
-      }
-      rest_arr as Entity<'a>
-    });
+    }
+    if let Some(rest) = rest {
+      rest_arr.init_rest(rest);
+      rest_arr_is_empty = false;
+    }
+    if rest_arr_is_empty {
+      rest_arr.deps.borrow_mut().push(analyzer.consumable(self));
+    }
     (elements, rest_arr, deps)
   }
 
