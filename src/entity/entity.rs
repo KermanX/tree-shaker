@@ -94,34 +94,35 @@ pub trait EntityTrait<'a>: Debug {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     length: usize,
-    need_rest: bool,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
+  ) -> (Vec<Entity<'a>>, Entity<'a>, Consumable<'a>) {
     let (elements, rest, deps) = self.iterate(analyzer, dep);
     let mut result_elements = Vec::new();
-    for element in elements.iter().take(length) {
-      result_elements.push(analyzer.factory.computed(*element, deps));
+    for i in 0..length.min(elements.len()) {
+      result_elements.push(analyzer.factory.computed(elements[i], deps));
     }
-    if length > elements.len() {
-      let element = analyzer.factory.computed(rest.unwrap_or(analyzer.factory.undefined), deps);
-      result_elements.resize(elements.len(), element);
+    for _ in 0..length.saturating_sub(elements.len()) {
+      if let Some(rest) = rest {
+        result_elements.push(analyzer.factory.computed(rest, deps));
+      } else {
+        result_elements.push(analyzer.factory.computed(analyzer.factory.undefined, deps));
+      }
     }
-    let rest_arr = need_rest.then(|| {
-      let rest_arr = analyzer.new_empty_array();
-      rest_arr.deps.borrow_mut().push(deps);
-      let mut rest_arr_is_empty = true;
-      for element in elements.iter().skip(length) {
+    let rest_arr = analyzer.new_empty_array();
+    rest_arr.deps.borrow_mut().push(deps);
+    let mut rest_arr_is_empty = true;
+    if length < elements.len() {
+      for element in &elements[length..elements.len()] {
         rest_arr.push_element(*element);
         rest_arr_is_empty = false;
       }
-      if let Some(rest) = rest {
-        rest_arr.init_rest(rest);
-        rest_arr_is_empty = false;
-      }
-      if rest_arr_is_empty {
-        rest_arr.deps.borrow_mut().push(analyzer.consumable(self));
-      }
-      rest_arr as Entity<'a>
-    });
+    }
+    if let Some(rest) = rest {
+      rest_arr.init_rest(rest);
+      rest_arr_is_empty = false;
+    }
+    if rest_arr_is_empty {
+      rest_arr.deps.borrow_mut().push(analyzer.consumable(self));
+    }
     (result_elements, rest_arr, deps)
   }
 
