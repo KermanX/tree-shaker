@@ -113,11 +113,9 @@ pub trait EntityTrait<'a>: Debug {
       let rest_arr = analyzer.new_empty_array();
       rest_arr.deps.borrow_mut().push(deps);
       let mut rest_arr_is_empty = true;
-      if length < elements.len() {
-        for element in extras {
-          rest_arr.push_element(element);
-          rest_arr_is_empty = false;
-        }
+      if !extras.is_empty() {
+        rest_arr.elements.replace(extras);
+        rest_arr_is_empty = false;
       }
       if let Some(rest) = rest {
         rest_arr.init_rest(rest);
