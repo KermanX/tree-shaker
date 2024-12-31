@@ -97,15 +97,17 @@ pub trait EntityTrait<'a>: Debug {
     need_rest: bool,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
     let (mut elements, rest, deps) = self.iterate(analyzer, dep);
-    let extras = match elements.len().cmp(&length) {
+    let iterated_len = elements.len();
+    let extras = match iterated_len.cmp(&length) {
       Ordering::Equal => Vec::new(),
       Ordering::Greater => elements.split_off(length),
       Ordering::Less => {
-        elements.resize(length, rest.unwrap_or(analyzer.factory.undefined));
+        let missing = analyzer.factory.computed(rest.unwrap_or(analyzer.factory.undefined), deps);
+        elements.resize(length, missing);
         Vec::new()
       }
     };
-    for element in &mut elements {
+    for element in &mut elements[0..iterated_len] {
       *element = analyzer.factory.computed(*element, deps);
     }
 
