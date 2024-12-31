@@ -383,20 +383,43 @@ impl<'a> ArrayEntity<'a> {
 }
 
 impl<'a> EntityFactory<'a> {
-  pub fn array(&self, cf_scope: ScopeId, object_id: SymbolId) -> &'a mut ArrayEntity<'a> {
+  pub fn array(
+    &self,
+    cf_scope: ScopeId,
+    object_id: SymbolId,
+    elements: Vec<Entity<'a>>,
+    rest: Vec<Entity<'a>>,
+  ) -> &'a mut ArrayEntity<'a> {
     self.alloc(ArrayEntity {
       consumed: Cell::new(false),
       deps: Default::default(),
       cf_scope,
       object_id,
-      elements: RefCell::new(Vec::new()),
-      rest: RefCell::new(Vec::new()),
+      elements: RefCell::new(elements),
+      rest: RefCell::new(rest),
     })
+  }
+
+  pub fn empty_array(&self, cf_scope: ScopeId, object_id: SymbolId) -> &'a mut ArrayEntity<'a> {
+    self.array(cf_scope, object_id, Vec::new(), Vec::new())
   }
 }
 
 impl<'a> Analyzer<'a> {
+  pub fn new_array(
+    &mut self,
+    elements: Vec<Entity<'a>>,
+    rest: Vec<Entity<'a>>,
+  ) -> &'a mut ArrayEntity<'a> {
+    self.factory.array(
+      self.scope_context.cf.current_id(),
+      self.scope_context.alloc_object_id(),
+      elements,
+      rest,
+    )
+  }
+
   pub fn new_empty_array(&mut self) -> &'a mut ArrayEntity<'a> {
-    self.factory.array(self.scope_context.cf.current_id(), self.scope_context.alloc_object_id())
+    self.new_array(Vec::new(), Vec::new())
   }
 }

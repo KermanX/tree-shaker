@@ -110,20 +110,13 @@ pub trait EntityTrait<'a>: Debug {
     }
 
     let rest_arr = need_rest.then(|| {
-      let rest_arr = analyzer.new_empty_array();
-      rest_arr.deps.borrow_mut().push(deps);
-      let mut rest_arr_is_empty = true;
-      if !extras.is_empty() {
-        rest_arr.elements.replace(extras);
-        rest_arr_is_empty = false;
-      }
-      if let Some(rest) = rest {
-        rest_arr.init_rest(rest);
-        rest_arr_is_empty = false;
-      }
-      if rest_arr_is_empty {
-        rest_arr.deps.borrow_mut().push(analyzer.consumable(self));
-      }
+      let is_empty = extras.is_empty() && rest.is_none();
+      let rest_arr = analyzer.new_array(extras, rest.into_iter().collect());
+      rest_arr.deps.borrow_mut().push(if is_empty {
+        analyzer.consumable((self, dep))
+      } else {
+        dep
+      });
       rest_arr as Entity<'a>
     });
 
