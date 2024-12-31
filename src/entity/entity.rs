@@ -98,8 +98,8 @@ pub trait EntityTrait<'a>: Debug {
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
     let (elements, rest, deps) = self.iterate(analyzer, dep);
     let mut result_elements = Vec::new();
-    for i in 0..length.min(elements.len()) {
-      result_elements.push(analyzer.factory.computed(elements[i], deps));
+    for element in elements.iter().take(length) {
+      result_elements.push(analyzer.factory.computed(*element, deps));
     }
     if elements.len() < length {
       let missing = analyzer.factory.computed(rest.unwrap_or(analyzer.factory.undefined), deps);
