@@ -154,50 +154,6 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   fn test_nullish(&self) -> Option<bool> {
     unreachable!()
   }
-
-  fn destruct_arguments(
-    &'a self,
-    analyzer: &mut Analyzer<'a>,
-    length: usize,
-    need_rest: bool,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    let mut elements = Vec::with_capacity(length);
-    let mut extras = Vec::new();
-    let mut rest: Option<Vec<Entity<'a>>> = None;
-    for (spread, entity) in &self.arguments {
-      if *spread {
-        if let Some(iterated) =
-          entity.iterate_result_union(analyzer, analyzer.factory.empty_consumable)
-        {
-          if let Some(rest) = &mut rest {
-            rest.push(iterated);
-          } else {
-            rest = Some(vec![iterated]);
-          }
-        }
-      } else if let Some(rest) = &mut rest {
-        rest.push(*entity);
-      } else if elements.len() < length {
-        elements.push(*entity);
-      } else {
-        extras.push(*entity);
-      }
-    }
-    let rest = rest.map(|val| analyzer.factory.union(val));
-    if elements.len() < length {
-      let missing = rest.unwrap_or(analyzer.factory.undefined);
-      elements.resize(length, missing);
-    }
-    let rest_arr = need_rest.then(|| {
-      let rest_arr = analyzer.new_empty_array();
-      rest_arr.elements.borrow_mut().extend(extras);
-      if let Some(rest) = rest {
-        rest_arr.init_rest(rest);
-      }
-      rest_arr as Entity<'a>
-    });
-    (elements, rest_arr)
-  }
 }
 
 impl<'a> EntityFactory<'a> {
