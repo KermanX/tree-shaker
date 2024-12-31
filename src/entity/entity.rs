@@ -107,7 +107,7 @@ pub trait EntityTrait<'a>: Debug {
         Vec::new()
       }
     };
-    for element in &mut elements[0..iterated_len] {
+    for element in elements.iter_mut().take(iterated_len) {
       *element = analyzer.factory.computed(*element, deps);
     }
 
