@@ -101,11 +101,10 @@ pub trait EntityTrait<'a>: Debug {
     for i in 0..length.min(elements.len()) {
       result_elements.push(analyzer.factory.computed(elements[i], deps));
     }
-    for _ in 0..length.saturating_sub(elements.len()) {
-      if let Some(rest) = rest {
-        result_elements.push(analyzer.factory.computed(rest, deps));
-      } else {
-        result_elements.push(analyzer.factory.computed(analyzer.factory.undefined, deps));
+    if elements.len() < length {
+      let missing = analyzer.factory.computed(rest.unwrap_or(analyzer.factory.undefined), deps);
+      for _ in elements.len()..length {
+        result_elements.push(missing);
       }
     }
     let rest_arr = need_rest.then(|| {
