@@ -102,12 +102,11 @@ pub trait EntityTrait<'a>: Debug {
       Ordering::Equal => Vec::new(),
       Ordering::Greater => elements.split_off(length),
       Ordering::Less => {
-        let missing = analyzer.factory.computed(rest.unwrap_or(analyzer.factory.undefined), dep);
-        elements.resize(length, missing);
+        elements.resize(length, rest.unwrap_or(analyzer.factory.undefined));
         Vec::new()
       }
     };
-    for element in elements.iter_mut().take(iterated_len) {
+    for element in &mut elements {
       *element = analyzer.factory.computed(*element, dep);
     }
 
