@@ -110,6 +110,7 @@ impl<'a> Analyzer<'a> {
           self,
           self.consumable(AstKind2::ArrayPattern(node)),
           node.elements.len(),
+          node.rest.is_some(),
         );
 
         self.push_dependent_cf_scope(dep);
@@ -119,8 +120,7 @@ impl<'a> Analyzer<'a> {
           }
         }
         if let Some(rest) = &node.rest {
-          let rest_value = rest_value(self);
-          self.init_binding_rest_element(rest, rest_value);
+          self.init_binding_rest_element(rest, rest_value.unwrap());
         }
         self.pop_cf_scope();
       }

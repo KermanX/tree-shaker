@@ -14,8 +14,12 @@ impl<'a> Analyzer<'a> {
     args: Entity<'a>,
     kind: DeclarationKind,
   ) {
-    let (elements_init, rest_init, _deps) =
-      args.destruct_as_array(self, self.factory.empty_consumable, node.items.len());
+    let (elements_init, rest_init, _deps) = args.destruct_as_array(
+      self,
+      self.factory.empty_consumable,
+      node.items.len(),
+      node.rest.is_some(),
+    );
 
     for param in &node.items {
       self.declare_binding_pattern(&param.pattern, false, kind);
@@ -33,8 +37,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(rest) = &node.rest {
       self.declare_binding_rest_element(rest, false, kind);
-      let rest_init = rest_init(self);
-      self.init_binding_rest_element(rest, rest_init);
+      self.init_binding_rest_element(rest, rest_init.unwrap());
     }
   }
 }
