@@ -2,7 +2,7 @@ use crate::entity::{Entity, EntityFactory};
 
 pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::createElement", |analyzer, dep, _this, args| {
-    let (args, children, _) = args.destruct_as_array(analyzer, dep, 2, true);
+    let (args, children, _) = args.destruct_as_array(analyzer, dep, 2);
     let [tag, props] = args[..] else { unreachable!() };
     let props = match props.test_nullish() {
       Some(true) => analyzer.new_empty_object(&analyzer.builtins.prototypes.object, None),
@@ -41,11 +41,12 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
       analyzer.consume(key);
     }
 
+    let children = children(analyzer);
     props.set_property(
       analyzer,
       analyzer.factory.empty_consumable,
       analyzer.factory.string("children"),
-      children.unwrap(),
+      children,
     );
     analyzer.factory.react_element(tag, props)
   })

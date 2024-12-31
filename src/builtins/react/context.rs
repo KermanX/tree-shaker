@@ -39,8 +39,7 @@ pub type ReactContexts<'a> = IndexVec<ContextId, ReactContextData<'a>>;
 
 pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::createContext", |analyzer, dep, _this, args| {
-    let default_value =
-      args.destruct_as_array(analyzer, analyzer.factory.empty_consumable, 1, false).0[0];
+    let default_value = args.destruct_as_array(analyzer, analyzer.factory.empty_consumable, 1).0[0];
 
     let context = analyzer.new_empty_object(&analyzer.builtins.prototypes.object, None);
 
@@ -83,7 +82,7 @@ fn create_react_context_provider_impl<'a>(
   analyzer.dynamic_implemented_builtin(
     "React::Context::Provider",
     move |analyzer, dep, _this, args| {
-      let props = args.destruct_as_array(analyzer, dep, 1, false).0[0];
+      let props = args.destruct_as_array(analyzer, dep, 1).0[0];
       let value = props.get_property(analyzer, dep, analyzer.factory.string("value"));
 
       let data = &mut analyzer.builtins.react_data.contexts[context_id];
@@ -144,7 +143,7 @@ fn create_react_context_consumer_impl<'a>(
 pub fn create_react_use_context_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::useContext", move |analyzer, dep, _this, args| {
     let context_object =
-      args.destruct_as_array(analyzer, analyzer.factory.empty_consumable, 1, false).0[0];
+      args.destruct_as_array(analyzer, analyzer.factory.empty_consumable, 1).0[0];
     let context_id = context_object.get_property(
       analyzer,
       analyzer.factory.empty_consumable,

@@ -13,7 +13,6 @@ impl<'a> Analyzer<'a> {
           self,
           self.consumable(AstKind2::ArrayAssignmentTarget(node)),
           node.elements.len(),
-          node.rest.is_some(),
         );
 
         self.push_dependent_cf_scope(dep);
@@ -23,7 +22,8 @@ impl<'a> Analyzer<'a> {
           }
         }
         if let Some(rest) = &node.rest {
-          self.exec_assignment_target_rest(rest, rest_value.unwrap());
+          let rest_value = rest_value(self);
+          self.exec_assignment_target_rest(rest, rest_value);
         }
         self.pop_cf_scope();
       }

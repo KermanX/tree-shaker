@@ -9,7 +9,7 @@ use oxc_index::Idx;
 pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
   init_prototype!("Function", create_object_prototype(factory), {
     "apply" => factory.implemented_builtin_fn("Function::apply", |analyzer, dep, this, args| {
-      let mut args = args.destruct_as_array(analyzer, dep, 2, false).0;
+      let mut args = args.destruct_as_array(analyzer, dep, 2).0;
       let args_arg = {
         let arg = args.pop().unwrap();
         let cf_scope = analyzer.scope_context.cf.current_id();
@@ -28,8 +28,9 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
       this.call(analyzer, dep, this_arg, args_arg)
     }),
     "call" => factory.implemented_builtin_fn("Function::call", |analyzer, dep, this, args| {
-      let (this_arg, args_arg, _deps) = args.destruct_as_array(analyzer, dep, 1, true);
-      this.call(analyzer, dep, this_arg[0], args_arg.unwrap())
+      let (this_arg, args_arg, _deps) = args.destruct_as_array(analyzer, dep, 1);
+      let args_arg = args_arg(analyzer);
+      this.call(analyzer, dep, this_arg[0], args_arg)
     }),
     "bind" => factory.pure_fn_returns_unknown,
     "length" => factory.unknown_number,
