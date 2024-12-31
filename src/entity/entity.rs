@@ -103,7 +103,7 @@ pub trait EntityTrait<'a>: Debug {
     }
     if length > elements.len() {
       let element = analyzer.factory.computed(rest.unwrap_or(analyzer.factory.undefined), deps);
-      result_elements.resize(length, element);
+      result_elements.resize(elements.len(), element);
     }
     let rest_arr = need_rest.then(|| {
       let rest_arr = analyzer.new_empty_array();
