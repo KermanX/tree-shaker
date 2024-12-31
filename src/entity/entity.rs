@@ -4,7 +4,7 @@ use crate::{
   consumable::{Consumable, ConsumableTrait},
 };
 use rustc_hash::FxHashSet;
-use std::fmt::Debug;
+use std::{cmp::Ordering, fmt::Debug};
 
 /// (vec![(definite, key, value)], dep)
 pub type EnumeratedProperties<'a> = (Vec<(bool, Entity<'a>, Entity<'a>)>, Consumable<'a>);
@@ -96,24 +96,25 @@ pub trait EntityTrait<'a>: Debug {
     length: usize,
     need_rest: bool,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
-    let (elements, rest, deps) = self.iterate(analyzer, dep);
-    let mut result_elements = Vec::new();
-    for element in elements.iter().take(length) {
-      result_elements.push(analyzer.factory.computed(*element, deps));
-    }
-    if elements.len() < length {
-      let missing = analyzer.factory.computed(rest.unwrap_or(analyzer.factory.undefined), deps);
-      for _ in elements.len()..length {
-        result_elements.push(missing);
+    let (mut elements, rest, deps) = self.iterate(analyzer, dep);
+    let extras = match elements.len().cmp(&length) {
+      Ordering::Equal => Vec::new(),
+      Ordering::Greater => elements.split_off(length),
+      Ordering::Less => {
+        elements.resize(length, rest.unwrap_or(analyzer.factory.undefined));
+        Vec::new()
       }
+    };
+    for element in &mut elements {
+      *element = analyzer.factory.computed(*element, deps);
     }
     let rest_arr = need_rest.then(|| {
       let rest_arr = analyzer.new_empty_array();
       rest_arr.deps.borrow_mut().push(deps);
       let mut rest_arr_is_empty = true;
       if length < elements.len() {
-        for element in &elements[length..elements.len()] {
-          rest_arr.push_element(*element);
+        for element in extras {
+          rest_arr.push_element(element);
           rest_arr_is_empty = false;
         }
       }
@@ -126,7 +127,7 @@ pub trait EntityTrait<'a>: Debug {
       }
       rest_arr as Entity<'a>
     });
-    (result_elements, rest_arr, deps)
+    (elements, rest_arr, deps)
   }
 
   fn iterate_result_union(
