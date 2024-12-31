@@ -96,19 +96,19 @@ pub trait EntityTrait<'a>: Debug {
     length: usize,
     need_rest: bool,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
-    let (mut elements, rest, deps) = self.iterate(analyzer, dep);
+    let (mut elements, rest, dep) = self.iterate(analyzer, dep);
     let iterated_len = elements.len();
     let extras = match iterated_len.cmp(&length) {
       Ordering::Equal => Vec::new(),
       Ordering::Greater => elements.split_off(length),
       Ordering::Less => {
-        let missing = analyzer.factory.computed(rest.unwrap_or(analyzer.factory.undefined), deps);
+        let missing = analyzer.factory.computed(rest.unwrap_or(analyzer.factory.undefined), dep);
         elements.resize(length, missing);
         Vec::new()
       }
     };
     for element in elements.iter_mut().take(iterated_len) {
-      *element = analyzer.factory.computed(*element, deps);
+      *element = analyzer.factory.computed(*element, dep);
     }
 
     let rest_arr = need_rest.then(|| {
@@ -125,7 +125,7 @@ pub trait EntityTrait<'a>: Debug {
       rest_arr as Entity<'a>
     });
 
-    (elements, rest_arr, deps)
+    (elements, rest_arr, dep)
   }
 
   fn iterate_result_union(
