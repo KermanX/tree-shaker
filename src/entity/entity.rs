@@ -96,8 +96,9 @@ pub trait EntityTrait<'a>: Debug {
     length: usize,
     need_rest: bool,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
-    let (mut elements, rest, deps) = self.iterate(analyzer, dep);
-    let extras = match elements.len().cmp(&length) {
+    let (mut elements, rest, dep) = self.iterate(analyzer, dep);
+    let iterated_len = elements.len();
+    let extras = match iterated_len.cmp(&length) {
       Ordering::Equal => Vec::new(),
       Ordering::Greater => elements.split_off(length),
       Ordering::Less => {
@@ -106,24 +107,24 @@ pub trait EntityTrait<'a>: Debug {
       }
     };
     for element in &mut elements {
-      *element = analyzer.factory.computed(*element, deps);
+      *element = analyzer.factory.computed(*element, dep);
     }
+
     let rest_arr = need_rest.then(|| {
       let rest_arr = analyzer.new_empty_array();
       rest_arr.deps.borrow_mut().push(if extras.is_empty() && rest.is_none() {
         analyzer.consumable((self, dep))
       } else {
-        dep
+        analyzer.consumable(dep)
       });
-      if !extras.is_empty() {
-        rest_arr.elements.replace(extras);
-      }
+      rest_arr.elements.borrow_mut().extend(extras);
       if let Some(rest) = rest {
         rest_arr.init_rest(rest);
       }
       rest_arr as Entity<'a>
     });
-    (elements, rest_arr, deps)
+
+    (elements, rest_arr, dep)
   }
 
   fn iterate_result_union(
