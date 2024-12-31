@@ -163,6 +163,18 @@ pub trait EntityTrait<'a>: Debug {
   ) -> Entity<'a> {
     self.call(analyzer, dep, this, analyzer.factory.arguments(vec![(false, value)]))
   }
+
+  /// Fast path for arguments -> formal parameters
+  fn destruct_arguments(
+    &'a self,
+    analyzer: &mut Analyzer<'a>,
+    length: usize,
+    need_rest: bool,
+  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
+    let (elements, rest, _) =
+      self.destruct_as_array(analyzer, analyzer.factory.empty_consumable, length, need_rest);
+    (elements, rest)
+  }
 }
 
 pub type Entity<'a> = &'a (dyn EntityTrait<'a> + 'a);
