@@ -4,7 +4,7 @@ use super::{
   Entity, EntityFactory, EntityTrait, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
-use std::{cell::Cell, cmp::Ordering};
+use std::cell::Cell;
 
 #[derive(Debug, Default)]
 pub struct ArgumentsEntity<'a> {
@@ -153,35 +153,6 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     unreachable!()
-  }
-
-  fn destruct_arguments(
-    &'a self,
-    analyzer: &mut Analyzer<'a>,
-    length: usize,
-    need_rest: bool,
-  ) -> (Vec<Entity<'a>>, Option<Entity<'a>>) {
-    let (mut elements, rest, _) = self.iterate(analyzer, analyzer.factory.empty_consumable);
-    let iterated_len = elements.len();
-    let extras = match iterated_len.cmp(&length) {
-      Ordering::Equal => Vec::new(),
-      Ordering::Greater => elements.split_off(length),
-      Ordering::Less => {
-        elements.resize(length, rest.unwrap_or(analyzer.factory.undefined));
-        Vec::new()
-      }
-    };
-
-    let rest_arr = need_rest.then(|| {
-      let rest_arr = analyzer.new_empty_array();
-      rest_arr.elements.borrow_mut().extend(extras);
-      if let Some(rest) = rest {
-        rest_arr.init_rest(rest);
-      }
-      rest_arr as Entity<'a>
-    });
-
-    (elements, rest_arr)
   }
 }
 
