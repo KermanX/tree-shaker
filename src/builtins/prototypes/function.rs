@@ -16,11 +16,11 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
         // This can be any value
         let arguments_object_id = SymbolId::from_usize(0);
         match arg.test_is_undefined() {
-          Some(true) => analyzer.factory.empty_array(cf_scope, arguments_object_id),
+          Some(true) => analyzer.factory.array(cf_scope, arguments_object_id),
           Some(false) => arg,
           None => analyzer.factory.union((
             arg,
-            analyzer.factory.empty_array(cf_scope, arguments_object_id) as Entity<'a>,
+            analyzer.factory.array(cf_scope, arguments_object_id) as Entity<'a>,
           )),
         }
       };
