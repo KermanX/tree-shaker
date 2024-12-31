@@ -94,7 +94,7 @@ pub trait EntityTrait<'a>: Debug {
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
     length: usize,
-    _need_rest: bool,
+    need_rest: bool,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
     let (mut elements, rest, deps) = self.iterate(analyzer, dep);
     let extras = match elements.len().cmp(&length) {
@@ -109,11 +109,18 @@ pub trait EntityTrait<'a>: Debug {
       *element = analyzer.factory.computed(*element, deps);
     }
 
-    let is_empty = extras.is_empty() && rest.is_none();
-    let rest_arr = analyzer.new_array(extras, rest.into_iter().collect());
-    rest_arr.deps.borrow_mut().push(if is_empty { analyzer.consumable((self, dep)) } else { dep });
+    let rest_arr = need_rest.then(|| {
+      let is_empty = extras.is_empty() && rest.is_none();
+      let rest_arr = analyzer.new_array(extras, rest.into_iter().collect());
+      rest_arr.deps.borrow_mut().push(if is_empty {
+        analyzer.consumable((self, dep))
+      } else {
+        dep
+      });
+      rest_arr as Entity<'a>
+    });
 
-    (elements, Some(rest_arr), deps)
+    (elements, rest_arr, deps)
   }
 
   fn iterate_result_union(
