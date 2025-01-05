@@ -72,7 +72,7 @@ function treeShake(...args: Parameters<(typeof import('@kermanx/tree-shaker'))['
 }
 
 const minifiedOnly = computed(() => treeShake(debouncedInput.value, "disabled", true, false))
-const treeShakedOnly = computed(() => treeShake(debouncedInput.value, preset.value, false, false))
+const treeShakedOnly = computed(() => treeShake(debouncedInput.value, preset.value, false, alwaysInline.value))
 const treeShakedMinified = computed(() => treeShake(treeShakedOnly.value.output, "disabled", true, false))
 
 const result = computed(() => {
