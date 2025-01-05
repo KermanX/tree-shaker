@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer, ast::AstKind2, consumable::ConsumableTrait, transformer::Transformer,
 };
 use oxc::span::{GetSpan, Span};
-use rustc_hash::FxHashMap;
+use rustc_hash::FxHashSet;
 use std::{
   fmt::Debug,
   hash::Hash,
@@ -52,36 +52,15 @@ impl DepId {
 }
 
 #[derive(Default)]
-pub struct ReferredDeps {
-  by_index: Vec<usize>,
-  by_ptr: FxHashMap<DepId, usize>,
-}
+pub struct ReferredDeps(FxHashSet<DepId>);
 
 impl ReferredDeps {
   pub fn refer_dep(&mut self, dep: impl Into<DepId>) {
-    let dep = dep.into();
-    match dep.into() {
-      AstKind2::Environment => {}
-      AstKind2::Index(index) => {
-        let counter = COUNTER.load(Ordering::Relaxed);
-        if counter >= self.by_index.len() {
-          self.by_index.resize(2 * counter, 0);
-        };
-        self.by_index[index] += 1;
-      }
-      _ => {
-        *self.by_ptr.entry(dep).or_insert(0) += 1;
-      }
-    }
+    self.0.insert(dep.into());
   }
 
   pub fn is_referred(&self, dep: impl Into<DepId>) -> bool {
-    let dep = dep.into();
-    match dep.into() {
-      AstKind2::Environment => unreachable!(),
-      AstKind2::Index(index) => self.by_index.get(index).copied().is_some_and(|x| x > 0),
-      _ => self.by_ptr.contains_key(&dep),
-    }
+    self.0.contains(&dep.into())
   }
 }
 
