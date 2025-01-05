@@ -51,7 +51,7 @@ impl<'a> ConditionalBranch<'a> {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for ConditionalBranch<'a> {
+impl<'a> ConsumableTrait<'a> for &'a ConditionalBranch<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let data = analyzer.get_conditional_data_mut(self.dep_id);
     self.refer_with_data(data);
@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
     is_consequent: bool,
     has_contra: bool,
   ) -> Consumable<'a> {
-    self.push_conditional_cf_scope(
+    let dep = self.push_conditional_cf_scope(
       dep_id,
       kind,
       test,
@@ -78,7 +78,8 @@ impl<'a> Analyzer<'a> {
       maybe_alternate,
       is_consequent,
       has_contra,
-    )
+    );
+    self.consumable(dep)
   }
 
   pub fn forward_logical_left_val(
@@ -101,7 +102,7 @@ impl<'a> Analyzer<'a> {
     maybe_right: bool,
   ) -> Consumable<'a> {
     assert!(maybe_right);
-    self.push_conditional_cf_scope(
+    let dep = self.push_conditional_cf_scope(
       dep_id,
       CfScopeKind::LogicalRight,
       left,
@@ -109,7 +110,8 @@ impl<'a> Analyzer<'a> {
       maybe_right,
       false,
       false,
-    )
+    );
+    self.consumable(dep)
   }
 
   #[allow(clippy::too_many_arguments)]
@@ -122,14 +124,14 @@ impl<'a> Analyzer<'a> {
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
-  ) -> Consumable<'a> {
+  ) -> impl ConsumableTrait<'a> + 'a {
     let dep =
       self.register_conditional_data(dep_id, test, maybe_true, maybe_false, is_true, has_contra);
 
     self.push_cf_scope_with_deps(
       kind,
       None,
-      vec![dep],
+      vec![self.consumable(dep)],
       if maybe_true && maybe_false { None } else { Some(false) },
     );
 
@@ -144,7 +146,7 @@ impl<'a> Analyzer<'a> {
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
-  ) -> Consumable<'a> {
+  ) -> &'a ConditionalBranch<'a> {
     let dep_id = dep_id.into();
     let call_id = self.call_scope().call_id;
 
@@ -165,7 +167,7 @@ impl<'a> Analyzer<'a> {
 
     node_to_data.entry(dep_id).or_insert_with(ConditionalData::default);
 
-    Consumable(branch)
+    branch
   }
 
   fn is_contra_branch_impure(
