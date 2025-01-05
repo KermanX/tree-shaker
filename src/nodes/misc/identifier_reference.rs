@@ -51,7 +51,7 @@ impl<'a> Analyzer<'a> {
     node: &'a IdentifierReference<'a>,
     value: Entity<'a>,
   ) {
-    let dep = AstKind2::IdentifierReference(node);
+    let dep = self.consumable(AstKind2::IdentifierReference(node));
     let value = self.factory.computed(value, dep);
 
     let reference = self.semantic.symbols().get_reference(node.reference_id());

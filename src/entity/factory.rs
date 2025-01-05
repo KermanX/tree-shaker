@@ -75,7 +75,7 @@ impl<'a> EntityFactory<'a> {
     let unmatched_prototype_property: Entity<'a> =
       if config.unmatched_prototype_property_as_undefined { undefined } else { immutable_unknown };
 
-    let empty_consumable = Consumable::Dyn(allocator.alloc(()));
+    let empty_consumable = Consumable(allocator.alloc(()));
     let consumed_lazy_consumable = LazyConsumable(allocator.alloc(RefCell::new(None)));
 
     EntityFactory {

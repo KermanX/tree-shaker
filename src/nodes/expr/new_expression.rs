@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
     let arguments = self.exec_arguments(&node.arguments);
 
     self.scope_context.pure += pure;
-    let value = callee.construct(self, AstKind2::NewExpression(node).into(), arguments);
+    let value = callee.construct(self, self.consumable(AstKind2::NewExpression(node)), arguments);
     self.scope_context.pure -= pure;
 
     value

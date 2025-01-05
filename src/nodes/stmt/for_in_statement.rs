@@ -30,10 +30,12 @@ impl<'a> Analyzer<'a> {
 
     self.declare_for_statement_left(&node.left);
 
+    let dep = self.consumable((AstKind2::ForInStatement(node), right));
+
     self.push_cf_scope_with_deps(
       CfScopeKind::BreakableWithoutLabel,
       labels.clone(),
-      vec![AstKind2::ForInStatement(node).into(), right.into()],
+      vec![dep],
       Some(false),
     );
     self.exec_loop(move |analyzer| {
