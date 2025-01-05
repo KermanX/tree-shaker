@@ -1,6 +1,5 @@
 import { compressToBase64, decompressFromBase64 } from 'lz-string'
-import { tree_shake } from '@kermanx/tree-shaker'
-import { computed, ref, watch, watchEffect } from 'vue'
+import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
 import { DEMO } from './examples';
 
 export const onInputUpdate: (() => void)[] = []
@@ -47,9 +46,22 @@ function save() {
 load()
 watchEffect(save)
 
-function safeTreeShake(...args: Parameters<typeof tree_shake>) {
+let library = shallowRef<typeof import('@kermanx/tree-shaker') | null>(null)
+function treeShake(...args: Parameters<(typeof import('@kermanx/tree-shaker'))['tree_shake']>) {
+  if (!library.value) {
+    import('@kermanx/tree-shaker').then(lib => {
+      library.value = lib
+    }).catch(err => {
+      console.error(err)
+      library.value = {
+        tree_shake: () => ({ output: `Failed to load library.\n${err}`, diagnostics: [], free() { } }),
+        Result: null!,
+      }
+    })
+    return { output: 'Loading library...', diagnostics: [] }
+  }
   try {
-    return tree_shake(...args)
+    return library.value.tree_shake(...args)
   }
   catch (e) {
     console.error(e)
@@ -59,9 +71,9 @@ function safeTreeShake(...args: Parameters<typeof tree_shake>) {
   }
 }
 
-const minifiedOnly = computed(() => safeTreeShake(debouncedInput.value, "disabled", true, false))
-const treeShakedOnly = computed(() => safeTreeShake(debouncedInput.value, preset.value, false, false))
-const treeShakedMinified = computed(() => safeTreeShake(treeShakedOnly.value.output, "disabled", true, false))
+const minifiedOnly = computed(() => treeShake(debouncedInput.value, "disabled", true, false))
+const treeShakedOnly = computed(() => treeShake(debouncedInput.value, preset.value, false, false))
+const treeShakedMinified = computed(() => treeShake(treeShakedOnly.value.output, "disabled", true, false))
 
 const result = computed(() => {
   return {
