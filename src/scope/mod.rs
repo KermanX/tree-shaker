@@ -10,7 +10,7 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableVec},
+  consumable::{Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
   entity::{Entity, EntityFactory, LabelEntity},
   utils::{CalleeInfo, CalleeNode},
@@ -214,8 +214,13 @@ impl<'a> Analyzer<'a> {
     self.push_cf_scope(CfScopeKind::Indeterminate, None, None);
   }
 
-  pub fn push_dependent_cf_scope(&mut self, dep: impl Into<Consumable<'a>>) {
-    self.push_cf_scope_with_deps(CfScopeKind::Dependent, None, vec![dep.into()], Some(false));
+  pub fn push_dependent_cf_scope(&mut self, dep: impl ConsumableTrait<'a> + 'a) {
+    self.push_cf_scope_with_deps(
+      CfScopeKind::Dependent,
+      None,
+      vec![self.consumable(dep)],
+      Some(false),
+    );
   }
 
   pub fn pop_cf_scope(&mut self) -> ScopeId {
