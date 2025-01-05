@@ -115,10 +115,7 @@ impl<'a> Analyzer<'a> {
         // Do nothing
       }
     } else if let Some(deps) = variable_ref.exhausted {
-      deps.push(self, init_node.into());
-      if let Some(value) = value {
-        deps.push(self, value.into());
-      }
+      deps.push(self, self.consumable((init_node, value)));
     } else {
       drop(variable_ref);
       variable.borrow_mut().value =
@@ -210,7 +207,7 @@ impl<'a> Analyzer<'a> {
               } else {
                 new_val
               },
-              dep,
+              self.consumable(dep),
             ));
           };
           drop(variable_ref);

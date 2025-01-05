@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
 
     let value = tag.call(
       self,
-      AstKind2::TaggedTemplateExpression(node).into(),
+      self.consumable(AstKind2::TaggedTemplateExpression(node)),
       this,
       self.factory.arguments(arguments),
     );

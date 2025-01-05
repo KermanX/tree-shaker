@@ -101,7 +101,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     analyzer.push_cf_scope_with_deps(
       CfScopeKind::Dependent,
       None,
-      vec![Consumable::from(self as Entity)],
+      vec![analyzer.consumable(self)],
       None,
     );
     let values = self.values.map(|v| v.call(analyzer, dep, this, args));

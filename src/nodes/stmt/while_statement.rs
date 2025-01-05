@@ -17,12 +17,12 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    let deps = vec![AstKind2::WhileStatement(node).into(), test.into()];
+    let dep = self.consumable((AstKind2::WhileStatement(node), test));
 
     self.push_cf_scope_with_deps(
       CfScopeKind::BreakableWithoutLabel,
       labels.clone(),
-      deps,
+      vec![dep],
       Some(false),
     );
     self.exec_loop(move |analyzer| {
@@ -34,7 +34,8 @@ impl<'a> Analyzer<'a> {
       analyzer.pop_cf_scope();
 
       let test = analyzer.exec_expression(&node.test);
-      analyzer.cf_scope_mut().push_dep(test.into());
+      let test = analyzer.consumable(test);
+      analyzer.cf_scope_mut().push_dep(test);
     });
     self.pop_cf_scope();
   }

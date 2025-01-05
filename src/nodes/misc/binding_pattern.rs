@@ -1,5 +1,6 @@
 use crate::{
   ast::{AstKind2, DeclarationKind},
+  dep::DepId,
   entity::Entity,
   transformer::Transformer,
   Analyzer,
@@ -83,7 +84,7 @@ impl<'a> Analyzer<'a> {
 
         let mut enumerated = vec![];
         for property in &node.properties {
-          let dep = AstKind2::BindingProperty(property).into();
+          let dep = self.consumable(DepId::from(AstKind2::BindingProperty(property)));
 
           self.push_dependent_cf_scope(init);
           let key = self.exec_property_key(&property.key);
@@ -107,7 +108,7 @@ impl<'a> Analyzer<'a> {
 
         let (element_values, rest_value, dep) = init.destruct_as_array(
           self,
-          AstKind2::ArrayPattern(node).into(),
+          self.consumable(AstKind2::ArrayPattern(node)),
           node.elements.len(),
           node.rest.is_some(),
         );
