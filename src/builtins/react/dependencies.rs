@@ -77,7 +77,7 @@ pub fn check_dependencies<'a>(
       if let Some(rest) = rest_collector.try_collect(factory) {
         (true, analyzer.consumable((rest, extra_collector.collect(factory))))
       } else {
-        (false, analyzer.consumable(extra_collector.collect(factory)))
+        (false, extra_collector.collect(factory))
       }
     } else {
       let mut deps = vec![];
