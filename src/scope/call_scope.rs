@@ -92,10 +92,10 @@ impl<'a> CallScope<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn return_value(&mut self, value: Entity<'a>, dep: impl ConsumableTrait<'a> + 'a) {
+  pub fn return_value(&mut self, value: Entity<'a>, dep: impl ConsumableTrait<'a> + Copy + 'a) {
     let call_scope = self.call_scope();
     let exec_dep = self.get_exec_dep(call_scope.cf_scope_depth);
-    let value = self.factory.computed(value, self.consumable((exec_dep, dep)));
+    let value = self.factory.computed(value, (exec_dep, dep));
 
     let call_scope = self.call_scope_mut();
     call_scope.returned_values.push(value);

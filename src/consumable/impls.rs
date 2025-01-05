@@ -1,4 +1,4 @@
-use super::{Consumable, ConsumableTrait};
+use super::ConsumableTrait;
 use crate::analyzer::Analyzer;
 use std::{cell::RefCell, rc::Rc};
 
@@ -29,12 +29,6 @@ impl<'a, T: Default + ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for &'a RefC
 impl<'a, T: Default + ConsumableTrait<'a> + 'a> ConsumableTrait<'a> for Rc<T> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.as_ref().consume(analyzer)
-  }
-}
-
-impl<'a> ConsumableTrait<'a> for Consumable<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    self.0.consume(analyzer)
   }
 }
 

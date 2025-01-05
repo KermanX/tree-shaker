@@ -82,12 +82,7 @@ impl<'a> Analyzer<'a> {
           if let Some(value) = &node.value {
             let key = keys[index].unwrap();
             let value = self.exec_expression(value);
-            class.set_property(
-              self,
-              self.consumable(AstKind2::PropertyDefinition(node)),
-              key,
-              value,
-            );
+            class.set_property(self, AstKind2::PropertyDefinition(node).into(), key, value);
           }
         }
         _ => {}

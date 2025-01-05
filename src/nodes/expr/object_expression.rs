@@ -36,7 +36,7 @@ impl<'a> Analyzer<'a> {
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(self, self.consumable(AstKind2::SpreadElement(node)), argument);
+          object.init_spread(self, AstKind2::SpreadElement(node).into(), argument);
         }
       }
     }

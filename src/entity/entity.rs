@@ -115,7 +115,7 @@ pub trait EntityTrait<'a>: Debug {
       rest_arr.deps.borrow_mut().push(if extras.is_empty() && rest.is_none() {
         analyzer.consumable((self, dep))
       } else {
-        analyzer.consumable(dep)
+        dep
       });
       rest_arr.elements.borrow_mut().extend(extras);
       if let Some(rest) = rest {

@@ -20,20 +20,20 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    let dep = if let Some(test) = &node.test {
+    let deps = if let Some(test) = &node.test {
       let test = self.exec_expression(test);
       if test.test_truthy() == Some(false) {
         return;
       }
-      self.consumable((AstKind2::ForStatement(node), test))
+      vec![AstKind2::ForStatement(node).into(), test.into()]
     } else {
-      self.consumable(AstKind2::ForStatement(node))
+      vec![AstKind2::ForStatement(node).into()]
     };
 
     self.push_cf_scope_with_deps(
       CfScopeKind::BreakableWithoutLabel,
       labels.clone(),
-      vec![dep],
+      deps,
       Some(false),
     );
     self.exec_loop(move |analyzer| {
@@ -50,8 +50,7 @@ impl<'a> Analyzer<'a> {
 
       if let Some(test) = &node.test {
         let test = analyzer.exec_expression(test);
-        let test = analyzer.consumable(test);
-        analyzer.cf_scope_mut().push_dep(test);
+        analyzer.cf_scope_mut().push_dep(test.into());
       }
     });
     self.pop_cf_scope();

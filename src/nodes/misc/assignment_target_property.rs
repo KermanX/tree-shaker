@@ -1,6 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, dep::DepId, entity::Entity, transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{
     AssignmentTargetProperty, AssignmentTargetPropertyIdentifier, AssignmentTargetPropertyProperty,
@@ -20,7 +18,7 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
-    let dep = self.consumable(DepId::from(AstKind2::AssignmentTargetProperty(node)));
+    let dep = AstKind2::AssignmentTargetProperty(node).into();
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = self.factory.string(node.binding.name.as_str());
