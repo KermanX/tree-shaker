@@ -23,7 +23,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   let mut group = c.benchmark_group("fixtures");
 
   for fixture in FIXTURES {
-    let input_path = format!("./test/e2e/{fixture}/dist/bundled.js");
+    let input_path = format!("../e2e/{fixture}/dist/bundled.js");
     let input_path = Path::new(&input_path);
     let source_text = read_to_string(input_path).unwrap();
 
