@@ -29,11 +29,11 @@ struct NeverGrowInPlaceAllocator;
 // SAFETY: Methods simply delegate to `System` allocator
 #[expect(unsafe_code, clippy::undocumented_unsafe_blocks)]
 unsafe impl GlobalAlloc for NeverGrowInPlaceAllocator {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        System.alloc(layout)
-    }
+  unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+    System.alloc(layout)
+  }
 
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        System.dealloc(ptr, layout);
-    }
+  unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+    System.dealloc(ptr, layout);
+  }
 }
