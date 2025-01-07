@@ -1,4 +1,4 @@
-use crate::analyzer::Analyzer;
+use crate::Analyzer;
 use oxc::ast::ast::{ArrayExpression, ArrayExpressionElement, SpreadElement};
 
 pub trait ArrayExpressionAnalyzer<'a> {
@@ -34,13 +34,14 @@ pub trait ArrayExpressionAnalyzer<'a> {
     for node in &node.elements {
       match node {
         ArrayExpressionElement::SpreadElement(node) => {
-          self.init_spread(node, &mut context, self.exec_spread_element(node));
+          self.init_spread(node, &mut context, todo!(/* self.exec_spread_element(node) */));
         }
         ArrayExpressionElement::Elision(_node) => {
           self.init_element(node, &mut context, self.new_undefined());
         }
         _ => {
-          self.init_element(node, &mut context, self.exec_expression(node.to_expression()));
+          let value = self.exec_expression(node.to_expression());
+          self.init_element(node, &mut context, value);
         }
       }
     }

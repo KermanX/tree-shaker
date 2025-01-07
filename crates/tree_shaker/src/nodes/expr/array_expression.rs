@@ -1,15 +1,12 @@
 use crate::TreeShaker;
 use ecma_analyzer::{Analyzer, ArrayExpressionAnalyzer};
-use oxc::ast::ast::ArrayExpression;
+use oxc::ast::ast::{ArrayExpression, ArrayExpressionElement, SpreadElement};
 
-struct Context {}
+pub struct Context {}
 
 impl<'a> ArrayExpressionAnalyzer<'a> for TreeShaker<'a> {
   type Context = Context;
-  fn before_array_expression(&mut self, node: &'a ArrayExpression<'a>) -> Self::Context
-  where
-    Self: Analyzer<'a>,
-  {
+  fn before_array_expression(&mut self, node: &'a ArrayExpression<'a>) -> Self::Context {
     Context {}
   }
 
@@ -17,26 +14,22 @@ impl<'a> ArrayExpressionAnalyzer<'a> for TreeShaker<'a> {
     &mut self,
     node: &'a ArrayExpressionElement<'a>,
     context: &mut Self::Context,
-    value: Self::Entity,
-  ) where
-    Self: Analyzer<'a>,
-  {
+    value: <TreeShaker<'a> as Analyzer<'a>>::Entity,
+  ) {
   }
 
   fn init_spread(
     &mut self,
     node: &'a SpreadElement<'a>,
     context: &mut Self::Context,
-    value: Self::Entity,
-  ) where
-    Self: Analyzer<'a>,
-  {
+    value: <TreeShaker<'a> as Analyzer<'a>>::Entity,
+  ) {
   }
 
-  fn after_array_expression(&mut self, context: Self::Context) -> Self::Entity
-  where
-    Self: Analyzer<'a>,
-  {
+  fn after_array_expression(
+    &mut self,
+    context: Self::Context,
+  ) -> <TreeShaker<'a> as Analyzer<'a>>::Entity {
     todo!()
   }
 }

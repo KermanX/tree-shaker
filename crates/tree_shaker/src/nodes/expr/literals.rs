@@ -1,35 +1,50 @@
-use crate::{entity::Entity, Analyzer};
+use crate::TreeShaker;
+use ecma_analyzer::{Analyzer, LiteralsAnalyzer};
 use oxc::ast::ast::{
   BigIntLiteral, BooleanLiteral, NullLiteral, NumberBase, NumericLiteral, RegExpLiteral,
   StringLiteral,
 };
 
-impl<'a> Analyzer<'a> {
-  pub fn exec_string_literal(&mut self, node: &'a StringLiteral) -> Entity<'a> {
-    self.factory.string(node.value.as_str())
+impl<'a> LiteralsAnalyzer<'a> for TreeShaker<'a> {
+  fn exec_string_literal(
+    &mut self,
+    node: &'a StringLiteral,
+  ) -> <TreeShaker<'a> as Analyzer<'a>>::Entity {
+    "self.factory.string(node.value.as_str())"
   }
 
-  pub fn exec_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity<'a> {
-    if node.base == NumberBase::Float {
-      self.factory.unknown_number
-    } else {
-      self.factory.number(node.value, None)
-    }
+  fn exec_numeric_literal(
+    &mut self,
+    node: &'a NumericLiteral,
+  ) -> <TreeShaker<'a> as Analyzer<'a>>::Entity {
+    ""
   }
 
-  pub fn exc_big_int_literal(&mut self, node: &'a BigIntLiteral) -> Entity<'a> {
-    self.factory.big_int(&node.raw.as_str()[..node.raw.len() - 1])
+  fn exc_big_int_literal(
+    &mut self,
+    node: &'a BigIntLiteral,
+  ) -> <TreeShaker<'a> as Analyzer<'a>>::Entity {
+    ""
   }
 
-  pub fn exec_boolean_literal(&mut self, node: &'a BooleanLiteral) -> Entity<'a> {
-    self.factory.boolean(node.value)
+  fn exec_boolean_literal(
+    &mut self,
+    node: &'a BooleanLiteral,
+  ) -> <TreeShaker<'a> as Analyzer<'a>>::Entity {
+    ""
   }
 
-  pub fn exec_null_literal(&mut self, _node: &'a NullLiteral) -> Entity<'a> {
-    self.factory.null
+  fn exec_null_literal(
+    &mut self,
+    _node: &'a NullLiteral,
+  ) -> <TreeShaker<'a> as Analyzer<'a>>::Entity {
+    ""
   }
 
-  pub fn exec_regexp_literal(&mut self, _node: &'a RegExpLiteral<'a>) -> Entity<'a> {
-    self.factory.immutable_unknown
+  fn exec_regexp_literal(
+    &mut self,
+    _node: &'a RegExpLiteral<'a>,
+  ) -> <TreeShaker<'a> as Analyzer<'a>>::Entity {
+    ""
   }
 }

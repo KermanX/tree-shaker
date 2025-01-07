@@ -1,6 +1,11 @@
-mod analyzer;
 mod nodes;
-// mod scoping;
 
-pub use analyzer::*;
 pub use nodes::*;
+
+pub trait Analyzer<'a>: ExpressionAnalyzer<'a> {
+  type Entity;
+
+  fn new_undefined(&self) -> Self::Entity
+  where
+    Self: Analyzer<'a>;
+}

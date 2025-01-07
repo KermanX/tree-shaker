@@ -1,9 +1,0 @@
----
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/import_expression.js
----
-export function main() {
-	effect(1), effect(2);
-	effect(import("c", effect(3)));
-}

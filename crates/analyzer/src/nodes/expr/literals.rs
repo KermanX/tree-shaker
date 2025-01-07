@@ -1,30 +1,30 @@
-use crate::{analyzer::Analyzer, host::Host};
+use crate::Analyzer;
 use oxc::ast::ast::{
   BigIntLiteral, BooleanLiteral, NullLiteral, NumericLiteral, RegExpLiteral, StringLiteral,
 };
 
-impl<'a, H: Host<'a>> Analyzer<'a, H> {
-  pub fn exec_string_literal(&mut self, node: &'a StringLiteral) -> H::Entity {
-    self.host.new_string(node)
-  }
+pub trait LiteralsAnalyzer<'a> {
+  fn exec_string_literal(&mut self, node: &'a StringLiteral) -> Self::Entity
+  where
+    Self: Analyzer<'a>;
 
-  pub fn exec_numeric_literal(&mut self, node: &'a NumericLiteral) -> H::Entity {
-    self.host.new_numeric(node)
-  }
+  fn exec_numeric_literal(&mut self, node: &'a NumericLiteral) -> Self::Entity
+  where
+    Self: Analyzer<'a>;
 
-  pub fn exc_big_int_literal(&mut self, node: &'a BigIntLiteral) -> H::Entity {
-    self.host.new_big_int(node)
-  }
+  fn exc_big_int_literal(&mut self, node: &'a BigIntLiteral) -> Self::Entity
+  where
+    Self: Analyzer<'a>;
 
-  pub fn exec_boolean_literal(&mut self, node: &'a BooleanLiteral) -> H::Entity {
-    self.host.new_boolean(node)
-  }
+  fn exec_boolean_literal(&mut self, node: &'a BooleanLiteral) -> Self::Entity
+  where
+    Self: Analyzer<'a>;
 
-  pub fn exec_null_literal(&mut self, node: &'a NullLiteral) -> H::Entity {
-    self.host.new_null(node)
-  }
+  fn exec_null_literal(&mut self, _node: &'a NullLiteral) -> Self::Entity
+  where
+    Self: Analyzer<'a>;
 
-  pub fn exec_regexp_literal(&mut self, node: &'a RegExpLiteral<'a>) -> H::Entity {
-    self.host.new_regexp(node)
-  }
+  fn exec_regexp_literal(&mut self, _node: &'a RegExpLiteral<'a>) -> Self::Entity
+  where
+    Self: Analyzer<'a>;
 }
