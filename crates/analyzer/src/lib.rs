@@ -1,4 +1,6 @@
 mod analyzer;
-mod host;
 mod nodes;
-mod scoping;
+// mod scoping;
+
+pub use analyzer::*;
+pub use nodes::*;

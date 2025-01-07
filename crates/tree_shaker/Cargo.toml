@@ -24,6 +24,8 @@ doctest = false
 flame = ["dep:flame", "dep:flamescope"]
 
 [dependencies]
+ecma_analyzer = { workspace = true }
+
 bitflags = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 dashmap = { workspace = true }

@@ -1539,6 +1539,7 @@ dependencies = [
  "bitflags",
  "clap",
  "dashmap",
+ "ecma_analyzer",
  "flame",
  "flamescope",
  "insta",

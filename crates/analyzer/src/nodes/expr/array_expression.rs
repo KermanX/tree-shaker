@@ -1,24 +1,50 @@
-use crate::{analyzer::Analyzer, host::Host};
-use oxc::ast::ast::{ArrayExpression, ArrayExpressionElement};
+use crate::analyzer::Analyzer;
+use oxc::ast::ast::{ArrayExpression, ArrayExpressionElement, SpreadElement};
 
-impl<'a, H: Host<'a>> Analyzer<'a, H> {
-  pub fn exec_array_expression(&mut self, node: &'a ArrayExpression<'a>) -> H::ArrayEntity {
-    let mut array = self.host.new_empty_array(node);
+pub trait ArrayExpressionAnalyzer<'a> {
+  type Context;
+
+  fn before_array_expression(&mut self, node: &'a ArrayExpression<'a>) -> Self::Context
+  where
+    Self: Analyzer<'a>;
+  fn init_spread(
+    &mut self,
+    node: &'a SpreadElement<'a>,
+    context: &mut Self::Context,
+    value: Self::Entity,
+  ) where
+    Self: Analyzer<'a>;
+  fn init_element(
+    &mut self,
+    node: &'a ArrayExpressionElement<'a>,
+    context: &mut Self::Context,
+    value: Self::Entity,
+  ) where
+    Self: Analyzer<'a>;
+  fn after_array_expression(&mut self, context: Self::Context) -> Self::Entity
+  where
+    Self: Analyzer<'a>;
+
+  fn exec_array_expression(&mut self, node: &'a ArrayExpression<'a>) -> Self::Entity
+  where
+    Self: Analyzer<'a>,
+  {
+    let mut context = self.before_array_expression(node);
 
     for node in &node.elements {
       match node {
         ArrayExpressionElement::SpreadElement(node) => {
-          self.host.init_spread(node, &mut array, self.exec_spread_element(node));
+          self.init_spread(node, &mut context, self.exec_spread_element(node));
         }
         ArrayExpressionElement::Elision(_node) => {
-          self.host.init_element(node, &mut array, self.host.new_undefined());
+          self.init_element(node, &mut context, self.new_undefined());
         }
         _ => {
-          self.host.init_element(node, &mut array, self.exec_expression(node.to_expression()));
+          self.init_element(node, &mut context, self.exec_expression(node.to_expression()));
         }
       }
     }
 
-    array
+    self.after_array_expression(context)
   }
 }
