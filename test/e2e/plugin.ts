@@ -19,10 +19,6 @@ export default function (options: {
     config(config) {
       return {
         build: {
-          // Currently enabling Rollup treeshake because JS built-ins is not supported yet
-          // rollupOptions: {
-          //   treeshake: false
-          // },
           outDir: './dist',
           minify: false,
           emptyOutDir: false,
@@ -32,6 +28,10 @@ export default function (options: {
             formats: ['es'],
             fileName: disabled ? 'bundled' : 'shaken',
             ...config?.build?.lib,
+          },
+          rollupOptions: {
+            ...config?.build?.rollupOptions,
+            treeshake: false,
           },
           modulePreload: {
             polyfill: false,
