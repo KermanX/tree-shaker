@@ -1,6 +1,4 @@
-use codspeed_criterion_compat::{
-  black_box, criterion_group, criterion_main, BenchmarkId, Criterion,
-};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::{fs::read_to_string, path::Path};
 use tree_shaker::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
