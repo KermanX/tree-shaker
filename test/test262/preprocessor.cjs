@@ -7,7 +7,7 @@ const process = require('process');
 const path = require('path');
 const { readFileSync } = require('fs');
 
-const do_minify = true;
+const do_minify = false;
 
 function printDiff(diff) {
   let t1 = ""
