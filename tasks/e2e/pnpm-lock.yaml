@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@kermanx/tree-shaker':
-        specifier: link:..\..\napi
-        version: link:../../napi
+        specifier: link:../../packages/napi
+        version: link:../../packages/napi
       '@types/node':
         specifier: ^22.7.6
         version: 22.7.6

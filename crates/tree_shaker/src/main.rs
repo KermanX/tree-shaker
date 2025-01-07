@@ -4,7 +4,7 @@ use oxc::{
   minifier::{MangleOptions, MinifierOptions},
 };
 use std::{fs::File, io::Write, path::PathBuf};
-use tree_shake::{tree_shake, TreeShakeConfig, TreeShakeOptions};
+use tree_shaker::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]

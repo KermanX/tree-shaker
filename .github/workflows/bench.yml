@@ -41,7 +41,7 @@ jobs:
         run: |
           pnpm i
           pnpm build-unshaken
-        working-directory: ./test/e2e
+        working-directory: ./tasks/e2e
 
       - name: Build benchmarks
         run: cargo codspeed build

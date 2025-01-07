@@ -30,7 +30,7 @@ jobs:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-            build: cd napi; pnpm build --target x86_64-unknown-linux-gnu
+            build: cd packages/napi; pnpm build --target x86_64-unknown-linux-gnu
           - host: macos-latest
             target: aarch64-apple-darwin
             build: pnpm build --target aarch64-apple-darwin
@@ -69,7 +69,7 @@ jobs:
         shell: bash
       - name: Install dependencies
         run: pnpm install
-        working-directory: ./napi
+        working-directory: ./packages/napi
       - name: Build in docker
         uses: addnab/docker-run-action@v3
         if: ${{ matrix.settings.docker }}
@@ -81,12 +81,12 @@ jobs:
         run: ${{ matrix.settings.build }}
         if: ${{ !matrix.settings.docker }}
         shell: bash
-        working-directory: ./napi
+        working-directory: ./packages/napi
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: napi/${{ env.APP_NAME }}.*.node
+          path: packages/napi/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
 
   publish:
@@ -106,19 +106,19 @@ jobs:
           version: 9
       - name: Install dependencies
         run: pnpm install
-        working-directory: ./napi
+        working-directory: ./packages/napi
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./napi/artifacts
+          path: ./packages/napi/artifacts
       - name: Move artifacts
         run: pnpm artifacts
-        working-directory: ./napi
+        working-directory: ./packages/napi
       - name: List packages
         run: ls -R ./npm
         shell: bash
-        working-directory: ./napi
+        working-directory: ./packages/napi
       - run: node ./scripts/patch.mjs
-        working-directory: ./napi
+        working-directory: ./packages/napi
       - run: pnpx pkg-pr-new publish './' './npm/*' --pnpm
-        working-directory: ./napi
+        working-directory: ./packages/napi

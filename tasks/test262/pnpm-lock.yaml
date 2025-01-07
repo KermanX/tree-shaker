@@ -12,8 +12,8 @@ importers:
         specifier: 0.0.1-dd05c163162914b12baca4fbabb6e9ce99a217bc
         version: 0.0.1-dd05c163162914b12baca4fbabb6e9ce99a217bc
       '@kermanx/tree-shaker':
-        specifier: link:..\..\napi
-        version: link:../../napi
+        specifier: link:../../packages/napi
+        version: link:../../packages/napi
       diff:
         specifier: ^6.0.0
         version: 6.0.0

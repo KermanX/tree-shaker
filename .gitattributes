@@ -1,3 +1,2 @@
-benches/fixtures/** linguist-vendored
-src/tests/fixtures/** linguist-vendored
-src/tests/snapshots/** linguist-generated
+crates/tree_shaker/tests/fixtures/** linguist-vendored
+crates/tree_shaker/tests/snapshots/** linguist-generated

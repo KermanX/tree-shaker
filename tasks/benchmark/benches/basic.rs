@@ -1,8 +1,6 @@
-use codspeed_criterion_compat::{
-  black_box, criterion_group, criterion_main, BenchmarkId, Criterion,
-};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::{fs::read_to_string, path::Path};
-use tree_shake::{tree_shake, TreeShakeConfig, TreeShakeOptions};
+use tree_shaker::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
 fn run_tree_shaker(source_text: String) -> String {
   let result = tree_shake(
@@ -23,7 +21,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
   let mut group = c.benchmark_group("fixtures");
 
   for fixture in FIXTURES {
-    let input_path = format!("./test/e2e/{fixture}/dist/bundled.js");
+    let input_path = format!("../e2e/{fixture}/dist/bundled.js");
     let input_path = Path::new(&input_path);
     let source_text = read_to_string(input_path).unwrap();
 

@@ -50,20 +50,20 @@ jobs:
 
       - name: Build wasm
         run: wasm-pack build --release
-        working-directory: ./wasm
+        working-directory: ./packages/wasm
 
       - name: Install NPM dependencies
         run: pnpm i
-        working-directory: ./playground
+        working-directory: ./packages/playground
 
       - name: Build UI
         run: pnpm run build --base /${{github.event.repository.name}}/
-        working-directory: ./playground
+        working-directory: ./packages/playground
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./playground/dist
+          path: ./packages/playground/dist
 
   deploy:
     environment:

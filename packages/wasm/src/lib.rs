@@ -21,14 +21,14 @@ pub fn tree_shake(
 ) -> Result {
   console_error_panic_hook::set_once();
 
-  let result = tree_shake::tree_shake(
+  let result = tree_shaker::tree_shake(
     source_text,
-    tree_shake::TreeShakeOptions {
+    tree_shaker::TreeShakeOptions {
       config: match preset.as_str() {
-        "recommended" => tree_shake::TreeShakeConfig::recommended(),
-        "smallest" => tree_shake::TreeShakeConfig::smallest(),
-        "safest" => tree_shake::TreeShakeConfig::safest(),
-        "disabled" => tree_shake::TreeShakeConfig::disabled(),
+        "recommended" => tree_shaker::TreeShakeConfig::recommended(),
+        "smallest" => tree_shaker::TreeShakeConfig::smallest(),
+        "safest" => tree_shaker::TreeShakeConfig::safest(),
+        "disabled" => tree_shaker::TreeShakeConfig::disabled(),
         _ => unreachable!("Invalid preset {}", preset),
       }
       .with_react_jsx(true)
