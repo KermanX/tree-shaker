@@ -396,6 +396,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "ecma_analyzer"
+version = "0.0.0"
+dependencies = [
+ "bitflags",
+ "clap",
+ "dashmap",
+ "flame",
+ "flamescope",
+ "insta",
+ "line-index",
+ "oxc",
+ "oxc_ecmascript",
+ "oxc_index",
+ "oxc_syntax",
+ "regex",
+ "rustc-hash",
+]
+
+[[package]]
 name = "either"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

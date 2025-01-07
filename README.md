@@ -4,6 +4,12 @@
 
 [**Try online**](https://kermanx.github.io/tree-shaker/)
 
+```mermaid
+graph LR;
+A[Analyzer] --> B[Tree Shaker]
+A --> C[Type Inferrer]
+```
+
 ## Features
 
 - Simulate the runtime behavior of the code, instead of applying rules.
