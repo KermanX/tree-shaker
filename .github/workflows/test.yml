@@ -49,19 +49,19 @@ jobs:
       run: |
         pnpm i
         pnpm build
-      working-directory: ./napi
+      working-directory: ./packages/napi
     - name: Run Test262
       run: |
         pnpm i
         pnpm test
-      working-directory: ./test/test262
+      working-directory: ./tasks/test262
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.2.1-node20
       with:
         name: Test262 result
         path: |
-          ./test/test262/failed.txt
-          ./test/test262/stat.txt
+          ./tasks/test262/failed.txt
+          ./tasks/test262/stat.txt
     # Comment stat.txt to the commit or PR
     - name: Send comment
       uses: actions/github-script@v7
@@ -70,7 +70,7 @@ jobs:
         script: |
           const fs = require('fs');
           const path = require('path');
-          const stat = fs.readFileSync('./test/test262/stat.txt', 'utf-8');
+          const stat = fs.readFileSync('./tasks/test262/stat.txt', 'utf-8');
           const body = stat.slice(0, 50000);
           if (context.issue.number) {
             github.rest.issues.createComment({
@@ -108,14 +108,14 @@ jobs:
       run: |
         pnpm i
         pnpm build
-      working-directory: ./napi
+      working-directory: ./packages/napi
     - name: Build e2e tests
       run: |
         pnpm i
         pnpm build-shaken
-      working-directory: ./test/e2e
+      working-directory: ./tasks/e2e
     - name: Run e2e tests
       run: |
         pnpm exec playwright install --with-deps chromium
         pnpm test
-      working-directory: ./test/e2e
+      working-directory: ./tasks/e2e

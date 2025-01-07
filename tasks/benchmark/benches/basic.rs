@@ -2,7 +2,7 @@ use codspeed_criterion_compat::{
   black_box, criterion_group, criterion_main, BenchmarkId, Criterion,
 };
 use std::{fs::read_to_string, path::Path};
-use tree_shake::{tree_shake, TreeShakeConfig, TreeShakeOptions};
+use tree_shaker::{tree_shake, TreeShakeConfig, TreeShakeOptions};
 
 fn run_tree_shaker(source_text: String) -> String {
   let result = tree_shake(

@@ -10,9 +10,6 @@ mod transformer;
 mod tree_shaker;
 mod utils;
 
-#[cfg(test)]
-mod tests;
-
 use analyzer::Analyzer;
 use oxc::{allocator::Allocator, parser::Parser, span::SourceType};
 use utils::{
