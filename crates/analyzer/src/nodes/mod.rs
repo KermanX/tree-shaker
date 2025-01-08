@@ -1,6 +1,7 @@
 mod expr;
 // mod jsx;
 // mod misc;
-// mod stmt;
+mod stmt;
 
 pub use expr::*;
+pub use stmt::*;

@@ -1,9 +1,11 @@
-use crate::{host::Host, 
-  analyzer::Analyzer,
+use oxc::{
+  ast::ast::LabeledStatement,
+  semantic::{ScopeId, SymbolId},
 };
-use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
 use std::{mem, rc::Rc};
+
+use crate::EcmaAnalyzer;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CfScopeKind {
@@ -37,7 +39,7 @@ pub enum ReferredState {
 #[derive(Debug)]
 pub struct CfScope<'a> {
   pub kind: CfScopeKind,
-  pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+  pub labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
   pub deps: ConsumableCollector<'a>,
   pub referred_state: ReferredState,
   pub exited: Option<bool>,
@@ -50,7 +52,7 @@ pub struct CfScope<'a> {
 impl<'a> CfScope<'a> {
   pub fn new(
     kind: CfScopeKind,
-    labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+    labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
     deps: ConsumableVec<'a>,
     exited: Option<bool>,
   ) -> Self {
@@ -93,7 +95,7 @@ impl<'a> CfScope<'a> {
     self.exited.is_none()
   }
 
-  pub fn matches_label(&self, label: &str) -> Option<&LabelEntity<'a>> {
+  pub fn matches_label(&self, label: &str) -> Option<&&'a LabeledStatement<'a>> {
     if let Some(labels) = &self.labels {
       labels.iter().find(|l| l.name == label)
     } else {
@@ -142,7 +144,8 @@ impl<'a> CfScope<'a> {
 
   pub fn iterate_exhaustively(&mut self) -> bool {
     let exited = self.must_exited();
-       let dirty = data.dirty;
+    let data = self.exhaustive_data.as_mut().unwrap();
+    let dirty = data.dirty;
     data.dirty = false;
     if dirty && !exited {
       data.deps.clear();
@@ -153,15 +156,21 @@ impl<'a> CfScope<'a> {
   }
 }
 
-impl<'a, H: Host<'a>> Analyzer<'a, H> {
-  pub fn exec_indeterminately<T>(&mut self, runner: impl FnOnce(&mut Analyzer<'a>) -> T) -> T {
+pub trait CfScopeAnalyzer<'a> {
+  fn exec_indeterminately<T>(&mut self, runner: impl FnOnce(&mut Self) -> T) -> T
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.push_indeterminate_cf_scope();
     let result = runner(self);
     self.pop_cf_scope();
     result
   }
 
-  pub fn get_exec_dep(&mut self, target_depth: usize) -> Consumable<'a> {
+  fn get_exec_dep(&mut self, target_depth: usize) -> Consumable<'a>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let mut deps = vec![];
     for id in target_depth..self.scope_context.cf.stack.len() {
       let scope = self.scope_context.cf.get_mut_from_depth(id);
@@ -172,23 +181,32 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     self.consumable(deps)
   }
 
-  pub fn exit_to(&mut self, target_depth: usize) {
+  fn exit_to(&mut self, target_depth: usize)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), true, None);
   }
 
-  pub fn exit_to_not_must(&mut self, target_depth: usize) {
+  fn exit_to_not_must(&mut self, target_depth: usize)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), false, None);
   }
 
   /// `None` => Interrupted by if branch
   /// `Some` => Accumulated dependencies, may be `None`
-  pub fn exit_to_impl(
+  fn exit_to_impl(
     &mut self,
     target_depth: usize,
     from_depth: usize,
     mut must_exit: bool,
     mut acc_dep: Option<Consumable<'a>>,
-  ) -> Option<Option<Consumable<'a>>> {
+  ) -> Option<Option<Consumable<'a>>>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     for depth in (target_depth..from_depth).rev() {
       let id = self.scope_context.cf.stack[depth];
       let cf_scope = self.scope_context.cf.get_mut(id);
@@ -227,7 +245,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
   }
 
   /// If the label is used, `true` is returned.
-  pub fn break_to_label(&mut self, label: Option<&'a str>) -> bool {
+  fn break_to_label(&mut self, label: Option<&'a str>) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let mut is_closest_breakable = true;
     let mut target_depth = None;
     let mut label_used = false;
@@ -258,7 +279,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
   }
 
   /// If the label is used, `true` is returned.
-  pub fn continue_to_label(&mut self, label: Option<&'a str>) -> bool {
+  fn continue_to_label(&mut self, label: Option<&'a str>) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let mut is_closest_continuable = true;
     let mut target_depth = None;
     let mut label_used = false;
@@ -288,7 +312,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     label_used
   }
 
-  pub fn refer_to_global(&mut self) {
+  fn refer_to_global(&mut self)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     if self.is_inside_pure() {
       return;
     }

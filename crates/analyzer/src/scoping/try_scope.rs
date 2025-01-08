@@ -1,32 +1,36 @@
-use crate::{analyzer::Analyzer, host::Host};
+use crate::EcmaAnalyzer;
 
 #[derive(Debug)]
-pub struct TryScope<'a> {
+pub struct TryScope<'a, A: EcmaAnalyzer<'a> + ?Sized> {
   pub may_throw: bool,
-  pub thrown_values: Vec<H::Entity>,
+  pub thrown_values: Vec<A::Entity>,
   /// Here we use index in current stack instead of ScopeId
   pub cf_scope_depth: usize,
 }
 
-impl<'a> TryScope<'a> {
-  pub fn new(cf_scope_depth: usize) -> Self {
+trait TryScopeAnalyzer<'a> {
+  fn new(cf_scope_depth: usize) -> Self {
     TryScope { may_throw: false, thrown_values: Vec::new(), cf_scope_depth }
   }
 
-  pub fn thrown_val(self, analyzer: &Analyzer<'a>) -> Option<H::Entity> {
+  fn thrown_val(self, scope: TryScope<'a, Self>) -> Option<Self::Entity>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     // Always unknown here
     self.may_throw.then(|| {
       if self.thrown_values.is_empty() {
-        analyzer.factory.unknown()
+        self.factory.unknown()
       } else {
-        analyzer.factory.computed_unknown(analyzer.consumable(self.thrown_values))
+        self.factory.computed_unknown(self.consumable(scope.thrown_values))
       }
     })
   }
-}
 
-impl<'a, H: Host<'a>> Analyzer<'a, H> {
-  pub fn may_throw(&mut self) {
+  fn may_throw(&mut self)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let try_scope = self.try_scope_mut();
 
     try_scope.may_throw = true;
@@ -36,14 +40,20 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     // self.exit_to(cf_scope_depth, false);
   }
 
-  pub fn explicit_throw(&mut self, value: H::Entity) {
+  fn explicit_throw(&mut self, value: Self::Entity)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.explicit_throw_impl(value);
 
     let try_scope = self.try_scope();
     self.exit_to(try_scope.cf_scope_depth);
   }
 
-  pub fn thrown_builtin_error(&mut self, message: impl Into<String>) {
+  fn thrown_builtin_error(&mut self, message: impl Into<String>)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     if self.scope_context.cf.iter_stack().all(|scope| scope.exited == Some(false)) {
       self.add_diagnostic(message);
     }
@@ -54,7 +64,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     self.exit_to(try_scope.cf_scope_depth);
   }
 
-  pub fn forward_throw(&mut self, values: Vec<H::Entity>) {
+  fn forward_throw(&mut self, values: Vec<Self::Entity>)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     if values.is_empty() {
       self.may_throw();
     } else {
@@ -66,7 +79,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     }
   }
 
-  fn explicit_throw_impl(&mut self, value: H::Entity) {
+  fn explicit_throw_impl(&mut self, value: Self::Entity)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let try_scope = self.try_scope();
     let exec_dep = self.get_exec_dep(try_scope.cf_scope_depth);
     let forwarded = self.factory.computed(value, exec_dep);

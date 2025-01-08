@@ -1,5 +1,5 @@
 use super::cf_scope::ReferredState;
-use crate::{analyzer::Analyzer, host::Host, scoping::CfScopeKind};
+use crate::{scoping::CfScopeKind, EcmaAnalyzer};
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::FxHashSet;
 use std::{
@@ -9,24 +9,27 @@ use std::{
 };
 
 #[derive(Clone)]
-pub struct ExhaustiveCallback<'a, H: Host<'a>> {
-  pub handler: Rc<dyn Fn(&mut Analyzer<'a, H>) + 'a>,
+pub struct ExhaustiveCallback<'a, A: EcmaAnalyzer<'a> + ?Sized> {
+  pub handler: Rc<dyn Fn(&mut A) + 'a>,
   pub once: bool,
 }
-impl<'a, H: Host<'a>> PartialEq for ExhaustiveCallback<'a, H> {
+impl<'a, A: EcmaAnalyzer<'a>> PartialEq for ExhaustiveCallback<'a, A> {
   fn eq(&self, other: &Self) -> bool {
     self.once == other.once && Rc::ptr_eq(&self.handler, &other.handler)
   }
 }
-impl<'a, H: Host<'a>> Eq for ExhaustiveCallback<'a, H> {}
-impl<'a, H: Host<'a>> Hash for ExhaustiveCallback<'a, H> {
+impl<'a, A: EcmaAnalyzer<'a>> Eq for ExhaustiveCallback<'a, A> {}
+impl<'a, A: EcmaAnalyzer<'a>> Hash for ExhaustiveCallback<'a, A> {
   fn hash<S: Hasher>(&self, state: &mut S) {
     Rc::as_ptr(&self.handler).hash(state);
   }
 }
 
-impl<'a, H: Host<'a>> Analyzer<'a, H> {
-  pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a, H>) + 'a) {
+pub trait ExhaustiveScopeAnalyzer<'a> {
+  fn exec_loop(&mut self, runner: impl Fn(&mut Self) + 'a)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let runner = Rc::new(runner);
 
     self.exec_exhaustively("loop", runner.clone(), false);
@@ -39,12 +42,11 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     }
   }
 
-  pub fn exec_consumed_fn(
-    &mut self,
-    kind: &str,
-    runner: impl Fn(&mut Analyzer<'a, H>) -> H::Entity + 'a,
-  ) {
-    let runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a> = Rc::new(move |analyzer| {
+  fn exec_consumed_fn(&mut self, kind: &str, runner: impl Fn(&mut Self) -> Self::Entity + 'a)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
+    let runner: Rc<dyn Fn(&mut Self) + 'a> = Rc::new(move |analyzer| {
       analyzer.push_indeterminate_cf_scope();
       analyzer.push_try_scope();
       let ret_val = runner(analyzer);
@@ -59,7 +61,7 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     self.register_exhaustive_callbacks(false, runner, deps);
   }
 
-  pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a, H>) + 'a) {
+  fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Self) + 'a) {
     let runner = Rc::new(runner);
     let deps = self.exec_exhaustively("async/generator", runner.clone(), true);
     self.register_exhaustive_callbacks(true, runner, deps);
@@ -68,7 +70,7 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
   fn exec_exhaustively(
     &mut self,
     kind: &str,
-    runner: Rc<dyn Fn(&mut Analyzer<'a, H>) + 'a>,
+    runner: Rc<dyn Fn(&mut Self) + 'a>,
     once: bool,
   ) -> FxHashSet<(ScopeId, SymbolId)> {
     self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
@@ -99,7 +101,7 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
   fn register_exhaustive_callbacks(
     &mut self,
     once: bool,
-    handler: Rc<dyn Fn(&mut Analyzer<'a, H>) + 'a>,
+    handler: Rc<dyn Fn(&mut Self) + 'a>,
     deps: FxHashSet<(ScopeId, SymbolId)>,
   ) {
     for (scope, symbol) in deps {
@@ -114,13 +116,13 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, variable: (ScopeId, SymbolId), target: usize) {
+  fn mark_exhaustive_read(&mut self, variable: (ScopeId, SymbolId), target: usize) {
     for depth in target..self.scope_context.cf.stack.len() {
       self.scope_context.cf.get_mut_from_depth(depth).mark_exhaustive_read(variable);
     }
   }
 
-  pub fn mark_exhaustive_write(
+  fn mark_exhaustive_write(
     &mut self,
     variable: (ScopeId, SymbolId),
     target: usize,
@@ -137,7 +139,7 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     (should_consume, indeterminate)
   }
 
-  pub fn add_exhaustive_callbacks(
+  fn add_exhaustive_callbacks(
     &mut self,
     should_consume: bool,
     (scope, symbol): (ScopeId, SymbolId),
@@ -160,7 +162,7 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     }
   }
 
-  pub fn call_exhaustive_callbacks(&mut self) -> bool {
+  fn call_exhaustive_callbacks(&mut self) -> bool {
     if self.pending_deps.is_empty() {
       return false;
     }
@@ -180,7 +182,7 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     }
   }
 
-  pub fn has_exhaustive_scope_since(&self, target_depth: usize) -> bool {
+  fn has_exhaustive_scope_since(&self, target_depth: usize) -> bool {
     self.scope_context.cf.iter_stack_range(target_depth..).any(|scope| scope.is_exhaustive())
   }
 }

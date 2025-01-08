@@ -1,8 +1,4 @@
 use super::CfScopeKind;
-use crate::{
-  analyzer::Analyzer,
-  host::Host,
-};
 use rustc_hash::FxHashMap;
 use std::{cell::Cell, fmt::Debug, mem};
 

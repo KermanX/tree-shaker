@@ -5,27 +5,25 @@ pub mod exhaustive;
 pub mod r#loop;
 mod scope_tree;
 pub mod try_scope;
-mod utils;
 pub mod variable_scope;
 
-use crate::{analyzer::Analyzer, host::Host};
-use call_scope::CallScope;
-use cf_scope::CfScope;
-pub use cf_scope::CfScopeKind;
-use oxc::{
-  ast::ast::LabeledStatement,
-  semantic::{ScopeId, SymbolId},
-};
-use oxc_index::Idx;
+pub use call_scope::*;
+pub use cf_scope::*;
+pub use exhaustive::*;
+use oxc::{ast::ast::LabeledStatement, semantic::ScopeId};
+pub use r#loop::*;
 use scope_tree::ScopeTree;
 use std::rc::Rc;
-use try_scope::TryScope;
-use variable_scope::VariableScope;
+pub use try_scope::*;
+pub use variable_scope::*;
 
-pub struct Scoping<'a> {
+use crate::EcmaAnalyzer;
+
+#[derive(Default)]
+pub struct Scoping<'a, A: EcmaAnalyzer<'a> + ?Sized> {
   pub labels: Vec<&'a LabeledStatement<'a>>,
-  pub call: Vec<CallScope<'a>>,
-  pub variable: ScopeTree<VariableScope<'a>>,
+  pub call: Vec<CallScope<'a, A>>,
+  pub variable: ScopeTree<VariableScope<'a, A>>,
   pub cf: ScopeTree<CfScope<'a>>,
   pub pure: usize,
 
@@ -33,111 +31,159 @@ pub struct Scoping<'a> {
   pub object_symbol_counter: usize,
 }
 
-impl<'a> Scoping<'a> {
-  pub fn new(factory: &EntityFactory<'a>) -> Self {
-    let mut cf = ScopeTree::new();
-    cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
-    let mut variable = ScopeTree::new();
-    let body_variable_scope = variable.push({
-      let mut scope = VariableScope::new();
-      scope.this = Some(factory.unknown());
-      scope
-    });
-    let object_scope_id = variable.add_special(VariableScope::new());
-    Scoping {
-      call: vec![CallScope::new(
-        DepId::from_counter(),
-        CalleeInfo {
-          node: CalleeNode::Module,
-          instance_id: factory.alloc_instance_id(),
-          #[cfg(feature = "flame")]
-          debug_name: "<Module>",
-        },
-        vec![],
-        0,
-        body_variable_scope,
-        true,
-        false,
-      )],
-      variable,
-      cf,
-      pure: 0,
+// impl<'a> Scoping<'a> {
+//   pub fn new(factory: &EntityFactory<'a>) -> Self {
+//     let mut cf = ScopeTree::new();
+//     cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
+//     let mut variable = ScopeTree::new();
+//     let body_variable_scope = variable.push({
+//       let mut scope = VariableScope::new();
+//       scope.this = Some(factory.unknown());
+//       scope
+//     });
+//     let object_scope_id = variable.add_special(VariableScope::new());
+//     Scoping {
+//       call: vec![CallScope::new(
+//         DepId::from_counter(),
+//         CalleeInfo {
+//           node: CalleeNode::Module,
+//           instance_id: factory.alloc_instance_id(),
+//           #[cfg(feature = "flame")]
+//           debug_name: "<Module>",
+//         },
+//         vec![],
+//         0,
+//         body_variable_scope,
+//         true,
+//         false,
+//       )],
+//       variable,
+//       cf,
+//       pure: 0,
 
-      object_scope_id,
-      object_symbol_counter: 128,
-    }
+//       object_scope_id,
+//       object_symbol_counter: 128,
+//     }
+//   }
+
+//   pub fn assert_final_state(&mut self) {
+//     assert_eq!(self.call.len(), 1);
+//     assert_eq!(self.variable.current_depth(), 0);
+//     assert_eq!(self.cf.current_depth(), 0);
+//     assert_eq!(self.pure, 0);
+
+//     for scope in self.cf.iter_all() {
+//       if let Some(data) = &scope.exhaustive_data {
+//         assert!(!data.dirty);
+//       }
+//     }
+
+//     #[cfg(feature = "flame")]
+//     self.call.pop().unwrap().scope_guard.end();
+//   }
+
+//   pub fn alloc_object_id(&mut self) -> SymbolId {
+//     self.object_symbol_counter += 1;
+//     SymbolId::from_usize(self.object_symbol_counter)
+//   }
+// }
+
+pub trait ScopingAnalyzer<'a>:
+  CallScopeAnalyzer<'a>
+  + CfScopeAnalyzer<'a>
+  + ExhaustiveScopeAnalyzer<'a>
+  + LoopScopeAnalyzer<'a>
+  + VariableScopeAnalyzer<'a>
+{
+  fn scoping() -> &'a Scoping<'a, Self>
+  where
+    Self: EcmaAnalyzer<'a>;
+  fn scoping_mut(&mut self) -> &mut Scoping<'a, Self>
+  where
+    Self: EcmaAnalyzer<'a>;
+
+  fn init_scoping(&mut self);
+
+  fn call_scope(&self) -> &CallScope<'a, Self>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
+    self.scoping().call.last().unwrap()
   }
 
-  pub fn assert_final_state(&mut self) {
-    assert_eq!(self.call.len(), 1);
-    assert_eq!(self.variable.current_depth(), 0);
-    assert_eq!(self.cf.current_depth(), 0);
-    assert_eq!(self.pure, 0);
-
-    for scope in self.cf.iter_all() {
-      if let Some(data) = &scope.exhaustive_data {
-        assert!(!data.dirty);
-      }
-    }
-
-    #[cfg(feature = "flame")]
-    self.call.pop().unwrap().scope_guard.end();
+  fn call_scope_mut(&mut self) -> &mut CallScope<'a, Self>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
+    self.scoping_mut().call.last_mut().unwrap()
   }
 
-  pub fn alloc_object_id(&mut self) -> SymbolId {
-    self.object_symbol_counter += 1;
-    SymbolId::from_usize(self.object_symbol_counter)
-  }
-}
-
-impl<'a, H: Host<'a>> Analyzer<'a, H> {
-  pub fn call_scope(&self) -> &CallScope<'a> {
-    self.scope_context.call.last().unwrap()
-  }
-
-  pub fn call_scope_mut(&mut self) -> &mut CallScope<'a> {
-    self.scope_context.call.last_mut().unwrap()
-  }
-
-  pub fn try_scope(&self) -> &TryScope<'a> {
+  fn try_scope(&self) -> &TryScope<'a, Self>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.call_scope().try_scopes.last().unwrap()
   }
 
-  pub fn try_scope_mut(&mut self) -> &mut TryScope<'a> {
+  fn try_scope_mut(&mut self) -> &mut TryScope<'a, Self>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.call_scope_mut().try_scopes.last_mut().unwrap()
   }
 
-  pub fn cf_scope(&self) -> &CfScope<'a> {
+  fn cf_scope(&self) -> &CfScope<'a>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.scope_context.cf.get_current()
   }
 
-  pub fn cf_scope_mut(&mut self) -> &mut CfScope<'a> {
+  fn cf_scope_mut(&mut self) -> &mut CfScope<'a>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.scope_context.cf.get_current_mut()
   }
 
-  pub fn cf_scope_id_of_call_scope(&self) -> ScopeId {
+  fn cf_scope_id_of_call_scope(&self) -> ScopeId
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let depth = self.call_scope().cf_scope_depth;
     self.scope_context.cf.stack[depth]
   }
 
-  pub fn variable_scope(&self) -> &VariableScope<'a> {
+  fn variable_scope(&self) -> &VariableScope<'a>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.scope_context.variable.get_current()
   }
 
-  pub fn variable_scope_mut(&mut self) -> &mut VariableScope<'a> {
+  fn variable_scope_mut(&mut self) -> &mut VariableScope<'a>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.scope_context.variable.get_current_mut()
   }
 
-  pub fn is_inside_pure(&self) -> bool {
+  fn is_inside_pure(&self) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     // TODO: self.scope_context.pure > 0
     false
   }
 
-  fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId> {
+  fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.scope_context.variable.replace_stack(new_stack)
   }
 
-  pub fn push_call_scope(
+  fn push_call_scope(
     &mut self,
     callee: CalleeInfo<'a>,
     call_dep: Consumable<'a>,
@@ -145,7 +191,9 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     is_async: bool,
     is_generator: bool,
     consume: bool,
-  ) {
+  ) where
+    Self: EcmaAnalyzer<'a>,
+  {
     let dep_id = DepId::from_counter();
     if consume {
       self.refer_dep(dep_id);
@@ -171,7 +219,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     ));
   }
 
-  pub fn pop_call_scope(&mut self) -> H::Entity {
+  fn pop_call_scope(&mut self) -> Self::Entity
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let scope = self.scope_context.call.pop().unwrap();
     let (old_variable_scope_stack, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
@@ -180,39 +231,57 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     ret_val
   }
 
-  pub fn push_variable_scope(&mut self) -> ScopeId {
+  fn push_variable_scope(&mut self) -> ScopeId
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.scope_context.variable.push(VariableScope::new())
   }
 
-  pub fn pop_variable_scope(&mut self) -> ScopeId {
+  fn pop_variable_scope(&mut self) -> ScopeId
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.scope_context.variable.pop()
   }
 
-  pub fn push_cf_scope(
+  fn push_cf_scope(
     &mut self,
     kind: CfScopeKind,
-    labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+    labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
     exited: Option<bool>,
-  ) -> usize {
+  ) -> usize
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.push_cf_scope_with_deps(kind, labels, vec![], exited)
   }
 
-  pub fn push_cf_scope_with_deps(
+  fn push_cf_scope_with_deps(
     &mut self,
     kind: CfScopeKind,
-    labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+    labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
     deps: ConsumableVec<'a>,
     exited: Option<bool>,
-  ) -> usize {
-    self.scope_context.cf.push(CfScope::new(kind, labels, deps, exited));
-    self.scope_context.cf.current_depth()
+  ) -> usize
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
+    self.scoping_mut().cf.push(CfScope::new(kind, labels, deps, exited));
+    self.scoping().cf.current_depth()
   }
 
-  pub fn push_indeterminate_cf_scope(&mut self) {
+  fn push_indeterminate_cf_scope(&mut self)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.push_cf_scope(CfScopeKind::Indeterminate, None, None);
   }
 
-  pub fn push_dependent_cf_scope(&mut self, dep: impl ConsumableTrait<'a> + 'a) {
+  fn push_dependent_cf_scope(&mut self, dep: impl ConsumableTrait<'a> + 'a)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.push_cf_scope_with_deps(
       CfScopeKind::Dependent,
       None,
@@ -221,15 +290,21 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     );
   }
 
-  pub fn pop_cf_scope(&mut self) -> ScopeId {
-    self.scope_context.cf.pop()
+  fn pop_cf_scope(&mut self) -> ScopeId
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
+    self.scoping_mut().cf.pop()
   }
 
-  pub fn pop_multiple_cf_scopes(&mut self, count: usize) -> Option<Consumable<'a>> {
+  fn pop_multiple_cf_scopes(&mut self, count: usize) -> Option<Consumable<'a>>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let mut exec_deps = vec![];
     for _ in 0..count {
-      let id = self.scope_context.cf.stack.pop().unwrap();
-      if let Some(dep) = self.scope_context.cf.get_mut(id).deps.try_collect(self.factory) {
+      let id = self.scoping_mut().cf.stack.pop().unwrap();
+      if let Some(dep) = self.scoping_mut().cf.get_mut(id).deps.try_collect(self.factory) {
         exec_deps.push(dep);
       }
     }
@@ -240,18 +315,24 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     }
   }
 
-  pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {
+  fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let id = self.pop_cf_scope();
-    self.scope_context.cf.get_mut(id)
+    self.scoping_mut().cf.get_mut(id)
   }
 
-  pub fn push_try_scope(&mut self) {
+  fn push_try_scope(&mut self) {
     self.push_indeterminate_cf_scope();
-    let cf_scope_depth = self.scope_context.cf.current_depth();
+    let cf_scope_depth = self.scoping_mut().cf.current_depth();
     self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_depth));
   }
 
-  pub fn pop_try_scope(&mut self) -> TryScope<'a> {
+  fn pop_try_scope(&mut self) -> TryScope<'a, Self>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.pop_cf_scope();
     self.call_scope_mut().try_scopes.pop().unwrap()
   }

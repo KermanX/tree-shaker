@@ -1,27 +1,31 @@
+use crate::{
+  ast::{AstKind2, DeclarationKind},
+  EcmaAnalyzer,
+};
+
 use super::exhaustive::ExhaustiveCallback;
-use crate::{analyzer::Analyzer, ast::DeclarationKind, consumable::LazyConsumable, host::Host};
 use oxc::semantic::{ScopeId, SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::{cell::RefCell, fmt};
 
 #[derive(Debug)]
-pub struct Variable<'a> {
+pub struct Variable<'a, A: EcmaAnalyzer<'a> + ?Sized> {
   pub kind: DeclarationKind,
   pub cf_scope: ScopeId,
   pub exhausted: Option<LazyConsumable<'a>>,
-  pub value: Option<H::Entity>,
+  pub value: Option<A::Entity>,
   pub decl_node: AstKind2<'a>,
 }
 
 #[derive(Default)]
-pub struct VariableScope<'a> {
-  pub variables: FxHashMap<SymbolId, &'a RefCell<Variable<'a>>>,
-  pub this: Option<H::Entity>,
-  pub arguments: Option<(H::Entity, Vec<SymbolId>)>,
-  pub exhaustive_callbacks: FxHashMap<SymbolId, FxHashSet<ExhaustiveCallback<'a>>>,
+pub struct VariableScope<'a, A: EcmaAnalyzer<'a> + ?Sized> {
+  pub variables: FxHashMap<SymbolId, &'a RefCell<Variable<'a, A>>>,
+  pub this: Option<A::Entity>,
+  pub arguments: Option<(A::Entity, Vec<SymbolId>)>,
+  pub exhaustive_callbacks: FxHashMap<SymbolId, FxHashSet<ExhaustiveCallback<'a, A>>>,
 }
 
-impl fmt::Debug for VariableScope<'_> {
+impl<'a, A: EcmaAnalyzer<'a> + ?Sized> fmt::Debug for VariableScope<'a, A> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let mut map = f.debug_map();
     for (k, v) in self.variables.iter() {
@@ -32,22 +36,24 @@ impl fmt::Debug for VariableScope<'_> {
   }
 }
 
-impl<'a> VariableScope<'a> {
+impl<'a, A: EcmaAnalyzer<'a> + ?Sized> VariableScope<'a, A> {
   pub fn new() -> Self {
     Self::default()
   }
 }
 
-impl<'a, H: Host<'a>> Analyzer<'a, H> {
+pub trait VariableScopeAnalyzer<'a> {
   fn declare_on_scope(
     &mut self,
     id: ScopeId,
     kind: DeclarationKind,
     symbol: SymbolId,
     decl_node: AstKind2<'a>,
-    fn_value: Option<H::Entity>,
-  ) {
-    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol) {
+    fn_value: Option<Self::Entity>,
+  ) where
+    Self: EcmaAnalyzer<'a>,
+  {
+    if let Some(variable) = self.scoping().variable.get(id).variables.get(&symbol) {
       // Here we can't use kind.is_untracked() because this time we are declaring a variable
       let old_kind = variable.borrow().kind;
 
@@ -98,9 +104,11 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     &mut self,
     id: ScopeId,
     symbol: SymbolId,
-    value: Option<H::Entity>,
+    value: Option<Self::Entity>,
     init_node: AstKind2<'a>,
-  ) {
+  ) where
+    Self: EcmaAnalyzer<'a>,
+  {
     let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
 
     let variable_ref = variable.borrow();
@@ -124,7 +132,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
   /// None: not in this scope
   /// Some(None): in this scope, but TDZ
   /// Some(Some(val)): in this scope, and val is the value
-  fn read_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> Option<Option<H::Entity>> {
+  fn read_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> Option<Option<Self::Entity>>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.scope_context.variable.get(id).variables.get(&symbol).copied().map(|variable| {
       let variable_ref = variable.borrow();
       let value = variable_ref.value.or_else(|| {
@@ -161,7 +172,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     })
   }
 
-  fn write_on_scope(&mut self, id: ScopeId, symbol: SymbolId, new_val: H::Entity) -> bool {
+  fn write_on_scope(&mut self, id: ScopeId, symbol: SymbolId, new_val: Self::Entity) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).copied() {
       let kind = variable.borrow().kind;
       if kind.is_untracked() {
@@ -218,7 +232,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     }
   }
 
-  pub fn consume_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> bool {
+  fn consume_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).copied() {
       let variable_ref = variable.borrow();
       if let Some(dep) = variable_ref.exhausted {
@@ -241,7 +258,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     }
   }
 
-  fn mark_untracked_on_scope(&mut self, symbol: SymbolId) {
+  fn mark_untracked_on_scope(&mut self, symbol: SymbolId)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let cf_scope_depth = self.call_scope().cf_scope_depth;
     let variable = self.allocator.alloc(RefCell::new(Variable {
       exhausted: Some(self.factory.consumed_lazy_consumable),
@@ -254,7 +274,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     assert!(old.is_none());
   }
 
-  pub fn consume_arguments_on_scope(&mut self, id: ScopeId) -> bool {
+  fn consume_arguments_on_scope(&mut self, id: ScopeId) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     if let Some((args_entity, args_symbols)) = self.scope_context.variable.get(id).arguments.clone()
     {
       args_entity.consume(self);
@@ -270,17 +293,17 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
       true
     }
   }
-}
 
-impl<'a, H: Host<'a>> Analyzer<'a, H> {
-  pub fn declare_symbol(
+  fn declare_symbol(
     &mut self,
     symbol: SymbolId,
     decl_node: AstKind2<'a>,
     exporting: bool,
     kind: DeclarationKind,
-    fn_value: Option<H::Entity>,
-  ) {
+    fn_value: Option<Self::Entity>,
+  ) where
+    Self: EcmaAnalyzer<'a>,
+  {
     if exporting {
       self.named_exports.push(symbol);
     }
@@ -294,18 +317,19 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
   }
 
-  pub fn init_symbol(
-    &mut self,
-    symbol: SymbolId,
-    value: Option<H::Entity>,
-    init_node: AstKind2<'a>,
-  ) {
+  fn init_symbol(&mut self, symbol: SymbolId, value: Option<Self::Entity>, init_node: AstKind2<'a>)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let variable_scope = self.scope_context.variable.current_id();
     self.init_on_scope(variable_scope, symbol, value, init_node);
   }
 
   /// `None` for TDZ
-  pub fn read_symbol(&mut self, symbol: SymbolId) -> Option<H::Entity> {
+  fn read_symbol(&mut self, symbol: SymbolId) -> Option<Self::Entity>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     for depth in (0..self.scope_context.variable.stack.len()).rev() {
       let id = self.scope_context.variable.stack[depth];
       if let Some(value) = self.read_on_scope(id, symbol) {
@@ -316,7 +340,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     Some(self.factory.unknown())
   }
 
-  pub fn write_symbol(&mut self, symbol: SymbolId, new_val: H::Entity) {
+  fn write_symbol(&mut self, symbol: SymbolId, new_val: Self::Entity)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     for depth in (0..self.scope_context.variable.stack.len()).rev() {
       let id = self.scope_context.variable.stack[depth];
       if self.write_on_scope(id, symbol, new_val) {
@@ -327,7 +354,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     self.mark_unresolved_reference(symbol);
   }
 
-  fn mark_unresolved_reference(&mut self, symbol: SymbolId) {
+  fn mark_unresolved_reference(&mut self, symbol: SymbolId)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     if self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration() {
       self.mark_untracked_on_scope(symbol);
     } else {
@@ -335,7 +365,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     }
   }
 
-  pub fn handle_tdz(&mut self, target_cf_scope: usize) {
+  fn handle_tdz(&mut self, target_cf_scope: usize)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     if self.has_exhaustive_scope_since(target_cf_scope) {
       self.may_throw();
     } else {
@@ -344,7 +377,10 @@ impl<'a, H: Host<'a>> Analyzer<'a, H> {
     self.refer_to_global();
   }
 
-  pub fn get_this(&self) -> H::Entity {
+  fn get_this(&self) -> Self::Entity
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     for depth in (0..self.scope_context.variable.stack.len()).rev() {
       let scope = self.scope_context.variable.get_from_depth(depth);
       if let Some(this) = scope.this {

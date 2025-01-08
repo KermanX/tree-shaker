@@ -1,36 +1,93 @@
-use super::try_scope::TryScope;
-use crate::{host::Host, 
-  analyzer::Analyzer, consumable::ConsumableTrait, dep::DepId, utils::CalleeInfo,
-};
-use oxc::semantic::ScopeId;
-use std::mem;
+use crate::EcmaAnalyzer;
 
-pub struct CallScope<'a> {
-  pub call_id: DepId,
+use super::try_scope::TryScope;
+use oxc::{
+  ast::ast::{ArrowFunctionExpression, Class, Function},
+  semantic::ScopeId,
+  span::{GetSpan, Span},
+};
+use std::{hash, mem};
+
+#[derive(Debug, Clone, Copy)]
+pub enum CalleeNode<'a> {
+  Function(&'a Function<'a>),
+  ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
+  ClassStatics(&'a Class<'a>),
+  ClassConstructor(&'a Class<'a>),
+  Module,
+}
+
+impl GetSpan for CalleeNode<'_> {
+  fn span(&self) -> Span {
+    match self {
+      CalleeNode::Function(node) => node.span(),
+      CalleeNode::ArrowFunctionExpression(node) => node.span(),
+      CalleeNode::ClassStatics(node) => node.span(),
+      CalleeNode::ClassConstructor(node) => node.span(),
+      CalleeNode::Module => Span::default(),
+    }
+  }
+}
+
+impl PartialEq for CalleeNode<'_> {
+  fn eq(&self, other: &Self) -> bool {
+    match (self, other) {
+      (CalleeNode::Module, CalleeNode::Module) => true,
+      (CalleeNode::Function(a), CalleeNode::Function(b)) => a.span() == b.span(),
+      (CalleeNode::ArrowFunctionExpression(a), CalleeNode::ArrowFunctionExpression(b)) => {
+        a.span() == b.span()
+      }
+      (CalleeNode::ClassStatics(a), CalleeNode::ClassStatics(b)) => a.span() == b.span(),
+      _ => false,
+    }
+  }
+}
+
+impl Eq for CalleeNode<'_> {}
+
+impl hash::Hash for CalleeNode<'_> {
+  fn hash<H: hash::Hasher>(&self, state: &mut H) {
+    self.span().hash(state)
+  }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CalleeInfo<'a> {
+  pub node: CalleeNode<'a>,
+  pub instance_id: usize,
+  #[cfg(feature = "flame")]
+  pub debug_name: &'a str,
+}
+
+pub struct CallScope<'a, A: EcmaAnalyzer<'a> + ?Sized> {
+  pub call_id: usize,
   pub callee: CalleeInfo<'a>,
   pub old_variable_scope_stack: Vec<ScopeId>,
   pub cf_scope_depth: usize,
   pub body_variable_scope: ScopeId,
-  pub returned_values: Vec<H::Entity>,
+  pub returned_values: Vec<A::Entity>,
   pub is_async: bool,
   pub is_generator: bool,
-  pub try_scopes: Vec<TryScope<'a>>,
+  pub try_scopes: Vec<TryScope<'a, A>>,
   pub need_consume_arguments: bool,
 
   #[cfg(feature = "flame")]
   pub scope_guard: flame::SpanGuard,
 }
 
-impl<'a> CallScope<'a> {
-  pub fn new(
-    call_id: DepId,
+pub trait CallScopeAnalyzer<'a> {
+  fn new_call_scope(
+    call_id: usize,
     callee: CalleeInfo<'a>,
     old_variable_scope_stack: Vec<ScopeId>,
     cf_scope_depth: usize,
     body_variable_scope: ScopeId,
     is_async: bool,
     is_generator: bool,
-  ) -> Self {
+  ) -> Self
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     CallScope {
       call_id,
       callee,
@@ -48,14 +105,17 @@ impl<'a> CallScope<'a> {
     }
   }
 
-  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (Vec<ScopeId>, H::Entity) {
-    assert_eq!(self.try_scopes.len(), 1);
+  fn finalize_call_scope(&mut self, scope: CallScope<'a, Self>) -> (Vec<ScopeId>, Self::Entity)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
+    assert_eq!(scope.try_scopes.len(), 1);
 
     // Forwards the thrown value to the parent try scope
-    let try_scope = self.try_scopes.into_iter().next().unwrap();
+    let try_scope = scope.try_scopes.into_iter().next().unwrap();
     let mut promise_error = None;
     if try_scope.may_throw {
-      if self.is_generator {
+      if scope.is_generator {
         let unknown = analyzer.factory.unknown();
         let parent_try_scope = analyzer.try_scope_mut();
         parent_try_scope.may_throw = true;
@@ -65,51 +125,43 @@ impl<'a> CallScope<'a> {
         for value in try_scope.thrown_values {
           value.consume(analyzer);
         }
-      } else if self.is_async {
+      } else if scope.is_async {
         promise_error = Some(try_scope.thrown_values);
       } else {
         analyzer.forward_throw(try_scope.thrown_values);
       }
     }
 
-    let value = if self.returned_values.is_empty() {
+    let value = if scope.returned_values.is_empty() {
       analyzer.factory.undefined
     } else {
-      analyzer.factory.union(self.returned_values)
+      analyzer.factory.union(scope.returned_values)
     };
 
-    let value = if self.is_async {
+    let value = if scope.is_async {
       analyzer.factory.computed_unknown(analyzer.consumable((value, promise_error)))
     } else {
       value
     };
 
     #[cfg(feature = "flame")]
-    self.scope_guard.end();
+    scope.scope_guard.end();
 
-    (self.old_variable_scope_stack, value)
-  }
-}
-
-impl<'a, H: Host<'a>> Analyzer<'a, H> {
-  pub fn return_value(&mut self, value: H::Entity, dep: impl ConsumableTrait<'a> + 'a) {
-    let call_scope = self.call_scope();
-    let exec_dep = self.get_exec_dep(call_scope.cf_scope_depth);
-    let value = self.factory.computed(value, self.consumable((exec_dep, dep)));
-
-    let call_scope = self.call_scope_mut();
-    call_scope.returned_values.push(value);
-
-    let target_depth = call_scope.cf_scope_depth;
-    self.exit_to(target_depth);
+    (scope.old_variable_scope_stack, value)
   }
 
-  pub fn consume_arguments(&mut self) -> bool {
+  fn consume_arguments(&mut self) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let scope = self.call_scope().body_variable_scope;
     self.consume_arguments_on_scope(scope)
   }
 
-  pub fn consume_return_values(&mut self) {
+  fn consume_return_values(&mut self)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let call_scope = self.call_scope_mut();
     let values = mem::take(&mut call_scope.returned_values);
     for value in values {

@@ -1,17 +1,19 @@
+use crate::EcmaAnalyzer;
 use rustc_hash::FxHashMap;
 use std::mem;
 
-use crate::{host::Host, analyzer::Analyzer, dep::DepId};
-
-pub struct LoopData<'a> {
-  call_id: DepId,
-  tests: Vec<H::Entity>,
+pub struct LoopData<'a, A: EcmaAnalyzer<'a> + ?Sized> {
+  call_id: usize,
+  tests: Vec<A::Entity>,
 }
 
-pub type LoopDataMap<'a> = FxHashMap<DepId, Vec<LoopData<'a>>>;
+pub type LoopDataMap<'a, A: EcmaAnalyzer<'a> + ?Sized> = FxHashMap<usize, Vec<LoopData<'a, A>>>;
 
-impl<'a, H: Host<'a>> Analyzer<'a, H> {
-  pub fn post_analyze_handle_loops(&mut self) -> bool {
+pub trait LoopScopeAnalyzer<'a> {
+  fn post_analyze_handle_loops(&mut self) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let mut remained = LoopDataMap::default();
     let mut dirty = false;
     for (loop_dep, data) in mem::take(&mut self.loop_data) {
