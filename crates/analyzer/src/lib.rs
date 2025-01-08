@@ -1,11 +1,12 @@
 mod nodes;
+mod scoping;
 
 pub use nodes::*;
 
-pub trait Analyzer<'a>: ExpressionAnalyzer<'a> {
+pub trait EcmaAnalyzer<'a>: ExpressionAnalyzer<'a> {
   type Entity;
 
   fn new_undefined(&self) -> Self::Entity
   where
-    Self: Analyzer<'a>;
+    Self: EcmaAnalyzer<'a>;
 }

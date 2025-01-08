@@ -1,28 +1,28 @@
 mod array_expression;
 mod literals;
 
-use crate::Analyzer;
+use crate::EcmaAnalyzer;
 pub use array_expression::*;
 pub use literals::*;
 use oxc::ast::ast::Expression;
 
 #[allow(unused_variables)]
 pub trait ExpressionAnalyzer<'a>: ArrayExpressionAnalyzer<'a> + LiteralsAnalyzer<'a> {
-  fn before_expression(&self, node: &'a Expression<'a>)
+  fn before_expression(&mut self, node: &'a Expression<'a>)
   where
-    Self: Analyzer<'a>,
+    Self: EcmaAnalyzer<'a>,
   {
   }
-  fn after_expression(&self, node: &'a Expression<'a>, value: Self::Entity) -> Self::Entity
+  fn after_expression(&mut self, node: &'a Expression<'a>, value: Self::Entity) -> Self::Entity
   where
-    Self: Analyzer<'a>,
+    Self: EcmaAnalyzer<'a>,
   {
     value
   }
 
   fn exec_expression(&mut self, node: &'a Expression<'a>) -> Self::Entity
   where
-    Self: Analyzer<'a>,
+    Self: EcmaAnalyzer<'a>,
   {
     self.before_expression(node);
 
