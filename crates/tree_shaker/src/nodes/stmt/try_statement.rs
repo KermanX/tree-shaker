@@ -1,8 +1,5 @@
 use crate::{analyzer::Analyzer, scope::CfScopeKind, transformer::Transformer};
-use oxc::{
-  ast::ast::{Statement, TryStatement},
-  span::SPAN,
-};
+use oxc::ast::ast::{Statement, TryStatement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_try_statement(&mut self, node: &'a TryStatement<'a>) {
@@ -47,7 +44,7 @@ impl<'a> Transformer<'a> {
 
     let block = self.transform_block_statement(block);
 
-    let handler_span = handler.as_ref().map_or_else(|| SPAN, |handler| handler.span);
+    let handler_span = handler.as_ref().map(|handler| handler.span).unwrap_or_default();
     let handler = if block.is_some() {
       handler.as_ref().map(|handler| self.transform_catch_clause(handler))
     } else {
