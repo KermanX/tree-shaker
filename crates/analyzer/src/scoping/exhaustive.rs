@@ -13,13 +13,13 @@ pub struct ExhaustiveCallback<'a, A: EcmaAnalyzer<'a> + ?Sized> {
   pub handler: Rc<dyn Fn(&mut A) + 'a>,
   pub once: bool,
 }
-impl<'a, A: EcmaAnalyzer<'a>> PartialEq for ExhaustiveCallback<'a, A> {
+impl<'a, A: EcmaAnalyzer<'a> + ?Sized> PartialEq for ExhaustiveCallback<'a, A> {
   fn eq(&self, other: &Self) -> bool {
     self.once == other.once && Rc::ptr_eq(&self.handler, &other.handler)
   }
 }
-impl<'a, A: EcmaAnalyzer<'a>> Eq for ExhaustiveCallback<'a, A> {}
-impl<'a, A: EcmaAnalyzer<'a>> Hash for ExhaustiveCallback<'a, A> {
+impl<'a, A: EcmaAnalyzer<'a> + ?Sized> Eq for ExhaustiveCallback<'a, A> {}
+impl<'a, A: EcmaAnalyzer<'a> + ?Sized> Hash for ExhaustiveCallback<'a, A> {
   fn hash<S: Hasher>(&self, state: &mut S) {
     Rc::as_ptr(&self.handler).hash(state);
   }
@@ -50,7 +50,7 @@ pub trait ExhaustiveScopeAnalyzer<'a> {
       analyzer.push_indeterminate_cf_scope();
       analyzer.push_try_scope();
       let ret_val = runner(analyzer);
-      let thrown_val = analyzer.pop_try_scope().thrown_val(analyzer);
+      let thrown_val = analyzer.get_thrown_val(analyzer.pop_try_scope());
       if !analyzer.is_inside_pure() {
         analyzer.consume(ret_val);
         analyzer.consume(thrown_val);
@@ -61,7 +61,10 @@ pub trait ExhaustiveScopeAnalyzer<'a> {
     self.register_exhaustive_callbacks(false, runner, deps);
   }
 
-  fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Self) + 'a) {
+  fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Self) + 'a)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let runner = Rc::new(runner);
     let deps = self.exec_exhaustively("async/generator", runner.clone(), true);
     self.register_exhaustive_callbacks(true, runner, deps);
@@ -72,7 +75,10 @@ pub trait ExhaustiveScopeAnalyzer<'a> {
     kind: &str,
     runner: Rc<dyn Fn(&mut Self) + 'a>,
     once: bool,
-  ) -> FxHashSet<(ScopeId, SymbolId)> {
+  ) -> FxHashSet<(ScopeId, SymbolId)>
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
     let mut round_counter = 0;
     while self.cf_scope_mut().iterate_exhaustively() {
@@ -94,7 +100,7 @@ pub trait ExhaustiveScopeAnalyzer<'a> {
       }
     }
     let id = self.pop_cf_scope();
-    let exhaustive_data = self.scope_context.cf.get_mut(id).exhaustive_data.as_mut().unwrap();
+    let exhaustive_data = self.scoping_mut().cf.get_mut(id).exhaustive_data.as_mut().unwrap();
     mem::take(&mut exhaustive_data.deps)
   }
 
@@ -103,10 +109,12 @@ pub trait ExhaustiveScopeAnalyzer<'a> {
     once: bool,
     handler: Rc<dyn Fn(&mut Self) + 'a>,
     deps: FxHashSet<(ScopeId, SymbolId)>,
-  ) {
+  ) where
+    Self: EcmaAnalyzer<'a>,
+  {
     for (scope, symbol) in deps {
       self
-        .scope_context
+        .scoping_mut()
         .variable
         .get_mut(scope)
         .exhaustive_callbacks
@@ -116,21 +124,23 @@ pub trait ExhaustiveScopeAnalyzer<'a> {
     }
   }
 
-  fn mark_exhaustive_read(&mut self, variable: (ScopeId, SymbolId), target: usize) {
-    for depth in target..self.scope_context.cf.stack.len() {
-      self.scope_context.cf.get_mut_from_depth(depth).mark_exhaustive_read(variable);
+  fn mark_exhaustive_read(&mut self, variable: (ScopeId, SymbolId), target: usize)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
+    for depth in target..self.scoping().cf.stack.len() {
+      self.scoping_mut().cf.get_mut_from_depth(depth).mark_exhaustive_read(variable);
     }
   }
 
-  fn mark_exhaustive_write(
-    &mut self,
-    variable: (ScopeId, SymbolId),
-    target: usize,
-  ) -> (bool, bool) {
+  fn mark_exhaustive_write(&mut self, variable: (ScopeId, SymbolId), target: usize) -> (bool, bool)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     let mut should_consume = false;
     let mut indeterminate = false;
-    for depth in target..self.scope_context.cf.stack.len() {
-      let scope = self.scope_context.cf.get_mut_from_depth(depth);
+    for depth in target..self.scoping().cf.stack.len() {
+      let scope = self.scoping_mut().cf.get_mut_from_depth(depth);
       if !should_consume {
         should_consume |= scope.mark_exhaustive_write(variable);
       }
@@ -143,17 +153,20 @@ pub trait ExhaustiveScopeAnalyzer<'a> {
     &mut self,
     should_consume: bool,
     (scope, symbol): (ScopeId, SymbolId),
-  ) -> bool {
+  ) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     if let Some(runners) =
-      self.scope_context.variable.get_mut(scope).exhaustive_callbacks.get_mut(&symbol)
+      self.scoping_mut().variable.get_mut(scope).exhaustive_callbacks.get_mut(&symbol)
     {
       if runners.is_empty() {
         false
       } else {
         if should_consume {
-          self.pending_deps.extend(runners.drain());
+          self.scoping_mut().pending_deps.extend(runners.drain());
         } else {
-          self.pending_deps.extend(runners.iter().cloned());
+          self.scoping_mut().pending_deps.extend(runners.iter().cloned());
         }
         true
       }
@@ -162,12 +175,15 @@ pub trait ExhaustiveScopeAnalyzer<'a> {
     }
   }
 
-  fn call_exhaustive_callbacks(&mut self) -> bool {
-    if self.pending_deps.is_empty() {
+  fn call_exhaustive_callbacks(&mut self) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
+    if self.scoping().pending_deps.is_empty() {
       return false;
     }
     loop {
-      let runners = mem::take(&mut self.pending_deps);
+      let runners = mem::take(&mut self.scoping_mut().pending_deps);
       for runner in runners {
         // let old_count = self.referred_deps.debug_count();
         let ExhaustiveCallback { handler: runner, once } = runner;
@@ -176,13 +192,16 @@ pub trait ExhaustiveScopeAnalyzer<'a> {
         // let new_count = self.referred_deps.debug_count();
         // self.debug += 1;
       }
-      if self.pending_deps.is_empty() {
+      if self.scoping().pending_deps.is_empty() {
         return true;
       }
     }
   }
 
-  fn has_exhaustive_scope_since(&self, target_depth: usize) -> bool {
-    self.scope_context.cf.iter_stack_range(target_depth..).any(|scope| scope.is_exhaustive())
+  fn has_exhaustive_scope_since(&self, target_depth: usize) -> bool
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
+    self.scoping().cf.iter_stack_range(target_depth..).any(|scope| scope.is_exhaustive())
   }
 }

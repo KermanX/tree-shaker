@@ -11,7 +11,7 @@ pub trait ReturnStatementAnalyzer<'a> {
     Self: EcmaAnalyzer<'a>,
   {
     let value =
-      node.argument.as_ref().map_or(self.new_undefined(), |expr| self.exec_expression(expr));
+      node.argument.as_ref().map_or(self.new_undefined_value(), |expr| self.exec_expression(expr));
 
     let value = self.on_return_value(node, value);
     let call_scope = self.call_scope_mut();

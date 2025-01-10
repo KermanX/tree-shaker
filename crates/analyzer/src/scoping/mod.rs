@@ -1,8 +1,6 @@
 pub mod call_scope;
 pub mod cf_scope;
-pub mod conditional;
 pub mod exhaustive;
-pub mod r#loop;
 mod scope_tree;
 pub mod try_scope;
 pub mod variable_scope;
@@ -11,7 +9,8 @@ pub use call_scope::*;
 pub use cf_scope::*;
 pub use exhaustive::*;
 use oxc::{ast::ast::LabeledStatement, semantic::ScopeId};
-pub use r#loop::*;
+use oxc_index::Idx;
+use rustc_hash::FxHashSet;
 use scope_tree::ScopeTree;
 use std::rc::Rc;
 pub use try_scope::*;
@@ -19,16 +18,32 @@ pub use variable_scope::*;
 
 use crate::EcmaAnalyzer;
 
-#[derive(Default)]
 pub struct Scoping<'a, A: EcmaAnalyzer<'a> + ?Sized> {
   pub labels: Vec<&'a LabeledStatement<'a>>,
   pub call: Vec<CallScope<'a, A>>,
   pub variable: ScopeTree<VariableScope<'a, A>>,
-  pub cf: ScopeTree<CfScope<'a>>,
-  pub pure: usize,
+  pub cf: ScopeTree<CfScope<'a, A>>,
+
+  pub pending_deps: FxHashSet<ExhaustiveCallback<'a, A>>,
 
   pub object_scope_id: ScopeId,
   pub object_symbol_counter: usize,
+}
+
+impl<'a, A: EcmaAnalyzer<'a> + ?Sized> Default for Scoping<'a, A> {
+  fn default() -> Self {
+    Scoping {
+      labels: vec![],
+      call: vec![],
+      variable: ScopeTree::new(),
+      cf: ScopeTree::new(),
+
+      pending_deps: FxHashSet::default(),
+
+      object_scope_id: ScopeId::from_usize(0),
+      object_symbol_counter: 128,
+    }
+  }
 }
 
 // impl<'a> Scoping<'a> {
@@ -94,15 +109,46 @@ pub trait ScopingAnalyzer<'a>:
   + ExhaustiveScopeAnalyzer<'a>
   + LoopScopeAnalyzer<'a>
   + VariableScopeAnalyzer<'a>
+  + TryScopeAnalyzer<'a>
 {
-  fn scoping() -> &'a Scoping<'a, Self>
+  fn scoping(&self) -> &Scoping<'a, Self>
   where
     Self: EcmaAnalyzer<'a>;
+
   fn scoping_mut(&mut self) -> &mut Scoping<'a, Self>
   where
     Self: EcmaAnalyzer<'a>;
 
-  fn init_scoping(&mut self);
+  fn init_scoping(&mut self)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
+    let cf_0 = CfScope::new(CfScopeKind::Module, None, Some(false), Default::default());
+    self.scoping_mut().cf.push(cf_0);
+
+    let mut variable_0 = VariableScope::new();
+    variable_0.this = Some(self.global_this());
+    let body_variable_scope = self.scoping_mut().variable.push(variable_0);
+
+    let object_scope_id = self.scoping_mut().variable.add_special(VariableScope::new());
+    self.scoping_mut().object_scope_id = object_scope_id;
+
+    let call_0 = CallScope::new(
+      0,
+      CalleeInfo {
+        node: CalleeNode::Module,
+        instance_id: factory.alloc_instance_id(),
+        #[cfg(feature = "flame")]
+        debug_name: "<Module>",
+      },
+      vec![],
+      0,
+      body_variable_scope,
+      true,
+      false,
+    );
+    self.scoping_mut().call.push(call_0);
+  }
 
   fn call_scope(&self) -> &CallScope<'a, Self>
   where
@@ -132,18 +178,18 @@ pub trait ScopingAnalyzer<'a>:
     self.call_scope_mut().try_scopes.last_mut().unwrap()
   }
 
-  fn cf_scope(&self) -> &CfScope<'a>
+  fn cf_scope(&self) -> &CfScope<'a, Self>
   where
     Self: EcmaAnalyzer<'a>,
   {
-    self.scope_context.cf.get_current()
+    self.scoping().cf.get_current()
   }
 
-  fn cf_scope_mut(&mut self) -> &mut CfScope<'a>
+  fn cf_scope_mut(&mut self) -> &mut CfScope<'a, Self>
   where
     Self: EcmaAnalyzer<'a>,
   {
-    self.scope_context.cf.get_current_mut()
+    self.scoping_mut().cf.get_current_mut()
   }
 
   fn cf_scope_id_of_call_scope(&self) -> ScopeId
@@ -151,21 +197,21 @@ pub trait ScopingAnalyzer<'a>:
     Self: EcmaAnalyzer<'a>,
   {
     let depth = self.call_scope().cf_scope_depth;
-    self.scope_context.cf.stack[depth]
+    self.scoping().cf.stack[depth]
   }
 
-  fn variable_scope(&self) -> &VariableScope<'a>
+  fn variable_scope(&self) -> &VariableScope<'a, Self>
   where
     Self: EcmaAnalyzer<'a>,
   {
-    self.scope_context.variable.get_current()
+    self.scoping().variable.get_current()
   }
 
-  fn variable_scope_mut(&mut self) -> &mut VariableScope<'a>
+  fn variable_scope_mut(&mut self) -> &mut VariableScope<'a, Self>
   where
     Self: EcmaAnalyzer<'a>,
   {
-    self.scope_context.variable.get_current_mut()
+    self.scoping_mut().variable.get_current_mut()
   }
 
   fn is_inside_pure(&self) -> bool
@@ -180,7 +226,7 @@ pub trait ScopingAnalyzer<'a>:
   where
     Self: EcmaAnalyzer<'a>,
   {
-    self.scope_context.variable.replace_stack(new_stack)
+    self.scoping_mut().variable.replace_stack(new_stack)
   }
 
   fn push_call_scope(
@@ -208,7 +254,7 @@ pub trait ScopingAnalyzer<'a>:
       Some(false),
     );
 
-    self.scope_context.call.push(CallScope::new(
+    self.scoping_mut().call.push(CallScope::new(
       dep_id,
       callee,
       old_variable_scope_stack,
@@ -223,7 +269,7 @@ pub trait ScopingAnalyzer<'a>:
   where
     Self: EcmaAnalyzer<'a>,
   {
-    let scope = self.scope_context.call.pop().unwrap();
+    let scope = self.scoping_mut().call.pop().unwrap();
     let (old_variable_scope_stack, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
     self.pop_variable_scope();
@@ -235,7 +281,7 @@ pub trait ScopingAnalyzer<'a>:
   where
     Self: EcmaAnalyzer<'a>,
   {
-    self.scope_context.variable.push(VariableScope::new())
+    self.scoping_mut().variable.push(VariableScope::new())
   }
 
   fn pop_variable_scope(&mut self) -> ScopeId
@@ -257,37 +303,11 @@ pub trait ScopingAnalyzer<'a>:
     self.push_cf_scope_with_deps(kind, labels, vec![], exited)
   }
 
-  fn push_cf_scope_with_deps(
-    &mut self,
-    kind: CfScopeKind,
-    labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
-    deps: ConsumableVec<'a>,
-    exited: Option<bool>,
-  ) -> usize
-  where
-    Self: EcmaAnalyzer<'a>,
-  {
-    self.scoping_mut().cf.push(CfScope::new(kind, labels, deps, exited));
-    self.scoping().cf.current_depth()
-  }
-
   fn push_indeterminate_cf_scope(&mut self)
   where
     Self: EcmaAnalyzer<'a>,
   {
     self.push_cf_scope(CfScopeKind::Indeterminate, None, None);
-  }
-
-  fn push_dependent_cf_scope(&mut self, dep: impl ConsumableTrait<'a> + 'a)
-  where
-    Self: EcmaAnalyzer<'a>,
-  {
-    self.push_cf_scope_with_deps(
-      CfScopeKind::Dependent,
-      None,
-      vec![self.consumable(dep)],
-      Some(false),
-    );
   }
 
   fn pop_cf_scope(&mut self) -> ScopeId
@@ -297,25 +317,19 @@ pub trait ScopingAnalyzer<'a>:
     self.scoping_mut().cf.pop()
   }
 
-  fn pop_multiple_cf_scopes(&mut self, count: usize) -> Option<Consumable<'a>>
+  fn pop_multiple_cf_scopes(&mut self, count: usize) -> Vec<&Self::CfScopeExtra>
   where
     Self: EcmaAnalyzer<'a>,
   {
-    let mut exec_deps = vec![];
+    let mut extras = vec![];
     for _ in 0..count {
       let id = self.scoping_mut().cf.stack.pop().unwrap();
-      if let Some(dep) = self.scoping_mut().cf.get_mut(id).deps.try_collect(self.factory) {
-        exec_deps.push(dep);
-      }
+      extras.push(&self.scoping_mut().cf.get_mut(id).extra);
     }
-    if exec_deps.is_empty() {
-      None
-    } else {
-      Some(self.consumable(exec_deps))
-    }
+    extras
   }
 
-  fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a>
+  fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a, Self>
   where
     Self: EcmaAnalyzer<'a>,
   {
@@ -323,7 +337,10 @@ pub trait ScopingAnalyzer<'a>:
     self.scoping_mut().cf.get_mut(id)
   }
 
-  fn push_try_scope(&mut self) {
+  fn push_try_scope(&mut self)
+  where
+    Self: EcmaAnalyzer<'a>,
+  {
     self.push_indeterminate_cf_scope();
     let cf_scope_depth = self.scoping_mut().cf.current_depth();
     self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_depth));

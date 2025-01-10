@@ -6,8 +6,9 @@
 
 ```mermaid
 graph LR;
-A[Analyzer] --> B[Tree Shaker]
-A --> C[Type Inferrer]
+A[Ecma Analyzer] --> B[Tree Shaker]
+A --> C[Type Inferrer] -.-> D[Rust-based Typed Linting]
+A --> E[Code to Vapor IR]
 ```
 
 ## Features

@@ -37,29 +37,29 @@ pub enum ReferredState {
 }
 
 #[derive(Debug)]
-pub struct CfScope<'a> {
+pub struct CfScope<'a, A: EcmaAnalyzer<'a> + ?Sized> {
   pub kind: CfScopeKind,
   pub labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
-  pub deps: ConsumableCollector<'a>,
   pub referred_state: ReferredState,
   pub exited: Option<bool>,
   /// Exits that have been stopped by this scope's indeterminate state.
   /// Only available when `kind` is `If`.
   pub blocked_exit: Option<usize>,
   pub exhaustive_data: Option<Box<ExhaustiveData>>,
+
+  pub extra: A::CfScopeExtra,
 }
 
-impl<'a> CfScope<'a> {
+impl<'a, A: EcmaAnalyzer<'a> + ?Sized> CfScope<'a, A> {
   pub fn new(
     kind: CfScopeKind,
     labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
-    deps: ConsumableVec<'a>,
     exited: Option<bool>,
+    extra: A::CfScopeExtra,
   ) -> Self {
     CfScope {
       kind,
       labels,
-      deps: ConsumableCollector::new(deps),
       referred_state: ReferredState::Never,
       exited,
       blocked_exit: None,
@@ -68,13 +68,8 @@ impl<'a> CfScope<'a> {
       } else {
         None
       },
-    }
-  }
 
-  pub fn push_dep(&mut self, dep: Consumable<'a>) {
-    self.deps.push(dep);
-    if self.referred_state == ReferredState::ReferredClean {
-      self.referred_state = ReferredState::ReferredDirty;
+      extra,
     }
   }
 
@@ -157,6 +152,8 @@ impl<'a> CfScope<'a> {
 }
 
 pub trait CfScopeAnalyzer<'a> {
+  type CfScopeExtra: Default;
+
   fn exec_indeterminately<T>(&mut self, runner: impl FnOnce(&mut Self) -> T) -> T
   where
     Self: EcmaAnalyzer<'a>,
@@ -167,32 +164,18 @@ pub trait CfScopeAnalyzer<'a> {
     result
   }
 
-  fn get_exec_dep(&mut self, target_depth: usize) -> Consumable<'a>
-  where
-    Self: EcmaAnalyzer<'a>,
-  {
-    let mut deps = vec![];
-    for id in target_depth..self.scope_context.cf.stack.len() {
-      let scope = self.scope_context.cf.get_mut_from_depth(id);
-      if let Some(dep) = scope.deps.try_collect(self.factory) {
-        deps.push(dep);
-      }
-    }
-    self.consumable(deps)
-  }
-
   fn exit_to(&mut self, target_depth: usize)
   where
     Self: EcmaAnalyzer<'a>,
   {
-    self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), true, None);
+    self.exit_to_impl(target_depth, self.scoping().cf.stack.len(), true, None);
   }
 
   fn exit_to_not_must(&mut self, target_depth: usize)
   where
     Self: EcmaAnalyzer<'a>,
   {
-    self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), false, None);
+    self.exit_to_impl(target_depth, self.scoping().cf.stack.len(), false, None);
   }
 
   /// `None` => Interrupted by if branch
@@ -208,8 +191,8 @@ pub trait CfScopeAnalyzer<'a> {
     Self: EcmaAnalyzer<'a>,
   {
     for depth in (target_depth..from_depth).rev() {
-      let id = self.scope_context.cf.stack[depth];
-      let cf_scope = self.scope_context.cf.get_mut(id);
+      let id = self.scoping().cf.stack[depth];
+      let cf_scope = self.scoping_mut().cf.get_mut(id);
       let this_dep = cf_scope.deps.try_collect(self.factory);
 
       // Update exited state

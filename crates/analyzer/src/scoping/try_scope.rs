@@ -8,24 +8,16 @@ pub struct TryScope<'a, A: EcmaAnalyzer<'a> + ?Sized> {
   pub cf_scope_depth: usize,
 }
 
-trait TryScopeAnalyzer<'a> {
-  fn new(cf_scope_depth: usize) -> Self {
+impl<'a, A: EcmaAnalyzer<'a> + ?Sized> TryScope<'a, A> {
+  pub fn new(cf_scope_depth: usize) -> Self {
     TryScope { may_throw: false, thrown_values: Vec::new(), cf_scope_depth }
   }
+}
 
-  fn thrown_val(self, scope: TryScope<'a, Self>) -> Option<Self::Entity>
+pub trait TryScopeAnalyzer<'a> {
+  fn get_thrown_val(&mut self, scope: TryScope<'a, Self>) -> Option<Self::Entity>
   where
-    Self: EcmaAnalyzer<'a>,
-  {
-    // Always unknown here
-    self.may_throw.then(|| {
-      if self.thrown_values.is_empty() {
-        self.factory.unknown()
-      } else {
-        self.factory.computed_unknown(self.consumable(scope.thrown_values))
-      }
-    })
-  }
+    Self: EcmaAnalyzer<'a>;
 
   fn may_throw(&mut self)
   where
@@ -54,7 +46,7 @@ trait TryScopeAnalyzer<'a> {
   where
     Self: EcmaAnalyzer<'a>,
   {
-    if self.scope_context.cf.iter_stack().all(|scope| scope.exited == Some(false)) {
+    if self.scoping_mut().cf.iter_stack().all(|scope| scope.exited == Some(false)) {
       self.add_diagnostic(message);
     }
 

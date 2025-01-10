@@ -43,6 +43,8 @@ impl<'a, A: EcmaAnalyzer<'a> + ?Sized> VariableScope<'a, A> {
 }
 
 pub trait VariableScopeAnalyzer<'a> {
+  type VariableExtra: fmt::Debug;
+
   fn declare_on_scope(
     &mut self,
     id: ScopeId,
@@ -87,13 +89,13 @@ pub trait VariableScopeAnalyzer<'a> {
         cf_scope: if kind.is_var() {
           self.cf_scope_id_of_call_scope()
         } else {
-          self.scope_context.cf.current_id()
+          self.scoping().cf.current_id()
         },
         exhausted: None,
         value: fn_value,
         decl_node,
       }));
-      self.scope_context.variable.get_mut(id).variables.insert(symbol, variable);
+      self.scoping().variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
         self.add_exhaustive_callbacks(false, (id, symbol));
       }
@@ -109,7 +111,7 @@ pub trait VariableScopeAnalyzer<'a> {
   ) where
     Self: EcmaAnalyzer<'a>,
   {
-    let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
+    let variable = self.scoping().variable.get_mut(id).variables.get_mut(&symbol).unwrap();
 
     let variable_ref = variable.borrow();
     if variable_ref.kind.is_redeclarable() {
@@ -136,7 +138,7 @@ pub trait VariableScopeAnalyzer<'a> {
   where
     Self: EcmaAnalyzer<'a>,
   {
-    self.scope_context.variable.get(id).variables.get(&symbol).copied().map(|variable| {
+    self.scoping().variable.get(id).variables.get(&symbol).copied().map(|variable| {
       let variable_ref = variable.borrow();
       let value = variable_ref.value.or_else(|| {
         variable_ref
@@ -176,7 +178,7 @@ pub trait VariableScopeAnalyzer<'a> {
   where
     Self: EcmaAnalyzer<'a>,
   {
-    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).copied() {
+    if let Some(variable) = self.scoping().variable.get(id).variables.get(&symbol).copied() {
       let kind = variable.borrow().kind;
       if kind.is_untracked() {
         self.consume(new_val);
@@ -236,7 +238,7 @@ pub trait VariableScopeAnalyzer<'a> {
   where
     Self: EcmaAnalyzer<'a>,
   {
-    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).copied() {
+    if let Some(variable) = self.scoping().variable.get(id).variables.get(&symbol).copied() {
       let variable_ref = variable.borrow();
       if let Some(dep) = variable_ref.exhausted {
         drop(variable_ref);
@@ -266,7 +268,7 @@ pub trait VariableScopeAnalyzer<'a> {
     let variable = self.allocator.alloc(RefCell::new(Variable {
       exhausted: Some(self.factory.consumed_lazy_consumable),
       kind: DeclarationKind::UntrackedVar,
-      cf_scope: self.scope_context.cf.stack[cf_scope_depth],
+      cf_scope: self.scoping().cf.stack[cf_scope_depth],
       value: Some(self.factory.unknown()),
       decl_node: AstKind2::Environment,
     }));
@@ -278,8 +280,7 @@ pub trait VariableScopeAnalyzer<'a> {
   where
     Self: EcmaAnalyzer<'a>,
   {
-    if let Some((args_entity, args_symbols)) = self.scope_context.variable.get(id).arguments.clone()
-    {
+    if let Some((args_entity, args_symbols)) = self.scoping().variable.get(id).arguments.clone() {
       args_entity.consume(self);
       let mut arguments_consumed = true;
       for symbol in args_symbols {
@@ -313,7 +314,7 @@ pub trait VariableScopeAnalyzer<'a> {
       }
     }
 
-    let variable_scope = self.scope_context.variable.current_id();
+    let variable_scope = self.scoping().variable.current_id();
     self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
   }
 
@@ -321,7 +322,7 @@ pub trait VariableScopeAnalyzer<'a> {
   where
     Self: EcmaAnalyzer<'a>,
   {
-    let variable_scope = self.scope_context.variable.current_id();
+    let variable_scope = self.scoping().variable.current_id();
     self.init_on_scope(variable_scope, symbol, value, init_node);
   }
 
@@ -330,8 +331,8 @@ pub trait VariableScopeAnalyzer<'a> {
   where
     Self: EcmaAnalyzer<'a>,
   {
-    for depth in (0..self.scope_context.variable.stack.len()).rev() {
-      let id = self.scope_context.variable.stack[depth];
+    for depth in (0..self.scoping().variable.stack.len()).rev() {
+      let id = self.scoping().variable.stack[depth];
       if let Some(value) = self.read_on_scope(id, symbol) {
         return value;
       }
@@ -344,8 +345,8 @@ pub trait VariableScopeAnalyzer<'a> {
   where
     Self: EcmaAnalyzer<'a>,
   {
-    for depth in (0..self.scope_context.variable.stack.len()).rev() {
-      let id = self.scope_context.variable.stack[depth];
+    for depth in (0..self.scoping().variable.stack.len()).rev() {
+      let id = self.scoping().variable.stack[depth];
       if self.write_on_scope(id, symbol, new_val) {
         return;
       }
@@ -381,8 +382,8 @@ pub trait VariableScopeAnalyzer<'a> {
   where
     Self: EcmaAnalyzer<'a>,
   {
-    for depth in (0..self.scope_context.variable.stack.len()).rev() {
-      let scope = self.scope_context.variable.get_from_depth(depth);
+    for depth in (0..self.scoping().variable.stack.len()).rev() {
+      let scope = self.scoping().variable.get_from_depth(depth);
       if let Some(this) = scope.this {
         return this;
       }

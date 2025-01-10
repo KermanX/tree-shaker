@@ -8,7 +8,7 @@ use crate::{
   },
   TreeShakeConfig, TreeShaker,
 };
-use ecma_analyzer::EcmaAnalyzer;
+use ecma_analyzer::{EcmaAnalyzer, Scoping};
 use line_index::LineIndex;
 use oxc::{
   allocator::Allocator,
@@ -19,6 +19,8 @@ use rustc_hash::FxHashSet;
 use std::{mem, rc::Rc};
 
 pub struct Analyzer<'a> {
+  pub scoping: Scoping<'a, Self>,
+
   pub tree_shaker: TreeShaker<'a>,
   pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
@@ -33,7 +35,6 @@ pub struct Analyzer<'a> {
   pub mangler: Mangler<'a>,
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
-  pub scope_context: ScopeContext<'a>,
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub builtins: Builtins<'a>,
   pub entity_op: EntityOpHost<'a>,
@@ -48,6 +49,8 @@ impl<'a> Analyzer<'a> {
     let factory = tree_shaker.0.factory;
 
     Analyzer {
+      scoping: Scoping::new(),
+
       tree_shaker,
       config,
       allocator,
@@ -62,7 +65,6 @@ impl<'a> Analyzer<'a> {
       mangler: Mangler::new(config.mangling, allocator),
       named_exports: Vec::new(),
       default_export: None,
-      scope_context: ScopeContext::new(factory),
       pending_deps: Default::default(),
       builtins: Builtins::new(config, factory),
       entity_op: EntityOpHost::new(allocator),
@@ -74,7 +76,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> EcmaAnalyzer<'a> for Analyzer<'a> {
   type Entity = &'a (dyn EntityTrait<'a> + 'a);
 
-  fn new_undefined(&self) -> Self::Entity {
+  fn new_undefined_value(&self) -> Self::Entity {
     "undefined"
   }
 }

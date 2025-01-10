@@ -75,8 +75,8 @@ pub struct CallScope<'a, A: EcmaAnalyzer<'a> + ?Sized> {
   pub scope_guard: flame::SpanGuard,
 }
 
-pub trait CallScopeAnalyzer<'a> {
-  fn new_call_scope(
+impl<'a, A: EcmaAnalyzer<'a> + ?Sized> CallScope<'a, A> {
+  pub fn new(
     call_id: usize,
     callee: CalleeInfo<'a>,
     old_variable_scope_stack: Vec<ScopeId>,
@@ -86,7 +86,7 @@ pub trait CallScopeAnalyzer<'a> {
     is_generator: bool,
   ) -> Self
   where
-    Self: EcmaAnalyzer<'a>,
+    A: EcmaAnalyzer<'a>,
   {
     CallScope {
       call_id,
@@ -104,6 +104,12 @@ pub trait CallScopeAnalyzer<'a> {
       scope_guard: flame::start_guard(callee.debug_name.to_string()),
     }
   }
+}
+
+pub trait CallScopeAnalyzer<'a> {
+  fn get_return_value(&mut self, scope: &CallScope<'a, Self>) -> Self::Entity
+  where
+    Self: EcmaAnalyzer<'a>;
 
   fn finalize_call_scope(&mut self, scope: CallScope<'a, Self>) -> (Vec<ScopeId>, Self::Entity)
   where
@@ -111,61 +117,11 @@ pub trait CallScopeAnalyzer<'a> {
   {
     assert_eq!(scope.try_scopes.len(), 1);
 
-    // Forwards the thrown value to the parent try scope
-    let try_scope = scope.try_scopes.into_iter().next().unwrap();
-    let mut promise_error = None;
-    if try_scope.may_throw {
-      if scope.is_generator {
-        let unknown = analyzer.factory.unknown();
-        let parent_try_scope = analyzer.try_scope_mut();
-        parent_try_scope.may_throw = true;
-        if !try_scope.thrown_values.is_empty() {
-          parent_try_scope.thrown_values.push(unknown);
-        }
-        for value in try_scope.thrown_values {
-          value.consume(analyzer);
-        }
-      } else if scope.is_async {
-        promise_error = Some(try_scope.thrown_values);
-      } else {
-        analyzer.forward_throw(try_scope.thrown_values);
-      }
-    }
-
-    let value = if scope.returned_values.is_empty() {
-      analyzer.factory.undefined
-    } else {
-      analyzer.factory.union(scope.returned_values)
-    };
-
-    let value = if scope.is_async {
-      analyzer.factory.computed_unknown(analyzer.consumable((value, promise_error)))
-    } else {
-      value
-    };
+    let value = self.get_return_value(&scope);
 
     #[cfg(feature = "flame")]
     scope.scope_guard.end();
 
     (scope.old_variable_scope_stack, value)
-  }
-
-  fn consume_arguments(&mut self) -> bool
-  where
-    Self: EcmaAnalyzer<'a>,
-  {
-    let scope = self.call_scope().body_variable_scope;
-    self.consume_arguments_on_scope(scope)
-  }
-
-  fn consume_return_values(&mut self)
-  where
-    Self: EcmaAnalyzer<'a>,
-  {
-    let call_scope = self.call_scope_mut();
-    let values = mem::take(&mut call_scope.returned_values);
-    for value in values {
-      self.consume(value);
-    }
   }
 }

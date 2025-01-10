@@ -41,7 +41,7 @@ pub trait ArrayExpressionAnalyzer<'a> {
           self.init_spread(node, &mut context, value);
         }
         ArrayExpressionElement::Elision(_node) => {
-          self.init_element(node, &mut context, self.new_undefined());
+          self.init_element(node, &mut context, self.new_undefined_value());
         }
         _ => {
           let value = self.exec_expression(node.to_expression());

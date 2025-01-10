@@ -58,7 +58,7 @@ pub trait StatementAnalyzer<'a>: ReturnStatementAnalyzer<'a> {
       Statement::ExpressionStatement(node) => {
         self.exec_expression(&node.expression);
       }
-      Statement::Return(node) => self.exec_return_statement(node),
+      Statement::ReturnStatement(node) => self.exec_return_statement(node),
       _ => todo!(),
     }
     self.after_init_statement(node);

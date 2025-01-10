@@ -5,6 +5,7 @@ mod consumable;
 mod entity;
 mod mangling;
 mod nodes;
+mod scoping;
 mod transformer;
 mod tree_shaker;
 mod utils;
