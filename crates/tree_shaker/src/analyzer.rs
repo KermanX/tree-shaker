@@ -2,7 +2,7 @@ use crate::{
   ast::AstKind2,
   builtins::Builtins,
   dep::{DepId, ReferredDeps},
-  entity::{Entity, EntityFactory, EntityOpHost, LabelEntity},
+  entity::{Entity, EntityFactory, EntityOpHost},
   mangling::Mangler,
   scope::{
     conditional::ConditionalDataMap, exhaustive::ExhaustiveCallback, r#loop::LoopDataMap,
@@ -15,7 +15,7 @@ use crate::{
 use line_index::LineIndex;
 use oxc::{
   allocator::Allocator,
-  ast::ast::Program,
+  ast::ast::{LabeledStatement, Program},
   semantic::{Semantic, SymbolId},
   span::{GetSpan, Span},
 };
@@ -38,7 +38,7 @@ pub struct Analyzer<'a> {
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
   pub scope_context: ScopeContext<'a>,
-  pub pending_labels: Vec<LabelEntity<'a>>,
+  pub pending_labels: Vec<&'a LabeledStatement<'a>>,
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub builtins: Builtins<'a>,
   pub entity_op: EntityOpHost<'a>,
@@ -153,7 +153,7 @@ impl<'a> Analyzer<'a> {
   }
 
   #[allow(clippy::rc_buffer)]
-  pub fn take_labels(&mut self) -> Option<Rc<Vec<LabelEntity<'a>>>> {
+  pub fn take_labels(&mut self) -> Option<Rc<Vec<&'a LabeledStatement<'a>>>> {
     if self.pending_labels.is_empty() {
       None
     } else {

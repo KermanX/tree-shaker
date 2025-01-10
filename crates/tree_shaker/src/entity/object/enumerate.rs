@@ -1,12 +1,11 @@
-use std::mem;
-
 use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
   consumable::Consumable,
-  entity::{consumed_object, entity::EnumeratedProperties},
+  entity::{consumed_object, EnumeratedProperties},
   scope::CfScopeKind,
 };
+use std::mem;
 
 impl<'a> ObjectEntity<'a> {
   pub fn enumerate_properties(

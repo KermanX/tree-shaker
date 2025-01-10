@@ -1,7 +1,6 @@
 use super::{
-  consumed_object,
-  entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityFactory, EntityTrait, ObjectEntity, TypeofResult,
+  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
+  ObjectEntity, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;

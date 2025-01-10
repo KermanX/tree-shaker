@@ -6,9 +6,8 @@ mod property;
 mod set;
 
 use super::{
-  consumed_object,
-  entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
+  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
+  LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,

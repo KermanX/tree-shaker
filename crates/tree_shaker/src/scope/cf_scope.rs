@@ -1,9 +1,12 @@
 use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableCollector, ConsumableVec},
-  entity::LabelEntity,
+  utils::ast::AstKind2,
 };
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::{
+  ast::ast::LabeledStatement,
+  semantic::{ScopeId, SymbolId},
+};
 use rustc_hash::FxHashSet;
 use std::{mem, rc::Rc};
 
@@ -39,7 +42,7 @@ pub enum ReferredState {
 #[derive(Debug)]
 pub struct CfScope<'a> {
   pub kind: CfScopeKind,
-  pub labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+  pub labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
   pub deps: ConsumableCollector<'a>,
   pub referred_state: ReferredState,
   pub exited: Option<bool>,
@@ -52,7 +55,7 @@ pub struct CfScope<'a> {
 impl<'a> CfScope<'a> {
   pub fn new(
     kind: CfScopeKind,
-    labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+    labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
     deps: ConsumableVec<'a>,
     exited: Option<bool>,
   ) -> Self {
@@ -95,9 +98,9 @@ impl<'a> CfScope<'a> {
     self.exited.is_none()
   }
 
-  pub fn matches_label(&self, label: &str) -> Option<&LabelEntity<'a>> {
+  pub fn matches_label(&self, label: &str) -> Option<&'a LabeledStatement<'a>> {
     if let Some(labels) = &self.labels {
-      labels.iter().find(|l| l.name == label)
+      labels.iter().find(|l| l.label.name == label).map(|v| &**v)
     } else {
       None
     }
@@ -240,9 +243,9 @@ impl<'a> Analyzer<'a> {
       }
       let breakable_without_label = cf_scope.is_breakable_without_label();
       if let Some(label) = label {
-        if let Some(label_entity) = cf_scope.matches_label(label) {
+        if let Some(label) = cf_scope.matches_label(label) {
           if !is_closest_breakable || !breakable_without_label {
-            self.referred_deps.refer_dep(label_entity.dep_id());
+            self.referred_deps.refer_dep(AstKind2::LabeledStatement(label));
             label_used = true;
           }
           target_depth = Some(idx);
@@ -272,9 +275,9 @@ impl<'a> Analyzer<'a> {
       let is_continuable = cf_scope.is_continuable();
       if let Some(label) = label {
         if is_continuable {
-          if let Some(label_entity) = cf_scope.matches_label(label) {
+          if let Some(label) = cf_scope.matches_label(label) {
             if !is_closest_continuable {
-              self.referred_deps.refer_dep(label_entity.dep_id());
+              self.referred_deps.refer_dep(AstKind2::LabeledStatement(label));
               label_used = true;
             }
             target_depth = Some(idx);

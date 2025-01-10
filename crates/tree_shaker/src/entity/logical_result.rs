@@ -1,8 +1,7 @@
 use oxc::ast::ast::LogicalOperator;
 
 use super::{
-  entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityFactory, EntityTrait, TypeofResult,
+  Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable};
 

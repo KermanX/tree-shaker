@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::LabelEntity, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
 use oxc::ast::ast::{LabeledStatement, Statement};
 
 impl<'a> Analyzer<'a> {
@@ -7,7 +7,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_labeled_statement(&mut self, node: &'a LabeledStatement<'a>) {
-    self.pending_labels.push(LabelEntity::new(&node.label));
+    self.pending_labels.push(node);
     self.exec_statement(&node.body);
   }
 }
@@ -21,7 +21,7 @@ impl<'a> Transformer<'a> {
 
     let body = self.transform_statement(body);
 
-    if self.is_referred(AstKind2::LabelIdentifier(label)) {
+    if self.is_referred(AstKind2::LabeledStatement(node)) {
       body.map(|body| self.ast_builder.statement_labeled(*span, label.clone(), body))
     } else {
       body

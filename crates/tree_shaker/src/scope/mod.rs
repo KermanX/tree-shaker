@@ -12,13 +12,16 @@ use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
-  entity::{Entity, EntityFactory, LabelEntity},
+  entity::{Entity, EntityFactory},
   utils::{CalleeInfo, CalleeNode},
 };
 use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::{
+  ast::ast::LabeledStatement,
+  semantic::{ScopeId, SymbolId},
+};
 use oxc_index::Idx;
 use scope_tree::ScopeTree;
 use std::rc::Rc;
@@ -193,7 +196,7 @@ impl<'a> Analyzer<'a> {
   pub fn push_cf_scope(
     &mut self,
     kind: CfScopeKind,
-    labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+    labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
     exited: Option<bool>,
   ) -> usize {
     self.push_cf_scope_with_deps(kind, labels, vec![], exited)
@@ -202,7 +205,7 @@ impl<'a> Analyzer<'a> {
   pub fn push_cf_scope_with_deps(
     &mut self,
     kind: CfScopeKind,
-    labels: Option<Rc<Vec<LabelEntity<'a>>>>,
+    labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
     deps: ConsumableVec<'a>,
     exited: Option<bool>,
   ) -> usize {

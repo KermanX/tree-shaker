@@ -1,6 +1,6 @@
 use super::{
-  entity::{EnumeratedProperties, IteratedElements},
-  Entity, EntityFactory, EntityTrait, LiteralEntity, TypeofResult,
+  Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
+  TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,

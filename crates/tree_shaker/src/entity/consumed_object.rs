@@ -1,7 +1,4 @@
-use super::{
-  entity::{EnumeratedProperties, IteratedElements},
-  Entity,
-};
+use super::{Entity, EnumeratedProperties, IteratedElements};
 use crate::{analyzer::Analyzer, consumable::Consumable};
 
 pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
