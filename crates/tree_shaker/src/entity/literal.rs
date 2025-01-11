@@ -518,7 +518,11 @@ impl<'a> EntityFactory<'a> {
   }
 
   pub fn boolean(&self, value: bool) -> Entity<'a> {
-    self.alloc(LiteralEntity::Boolean(value))
+    if value {
+      self.r#true
+    } else {
+      self.r#false
+    }
   }
 
   pub fn boolean_maybe_unknown(&self, value: Option<bool>) -> Entity<'a> {
