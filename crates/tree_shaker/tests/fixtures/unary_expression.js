@@ -1,5 +1,3 @@
-// @minify
-
 export const result = {
   s1: typeof 1,
   s2: typeof 1n,

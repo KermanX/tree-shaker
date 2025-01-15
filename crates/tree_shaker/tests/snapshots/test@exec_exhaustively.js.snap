@@ -1,7 +1,7 @@
 ---
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/exec_exhaustively.js
+source: crates/tree_shaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/tree_shaker/tests/fixtures/exec_exhaustively.js
 ---
 export function f1() {
 	let x = false;
@@ -19,10 +19,10 @@ export function f2() {
 	while (sth()) {
 		a = true;
 		if (a) effect1();
-else effect2();
+		else effect2();
 	}
 	if (a) effect1();
-else effect2();
+	else effect2();
 }
 export function f3() {}
 export function f4() {

@@ -1,7 +1,7 @@
 ---
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/unary_expression.js
+source: crates/tree_shaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/tree_shaker/tests/fixtures/unary_expression.js
 ---
 export const result = {
 	s1: "number",
@@ -18,7 +18,9 @@ export const result = {
 };
 export function deletion() {
 	const obj1 = { c: 3 };
-	if (unknown) delete obj1.c;
+	if (unknown) {
+		delete obj1.c;
+	}
 	const c = unknown;
 	delete unknown[c];
 	effect(void 0, void 0, obj1.c, 4);

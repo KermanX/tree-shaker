@@ -12,8 +12,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_function_expression_body(&mut self, node: &'a FunctionBody<'a>) {
-    assert!(node.statements.len() == 1);
-    if let Some(Statement::ExpressionStatement(expr)) = node.statements.first() {
+    if let [Statement::ExpressionStatement(expr)] = node.statements.as_slice() {
       let dep = self.consumable(AstKind2::FunctionBody(node));
       let value = self.exec_expression(&expr.expression);
       let value = self.factory.computed(value, dep);
