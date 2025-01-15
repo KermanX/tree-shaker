@@ -77,7 +77,6 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     }
 
     let dep = analyzer.consumable((self.deps.borrow_mut().collect(analyzer.factory), dep, key));
-    let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut result = vec![];
       let mut rest_added = false;
@@ -145,7 +144,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
         break 'known;
       }
 
-      let Some(key_literals) = key.get_to_property_key(analyzer).get_to_literals(analyzer) else {
+      let Some(key_literals) = key.get_to_literals(analyzer) else {
         break 'known;
       };
 
@@ -206,7 +205,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     // Unknown
     let mut deps = self.deps.borrow_mut();
     deps.push(dep);
-    deps.push(analyzer.consumable((exec_deps, key.get_to_property_key(analyzer), value)));
+    deps.push(analyzer.consumable((exec_deps, key, value)));
   }
 
   fn enumerate_properties(
@@ -261,7 +260,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
 
     let mut deps = self.deps.borrow_mut();
     deps.push(dep);
-    deps.push(analyzer.consumable((exec_deps, key.get_to_property_key(analyzer))));
+    deps.push(analyzer.consumable((exec_deps, key)));
   }
 
   fn call(

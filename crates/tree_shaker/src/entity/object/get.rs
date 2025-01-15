@@ -26,7 +26,6 @@ impl<'a> ObjectEntity<'a> {
 
     let mut check_rest = false;
     let mut may_add_undefined = false;
-    let key = key.get_to_property_key(analyzer);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       mangable = self.check_mangable(analyzer, &key_literals);
       let mut string_keyed = self.string_keyed.borrow_mut();

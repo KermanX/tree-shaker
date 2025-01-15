@@ -41,8 +41,6 @@ impl<'a> ObjectEntity<'a> {
       }
     }
 
-    let key = key.get_to_property_key(analyzer);
-
     let value = analyzer.factory.computed(value, analyzer.consumable((exec_deps, dep)));
     let non_mangable_value = analyzer.factory.computed(value, key);
 

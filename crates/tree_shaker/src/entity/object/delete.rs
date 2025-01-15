@@ -25,8 +25,6 @@ impl<'a> ObjectEntity<'a> {
       return consumed_object::delete_property(analyzer, dep, key);
     }
 
-    let key = key.get_to_property_key(analyzer);
-
     {
       let mut unknown_keyed = self.unknown_keyed.borrow_mut();
       if !unknown_keyed.possible_values.is_empty() {

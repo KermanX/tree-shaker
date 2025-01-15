@@ -33,10 +33,8 @@ pub fn set_property<'a>(
   value: Entity<'a>,
 ) {
   analyzer.may_throw();
-  analyzer.consume(dep);
   analyzer.refer_to_global();
-  key.get_to_property_key(analyzer).consume(analyzer);
-  value.consume(analyzer);
+  analyzer.consume((dep, key, value));
 }
 
 pub fn enumerate_properties<'a>(
@@ -61,9 +59,8 @@ pub fn enumerate_properties<'a>(
 }
 
 pub fn delete_property<'a>(analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
-  analyzer.consume(dep);
   analyzer.refer_to_global();
-  key.get_to_property_key(analyzer).consume(analyzer);
+  analyzer.consume((dep, key));
 }
 
 pub fn call<'a>(
