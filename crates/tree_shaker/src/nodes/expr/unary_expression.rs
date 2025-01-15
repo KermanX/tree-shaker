@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
         }
         Expression::ComputedMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
-          let property = self.exec_expression(&node.expression);
+          let property = self.exec_expression(&node.expression).get_to_property_key(self);
           object.delete_property(self, self.consumable(dep), property)
         }
         Expression::Identifier(_node) => {
