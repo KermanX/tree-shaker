@@ -45,21 +45,6 @@ impl<'a> Analyzer<'a> {
 
   pub fn init_statement(&mut self, node: &'a Statement) {
     self.push_span(node);
-    if !matches!(
-      node,
-      Statement::BlockStatement(_)
-        | Statement::IfStatement(_)
-        | Statement::WhileStatement(_)
-        | Statement::DoWhileStatement(_)
-        | Statement::ForStatement(_)
-        | Statement::ForInStatement(_)
-        | Statement::ForOfStatement(_)
-        | Statement::SwitchStatement(_)
-        | Statement::LabeledStatement(_)
-        | Statement::TryStatement(_),
-    ) {
-      self.pending_labels.clear();
-    }
     match node {
       match_declaration!(Statement) => {
         let node = node.to_declaration();

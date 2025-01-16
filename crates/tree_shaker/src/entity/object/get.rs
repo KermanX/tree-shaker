@@ -96,7 +96,6 @@ impl<'a> ObjectEntity<'a> {
     if !getters.is_empty() {
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
-        None,
         vec![if mangable { dep } else { analyzer.consumable((dep, key)) }],
         if indeterminate_getter { None } else { Some(false) },
       );

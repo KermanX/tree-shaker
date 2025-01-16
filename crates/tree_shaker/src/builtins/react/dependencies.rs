@@ -2,6 +2,7 @@ use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableCollector},
   entity::Entity,
+  scope::CfScopeKind,
 };
 use oxc::span::Span;
 use rustc_hash::FxHashMap;
@@ -114,10 +115,10 @@ pub fn check_dependencies<'a>(
 
   if require_rerun {
     for depth in 0..analyzer.scope_context.cf.stack.len() {
-      if let Some(exhaustive_data) =
-        &mut analyzer.scope_context.cf.get_mut_from_depth(depth).exhaustive_data
+      if let CfScopeKind::Exhaustive(exhaustive_data) =
+        &mut analyzer.scope_context.cf.get_mut_from_depth(depth).kind
       {
-        exhaustive_data.dirty = true;
+        exhaustive_data.clean = false;
         break;
       }
     }

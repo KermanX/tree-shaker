@@ -1,11 +1,8 @@
-use crate::{analyzer::Analyzer, scope::CfScopeKind, transformer::Transformer};
+use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::{Statement, TryStatement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_try_statement(&mut self, node: &'a TryStatement<'a>) {
-    let labels = self.take_labels();
-    self.push_cf_scope(CfScopeKind::Labeled, labels, Some(false));
-
     self.push_try_scope();
     self.exec_block_statement(&node.block);
     let try_scope = self.pop_try_scope();
@@ -33,8 +30,6 @@ impl<'a> Analyzer<'a> {
         self.forward_throw(uncaught.clone());
       }
     }
-
-    self.pop_cf_scope();
   }
 }
 

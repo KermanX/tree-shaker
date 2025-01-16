@@ -15,12 +15,12 @@ use crate::{
 use line_index::LineIndex;
 use oxc::{
   allocator::Allocator,
-  ast::ast::{LabeledStatement, Program},
+  ast::ast::Program,
   semantic::{Semantic, SymbolId},
   span::{GetSpan, Span},
 };
 use rustc_hash::FxHashSet;
-use std::{mem, rc::Rc};
+use std::mem;
 
 pub struct Analyzer<'a> {
   pub tree_shaker: TreeShaker<'a>,
@@ -38,7 +38,6 @@ pub struct Analyzer<'a> {
   pub named_exports: Vec<SymbolId>,
   pub default_export: Option<Entity<'a>>,
   pub scope_context: ScopeContext<'a>,
-  pub pending_labels: Vec<&'a LabeledStatement<'a>>,
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub builtins: Builtins<'a>,
   pub entity_op: EntityOpHost<'a>,
@@ -68,7 +67,6 @@ impl<'a> Analyzer<'a> {
       named_exports: Vec::new(),
       default_export: None,
       scope_context: ScopeContext::new(factory),
-      pending_labels: Vec::new(),
       pending_deps: Default::default(),
       builtins: Builtins::new(config, factory),
       entity_op: EntityOpHost::new(allocator),
@@ -150,15 +148,6 @@ impl<'a> Analyzer<'a> {
 
   pub fn load_data<D: Default + 'a>(&mut self, key: impl Into<DepId>) -> &'a mut D {
     self.get_data_or_insert_with(key, Default::default)
-  }
-
-  #[allow(clippy::rc_buffer)]
-  pub fn take_labels(&mut self) -> Option<Rc<Vec<&'a LabeledStatement<'a>>>> {
-    if self.pending_labels.is_empty() {
-      None
-    } else {
-      Some(Rc::new(mem::take(&mut self.pending_labels)))
-    }
   }
 
   pub fn current_span(&self) -> Span {

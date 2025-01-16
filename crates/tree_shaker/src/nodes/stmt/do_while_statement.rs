@@ -14,13 +14,10 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_do_while_statement(&mut self, node: &'a DoWhileStatement<'a>) {
-    let labels = self.take_labels();
-    self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels.clone(), Some(false));
+    self.push_cf_scope(CfScopeKind::Loop, Some(false));
 
     // Execute the first round.
-    self.push_cf_scope(CfScopeKind::Continuable, labels.clone(), Some(false));
     self.exec_statement(&node.body);
-    self.pop_cf_scope();
 
     if self.cf_scope().must_exited() {
       self.pop_cf_scope();
@@ -41,7 +38,7 @@ impl<'a> Analyzer<'a> {
     data.need_loop = true;
 
     self.exec_loop(move |analyzer| {
-      analyzer.push_cf_scope(CfScopeKind::Continuable, labels.clone(), None);
+      analyzer.push_cf_scope(CfScopeKind::Loop, None);
 
       analyzer.exec_statement(&node.body);
       analyzer.exec_expression(&node.test).consume(analyzer);

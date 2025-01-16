@@ -3,7 +3,7 @@ use oxc::ast::ast::{ContinueStatement, Statement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_continue_statement(&mut self, node: &'a ContinueStatement<'a>) {
-    let label = node.label.as_ref().map(|label| label.name.as_str());
+    let label = node.label.as_ref().map(|label| &label.name);
     if self.continue_to_label(label) {
       self.consume(AstKind2::ContinueStatement(node));
     }

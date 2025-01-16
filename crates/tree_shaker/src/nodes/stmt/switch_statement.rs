@@ -16,7 +16,6 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_switch_statement(&mut self, node: &'a SwitchStatement<'a>) {
-    let labels = self.take_labels();
     let data = self.load_data::<Data>(AstKind2::SwitchStatement(node));
 
     // 1. discriminant
@@ -77,7 +76,7 @@ impl<'a> Analyzer<'a> {
     }
 
     // 3. consequent
-    self.push_cf_scope(CfScopeKind::BreakableWithoutLabel, labels, Some(false));
+    self.push_cf_scope(CfScopeKind::Switch, Some(false));
     let mut entered = Some(false);
     for (index, case) in node.cases.iter().enumerate() {
       if self.cf_scope().must_exited() {

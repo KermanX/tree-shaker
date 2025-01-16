@@ -18,7 +18,7 @@ impl<'a> ObjectEntity<'a> {
     }
 
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
-    analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, None, vec![dep], None);
+    analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, vec![dep], None);
 
     let mut result = vec![];
     let mut non_existent = vec![];

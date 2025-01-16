@@ -8,8 +8,6 @@ impl<'a> Analyzer<'a> {
   pub fn exec_if_statement(&mut self, node: &'a IfStatement) {
     let factory = self.factory;
 
-    let labels = self.take_labels();
-
     let test = self.exec_expression(&node.test).get_to_boolean(self);
 
     let (maybe_consequent, maybe_alternate) = match test.test_truthy() {
@@ -27,20 +25,18 @@ impl<'a> Analyzer<'a> {
     if maybe_consequent {
       self.push_if_like_branch_cf_scope(
         AstKind2::IfStatement(node),
-        CfScopeKind::IfBranch,
+        CfScopeKind::ExitBlocker(None),
         test,
         maybe_consequent,
         maybe_alternate,
         true,
         node.alternate.is_some(),
       );
-      self.push_cf_scope(CfScopeKind::Labeled, labels.clone(), Some(false));
       self.exec_statement(&node.consequent);
-      self.pop_cf_scope();
       let conditional_scope = self.pop_cf_scope_and_get_mut();
-      if let Some(stopped_exit) = conditional_scope.blocked_exit {
-        exit_target_inner = exit_target_inner.max(stopped_exit);
-        exit_target_outer = exit_target_outer.min(stopped_exit);
+      if let CfScopeKind::ExitBlocker(Some(stopped_exit)) = &conditional_scope.kind {
+        exit_target_inner = exit_target_inner.max(*stopped_exit);
+        exit_target_outer = exit_target_outer.min(*stopped_exit);
       } else {
         both_exit = false;
       }
@@ -49,7 +45,7 @@ impl<'a> Analyzer<'a> {
     if maybe_alternate {
       self.push_if_like_branch_cf_scope(
         AstKind2::IfStatement(node),
-        CfScopeKind::IfBranch,
+        CfScopeKind::ExitBlocker(None),
         test,
         maybe_consequent,
         maybe_alternate,
@@ -57,13 +53,11 @@ impl<'a> Analyzer<'a> {
         true,
       );
       if let Some(alternate) = &node.alternate {
-        self.push_cf_scope(CfScopeKind::Labeled, labels.clone(), Some(false));
         self.exec_statement(alternate);
-        self.pop_cf_scope();
         let conditional_scope = self.pop_cf_scope_and_get_mut();
-        if let Some(stopped_exit) = conditional_scope.blocked_exit {
-          exit_target_inner = exit_target_inner.max(stopped_exit);
-          exit_target_outer = exit_target_outer.min(stopped_exit);
+        if let CfScopeKind::ExitBlocker(Some(stopped_exit)) = &conditional_scope.kind {
+          exit_target_inner = exit_target_inner.max(*stopped_exit);
+          exit_target_outer = exit_target_outer.min(*stopped_exit);
         } else {
           both_exit = false;
         }

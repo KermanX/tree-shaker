@@ -71,7 +71,7 @@ impl<'a> Analyzer<'a> {
     runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     once: bool,
   ) -> FxHashSet<(ScopeId, SymbolId)> {
-    self.push_cf_scope(CfScopeKind::Exhaustive, None, Some(false));
+    self.push_cf_scope(CfScopeKind::Exhaustive(Default::default()), Some(false));
     let mut round_counter = 0;
     while self.cf_scope_mut().iterate_exhaustively() {
       #[cfg(feature = "flame")]
@@ -84,7 +84,8 @@ impl<'a> Analyzer<'a> {
       runner(self);
       round_counter += 1;
       if once {
-        self.cf_scope_mut().exhaustive_data.as_mut().unwrap().dirty = false;
+        let data = self.cf_scope_mut().exhaustive_data_mut().unwrap();
+        data.clean = true;
         break;
       }
       if round_counter > 1000 {
@@ -92,8 +93,8 @@ impl<'a> Analyzer<'a> {
       }
     }
     let id = self.pop_cf_scope();
-    let exhaustive_data = self.scope_context.cf.get_mut(id).exhaustive_data.as_mut().unwrap();
-    mem::take(&mut exhaustive_data.deps)
+    let data = self.scope_context.cf.get_mut(id).exhaustive_data_mut().unwrap();
+    mem::take(&mut data.deps)
   }
 
   fn register_exhaustive_callbacks(
@@ -181,6 +182,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn has_exhaustive_scope_since(&self, target_depth: usize) -> bool {
-    self.scope_context.cf.iter_stack_range(target_depth..).any(|scope| scope.is_exhaustive())
+    self.scope_context.cf.iter_stack_range(target_depth..).any(|scope| scope.kind.is_exhaustive())
   }
 }

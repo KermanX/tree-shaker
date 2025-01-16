@@ -6,30 +6,55 @@ use crate::{
 use oxc::{
   ast::ast::LabeledStatement,
   semantic::{ScopeId, SymbolId},
+  span::Atom,
 };
 use rustc_hash::FxHashSet;
-use std::{mem, rc::Rc};
+use std::mem;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum CfScopeKind {
-  Indeterminate,
-  Labeled,
-  Dependent,
-  BreakableWithoutLabel,
-  Continuable,
-  Exhaustive,
-  IfBranch,
-  ConditionalExprBranch,
-  LogicalRight,
-  Function,
-  Block,
-  Module,
+#[derive(Debug, Default)]
+pub struct ExhaustiveData {
+  pub clean: bool,
+  pub deps: FxHashSet<(ScopeId, SymbolId)>,
 }
 
 #[derive(Debug)]
-pub struct ExhaustiveData {
-  pub dirty: bool,
-  pub deps: FxHashSet<(ScopeId, SymbolId)>,
+pub enum CfScopeKind<'a> {
+  Module,
+  Labeled(&'a LabeledStatement<'a>),
+  Function,
+  Loop,
+  Switch,
+  If,
+
+  Dependent,
+  Indeterminate,
+  Exhaustive(ExhaustiveData),
+  ExitBlocker(Option<usize>),
+}
+
+impl<'a> CfScopeKind<'a> {
+  pub fn is_function(&self) -> bool {
+    matches!(self, CfScopeKind::Function)
+  }
+
+  pub fn is_breakable_without_label(&self) -> bool {
+    matches!(self, CfScopeKind::Loop | CfScopeKind::Switch)
+  }
+
+  pub fn is_continuable(&self) -> bool {
+    matches!(self, CfScopeKind::Loop)
+  }
+
+  pub fn matches_label(&self, label: &'a Atom<'a>) -> Option<&'a LabeledStatement<'a>> {
+    match self {
+      CfScopeKind::Labeled(stmt) if stmt.label.name == label => Some(stmt),
+      _ => None,
+    }
+  }
+
+  pub fn is_exhaustive(&self) -> bool {
+    matches!(self, CfScopeKind::Exhaustive(_))
+  }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -41,36 +66,19 @@ pub enum ReferredState {
 
 #[derive(Debug)]
 pub struct CfScope<'a> {
-  pub kind: CfScopeKind,
-  pub labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
+  pub kind: CfScopeKind<'a>,
   pub deps: ConsumableCollector<'a>,
   pub referred_state: ReferredState,
   pub exited: Option<bool>,
-  /// Exits that have been stopped by this scope's indeterminate state.
-  /// Only available when `kind` is `If`.
-  pub blocked_exit: Option<usize>,
-  pub exhaustive_data: Option<Box<ExhaustiveData>>,
 }
 
 impl<'a> CfScope<'a> {
-  pub fn new(
-    kind: CfScopeKind,
-    labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
-    deps: ConsumableVec<'a>,
-    exited: Option<bool>,
-  ) -> Self {
+  pub fn new(kind: CfScopeKind<'a>, deps: ConsumableVec<'a>, exited: Option<bool>) -> Self {
     CfScope {
       kind,
-      labels,
       deps: ConsumableCollector::new(deps),
       referred_state: ReferredState::Never,
       exited,
-      blocked_exit: None,
-      exhaustive_data: if kind == CfScopeKind::Exhaustive {
-        Some(Box::new(ExhaustiveData { dirty: true, deps: FxHashSet::default() }))
-      } else {
-        None
-      },
     }
   }
 
@@ -98,46 +106,25 @@ impl<'a> CfScope<'a> {
     self.exited.is_none()
   }
 
-  pub fn matches_label(&self, label: &str) -> Option<&'a LabeledStatement<'a>> {
-    if let Some(labels) = &self.labels {
-      labels.iter().find(|l| l.label.name == label).map(|v| &**v)
-    } else {
-      None
+  pub fn exhaustive_data_mut(&mut self) -> Option<&mut ExhaustiveData> {
+    match &mut self.kind {
+      CfScopeKind::Exhaustive(data) => Some(data),
+      _ => None,
     }
   }
 
-  pub fn is_breakable_without_label(&self) -> bool {
-    self.kind == CfScopeKind::BreakableWithoutLabel
-  }
-
-  pub fn is_continuable(&self) -> bool {
-    self.kind == CfScopeKind::Continuable
-  }
-
-  pub fn is_if_branch(&self) -> bool {
-    self.kind == CfScopeKind::IfBranch
-  }
-
-  pub fn is_function(&self) -> bool {
-    self.kind == CfScopeKind::Function
-  }
-
-  pub fn is_exhaustive(&self) -> bool {
-    self.kind == CfScopeKind::Exhaustive
-  }
-
   pub fn mark_exhaustive_read(&mut self, variable: (ScopeId, SymbolId)) {
-    if let Some(data) = &mut self.exhaustive_data {
-      if !data.dirty {
+    if let Some(data) = self.exhaustive_data_mut() {
+      if data.clean {
         data.deps.insert(variable);
       }
     }
   }
 
   pub fn mark_exhaustive_write(&mut self, variable: (ScopeId, SymbolId)) -> bool {
-    if let Some(data) = &mut self.exhaustive_data {
-      if !data.dirty && data.deps.contains(&variable) {
-        data.dirty = true;
+    if let Some(data) = self.exhaustive_data_mut() {
+      if data.clean && data.deps.contains(&variable) {
+        data.clean = false;
       }
       true
     } else {
@@ -147,10 +134,10 @@ impl<'a> CfScope<'a> {
 
   pub fn iterate_exhaustively(&mut self) -> bool {
     let exited = self.must_exited();
-    let data = self.exhaustive_data.as_mut().unwrap();
-    let dirty = data.dirty;
-    data.dirty = false;
-    if dirty && !exited {
+    let data = self.exhaustive_data_mut().unwrap();
+    let clean = data.clean;
+    data.clean = true;
+    if !clean && !exited {
       data.deps.clear();
       true
     } else {
@@ -208,11 +195,11 @@ impl<'a> Analyzer<'a> {
         // Stop exiting outer scopes if one inner scope is indeterminate.
         if is_indeterminate {
           must_exit = false;
-          if cf_scope.is_if_branch() {
+          if let CfScopeKind::ExitBlocker(target) = &mut cf_scope.kind {
             // For the `if` statement, do not mark the outer scopes as indeterminate here.
             // Instead, let the `if` statement handle it.
-            assert!(cf_scope.blocked_exit.is_none());
-            cf_scope.blocked_exit = Some(target_depth);
+            assert!(target.is_none());
+            *target = Some(target_depth);
             return None;
           }
         }
@@ -233,17 +220,17 @@ impl<'a> Analyzer<'a> {
   }
 
   /// If the label is used, `true` is returned.
-  pub fn break_to_label(&mut self, label: Option<&'a str>) -> bool {
+  pub fn break_to_label(&mut self, label: Option<&'a Atom<'a>>) -> bool {
     let mut is_closest_breakable = true;
     let mut target_depth = None;
     let mut label_used = false;
     for (idx, cf_scope) in self.scope_context.cf.iter_stack().enumerate().rev() {
-      if cf_scope.is_function() {
+      if cf_scope.kind.is_function() {
         break;
       }
-      let breakable_without_label = cf_scope.is_breakable_without_label();
+      let breakable_without_label = cf_scope.kind.is_breakable_without_label();
       if let Some(label) = label {
-        if let Some(label) = cf_scope.matches_label(label) {
+        if let Some(label) = cf_scope.kind.matches_label(label) {
           if !is_closest_breakable || !breakable_without_label {
             self.referred_deps.refer_dep(AstKind2::LabeledStatement(label));
             label_used = true;
@@ -264,31 +251,31 @@ impl<'a> Analyzer<'a> {
   }
 
   /// If the label is used, `true` is returned.
-  pub fn continue_to_label(&mut self, label: Option<&'a str>) -> bool {
+  pub fn continue_to_label(&mut self, label: Option<&'a Atom<'a>>) -> bool {
     let mut is_closest_continuable = true;
     let mut target_depth = None;
     let mut label_used = false;
     for (idx, cf_scope) in self.scope_context.cf.iter_stack().enumerate().rev() {
-      if cf_scope.is_function() {
+      if cf_scope.kind.is_function() {
         break;
       }
-      let is_continuable = cf_scope.is_continuable();
       if let Some(label) = label {
-        if is_continuable {
-          if let Some(label) = cf_scope.matches_label(label) {
-            if !is_closest_continuable {
-              self.referred_deps.refer_dep(AstKind2::LabeledStatement(label));
-              label_used = true;
-            }
-            target_depth = Some(idx);
-            break;
+        if let Some(label) = cf_scope.kind.matches_label(label) {
+          if !is_closest_continuable {
+            self.referred_deps.refer_dep(AstKind2::LabeledStatement(label));
+            label_used = true;
           }
-          is_closest_continuable = false;
+          target_depth = Some(idx);
+          break;
         }
-      } else if is_continuable {
+        is_closest_continuable = false;
+      } else if cf_scope.kind.is_continuable() {
         target_depth = Some(idx);
         break;
       }
+    }
+    if target_depth.is_none() {
+      panic!("label: {:?}, is_closest_continuable: {}", label, is_closest_continuable);
     }
     self.exit_to(target_depth.unwrap());
     label_used

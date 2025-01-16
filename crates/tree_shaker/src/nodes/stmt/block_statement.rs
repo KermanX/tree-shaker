@@ -1,17 +1,11 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer,
-  utils::StatementVecData,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, utils::StatementVecData};
 use oxc::{allocator, ast::ast::BlockStatement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_block_statement(&mut self, node: &'a BlockStatement) {
-    let labels = self.take_labels();
     let data = self.load_data::<StatementVecData>(AstKind2::BlockStatement(node));
 
-    self.push_cf_scope(CfScopeKind::Block, labels, Some(false));
     self.exec_statement_vec(data, &node.body);
-    self.pop_cf_scope();
   }
 }
 

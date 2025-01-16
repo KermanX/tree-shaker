@@ -96,12 +96,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.push_cf_scope_with_deps(
-      CfScopeKind::Dependent,
-      None,
-      vec![analyzer.consumable(self)],
-      None,
-    );
+    analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, vec![analyzer.consumable(self)], None);
     let values = self.values.map(|v| v.call(analyzer, dep, this, args));
     analyzer.pop_cf_scope();
     analyzer.factory.union(values)

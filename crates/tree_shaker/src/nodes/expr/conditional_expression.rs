@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
     let exec_consequent = move |analyzer: &mut Analyzer<'a>| {
       let conditional_dep = analyzer.push_if_like_branch_cf_scope(
         AstKind2::ConditionalExpression(node),
-        CfScopeKind::ConditionalExprBranch,
+        CfScopeKind::Indeterminate,
         test,
         maybe_true,
         maybe_false,
@@ -32,7 +32,7 @@ impl<'a> Analyzer<'a> {
     let exec_alternate = move |analyzer: &mut Analyzer<'a>| {
       let conditional_dep = analyzer.push_if_like_branch_cf_scope(
         AstKind2::ConditionalExpression(node),
-        CfScopeKind::ConditionalExprBranch,
+        CfScopeKind::Indeterminate,
         test,
         maybe_true,
         maybe_false,

@@ -116,7 +116,6 @@ impl<'a> ObjectEntity<'a> {
       let indeterminate = indeterminate || setters.len() > 1 || setters[0].0;
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
-        None,
         vec![analyzer.consumable((dep, key))],
         if indeterminate { None } else { Some(false) },
       );

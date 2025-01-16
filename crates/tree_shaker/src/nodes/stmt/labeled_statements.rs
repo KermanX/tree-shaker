@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::ast::ast::{LabeledStatement, Statement};
 
 impl<'a> Analyzer<'a> {
@@ -7,8 +7,9 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_labeled_statement(&mut self, node: &'a LabeledStatement<'a>) {
-    self.pending_labels.push(node);
+    self.push_cf_scope(CfScopeKind::Labeled(node), Some(false));
     self.exec_statement(&node.body);
+    self.pop_cf_scope();
   }
 }
 

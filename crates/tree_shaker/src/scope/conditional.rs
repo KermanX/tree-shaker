@@ -63,7 +63,7 @@ impl<'a> Analyzer<'a> {
   pub fn push_if_like_branch_cf_scope(
     &mut self,
     dep_id: impl Into<DepId>,
-    kind: CfScopeKind,
+    kind: CfScopeKind<'a>,
     test: Entity<'a>,
     maybe_consequent: bool,
     maybe_alternate: bool,
@@ -104,7 +104,7 @@ impl<'a> Analyzer<'a> {
     assert!(maybe_right);
     let dep = self.push_conditional_cf_scope(
       dep_id,
-      CfScopeKind::LogicalRight,
+      CfScopeKind::Indeterminate,
       left,
       maybe_left,
       maybe_right,
@@ -118,7 +118,7 @@ impl<'a> Analyzer<'a> {
   fn push_conditional_cf_scope(
     &mut self,
     dep_id: impl Into<DepId>,
-    kind: CfScopeKind,
+    kind: CfScopeKind<'a>,
     test: Entity<'a>,
     maybe_true: bool,
     maybe_false: bool,
@@ -130,7 +130,6 @@ impl<'a> Analyzer<'a> {
 
     self.push_cf_scope_with_deps(
       kind,
-      None,
       vec![self.consumable(dep)],
       if maybe_true && maybe_false { None } else { Some(false) },
     );

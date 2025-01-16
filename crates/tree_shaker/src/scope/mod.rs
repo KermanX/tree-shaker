@@ -18,13 +18,9 @@ use crate::{
 use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::CfScopeKind;
-use oxc::{
-  ast::ast::LabeledStatement,
-  semantic::{ScopeId, SymbolId},
-};
+use oxc::semantic::{ScopeId, SymbolId};
 use oxc_index::Idx;
 use scope_tree::ScopeTree;
-use std::rc::Rc;
 use try_scope::TryScope;
 use variable_scope::VariableScope;
 
@@ -41,7 +37,7 @@ pub struct ScopeContext<'a> {
 impl<'a> ScopeContext<'a> {
   pub fn new(factory: &EntityFactory<'a>) -> Self {
     let mut cf = ScopeTree::new();
-    cf.push(CfScope::new(CfScopeKind::Module, None, vec![], Some(false)));
+    cf.push(CfScope::new(CfScopeKind::Module, vec![], Some(false)));
     let mut variable = ScopeTree::new();
     let body_variable_scope = variable.push({
       let mut scope = VariableScope::new();
@@ -80,8 +76,8 @@ impl<'a> ScopeContext<'a> {
     assert_eq!(self.pure, 0);
 
     for scope in self.cf.iter_all() {
-      if let Some(data) = &scope.exhaustive_data {
-        assert!(!data.dirty);
+      if let CfScopeKind::Exhaustive(data) = &scope.kind {
+        assert!(data.clean);
       }
     }
 
@@ -160,7 +156,6 @@ impl<'a> Analyzer<'a> {
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
       CfScopeKind::Function,
-      None,
       vec![call_dep, self.consumable(dep_id)],
       Some(false),
     );
@@ -193,37 +188,26 @@ impl<'a> Analyzer<'a> {
     self.scope_context.variable.pop()
   }
 
-  pub fn push_cf_scope(
-    &mut self,
-    kind: CfScopeKind,
-    labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
-    exited: Option<bool>,
-  ) -> usize {
-    self.push_cf_scope_with_deps(kind, labels, vec![], exited)
+  pub fn push_cf_scope(&mut self, kind: CfScopeKind<'a>, exited: Option<bool>) -> usize {
+    self.push_cf_scope_with_deps(kind, vec![], exited)
   }
 
   pub fn push_cf_scope_with_deps(
     &mut self,
-    kind: CfScopeKind,
-    labels: Option<Rc<Vec<&'a LabeledStatement<'a>>>>,
+    kind: CfScopeKind<'a>,
     deps: ConsumableVec<'a>,
     exited: Option<bool>,
   ) -> usize {
-    self.scope_context.cf.push(CfScope::new(kind, labels, deps, exited));
+    self.scope_context.cf.push(CfScope::new(kind, deps, exited));
     self.scope_context.cf.current_depth()
   }
 
   pub fn push_indeterminate_cf_scope(&mut self) {
-    self.push_cf_scope(CfScopeKind::Indeterminate, None, None);
+    self.push_cf_scope(CfScopeKind::Indeterminate, None);
   }
 
   pub fn push_dependent_cf_scope(&mut self, dep: impl ConsumableTrait<'a> + 'a) {
-    self.push_cf_scope_with_deps(
-      CfScopeKind::Dependent,
-      None,
-      vec![self.consumable(dep)],
-      Some(false),
-    );
+    self.push_cf_scope_with_deps(CfScopeKind::Dependent, vec![self.consumable(dep)], Some(false));
   }
 
   pub fn pop_cf_scope(&mut self) -> ScopeId {
